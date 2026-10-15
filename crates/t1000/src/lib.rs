@@ -17,6 +17,7 @@ pub mod compiler;
 pub mod diagonal;
 pub mod feature_map;
 pub mod ingest;
+pub mod lattice;
 pub mod memory;
 pub mod molfeatures;
 pub mod observable;
@@ -37,6 +38,10 @@ pub use ansatz::{CircuitAnsatz, DeepQuantumNeuralNetwork, PiPhaseLayer, PreInitC
 pub use compiler::{CircuitBuilder, CircuitDag, CircuitOp, CompiledCircuit, CompilerTelemetry, ScheduledStage};
 pub use feature_map::{DataEncodingLayer, EncodingKind};
 pub use ingest::{tokenize_text, CorpusIngestor, IngestedDoc, IngestionTelemetry};
+pub use lattice::{
+    extract_lattice_frame, render_lattice_ascii, BoundaryCondition, LatticeConfig, LatticeFrame,
+    LatticeTrotterEvolver, LatticeVqeEngine,
+};
 pub use memory::{MemoryEntry, QuantumAssociativeMemory};
 pub use observable::PauliObservable;
 pub use optimizer::{AdamOptimizer, ParameterShiftEngine};
