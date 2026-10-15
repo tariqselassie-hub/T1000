@@ -55,6 +55,7 @@ pub struct RcsRunReport {
 }
 
 /// Advanced Random Circuit Sampling Engine.
+#[derive(Debug, Clone)]
 pub struct RcsSimulator {
     config: RcsConfig,
 }
@@ -149,7 +150,7 @@ impl RcsSimulator {
             cross_xeb_sum += p[i] * q[i];
         }
 
-        let bc_clamped = bc.min(1.0).max(0.0);
+        let bc_clamped = bc.clamp(0.0, 1.0);
         let sq_hellinger = (1.0 - bc_clamped).max(0.0);
         let hellinger = sq_hellinger.sqrt();
         let cross_xeb = (dim as f64) * cross_xeb_sum - 1.0;

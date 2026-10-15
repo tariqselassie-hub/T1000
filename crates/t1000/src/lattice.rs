@@ -350,6 +350,7 @@ fn compute_bipartite_entropy(state: &QuantumState, dim_a: usize, dim_b: usize) -
 
 /// Real-time Trotter-Suzuki time evolver for 2D spin lattices:
 /// U(Δt) = exp(i h_x Δt sum_i X_i) * exp(i Δt (J sum_<i,j> Z_i Z_j + h_z sum_i Z_i))
+#[derive(Debug, Clone)]
 pub struct LatticeTrotterEvolver {
     pub config: LatticeConfig,
     pub dt: f64,
@@ -431,6 +432,7 @@ impl LatticeTrotterEvolver {
 /// Variational Quantum Eigensolver (VQE) for Ground-State Phase Discovery.
 /// Uses a Hamiltonian-Variational Ansatz (HVA):
 /// Layer l: R_zz(θ_ij) across all bonds -> R_x(φ_i) on all sites -> R_y(ψ_i) on all sites.
+#[derive(Debug, Clone)]
 pub struct LatticeVqeEngine {
     pub config: LatticeConfig,
     pub depth: usize,

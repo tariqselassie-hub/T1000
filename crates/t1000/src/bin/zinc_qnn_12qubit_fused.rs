@@ -280,7 +280,7 @@ fn main() {
                                 let mut p_qed = p_ref[b_off + 1];
                                 let mut p_sas = p_ref[b_off + 2];
                                 for q in 0..12 {
-                                    p_logp += p_ref[w_off + 0 * 12 + q] * z_eval[q];
+                                    p_logp += p_ref[w_off + q] * z_eval[q];
                                     p_qed += p_ref[w_off + 1 * 12 + q] * z_eval[q];
                                     p_sas += p_ref[w_off + 2 * 12 + q] * z_eval[q];
                                 }
@@ -342,7 +342,7 @@ fn main() {
                                 let mut p_qed = p_ref[b_off + 1];
                                 let mut p_sas = p_ref[b_off + 2];
                                 for q in 0..12 {
-                                    p_logp += p_ref[w_off + 0 * 12 + q] * z_eval[q];
+                                    p_logp += p_ref[w_off + q] * z_eval[q];
                                     p_qed += p_ref[w_off + 1 * 12 + q] * z_eval[q];
                                     p_sas += p_ref[w_off + 2 * 12 + q] * z_eval[q];
                                 }
@@ -410,7 +410,7 @@ fn main() {
                                 let mut p_qed = p_ref[b_off + 1];
                                 let mut p_sas = p_ref[b_off + 2];
                                 for q in 0..12 {
-                                    p_logp += p_ref[w_off + 0 * 12 + q] * z_fused[q];
+                                    p_logp += p_ref[w_off + q] * z_fused[q];
                                     p_qed += p_ref[w_off + 1 * 12 + q] * z_fused[q];
                                     p_sas += p_ref[w_off + 2 * 12 + q] * z_fused[q];
                                 }
@@ -483,7 +483,7 @@ fn main() {
                                 let mut p_qed = p_ref[b_off + 1];
                                 let mut p_sas = p_ref[b_off + 2];
                                 for q in 0..11 {
-                                    p_logp += p_ref[w_off + 0 * 12 + q] * z_fused_11[q];
+                                    p_logp += p_ref[w_off + q] * z_fused_11[q];
                                     p_qed += p_ref[w_off + 1 * 12 + q] * z_fused_11[q];
                                     p_sas += p_ref[w_off + 2 * 12 + q] * z_fused_11[q];
                                 }
@@ -543,7 +543,7 @@ fn main() {
             let mut p_qed = p_ref[b_off + 1];
             let mut p_sas = p_ref[b_off + 2];
             for q in 0..11 {
-                p_logp += p_ref[w_off + 0 * 12 + q] * z_fused_11[q];
+                p_logp += p_ref[w_off + q] * z_fused_11[q];
                 p_qed += p_ref[w_off + 1 * 12 + q] * z_fused_11[q];
                 p_sas += p_ref[w_off + 2 * 12 + q] * z_fused_11[q];
             }

@@ -455,6 +455,7 @@ pub fn train_on_split(
 }
 
 /// Standardized inputs (fitted on training rows) and original-unit targets for one split.
+#[derive(Debug, Clone)]
 pub struct PreparedSplit {
     pub x_train: Vec<Vec<f64>>,
     pub x_valid: Vec<Vec<f64>>,

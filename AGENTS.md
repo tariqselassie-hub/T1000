@@ -81,3 +81,41 @@ Every newly created Rust source file (`.rs`), script, or core module MUST includ
 2. **Action-First Execution:** Implement full, working, drop-in solutions without placeholders, mock stubs, or unfinished `todo!()` blocks in production crates.
 3. **Zero-Warning Hygiene:** Code must compile cleanly with zero compiler warnings and zero broken documentation links.
 4. **Performance Integrity:** Avoid unnecessary allocations, clone calls on statevector buffers, or dynamic dispatch on hot inner-loop butterfly kernels.
+
+---
+
+## 6. Code Etiquette, Architectural Bounds & Lint Specifications
+
+To guarantee maintainability, extreme memory bandwidth efficiency, and long-term scientific reproducibility, all code in `T-1000` must strictly conform to these architectural ceilings:
+
+### Lines of Code (LoC) Limits
+| Scope | Maximum Soft Limit | Architectural Policy |
+| :--- | :--- | :--- |
+| **Rust Source File / Module** | **$\le 800$ LoC** | Files exceeding 800 lines must be systematically refactored into focused submodules under a directory namespace. |
+| **Individual Function / Method** | **$\le 80$ LoC** | Decompose monolithic functions into single-purpose helper functions with explicit input/output boundaries. |
+| **Hot Mathematical / SIMD Kernels** | **$\le 40$ LoC** | Inner AVX2 butterfly kernels, rotation sweeps, and amplitude updates must be hyper-focused, inlined (`#[inline(always)]`), and zero-allocation. |
+| **Benchmark & Experiment Binaries** | **$\le 500$ LoC** | CLI binaries in `src/bin/` must focus strictly on orchestrating the experiment, recording telemetry to JSON, and outputting formatted matrices. |
+
+### Mandatory Workspace Lint Governance
+All crates inherit compiler and clippy lints from the root `Cargo.toml` via `[lints] workspace = true`:
+* **Compile-Time Deny Directives:**
+  - `clippy::correctness = "deny"` — Zero tolerance for semantic errors.
+  - `clippy::erasing_op = "deny"` — Catches zero multiplications (`0 * stride`) and dead evaluation branches.
+  - `clippy::approx_constant = "deny"` — Mandates standard constants (`std::f64::consts::PI`) over floating literals.
+* **Compiler Quality Directives:**
+  - `missing_debug_implementations = "warn"` — Every public struct MUST derive or implement `Debug`.
+  - `clippy::redundant_clone = "warn"` — Prevents accidental cloning of multi-megabyte statevectors.
+  - `clippy::unnecessary_wraps = "warn"` — Eliminates gratuitous `Option`/`Result` wrapping in inner loops.
+  - `clippy::manual_clamp = "warn"` — Enforces native `.clamp()` over chained `.min().max()`.
+  - `clippy::manual_div_ceil = "warn"` — Enforces native `.div_ceil()` for integer chunk partitioning.
+
+### Formatting & Code Style (`rustfmt.toml`)
+* **Maximum Line Width:** 100 characters (`max_width = 100`).
+* **Indentation:** 4 spaces; zero tabs (`tab_spaces = 4`).
+* **Newline Style:** Unix LF (`newline_style = "Unix"`).
+* **Shorthand:** `use_field_init_shorthand = true`, `use_try_shorthand = true`.
+
+### Zero-Allocation Hot-Loop Discipline
+* **Never allocate in inner quantum loops:** No `vec![]`, `to_string()`, `format!()`, or dynamic dispatch inside butterfly passes, unitary Trotter steps, or observable evaluation.
+* **Pre-allocate scratch buffers:** All temporary workspace memory (e.g. forward states, adjoint vectors, expectation registers) must be allocated once before stepping and reused across iterations.
+

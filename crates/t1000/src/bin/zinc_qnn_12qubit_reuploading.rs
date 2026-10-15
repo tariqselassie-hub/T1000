@@ -554,7 +554,7 @@ fn main() {
             let m_hat = m_adam[q] / (1.0 - beta1.powi(epoch as i32));
             let v_hat = v_adam[q] / (1.0 - beta2.powi(epoch as i32));
             dru_scales[q] -= lr * m_hat / (v_hat.sqrt() + 1e-8);
-            dru_scales[q] = dru_scales[q].clamp(-3.14159, 3.14159);
+            dru_scales[q] = dru_scales[q].clamp(-std::f64::consts::PI, std::f64::consts::PI);
         }
 
         let norm_s = dru_scales.iter().map(|&s| s * s).sum::<f64>().sqrt();

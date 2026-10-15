@@ -619,6 +619,7 @@ impl SmilesFeatures {
 }
 
 /// SMILES featurizer built on the [`tokenize`] / [`parse`] front end.
+#[derive(Debug, Clone, Copy)]
 pub struct SmilesFeaturizer;
 
 impl SmilesFeaturizer {
@@ -685,6 +686,7 @@ impl SmilesFeaturizer {
 // =========================================================================
 
 /// Quantum feature encoder mapping pure SMILES strings into Hilbert space statevectors.
+#[derive(Debug, Clone)]
 pub struct SmilesQuantumEncoder {
     qubits: usize,
     encoding: DataEncodingLayer,
@@ -722,6 +724,7 @@ pub struct SmilesPropertyProfile {
 }
 
 /// High-throughput SMILES exploration and screening engine powered by VQC.
+#[derive(Debug, Clone)]
 pub struct SmilesExplorer {
     encoder: SmilesQuantumEncoder,
     ansatz: CircuitAnsatz,

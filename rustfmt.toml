@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
+# Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
+# T-1000 Rustfmt Sovereign Formatting Specification
+edition = "2021"
+max_width = 100
+tab_spaces = 4
+newline_style = "Unix"
+use_field_init_shorthand = true
+use_try_shorthand = true
+format_strings = true
+format_macro_bodies = true
+format_macro_matchers = true

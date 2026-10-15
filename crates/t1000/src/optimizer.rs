@@ -95,6 +95,7 @@ impl AdamOptimizer {
 /// Hybrid quantum-classical gradient engine. Gradients use adjoint differentiation; the
 /// `*_parameter_shift` methods keep the parameter-shift rule for cross-checks. (The type name
 /// is kept for compatibility.)
+#[derive(Debug, Clone)]
 pub struct ParameterShiftEngine {
     pub encoding: DataEncodingLayer,
     pub ansatz: CircuitAnsatz,

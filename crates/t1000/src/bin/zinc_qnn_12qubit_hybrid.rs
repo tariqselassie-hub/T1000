@@ -431,7 +431,7 @@ fn main() {
         let std_norm = (N_QUBITS as f64).sqrt();
         for q in 0..N_QUBITS {
             let angle = 2.0 * std::f64::consts::PI * (q as f64) / (N_QUBITS as f64);
-            hybrid_params[w_offset + 0 * 12 + q] = (SIGMA_LOGP / std_norm) * angle.cos();
+            hybrid_params[w_offset + q] = (SIGMA_LOGP / std_norm) * angle.cos();
             hybrid_params[w_offset + 1 * 12 + q] = (SIGMA_QED / std_norm) * angle.sin();
             hybrid_params[w_offset + 2 * 12 + q] = (SIGMA_SAS / std_norm) * (2.0 * angle).cos();
         }
@@ -464,7 +464,7 @@ fn main() {
         let mut p_qed = hybrid_params[b_offset + 1];
         let mut p_sas = hybrid_params[b_offset + 2];
         for q in 0..12 {
-            p_logp += hybrid_params[w_offset + 0 * 12 + q] * z_eval[q];
+            p_logp += hybrid_params[w_offset + q] * z_eval[q];
             p_qed  += hybrid_params[w_offset + 1 * 12 + q] * z_eval[q];
             p_sas  += hybrid_params[w_offset + 2 * 12 + q] * z_eval[q];
         }
@@ -690,7 +690,7 @@ fn main() {
         let mut p_qed = hybrid_params[b_offset + 1];
         let mut p_sas = hybrid_params[b_offset + 2];
         for q in 0..12 {
-            p_logp += hybrid_params[w_offset + 0 * 12 + q] * z_eval[q];
+            p_logp += hybrid_params[w_offset + q] * z_eval[q];
             p_qed  += hybrid_params[w_offset + 1 * 12 + q] * z_eval[q];
             p_sas  += hybrid_params[w_offset + 2 * 12 + q] * z_eval[q];
         }

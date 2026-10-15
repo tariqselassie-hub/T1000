@@ -30,6 +30,7 @@ pub struct IngestionTelemetry {
 }
 
 /// The Corpus Ingestor engine.
+#[derive(Debug)]
 pub struct CorpusIngestor {
     pub feature_map: QuantumFeatureMap,
     pub qnn: DeepQuantumNeuralNetwork,

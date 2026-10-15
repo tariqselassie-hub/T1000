@@ -6,6 +6,9 @@ authors.workspace = true
 license.workspace = true
 description = "T-1000 Quantum Neural Network: Shape-shifting, high-performance AVX2 quantum simulation, circuit compilation, and molecular SMILES latent exploration."
 
+[lints]
+workspace = true
+
 [dependencies]
 t1000_core = { workspace = true }
 serde = { workspace = true }
@@ -15,6 +18,10 @@ rand = { workspace = true }
 rand_chacha = { workspace = true }
 rayon = { workspace = true }
 thiserror = { workspace = true }
+
+[[bin]]
+name = "lattice_phase_transition"
+path = "src/bin/lattice_phase_transition.rs"
 
 [[bin]]
 name = "corpus_qnn_ingest"

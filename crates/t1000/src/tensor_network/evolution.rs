@@ -25,6 +25,7 @@ impl EvolutionTelemetry {
 }
 
 /// Common single-qubit quantum gates.
+#[derive(Debug, Clone, Copy)]
 pub struct SingleQubitGate;
 
 impl SingleQubitGate {
@@ -120,6 +121,7 @@ impl SingleQubitGate {
 }
 
 /// Common two-qubit quantum gates (4x4 matrices in row-major computational basis |00>, |01>, |10>, |11>).
+#[derive(Debug, Clone, Copy)]
 pub struct TwoQubitGate;
 
 impl TwoQubitGate {

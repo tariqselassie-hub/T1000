@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
+# Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
+# T-1000 Clippy Sovereign Configuration
+cognitive-complexity-threshold = 30
+too-many-arguments-threshold = 10
+too-many-lines-threshold = 120
+doc-valid-idents = [
+    "AVX2",
+    "FMA",
+    "SIMD",
+    "QNN",
+    "VQC",
+    "HVA",
+    "RCS",
+    "XEB",
+    "POVM",
+    "SMILES",
+    "OpenSMILES",
+    "ZINC",
+    "Rayon",
+    "Trotter",
+    "GHz",
+    "Qubit",
+    "Qubits",
+    "Statevector",
+    "Hilbert",
+]

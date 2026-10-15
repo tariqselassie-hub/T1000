@@ -54,6 +54,7 @@ pub struct OptimalConfig {
 }
 
 /// Unified Quantum Engine Wrapper for VQC Ansatz profiling.
+#[derive(Debug, Clone)]
 pub struct QuantumEngine {
     pub n_qubits: usize,
     pub encoding: DataEncodingLayer,

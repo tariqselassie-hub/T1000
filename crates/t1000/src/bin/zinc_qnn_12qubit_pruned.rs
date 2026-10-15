@@ -279,7 +279,7 @@ fn main() {
                         let mut p_qed = full_params_ref[b_off + 1];
                         let mut p_sas = full_params_ref[b_off + 2];
                         for q in 0..12 {
-                            p_logp += full_params_ref[w_off + 0 * 12 + q] * z_eval[q];
+                            p_logp += full_params_ref[w_off + q] * z_eval[q];
                             p_qed += full_params_ref[w_off + 1 * 12 + q] * z_eval[q];
                             p_sas += full_params_ref[w_off + 2 * 12 + q] * z_eval[q];
                         }
@@ -329,7 +329,7 @@ fn main() {
                         let mut p_qed = pruned_params_ref[b_off + 1];
                         let mut p_sas = pruned_params_ref[b_off + 2];
                         for q in 0..12 {
-                            p_logp += pruned_params_ref[w_off + 0 * 12 + q] * z_eval[q];
+                            p_logp += pruned_params_ref[w_off + q] * z_eval[q];
                             p_qed += pruned_params_ref[w_off + 1 * 12 + q] * z_eval[q];
                             p_sas += pruned_params_ref[w_off + 2 * 12 + q] * z_eval[q];
                         }

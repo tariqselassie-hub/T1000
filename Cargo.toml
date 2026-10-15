@@ -21,3 +21,19 @@ rand = "0.8"
 rand_chacha = "0.3"
 rayon = "1"
 thiserror = "2.0"
+
+[workspace.lints.rust]
+unsafe_code = "allow"
+missing_debug_implementations = "warn"
+rust_2021_compatibility = "warn"
+
+[workspace.lints.clippy]
+correctness = "deny"
+erasing_op = "deny"
+approx_constant = "deny"
+redundant_clone = "warn"
+unnecessary_wraps = "warn"
+cast_lossless = "warn"
+identity_op = "warn"
+manual_clamp = "warn"
+manual_div_ceil = "warn"
