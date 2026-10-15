@@ -114,6 +114,9 @@ python scripts/charting/chart_all.py
 # Verify physical Artix-7 FPGA autonomous layers and chaos streaming over COM6
 python scripts/fpga/test_chaos_streaming.py
 
+# Launch interactive 3D molecular dashboard and Lego-block circuit composer
+python web/serve.py
+
 # Benchmark PC AVX2 CPU vs FPGA Silicon across 10-to-26 qubits
 python scripts/fpga/bench_pc_vs_fpga_scaling.py
 # Run sovereign Quantum Coherence Frontier Push (Dense 26Q + TN 64Q + Heptal 7^9 Qudits)
@@ -122,6 +125,9 @@ cargo run --release -p t1000 --bin coherence_frontier_push
 # Run chemical SMILES quantum featurization & screening
 cargo run --release -p t1000 --bin zinc_protocol
 ```
+
+* **Dashboard & Circuit Composer Documentation:** [`docs/dashboard_and_circuit_composer.md`](docs/dashboard_and_circuit_composer.md).
+
 
 ---
 

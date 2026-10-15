@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>T-1000 Sovereign Quantum Molecular Engine & 3D Atomic Mesh</title>
+    <title>T-1000 Sovereign Quantum Neural Engine & Telemetry Deck</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -18,166 +18,600 @@
             </div>
             <span style="color:var(--text-muted); font-size:12px; font-family:var(--font-mono);">|</span>
             <span style="font-family:var(--font-mono); font-size:12px; color:var(--text-slate);">
-                3D QUANTUM MOLECULAR MANIFOLD
+                SOVEREIGN QUANTUM WORKSPACE
             </span>
         </div>
 
+        <!-- Deck Switcher Tabs -->
+        <nav class="deck-nav">
+            <button class="deck-tab active" data-deck="deck-manifold">
+                <span class="tab-idx">[1]</span> 3D MOLECULAR MANIFOLD
+            </button>
+            <button class="deck-tab" data-deck="deck-composer">
+                <span class="tab-idx">[2]</span> LEGO CIRCUIT COMPOSER
+            </button>
+            <button class="deck-tab" data-deck="deck-telemetry">
+                <span class="tab-idx">[3]</span> RUN TELEMETRY &amp; HARDWARE MATRIX
+            </button>
+        </nav>
+
+        <!-- Hardware Link Telemetry Strip -->
         <div class="telemetry-strip">
             <div class="telemetry-item">
-                <span>TARGET SILICON:</span>
+                <span>SILICON:</span>
                 <span class="val">ARTIX-7 XC7A35T</span>
             </div>
             <div class="telemetry-item">
                 <span>LINK:</span>
-                <span class="val-green">COM6 @ 3.0 MBaud</span>
+                <span id="header-link-status" class="val-green">COM6 @ 3.0 MBaud</span>
             </div>
             <div class="telemetry-item">
-                <span>LATENCY:</span>
-                <span class="val">122.88 &mu;s</span>
+                <span>CLOCK:</span>
+                <span class="val">100.0 MHz</span>
             </div>
             <div class="telemetry-item">
                 <span>STATE VECTOR:</span>
-                <span class="val-green">2^10 HILBERT</span>
+                <span class="val-green" id="header-hilbert-dim">2^10 HILBERT</span>
             </div>
         </div>
     </header>
 
-    <!-- Main Workspace Grid -->
-    <main class="dashboard-grid">
-        <!-- Left Panel: Control Deck & Experiment Discovery -->
-        <aside class="control-panel">
-            <div class="panel-header">
-                <span>[+] Molecular Ingestion</span>
-                <span style="color:var(--hardware-gold);">DECK A</span>
-            </div>
+    <!-- MAIN VIEWPORT CONTAINER -->
+    <main class="main-container">
+        
+        <!-- =================================================================== -->
+        <!-- DECK 1: 3D QUANTUM MOLECULAR & ATOMIC MANIFOLD                      -->
+        <!-- =================================================================== -->
+        <section id="deck-manifold" class="deck-section active">
+            <div class="dashboard-grid">
+                <!-- Left Panel: Control Deck & Experiment Discovery -->
+                <aside class="control-panel">
+                    <div class="panel-header">
+                        <span>[+] Molecular Ingestion</span>
+                        <span style="color:var(--hardware-gold);">DECK A</span>
+                    </div>
 
-            <!-- Live SMILES Input -->
-            <div class="panel-section">
-                <div class="section-label">
-                    <span>Target SMILES Vector</span>
-                    <span style="color:var(--quantum-green); font-size:10px;">LIVE 3D</span>
-                </div>
-                <div class="input-group">
-                    <input type="text" id="input-smiles" value="NCc1cccc(CO)c1" placeholder="Enter valid SMILES string..." spellcheck="false">
-                </div>
-                <button id="btn-simulate" class="btn-primary" style="width:100%;">SIMULATE &amp; MESH</button>
-            </div>
+                    <!-- Live SMILES Input -->
+                    <div class="panel-section">
+                        <div class="section-label">
+                            <span>Target SMILES Vector</span>
+                            <span style="color:var(--quantum-green); font-size:10px;">LIVE 3D</span>
+                        </div>
+                        <div class="input-group">
+                            <input type="text" id="input-smiles" value="NCc1cccc(CO)c1" placeholder="Enter valid SMILES string..." spellcheck="false">
+                        </div>
+                        <button id="btn-simulate" class="btn-primary" style="width:100%;">SIMULATE &amp; MESH</button>
+                    </div>
 
-            <!-- Experiment JSON Loader -->
-            <div class="panel-section">
-                <div class="section-label">
-                    <span>Experiment Stream</span>
-                    <span style="color:var(--hardware-gold); font-size:10px;">DISK TELEMETRY</span>
-                </div>
-                <select id="select-experiment" style="margin-bottom:10px;">
-                    <option value="data/period_1_2_atomic_quantum.json">Period 1 &amp; 2: Atomic Quantum Shells (Z=1-10)</option>
-                    <option value="data/lead_109_convergence_analysis.json" selected>Lead #109 Attractor Convergence (MIMAC)</option>
-                    <option value="data/mimac_quantum_activity_cliffs.json">Top 20 MIMAC Quantum Activity Cliffs</option>
-                    <option value="data/zinc_pareto_leads.json">Search 1: ZINC Frontier Pareto Leads</option>
-                    <option value="data/zinc_quantum_anomalies.json">Search 3: ZINC Quantum Anomalies</option>
-                </select>
+                    <!-- Experiment JSON Loader (Expanded to All 17 Datasets) -->
+                    <div class="panel-section">
+                        <div class="section-label">
+                            <span>Experiment Stream</span>
+                            <span style="color:var(--hardware-gold); font-size:10px;">17 DATASETS</span>
+                        </div>
+                        <select id="select-experiment" style="margin-bottom:10px;">
+                            <optgroup label="Lead Attractors &amp; Cliffs">
+                                <option value="data/lead_109_convergence_analysis.json" selected>Lead #109 Attractor Convergence (MIMAC)</option>
+                                <option value="data/mimac_quantum_activity_cliffs.json">Top 20 MIMAC Quantum Activity Cliffs</option>
+                            </optgroup>
+                            <optgroup label="Atomic Quantum Shells">
+                                <option value="data/period_1_2_atomic_quantum.json">Period 1 &amp; 2: Atomic Shells (Z=1-10)</option>
+                            </optgroup>
+                            <optgroup label="ZINC Molecular Screening">
+                                <option value="data/zinc_pareto_leads.json">Search 1: ZINC Frontier Pareto Leads (250k)</option>
+                                <option value="data/zinc_quantum_anomalies.json">Search 3: ZINC Quantum Anomalies</option>
+                            </optgroup>
+                            <optgroup label="Quantum Neural Networks">
+                                <option value="data/mnist_qnn_training.json">MNIST VQC 10-Qubit Training (Adjoint AVX2)</option>
+                                <option value="data/qnn_training_run.json">12-Qubit Re-uploading QNN Convergence</option>
+                                <option value="data/qnn_bench_results.json">QNN Gate Speed Benchmark Suite</option>
+                            </optgroup>
+                            <optgroup label="FPGA Silicon &amp; Hardware Scaling">
+                                <option value="data/pc_vs_fpga_26q_scaling.json">PC vs Artix-7 FPGA 26-Qubit Scaling</option>
+                                <option value="data/frontier_rcs_fpga_results.json">Frontier RCS FPGA Execution (D=36)</option>
+                                <option value="data/nist_entropy_audit.json">NIST Quantum Entropy Hardware Audit</option>
+                            </optgroup>
+                            <optgroup label="Lattice Quench &amp; Phase Transitions">
+                                <option value="data/lattice_quench_dynamics.json">Ising 2D Lattice Quench Dynamics</option>
+                                <option value="data/lattice_phase_transition.json">Transverse-Field Phase Diagram</option>
+                            </optgroup>
+                        </select>
 
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <label for="file-upload" class="btn-secondary" style="display:inline-block; text-align:center; flex:1; cursor:pointer;">
-                        [#] LOAD CUSTOM JSON
-                    </label>
-                    <input type="file" id="file-upload" accept=".json" style="display:none;">
-                </div>
-            </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                            <label for="file-upload" class="btn-secondary" style="display:inline-block; text-align:center; flex:1; cursor:pointer;">
+                                [#] LOAD JSON
+                            </label>
+                            <input type="file" id="file-upload" accept=".json" style="display:none;">
+                            <button id="btn-export-to-composer" class="btn-secondary" title="Export current molecule as VQC Circuit to Composer">
+                                &rarr; TO COMPOSER
+                            </button>
+                        </div>
+                    </div>
 
-            <!-- Molecule Selector List -->
-            <div class="panel-section" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
-                <div class="section-label">
-                    <span>Active Candidates</span>
-                    <span id="candidate-count" style="color:var(--text-slate); font-size:10px;">BATCH VIEW</span>
-                </div>
-                <div id="molecule-list" class="molecule-list">
-                    <!-- Populated dynamically via JS -->
-                </div>
-            </div>
-        </aside>
+                    <!-- Molecule Selector List -->
+                    <div class="panel-section" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
+                        <div class="section-label">
+                            <span>Active Candidates</span>
+                            <span id="candidate-count" style="color:var(--text-slate); font-size:10px;">BATCH VIEW</span>
+                        </div>
+                        <div id="molecule-list" class="molecule-list">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+                </aside>
 
-        <!-- Center Viewport: 3D Atomic & Mesh Canvas -->
-        <section class="viewport-panel">
-            <div class="viewport-overlay-top">
-                <div class="overlay-badge">
-                    <span id="badge-id" style="color:var(--hardware-gold); font-weight:800;">#109</span>
-                    <span id="display-smiles" style="color:var(--quantum-green); font-weight:600;">NCc1cccc(CO)c1</span>
-                </div>
-                <div class="overlay-badge">
-                    <span style="color:var(--text-slate);">TOPOLOGY:</span>
-                    <span style="color:var(--text-white);">DISTANCE-GEOMETRY RELAXATION</span>
-                </div>
-            </div>
+                <!-- Center Viewport: 3D Atomic & Mesh Canvas -->
+                <section class="viewport-panel">
+                    <div class="viewport-overlay-top">
+                        <div class="overlay-badge">
+                            <span id="badge-id" style="color:var(--hardware-gold); font-weight:800;">#109</span>
+                            <span id="display-smiles" style="color:var(--quantum-green); font-weight:600;">NCc1cccc(CO)c1</span>
+                        </div>
+                        <div class="overlay-badge">
+                            <span style="color:var(--text-slate);">TOPOLOGY:</span>
+                            <span style="color:var(--text-white);">DISTANCE-GEOMETRY RELAXATION</span>
+                        </div>
+                    </div>
 
-            <div id="canvas-container"></div>
+                    <div id="canvas-container"></div>
 
-            <!-- Viewport Overlay Controls -->
-            <div class="viewport-controls">
-                <button class="btn-secondary btn-render-mode active" data-mode="hybrid">HYBRID</button>
-                <button class="btn-secondary btn-render-mode" data-mode="spheres">ATOMIC CPK</button>
-                <button class="btn-secondary btn-render-mode" data-mode="mesh">DENSITY MESH</button>
-                <button class="btn-secondary btn-render-mode" data-mode="wireframe">WIREFRAME</button>
-                <button id="btn-toggle-spin" class="btn-secondary active">SPIN</button>
-                <button id="btn-reset-cam" class="btn-secondary">RESET CAM</button>
+                    <!-- Viewport Overlay Controls -->
+                    <div class="viewport-controls">
+                        <button class="btn-secondary btn-render-mode active" data-mode="hybrid">HYBRID</button>
+                        <button class="btn-secondary btn-render-mode" data-mode="spheres">ATOMIC CPK</button>
+                        <button class="btn-secondary btn-render-mode" data-mode="mesh">DENSITY MESH</button>
+                        <button class="btn-secondary btn-render-mode" data-mode="wireframe">WIREFRAME</button>
+                        <button id="btn-toggle-spin" class="btn-secondary active">SPIN</button>
+                        <button id="btn-reset-cam" class="btn-secondary">RESET CAM</button>
+                    </div>
+                </section>
+
+                <!-- Right Panel: Biophysical & Quantum Telemetry Deck -->
+                <aside class="telemetry-panel">
+                    <div class="panel-header">
+                        <span>[Q] Hilbert Telemetry</span>
+                        <span style="color:var(--quantum-green);">10-QUBIT VQC</span>
+                    </div>
+
+                    <!-- Biophysical Parameters -->
+                    <div class="panel-section">
+                        <div class="section-label">
+                            <span id="section-metrics-title">Biophysical Descriptors</span>
+                            <span style="color:var(--hardware-gold); font-size:10px;">MOLECULAR METRICS</span>
+                        </div>
+                        <div class="metric-grid">
+                            <div class="metric-card">
+                                <div id="title-m1" class="metric-title">Mol Weight</div>
+                                <div id="val-mw" class="metric-value">137.08 g/mol</div>
+                            </div>
+                            <div class="metric-card">
+                                <div id="title-m2" class="metric-title">LogP (Lipophilicity)</div>
+                                <div id="val-logp" class="metric-value gold">0.64</div>
+                            </div>
+                            <div class="metric-card">
+                                <div id="title-m3" class="metric-title">TPSA Polar Surface</div>
+                                <div id="val-tpsa" class="metric-value">46.3 Å²</div>
+                            </div>
+                            <div class="metric-card">
+                                <div id="title-m4" class="metric-title">Bioactivity Score</div>
+                                <div id="val-act" class="metric-value highlight">8.56</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contextual Analysis Comparison -->
+                    <div class="panel-section">
+                        <div class="section-label">
+                            <span id="section-comparison-title">Attractor Convergence</span>
+                            <span style="color:var(--hardware-gold); font-size:10px;">ANALYSIS DECK</span>
+                        </div>
+                        <div id="attractor-comparison-container">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+
+                    <!-- 10-Qubit Statevector Observables -->
+                    <div class="panel-section" style="flex:1;">
+                        <div class="section-label">
+                            <span>10-Qubit Pauli-Z Expectations &lang;Z_q&rang;</span>
+                            <span style="color:var(--quantum-green); font-size:10px;">HILBERT SPECTRUM</span>
+                        </div>
+                        <div id="qubit-bars" class="qubit-bar-container">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+                </aside>
             </div>
         </section>
 
-        <!-- Right Panel: Biophysical & Quantum Telemetry Deck -->
-        <aside class="telemetry-panel">
-            <div class="panel-header">
-                <span>[Q] Hilbert Telemetry</span>
-                <span style="color:var(--quantum-green);">10-QUBIT VQC</span>
-            </div>
+        <!-- =================================================================== -->
+        <!-- DECK 2: LEGO-BLOCK QUANTUM CIRCUIT COMPOSER & EXPERIMENTAL BENCH    -->
+        <!-- =================================================================== -->
+        <section id="deck-composer" class="deck-section">
+            <div class="composer-grid">
+                <!-- Left: Palette, Presets, and Hardware Execution Selector -->
+                <aside class="composer-controls">
+                    <div class="panel-header">
+                        <span>[+] Gate Palette &amp; Controls</span>
+                        <span style="color:var(--quantum-green);">LEGO DOCK</span>
+                    </div>
 
-            <!-- Biophysical Parameters -->
-            <div class="panel-section">
-                <div class="section-label">
-                    <span id="section-metrics-title">Biophysical Descriptors</span>
-                    <span style="color:var(--hardware-gold); font-size:10px;">MOLECULAR METRICS</span>
-                </div>
-                <div class="metric-grid">
-                    <div class="metric-card">
-                        <div id="title-m1" class="metric-title">Mol Weight</div>
-                        <div id="val-mw" class="metric-value">137.08 g/mol</div>
-                    </div>
-                    <div class="metric-card">
-                        <div id="title-m2" class="metric-title">LogP (Lipophilicity)</div>
-                        <div id="val-logp" class="metric-value gold">0.64</div>
-                    </div>
-                    <div class="metric-card">
-                        <div id="title-m3" class="metric-title">TPSA Polar Surface</div>
-                        <div id="val-tpsa" class="metric-value">46.3 Å²</div>
-                    </div>
-                    <div class="metric-card">
-                        <div id="title-m4" class="metric-title">Bioactivity Score</div>
-                        <div id="val-act" class="metric-value highlight">8.56</div>
-                    </div>
-                </div>
-            </div>
+                    <!-- Gate Palette -->
+                    <div class="panel-section">
+                        <div class="section-label">
+                            <span>Single-Qubit Rotations (Parameterized)</span>
+                            <span style="color:var(--quantum-green); font-size:10px;">SOVEREIGN GREEN</span>
+                        </div>
+                        <div class="gate-palette-row">
+                            <button class="lego-btn gate-ry active" data-gate="RY" title="Y-Rotation Gate Ry(θ)">Ry(θ)</button>
+                            <button class="lego-btn gate-rx" data-gate="RX" title="X-Rotation Gate Rx(θ)">Rx(θ)</button>
+                            <button class="lego-btn gate-rz" data-gate="RZ" title="Z-Rotation Gate Rz(θ)">Rz(θ)</button>
+                        </div>
 
-            <!-- Contextual Analysis Comparison -->
-            <div class="panel-section">
-                <div class="section-label">
-                    <span id="section-comparison-title">Attractor Convergence</span>
-                    <span style="color:var(--hardware-gold); font-size:10px;">ANALYSIS DECK</span>
-                </div>
-                <div id="attractor-comparison-container">
-                    <!-- Populated dynamically via JS -->
-                </div>
-            </div>
+                        <div class="section-label" style="margin-top:12px;">
+                            <span>Clifford &amp; Pauli Gates</span>
+                            <span style="color:var(--text-white); font-size:10px;">POLAR SLATE</span>
+                        </div>
+                        <div class="gate-palette-row">
+                            <button class="lego-btn gate-h" data-gate="H" title="Hadamard Superposition Gate">H</button>
+                            <button class="lego-btn gate-x" data-gate="X" title="Pauli-X NOT Gate">X</button>
+                            <button class="lego-btn gate-z" data-gate="Z" title="Pauli-Z Phase Flip">Z</button>
+                            <button class="lego-btn gate-s" data-gate="S" title="Phase Gate S (π/2)">S</button>
+                            <button class="lego-btn gate-t" data-gate="T" title="T Gate (π/4)">T</button>
+                        </div>
 
-            <!-- 10-Qubit Statevector Observables -->
-            <div class="panel-section" style="flex:1;">
-                <div class="section-label">
-                    <span>10-Qubit Pauli-Z Expectations &lang;Z_q&rang;</span>
-                    <span style="color:var(--quantum-green); font-size:10px;">HILBERT SPECTRUM</span>
+                        <div class="section-label" style="margin-top:12px;">
+                            <span>Two-Qubit Entangling Gates</span>
+                            <span style="color:var(--hardware-gold); font-size:10px;">HARDWARE GOLD</span>
+                        </div>
+                        <div class="gate-palette-row">
+                            <button class="lego-btn gate-cz" data-gate="CZ" title="Controlled-Z Entangler">CZ</button>
+                            <button class="lego-btn gate-cx" data-gate="CX" title="Controlled-NOT (CNOT)">CX</button>
+                            <button class="lego-btn gate-swap" data-gate="SWAP" title="Qubit State SWAP">SWAP</button>
+                        </div>
+
+                        <div class="section-label" style="margin-top:12px;">
+                            <span>Measurement &amp; Reset</span>
+                            <span style="color:var(--alert-red); font-size:10px;">CRIMSON</span>
+                        </div>
+                        <div class="gate-palette-row">
+                            <button class="lego-btn gate-mz" data-gate="MZ" title="Pauli-Z Projective Measurement">Mz</button>
+                            <button class="lego-btn gate-erase" data-gate="ERASE" title="Eraser tool - Click to remove gate">[DEL]</button>
+                        </div>
+                    </div>
+
+                    <!-- Circuit Presets -->
+                    <div class="panel-section">
+                        <div class="section-label">
+                            <span>Experimental Circuit Presets</span>
+                            <span style="color:var(--hardware-gold); font-size:10px;">QUICK LOAD</span>
+                        </div>
+                        <div class="preset-buttons-grid">
+                            <button class="btn-secondary btn-preset" data-preset="lead_109">Lead #109 VQC Feature Map</button>
+                            <button class="btn-secondary btn-preset" data-preset="ghz_entangle">GHZ / Bell 3-Qubit Entangler</button>
+                            <button class="btn-secondary btn-preset" data-preset="rcs_chaos">Frontier RCS Chaos (D=6)</button>
+                            <button class="btn-secondary btn-preset" data-preset="hea_ansatz">Hardware Efficient Ansatz (4Q)</button>
+                            <button class="btn-secondary btn-preset" data-preset="qft_4q">Quantum Fourier Transform (4Q)</button>
+                            <button class="btn-secondary btn-preset" data-preset="zeno_sentry">Zeno Perimeter Sentry</button>
+                        </div>
+                    </div>
+
+                    <!-- Hardware Target Switcher & Execution -->
+                    <div class="panel-section">
+                        <div class="section-label">
+                            <span>Execution Engine Target</span>
+                            <span style="color:var(--quantum-green); font-size:10px;">SILICON ROUTING</span>
+                        </div>
+                        <div class="target-toggle-group">
+                            <button id="target-cpu" class="btn-target active" data-target="cpu">
+                                <div>CPU SIMD</div>
+                                <div style="font-size:9px; color:var(--text-slate);">AVX2+FMA 256-BIT</div>
+                            </button>
+                            <button id="target-fpga" class="btn-target" data-target="fpga">
+                                <div>FPGA SILICON</div>
+                                <div style="font-size:9px; color:var(--hardware-gold);">ARTIX-7 @ COM6</div>
+                            </button>
+                        </div>
+
+                        <div style="margin-top:14px; display:flex; gap:8px;">
+                            <button id="btn-run-circuit" class="btn-primary" style="flex:2;">
+                                &gt;&gt; EXECUTE ON SILICON
+                            </button>
+                            <button id="btn-clear-circuit" class="btn-secondary" style="flex:1;">
+                                CLEAR
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Circuit Dimension Sizing -->
+                    <div class="panel-section" style="padding-bottom:12px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <span style="font-size:11px; font-family:var(--font-mono); color:var(--text-slate);">WIRES (QUBITS):</span>
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <button id="btn-sub-qubit" class="btn-tiny">-</button>
+                                <span id="val-qubit-count" style="font-family:var(--font-mono); font-weight:700; color:var(--quantum-green); width:20px; text-align:center;">6</span>
+                                <button id="btn-add-qubit" class="btn-tiny">+</button>
+                            </div>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-size:11px; font-family:var(--font-mono); color:var(--text-slate);">DEPTH (LAYERS):</span>
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <button id="btn-sub-layer" class="btn-tiny">-</button>
+                                <span id="val-layer-count" style="font-family:var(--font-mono); font-weight:700; color:var(--hardware-gold); width:20px; text-align:center;">8</span>
+                                <button id="btn-add-layer" class="btn-tiny">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- Center: Interactive Circuit Canvas Grid -->
+                <section class="composer-canvas-panel">
+                    <div class="canvas-header-strip">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <span style="color:var(--quantum-green); font-weight:700;">CIRCUIT MATRIX</span>
+                            <span id="circuit-summary-tag" style="color:var(--text-slate); font-size:11px;">
+                                6 Wires &bull; 8 Layers &bull; Click to Place Gates &bull; Click Gate to Tweak Angle
+                            </span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span id="active-tool-indicator" class="reticle-pill">TOOL: Ry(θ)</span>
+                        </div>
+                    </div>
+
+                    <!-- Visual Circuit Board Canvas Container -->
+                    <div class="circuit-grid-wrapper">
+                        <div id="circuit-grid" class="circuit-grid">
+                            <!-- Rendered dynamically by app.js -->
+                        </div>
+                    </div>
+
+                    <!-- Live Parameter Slider HUD (Floats when gate is selected) -->
+                    <div id="param-tweak-hud" class="param-tweak-hud">
+                        <div class="param-hud-header">
+                            <span id="hud-gate-title">Ry(θ) Parameter Angle</span>
+                            <button id="hud-close-btn">&times;</button>
+                        </div>
+                        <div class="param-hud-body">
+                            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                                <span style="font-size:11px; color:var(--text-slate);">ROTATION ANGLE &theta;:</span>
+                                <span id="hud-angle-val" style="font-family:var(--font-mono); font-weight:700; color:var(--quantum-green);">+1.571 rad (+0.50&pi;)</span>
+                            </div>
+                            <input type="range" id="hud-angle-slider" min="-3.14159" max="3.14159" step="0.01" value="1.5708">
+                            <div class="param-quick-snaps">
+                                <button class="btn-tiny btn-snap" data-val="-3.14159">-&pi;</button>
+                                <button class="btn-tiny btn-snap" data-val="-1.5708">-&pi;/2</button>
+                                <button class="btn-tiny btn-snap" data-val="-0.7854">-&pi;/4</button>
+                                <button class="btn-tiny btn-snap" data-val="0.0">0</button>
+                                <button class="btn-tiny btn-snap" data-val="0.7854">+&pi;/4</button>
+                                <button class="btn-tiny btn-snap" data-val="1.5708">+&pi;/2</button>
+                                <button class="btn-tiny btn-snap" data-val="3.14159">+&pi;</button>
+                            </div>
+                            <div id="hud-control-qubit-row" style="margin-top:10px; display:none; align-items:center; justify-content:space-between;">
+                                <span style="font-size:11px; color:var(--text-slate);">CONTROL WIRE:</span>
+                                <select id="hud-control-select" style="width:110px; font-size:11px; padding:2px 4px;"></select>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Right: Live Circuit Telemetry & Hilbert Amplitude Spectrum -->
+                <aside class="composer-telemetry">
+                    <div class="panel-header">
+                        <span>[Q] Silicon Execution Telemetry</span>
+                        <span id="composer-target-badge" style="color:var(--hardware-gold);">CPU AVX2</span>
+                    </div>
+
+                    <!-- Performance Metrics Strip -->
+                    <div class="panel-section">
+                        <div class="section-label">
+                            <span>Silicon Execution Metrics</span>
+                            <span style="color:var(--quantum-green); font-size:10px;">CYCLE ACCURATE</span>
+                        </div>
+                        <div class="metric-grid">
+                            <div class="metric-card">
+                                <div class="metric-title">Wall Latency</div>
+                                <div id="tel-wall-time" class="metric-value highlight">4.20 &mu;s</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-title">Silicon Clock Time</div>
+                                <div id="tel-silicon-time" class="metric-value gold">10.24 &mu;s</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-title">Gate Throughput</div>
+                                <div id="tel-throughput" class="metric-value">960 kG/s</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-title">XEB Linear Fidelity</div>
+                                <div id="tel-fxeb" class="metric-value highlight">0.9998</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Silicon Attestation Token -->
+                    <div class="panel-section">
+                        <div class="section-label">
+                            <span>Hardware Attestation Ledger</span>
+                            <span style="color:var(--hardware-gold); font-size:10px;">COM6 ATTESTATION</span>
+                        </div>
+                        <table class="comparison-table">
+                            <tr>
+                                <td>Execution Target</td>
+                                <td id="tel-target-name" class="val-col">Artix-7 XC7A35T (COM6)</td>
+                            </tr>
+                            <tr>
+                                <td>DSP Slices Active</td>
+                                <td id="tel-dsp-lanes" class="val-col" style="color:var(--hardware-gold);">8 DSP48E1 Lanes</td>
+                            </tr>
+                            <tr>
+                                <td>Hardware Cycles</td>
+                                <td id="tel-cycles" class="val-col">8,192 Cycles @ 100MHz</td>
+                            </tr>
+                            <tr>
+                                <td>Shannon Entropy S</td>
+                                <td id="tel-entropy" class="val-col">5.82 bits</td>
+                            </tr>
+                            <tr>
+                                <td>Attestation Hash</td>
+                                <td id="tel-hash" class="val-col" style="color:var(--quantum-green); font-family:var(--font-mono);">0x1000_QPU_2000_EE</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Pauli-Z Expectation Spectrum -->
+                    <div class="panel-section">
+                        <div class="section-label">
+                            <span>Qubit Observables &lang;Z_q&rang;</span>
+                            <span style="color:var(--quantum-green); font-size:10px;">EXPECTATIONS</span>
+                        </div>
+                        <div id="composer-qubit-bars" class="qubit-bar-container">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Top Basis State Probabilities -->
+                    <div class="panel-section" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
+                        <div class="section-label">
+                            <span>Top Basis Amplitudes |&psi;&rang;</span>
+                            <span style="color:var(--hardware-gold); font-size:10px;">P = |c_i|&sup2;</span>
+                        </div>
+                        <div id="composer-basis-states" class="basis-states-list">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </section>
+
+        <!-- =================================================================== -->
+        <!-- DECK 3: RUN TELEMETRY & HARDWARE MATRIX                              -->
+        <!-- =================================================================== -->
+        <section id="deck-telemetry" class="deck-section">
+            <div class="telemetry-matrix-container">
+                <div class="matrix-header">
+                    <div>
+                        <h2>SOVEREIGN EXPERIMENT &amp; SILICON TELEMETRY MATRIX</h2>
+                        <p style="color:var(--text-slate); font-size:12px; margin-top:4px;">
+                            Empirical disk telemetry from physical Artix-7 silicon (COM6 @ 3.0 MBaud) and Core Ultra AVX2 benchmarks.
+                        </p>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <button id="btn-refresh-telemetry" class="btn-secondary">[R] REFRESH DISK LOGS</button>
+                    </div>
                 </div>
-                <div id="qubit-bars" class="qubit-bar-container">
-                    <!-- Populated dynamically via JS -->
+
+                <div class="matrix-grid">
+                    <!-- Card 1: PC vs Artix-7 FPGA 26-Qubit Scaling -->
+                    <div class="matrix-card">
+                        <div class="matrix-card-title">
+                            <span>1. Physical FPGA vs PC Scaling (10 &rarr; 26 Qubits)</span>
+                            <span class="badge-gold">ARTIX-7 XC7A35T</span>
+                        </div>
+                        <p class="matrix-desc">
+                            Raw 100 MHz silicon speedup up to <b>412x</b> over host CPU. UART bridge bottleneck (1.027 ms) versus autonomous multi-layer execution (Opcode 0x20).
+                        </p>
+                        <div class="table-scroll-container">
+                            <table class="matrix-table" id="table-scaling-telemetry">
+                                <thead>
+                                    <tr>
+                                        <th>Qubits</th>
+                                        <th>Dim (States)</th>
+                                        <th>PC Wall (ms)</th>
+                                        <th>Silicon (ms)</th>
+                                        <th>UART Bridge</th>
+                                        <th>Silicon Speedup</th>
+                                        <th>F_xeb</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Populated dynamically from pc_vs_fpga_26q_scaling.json -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: MNIST 10-Qubit VQC Training Convergence -->
+                    <div class="matrix-card">
+                        <div class="matrix-card-title">
+                            <span>2. MNIST VQC Convergence (Adjoint AVX2)</span>
+                            <span class="badge-green">84.5% ACCURACY</span>
+                        </div>
+                        <p class="matrix-desc">
+                            16 Epochs training on 10,000 samples. Fast AVX2 adjoint gradient step (33.6 &mu;s/sample). Quantum coherence L1 norm tracking.
+                        </p>
+                        <div class="chart-box" id="chart-mnist-box">
+                            <div class="metric-row-inline">
+                                <div><span class="label">Initial Loss:</span> <span class="val">1.200</span></div>
+                                <div><span class="label">Final Loss:</span> <span class="val-green">0.495</span></div>
+                                <div><span class="label">Baseline BNN:</span> <span class="val">81.2%</span></div>
+                                <div><span class="label">VQC Top-1:</span> <span class="val-green">84.5%</span></div>
+                            </div>
+                            <div class="ascii-loss-chart" id="ascii-loss-chart">
+                                <!-- Rendered dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Frontier RCS & Quantum Chaos Benchmark -->
+                    <div class="matrix-card">
+                        <div class="matrix-card-title">
+                            <span>3. Frontier Random Circuit Sampling (D=36 Layers)</span>
+                            <span class="badge-green">XEB FIDELITY 0.999+</span>
+                        </div>
+                        <p class="matrix-desc">
+                            100 consecutive runs of depth-36 chaotic circuits. 1,008 quantum gates per circuit. Gate throughput <b>960,165 gates/sec</b>.
+                        </p>
+                        <div class="rcs-metrics-deck">
+                            <div class="rcs-stat-tile">
+                                <div class="num">1,008</div>
+                                <div class="lbl">GATES / RUN</div>
+                            </div>
+                            <div class="rcs-stat-tile">
+                                <div class="num">0.369 ms</div>
+                                <div class="lbl">SILICON PASS</div>
+                            </div>
+                            <div class="rcs-stat-tile">
+                                <div class="num">169.1x</div>
+                                <div class="lbl">SILICON SPEEDUP</div>
+                            </div>
+                            <div class="rcs-stat-tile">
+                                <div class="num">0.254 W</div>
+                                <div class="lbl">TOTAL POWER</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 4: NIST Entropy Hardware Audit & Chaos Streaming -->
+                    <div class="matrix-card">
+                        <div class="matrix-card-title">
+                            <span>4. NIST Randomness Audit &amp; Hardware Chaos (COM6)</span>
+                            <span class="badge-gold">OPCODE 0x30 STREAM</span>
+                        </div>
+                        <p class="matrix-desc">
+                            Continuous 256-bit cryptographic seed harvest on Artix-7 silicon. 1.28 million bits analyzed against NIST SP 800-22 test suite.
+                        </p>
+                        <table class="comparison-table" style="margin-top:10px;">
+                            <tr>
+                                <td>Harvest Volume</td>
+                                <td class="val-col">5,000 Seeds (1,280,008 Bits)</td>
+                            </tr>
+                            <tr>
+                                <td>Shannon Entropy</td>
+                                <td class="val-col" style="color:var(--quantum-green); font-weight:700;">5.0001 bits / byte</td>
+                            </tr>
+                            <tr>
+                                <td>Bit Balance (1-Ratio)</td>
+                                <td class="val-col">0.3125 (Hardware PRNG Core)</td>
+                            </tr>
+                            <tr>
+                                <td>Wire Data Rate</td>
+                                <td class="val-col">3.0 MBaud Full Saturation</td>
+                            </tr>
+                        </table>
+                    </div>
                 </div>
             </div>
-        </aside>
+        </section>
+
     </main>
 
     <!-- Vendored Offline Scripts -->

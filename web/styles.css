@@ -40,27 +40,29 @@ body {
     flex-direction: column;
 }
 
-/* Header Reticle */
+/* ========================================================================= */
+/* Header Reticle & Deck Navigation                                          */
+/* ========================================================================= */
 header {
     background-color: var(--bg-card);
     border-bottom: 1px solid var(--border-color);
-    padding: 10px 24px;
+    padding: 6px 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     height: 56px;
-    z-index: 10;
+    z-index: 100;
 }
 
 .brand-section {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 14px;
 }
 
 .brand-logo {
     font-family: var(--font-mono);
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 800;
     letter-spacing: 2px;
     color: var(--quantum-green);
@@ -71,7 +73,7 @@ header {
 }
 
 .brand-logo .reticle-tag {
-    font-size: 11px;
+    font-size: 10px;
     background: rgba(0, 230, 118, 0.12);
     border: 1px solid var(--quantum-green);
     color: var(--quantum-green);
@@ -80,12 +82,60 @@ header {
     font-weight: 600;
 }
 
+/* Deck Switcher Tabs */
+.deck-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--bg-root);
+    padding: 3px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+.deck-tab {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-slate);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.deck-tab .tab-idx {
+    color: var(--hardware-gold);
+    font-weight: 700;
+}
+
+.deck-tab:hover {
+    color: var(--text-white);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.deck-tab.active {
+    background: rgba(0, 230, 118, 0.12);
+    border-color: var(--quantum-green);
+    color: var(--quantum-green);
+}
+
+.deck-tab.active .tab-idx {
+    color: var(--quantum-green);
+}
+
+/* Telemetry Strip */
 .telemetry-strip {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 16px;
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: 11px;
 }
 
 .telemetry-item {
@@ -105,15 +155,36 @@ header {
     font-weight: 600;
 }
 
-/* Main Layout Grid */
+/* ========================================================================= */
+/* Main Viewport & Section Decks                                             */
+/* ========================================================================= */
+.main-container {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    height: calc(100vh - 56px);
+}
+
+.deck-section {
+    display: none;
+    width: 100%;
+    height: 100%;
+}
+
+.deck-section.active {
+    display: block;
+}
+
+/* ========================================================================= */
+/* DECK 1: 3D Quantum Molecular Grid                                         */
+/* ========================================================================= */
 .dashboard-grid {
     display: grid;
-    grid-template-columns: 340px 1fr 380px;
-    height: calc(100vh - 56px);
+    grid-template-columns: 330px 1fr 370px;
+    height: 100%;
     overflow: hidden;
 }
 
-/* Left Panel: Control Deck & Experiment Loader */
 .control-panel {
     background: var(--bg-card);
     border-right: 1px solid var(--border-color);
@@ -123,7 +194,7 @@ header {
 }
 
 .panel-header {
-    padding: 14px 18px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--border-color);
     font-family: var(--font-mono);
     font-size: 12px;
@@ -136,7 +207,7 @@ header {
 }
 
 .panel-section {
-    padding: 16px;
+    padding: 14px 16px;
     border-bottom: 1px solid var(--border-color);
 }
 
@@ -153,52 +224,78 @@ header {
 
 .input-group {
     display: flex;
-    gap: 8px;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
 }
 
-input[type="text"], select {
-    width: 100%;
+input[type="text"] {
+    flex: 1;
     background: var(--bg-root);
-    border: 1px solid var(--border-bright);
+    border: 1px solid var(--border-color);
     color: var(--text-white);
-    padding: 8px 12px;
     font-family: var(--font-mono);
     font-size: 12px;
+    padding: 8px 10px;
     border-radius: 2px;
     outline: none;
-    transition: border-color 0.15s ease;
+    transition: border-color 0.2s;
 }
 
-input[type="text"]:focus, select:focus {
+input[type="text"]:focus {
     border-color: var(--quantum-green);
-    box-shadow: 0 0 8px var(--quantum-green-glow);
+}
+
+select {
+    width: 100%;
+    background: var(--bg-root);
+    border: 1px solid var(--border-color);
+    color: var(--text-white);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 7px 8px;
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+}
+
+select:focus {
+    border-color: var(--quantum-green);
+}
+
+select optgroup {
+    background: var(--bg-card);
+    color: var(--hardware-gold);
+    font-weight: 700;
 }
 
 button.btn-primary {
     background: var(--quantum-green);
     color: #05080d;
     border: none;
-    padding: 8px 14px;
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
+    padding: 8px 12px;
     cursor: pointer;
     border-radius: 2px;
-    transition: opacity 0.15s ease, transform 0.05s ease;
+    transition: background 0.2s, transform 0.1s;
+    letter-spacing: 1px;
 }
 
 button.btn-primary:hover {
-    opacity: 0.9;
+    background: #00ff88;
+}
+
+button.btn-primary:active {
+    transform: scale(0.98);
 }
 
 button.btn-secondary {
-    background: transparent;
-    border: 1px solid var(--border-bright);
+    background: var(--bg-root);
+    border: 1px solid var(--border-color);
     color: var(--text-white);
-    padding: 6px 12px;
     font-family: var(--font-mono);
     font-size: 11px;
+    padding: 6px 10px;
     cursor: pointer;
     border-radius: 2px;
     transition: all 0.15s ease;
@@ -215,6 +312,22 @@ button.btn-secondary.active {
     color: var(--quantum-green);
 }
 
+.btn-tiny {
+    background: var(--bg-root);
+    border: 1px solid var(--border-color);
+    color: var(--text-slate);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 2px 7px;
+    cursor: pointer;
+    border-radius: 2px;
+}
+
+.btn-tiny:hover {
+    border-color: var(--quantum-green);
+    color: var(--text-white);
+}
+
 .molecule-list {
     max-height: 280px;
     overflow-y: auto;
@@ -226,7 +339,7 @@ button.btn-secondary.active {
 .molecule-card {
     background: var(--bg-root);
     border: 1px solid var(--border-color);
-    padding: 10px 12px;
+    padding: 8px 10px;
     border-radius: 2px;
     cursor: pointer;
     transition: all 0.15s ease;
@@ -248,7 +361,7 @@ button.btn-secondary.active {
     align-items: center;
     font-family: var(--font-mono);
     font-size: 11px;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
 }
 
 .mol-card-id {
@@ -270,7 +383,6 @@ button.btn-secondary.active {
     text-overflow: ellipsis;
 }
 
-/* Center Viewport: 3D Quantum Molecular Canvas */
 .viewport-panel {
     background: var(--bg-root);
     position: relative;
@@ -288,9 +400,9 @@ button.btn-secondary.active {
 
 .viewport-overlay-top {
     position: absolute;
-    top: 16px;
-    left: 20px;
-    right: 20px;
+    top: 14px;
+    left: 18px;
+    right: 18px;
     display: flex;
     justify-content: space-between;
     pointer-events: none;
@@ -298,35 +410,34 @@ button.btn-secondary.active {
 }
 
 .overlay-badge {
-    background: rgba(15, 23, 42, 0.85);
+    background: rgba(15, 23, 42, 0.88);
     border: 1px solid var(--border-bright);
     backdrop-filter: blur(8px);
-    padding: 8px 14px;
+    padding: 6px 12px;
     border-radius: 2px;
     pointer-events: auto;
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: 11px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
 }
 
 .viewport-controls {
     position: absolute;
-    bottom: 20px;
+    bottom: 16px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 8px;
-    background: rgba(15, 23, 42, 0.85);
+    gap: 6px;
+    background: rgba(15, 23, 42, 0.88);
     border: 1px solid var(--border-bright);
     backdrop-filter: blur(8px);
-    padding: 6px 12px;
-    border-radius: 4px;
+    padding: 5px 10px;
+    border-radius: 3px;
     z-index: 5;
 }
 
-/* Right Panel: Quantum State & Biophysical Spectroscopy */
 .telemetry-panel {
     background: var(--bg-card);
     border-left: 1px solid var(--border-color);
@@ -351,17 +462,17 @@ button.btn-secondary.active {
 
 .metric-title {
     font-family: var(--font-mono);
-    font-size: 9px;
-    color: var(--text-muted);
+    font-size: 10px;
+    color: var(--text-slate);
     text-transform: uppercase;
+    margin-bottom: 2px;
 }
 
 .metric-value {
     font-family: var(--font-mono);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 700;
     color: var(--text-white);
-    margin-top: 2px;
 }
 
 .metric-value.highlight {
@@ -372,31 +483,30 @@ button.btn-secondary.active {
     color: var(--hardware-gold);
 }
 
-/* 10-Qubit Expectation Bars */
 .qubit-bar-container {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 5px;
     margin-top: 6px;
 }
 
 .qubit-row {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     font-family: var(--font-mono);
     font-size: 10px;
 }
 
 .qubit-label {
-    width: 26px;
-    color: var(--text-slate);
-    font-size: 9px;
+    width: 32px;
+    color: var(--hardware-gold);
+    font-weight: 600;
 }
 
 .qubit-bar-bg {
     flex: 1;
-    height: 10px;
+    height: 12px;
     background: #080c14;
     border: 1px solid var(--border-color);
     position: relative;
@@ -428,7 +538,6 @@ button.btn-secondary.active {
     font-size: 9px;
 }
 
-/* Attractor Comparison Strip */
 .comparison-strip {
     background: rgba(255, 179, 0, 0.05);
     border: 1px solid rgba(255, 179, 0, 0.2);
@@ -462,6 +571,649 @@ button.btn-secondary.active {
 .comparison-table td.val-col {
     text-align: right;
     color: var(--text-white);
+}
+
+/* ========================================================================= */
+/* DECK 2: LEGO-BLOCK QUANTUM CIRCUIT COMPOSER                               */
+/* ========================================================================= */
+.composer-grid {
+    display: grid;
+    grid-template-columns: 330px 1fr 370px;
+    height: 100%;
+    overflow: hidden;
+}
+
+.composer-controls {
+    background: var(--bg-card);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+/* Lego Gate Palette Buttons */
+.gate-palette-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.lego-btn {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 7px 11px;
+    border-radius: 3px;
+    cursor: pointer;
+    border: 1px solid;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 2px 4px rgba(0,0,0,0.4);
+}
+
+.lego-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 4px 8px rgba(0,0,0,0.6);
+}
+
+.lego-btn:active {
+    transform: translateY(1px);
+}
+
+/* Laser Emerald Green (Parameterized Rotations) */
+.gate-ry, .gate-rx, .gate-rz {
+    background: rgba(0, 230, 118, 0.12);
+    border-color: var(--quantum-green);
+    color: var(--quantum-green);
+}
+.gate-ry:hover, .gate-rx:hover, .gate-rz:hover,
+.gate-ry.active, .gate-rx.active, .gate-rz.active {
+    background: var(--quantum-green);
+    color: #05080d;
+}
+
+/* Polar Slate (Clifford / Pauli) */
+.gate-h, .gate-x, .gate-z, .gate-s, .gate-t {
+    background: rgba(248, 250, 252, 0.08);
+    border-color: #94a3b8;
+    color: var(--text-white);
+}
+.gate-h:hover, .gate-x:hover, .gate-z:hover, .gate-s:hover, .gate-t:hover,
+.gate-h.active, .gate-x.active, .gate-z.active, .gate-s.active, .gate-t.active {
+    background: #f8fafc;
+    color: #05080d;
+    border-color: #f8fafc;
+}
+
+/* Radiant Gold (Entangling Gates) */
+.gate-cz, .gate-cx, .gate-swap {
+    background: rgba(255, 179, 0, 0.12);
+    border-color: var(--hardware-gold);
+    color: var(--hardware-gold);
+}
+.gate-cz:hover, .gate-cx:hover, .gate-swap:hover,
+.gate-cz.active, .gate-cx.active, .gate-swap.active {
+    background: var(--hardware-gold);
+    color: #05080d;
+}
+
+/* Alert Red (Measurement / Eraser) */
+.gate-mz {
+    background: rgba(239, 68, 68, 0.12);
+    border-color: var(--alert-red);
+    color: var(--alert-red);
+}
+.gate-mz:hover, .gate-mz.active {
+    background: var(--alert-red);
+    color: #05080d;
+}
+
+.gate-erase {
+    background: rgba(100, 116, 139, 0.15);
+    border-color: var(--text-slate);
+    color: var(--text-slate);
+}
+.gate-erase:hover, .gate-erase.active {
+    background: var(--text-slate);
+    color: #05080d;
+}
+
+/* Preset Buttons Grid */
+.preset-buttons-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 6px;
+}
+
+.preset-buttons-grid button {
+    text-align: left;
+    font-size: 10px;
+    padding: 6px 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Execution Target Switcher */
+.target-toggle-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+.btn-target {
+    background: var(--bg-root);
+    border: 1px solid var(--border-color);
+    color: var(--text-white);
+    padding: 8px 6px;
+    border-radius: 2px;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    text-align: center;
+    transition: all 0.15s ease;
+}
+
+.btn-target:hover {
+    border-color: var(--border-bright);
+}
+
+.btn-target.active {
+    border-color: var(--quantum-green);
+    background: rgba(0, 230, 118, 0.08);
+}
+
+.btn-target#target-fpga.active {
+    border-color: var(--hardware-gold);
+    background: rgba(255, 179, 0, 0.08);
+}
+
+/* Center Canvas Panel */
+.composer-canvas-panel {
+    background: var(--bg-root);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+
+.canvas-header-strip {
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border-color);
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 12px;
+}
+
+.reticle-pill {
+    background: rgba(0, 230, 118, 0.12);
+    border: 1px solid var(--quantum-green);
+    color: var(--quantum-green);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 2px;
+    font-weight: 700;
+}
+
+/* Circuit Grid Container */
+.circuit-grid-wrapper {
+    flex: 1;
+    overflow: auto;
+    padding: 24px;
+    background: #05080d;
+    position: relative;
+}
+
+.circuit-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 650px;
+    position: relative;
+}
+
+.circuit-wire-row {
+    display: flex;
+    align-items: center;
+    position: relative;
+    height: 54px;
+}
+
+.wire-label {
+    width: 60px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--hardware-gold);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    z-index: 3;
+    user-select: none;
+}
+
+.wire-line {
+    position: absolute;
+    left: 60px;
+    right: 0;
+    top: 50%;
+    height: 2px;
+    background: #1e293b;
+    z-index: 1;
+}
+
+.wire-cells {
+    display: flex;
+    gap: 12px;
+    margin-left: 60px;
+    z-index: 2;
+    position: relative;
+}
+
+.circuit-cell {
+    width: 52px;
+    height: 52px;
+    border: 1px dashed rgba(51, 65, 85, 0.5);
+    border-radius: 4px;
+    background: rgba(8, 12, 20, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    position: relative;
+}
+
+.circuit-cell:hover {
+    border-color: var(--quantum-green);
+    background: rgba(0, 230, 118, 0.05);
+}
+
+/* Placed Lego Gate Block */
+.placed-block {
+    width: 48px;
+    height: 48px;
+    border-radius: 3px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    cursor: pointer;
+    position: relative;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.15);
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+    border: 1px solid;
+    user-select: none;
+}
+
+.placed-block:hover {
+    transform: scale(1.06);
+    box-shadow: 0 5px 12px rgba(0,0,0,0.8);
+}
+
+.placed-block .block-name {
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.placed-block .block-theta {
+    font-size: 8px;
+    font-weight: 600;
+    opacity: 0.9;
+    margin-top: 2px;
+}
+
+.placed-block.block-ry, .placed-block.block-rx, .placed-block.block-rz {
+    background: #0d2818;
+    border-color: var(--quantum-green);
+    color: var(--quantum-green);
+}
+
+.placed-block.block-h, .placed-block.block-x, .placed-block.block-z,
+.placed-block.block-s, .placed-block.block-t {
+    background: #111827;
+    border-color: #94a3b8;
+    color: #f8fafc;
+}
+
+.placed-block.block-cz, .placed-block.block-cx, .placed-block.block-swap {
+    background: #271a06;
+    border-color: var(--hardware-gold);
+    color: var(--hardware-gold);
+}
+
+.placed-block.block-mz {
+    background: #2b0b0e;
+    border-color: var(--alert-red);
+    color: var(--alert-red);
+}
+
+/* Multi-Qubit Entangling Connector Line */
+.entangle-connector {
+    position: absolute;
+    width: 2px;
+    background: var(--hardware-gold);
+    z-index: 1;
+    pointer-events: none;
+    box-shadow: 0 0 6px rgba(255, 179, 0, 0.6);
+}
+
+.entangle-control-node {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--hardware-gold);
+    border: 2px solid #05080d;
+    box-shadow: 0 0 8px rgba(255, 179, 0, 0.8);
+}
+
+/* Floating Parameter Slider HUD */
+.param-tweak-hud {
+    position: absolute;
+    bottom: 24px;
+    right: 24px;
+    width: 320px;
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid var(--border-bright);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.8);
+    backdrop-filter: blur(10px);
+    border-radius: 4px;
+    padding: 14px 16px;
+    z-index: 50;
+    display: none;
+}
+
+.param-tweak-hud.visible {
+    display: block;
+}
+
+.param-hud-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--quantum-green);
+    margin-bottom: 10px;
+}
+
+.param-hud-header button {
+    background: transparent;
+    border: none;
+    color: var(--text-slate);
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.param-hud-body input[type="range"] {
+    width: 100%;
+    accent-color: var(--quantum-green);
+    cursor: pointer;
+    margin-bottom: 8px;
+}
+
+.param-quick-snaps {
+    display: flex;
+    justify-content: space-between;
+    gap: 3px;
+}
+
+.param-quick-snaps button {
+    flex: 1;
+    font-size: 9px;
+    padding: 2px 0;
+}
+
+/* Composer Telemetry Panel (Right) */
+.composer-telemetry {
+    background: var(--bg-card);
+    border-left: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.basis-states-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    overflow-y: auto;
+    max-height: 240px;
+}
+
+.basis-row {
+    background: var(--bg-root);
+    border: 1px solid var(--border-color);
+    padding: 5px 8px;
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 10px;
+}
+
+.basis-bitstr {
+    color: var(--hardware-gold);
+    font-weight: 700;
+}
+
+.basis-prob-bar-wrap {
+    flex: 1;
+    height: 8px;
+    background: #080c14;
+    border: 1px solid var(--border-color);
+    margin: 0 10px;
+    position: relative;
+    border-radius: 1px;
+    overflow: hidden;
+}
+
+.basis-prob-bar-fill {
+    height: 100%;
+    background: var(--quantum-green);
+    transition: width 0.25s ease;
+}
+
+.basis-prob-num {
+    color: var(--text-white);
+    font-weight: 600;
+    width: 44px;
+    text-align: right;
+}
+
+/* ========================================================================= */
+/* DECK 3: RUN TELEMETRY & HARDWARE MATRIX                                   */
+/* ========================================================================= */
+.telemetry-matrix-container {
+    padding: 24px;
+    overflow-y: auto;
+    height: 100%;
+    background: var(--bg-root);
+}
+
+.matrix-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 14px;
+    margin-bottom: 20px;
+}
+
+.matrix-header h2 {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    letter-spacing: 1px;
+    color: var(--quantum-green);
+}
+
+.matrix-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.matrix-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+}
+
+.matrix-card-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-white);
+    margin-bottom: 6px;
+}
+
+.badge-gold {
+    background: rgba(255, 179, 0, 0.12);
+    border: 1px solid var(--hardware-gold);
+    color: var(--hardware-gold);
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 2px;
+}
+
+.badge-green {
+    background: rgba(0, 230, 118, 0.12);
+    border: 1px solid var(--quantum-green);
+    color: var(--quantum-green);
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 2px;
+}
+
+.matrix-desc {
+    font-size: 11px;
+    color: var(--text-slate);
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.table-scroll-container {
+    max-height: 260px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+}
+
+.matrix-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-mono);
+    font-size: 10px;
+}
+
+.matrix-table th {
+    background: #080c14;
+    color: var(--hardware-gold);
+    padding: 6px 8px;
+    text-align: left;
+    position: sticky;
+    top: 0;
+    border-bottom: 1px solid var(--border-bright);
+}
+
+.matrix-table td {
+    padding: 5px 8px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-slate);
+}
+
+.matrix-table tr:hover td {
+    background: rgba(255,255,255,0.02);
+    color: var(--text-white);
+}
+
+.chart-box {
+    background: var(--bg-root);
+    border: 1px solid var(--border-color);
+    padding: 12px;
+    border-radius: 3px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.metric-row-inline {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 11px;
+}
+
+.metric-row-inline .label {
+    color: var(--text-slate);
+}
+
+.metric-row-inline .val {
+    color: var(--hardware-gold);
+    font-weight: 700;
+}
+
+.metric-row-inline .val-green {
+    color: var(--quantum-green);
+    font-weight: 700;
+}
+
+.ascii-loss-chart {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    line-height: 1.4;
+    color: var(--quantum-green);
+    background: #080c14;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 2px;
+    overflow-x: auto;
+}
+
+.rcs-metrics-deck {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.rcs-stat-tile {
+    background: var(--bg-root);
+    border: 1px solid var(--border-color);
+    padding: 10px 8px;
+    text-align: center;
+    border-radius: 2px;
+}
+
+.rcs-stat-tile .num {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--quantum-green);
+    margin-bottom: 3px;
+}
+
+.rcs-stat-tile .lbl {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-slate);
 }
 
 /* Scrollbars */
