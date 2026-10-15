@@ -1,0 +1,10 @@
+{
+  "total_screened": 249455,
+  "inference_wall_clock_ms": 1169.2257,
+  "throughput_mols_per_sec": 213350.5960397552,
+  "top_anomalies_count": 100,
+  "top_pareto_count": 100,
+  "mean_pareto_score": 0.557579429270705,
+  "max_pareto_score": 0.6501246293608046,
+  "max_anomaly_score": 17.395991286433237
+}

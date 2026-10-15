@@ -1,0 +1,480 @@
+/* SPDX-License-Identifier: MIT OR Apache-2.0 */
+/* Copyright (c) 2026 Terrence A. Jones SR. All rights reserved. */
+
+:root {
+    --bg-root: #05080d;
+    --bg-canvas: #080c14;
+    --bg-card: #0f172a;
+    --bg-card-hover: #1e293b;
+    --border-color: #1e293b;
+    --border-bright: #334155;
+    
+    --quantum-green: #00e676;
+    --quantum-green-glow: rgba(0, 230, 118, 0.2);
+    --hardware-gold: #ffb300;
+    --hardware-gold-glow: rgba(255, 179, 0, 0.2);
+    --alert-red: #ef4444;
+    --alert-red-glow: rgba(239, 68, 68, 0.2);
+    
+    --text-white: #f8fafc;
+    --text-slate: #94a3b8;
+    --text-muted: #64748b;
+    
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg-root);
+    color: var(--text-white);
+    font-family: var(--font-sans);
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header Reticle */
+header {
+    background-color: var(--bg-card);
+    border-bottom: 1px solid var(--border-color);
+    padding: 10px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    z-index: 10;
+}
+
+.brand-section {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.brand-logo {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: var(--quantum-green);
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.brand-logo .reticle-tag {
+    font-size: 11px;
+    background: rgba(0, 230, 118, 0.12);
+    border: 1px solid var(--quantum-green);
+    color: var(--quantum-green);
+    padding: 2px 6px;
+    border-radius: 2px;
+    font-weight: 600;
+}
+
+.telemetry-strip {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+}
+
+.telemetry-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-slate);
+}
+
+.telemetry-item span.val {
+    color: var(--hardware-gold);
+    font-weight: 600;
+}
+
+.telemetry-item span.val-green {
+    color: var(--quantum-green);
+    font-weight: 600;
+}
+
+/* Main Layout Grid */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 340px 1fr 380px;
+    height: calc(100vh - 56px);
+    overflow: hidden;
+}
+
+/* Left Panel: Control Deck & Experiment Loader */
+.control-panel {
+    background: var(--bg-card);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.panel-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border-color);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--quantum-green);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.panel-section {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.section-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-slate);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.input-group {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+input[type="text"], select {
+    width: 100%;
+    background: var(--bg-root);
+    border: 1px solid var(--border-bright);
+    color: var(--text-white);
+    padding: 8px 12px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    border-radius: 2px;
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+
+input[type="text"]:focus, select:focus {
+    border-color: var(--quantum-green);
+    box-shadow: 0 0 8px var(--quantum-green-glow);
+}
+
+button.btn-primary {
+    background: var(--quantum-green);
+    color: #05080d;
+    border: none;
+    padding: 8px 14px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: opacity 0.15s ease, transform 0.05s ease;
+}
+
+button.btn-primary:hover {
+    opacity: 0.9;
+}
+
+button.btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border-bright);
+    color: var(--text-white);
+    padding: 6px 12px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.15s ease;
+}
+
+button.btn-secondary:hover {
+    border-color: var(--quantum-green);
+    color: var(--quantum-green);
+}
+
+button.btn-secondary.active {
+    background: rgba(0, 230, 118, 0.12);
+    border-color: var(--quantum-green);
+    color: var(--quantum-green);
+}
+
+.molecule-list {
+    max-height: 280px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.molecule-card {
+    background: var(--bg-root);
+    border: 1px solid var(--border-color);
+    padding: 10px 12px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.molecule-card:hover {
+    border-color: var(--hardware-gold);
+    background: #0d131f;
+}
+
+.molecule-card.selected {
+    border-color: var(--quantum-green);
+    background: rgba(0, 230, 118, 0.06);
+}
+
+.mol-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    margin-bottom: 4px;
+}
+
+.mol-card-id {
+    color: var(--hardware-gold);
+    font-weight: 700;
+}
+
+.mol-card-act {
+    color: var(--quantum-green);
+    font-weight: 700;
+}
+
+.mol-card-smiles {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-slate);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Center Viewport: 3D Quantum Molecular Canvas */
+.viewport-panel {
+    background: var(--bg-root);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+#canvas-container {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    outline: none;
+}
+
+.viewport-overlay-top {
+    position: absolute;
+    top: 16px;
+    left: 20px;
+    right: 20px;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.overlay-badge {
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid var(--border-bright);
+    backdrop-filter: blur(8px);
+    padding: 8px 14px;
+    border-radius: 2px;
+    pointer-events: auto;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.viewport-controls {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid var(--border-bright);
+    backdrop-filter: blur(8px);
+    padding: 6px 12px;
+    border-radius: 4px;
+    z-index: 5;
+}
+
+/* Right Panel: Quantum State & Biophysical Spectroscopy */
+.telemetry-panel {
+    background: var(--bg-card);
+    border-left: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.metric-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.metric-card {
+    background: var(--bg-root);
+    border: 1px solid var(--border-color);
+    padding: 10px 12px;
+    border-radius: 2px;
+}
+
+.metric-title {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.metric-value {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-white);
+    margin-top: 4px;
+}
+
+.metric-value.highlight {
+    color: var(--quantum-green);
+}
+
+.metric-value.gold {
+    color: var(--hardware-gold);
+}
+
+/* 10-Qubit Expectation Bars */
+.qubit-bar-container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.qubit-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+}
+
+.qubit-label {
+    width: 28px;
+    color: var(--text-slate);
+}
+
+.qubit-bar-bg {
+    flex: 1;
+    height: 14px;
+    background: #080c14;
+    border: 1px solid var(--border-color);
+    position: relative;
+    border-radius: 1px;
+    overflow: hidden;
+}
+
+.qubit-bar-center {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--border-bright);
+    z-index: 2;
+}
+
+.qubit-bar-fill {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    transition: width 0.3s ease, left 0.3s ease, background 0.3s ease;
+}
+
+.qubit-val {
+    width: 48px;
+    text-align: right;
+    color: var(--text-slate);
+    font-size: 10px;
+}
+
+/* Attractor Comparison Strip */
+.comparison-strip {
+    background: rgba(255, 179, 0, 0.05);
+    border: 1px solid rgba(255, 179, 0, 0.2);
+    border-radius: 2px;
+    padding: 12px;
+    margin-top: 10px;
+}
+
+.comparison-header {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--hardware-gold);
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.comparison-table {
+    width: 100%;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    border-collapse: collapse;
+}
+
+.comparison-table td {
+    padding: 3px 0;
+    color: var(--text-slate);
+}
+
+.comparison-table td.val-col {
+    text-align: right;
+    color: var(--text-white);
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+::-webkit-scrollbar-track {
+    background: var(--bg-root);
+}
+::-webkit-scrollbar-thumb {
+    background: var(--border-bright);
+    border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--quantum-green);
+}

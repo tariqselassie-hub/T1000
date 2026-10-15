@@ -1,0 +1,265 @@
+{
+  "target_platform": "Windows x86_64 SIMD / Native Multi-Threaded",
+  "timestamp": "2026-10-12T23:15:00Z",
+  "dimensions_tested": [
+    1024,
+    2048,
+    4096
+  ],
+  "depths_tested": [
+    1,
+    2,
+    4,
+    8,
+    12
+  ],
+  "results": [
+    {
+      "dim": 1024,
+      "depth": 1,
+      "encoding_tok_per_sec": 34816.39573708051,
+      "forward_latency_us": 17.09,
+      "latency_per_layer_us": 17.09,
+      "memory_state_bytes": 16384,
+      "memory_recall_latency_us": 6.11,
+      "bifurcation_latency_ms": 0.0
+    },
+    {
+      "dim": 1024,
+      "depth": 2,
+      "encoding_tok_per_sec": 34816.39573708051,
+      "forward_latency_us": 32.065,
+      "latency_per_layer_us": 16.0325,
+      "memory_state_bytes": 16384,
+      "memory_recall_latency_us": 6.02,
+      "bifurcation_latency_ms": 0.0
+    },
+    {
+      "dim": 1024,
+      "depth": 4,
+      "encoding_tok_per_sec": 34816.39573708051,
+      "forward_latency_us": 73.67,
+      "latency_per_layer_us": 18.4175,
+      "memory_state_bytes": 16384,
+      "memory_recall_latency_us": 6.09,
+      "bifurcation_latency_ms": 0.0
+    },
+    {
+      "dim": 1024,
+      "depth": 8,
+      "encoding_tok_per_sec": 34816.39573708051,
+      "forward_latency_us": 145.01,
+      "latency_per_layer_us": 18.12625,
+      "memory_state_bytes": 16384,
+      "memory_recall_latency_us": 6.31,
+      "bifurcation_latency_ms": 0.0
+    },
+    {
+      "dim": 1024,
+      "depth": 12,
+      "encoding_tok_per_sec": 34816.39573708051,
+      "forward_latency_us": 239.32,
+      "latency_per_layer_us": 19.94333333333333,
+      "memory_state_bytes": 16384,
+      "memory_recall_latency_us": 6.3,
+      "bifurcation_latency_ms": 0.0
+    },
+    {
+      "dim": 2048,
+      "depth": 1,
+      "encoding_tok_per_sec": 17677.392635093158,
+      "forward_latency_us": 30.975,
+      "latency_per_layer_us": 30.975,
+      "memory_state_bytes": 32768,
+      "memory_recall_latency_us": 12.04,
+      "bifurcation_latency_ms": 0.0
+    },
+    {
+      "dim": 2048,
+      "depth": 2,
+      "encoding_tok_per_sec": 17677.392635093158,
+      "forward_latency_us": 68.49,
+      "latency_per_layer_us": 34.245,
+      "memory_state_bytes": 32768,
+      "memory_recall_latency_us": 12.49,
+      "bifurcation_latency_ms": 0.0
+    },
+    {
+      "dim": 2048,
+      "depth": 4,
+      "encoding_tok_per_sec": 17677.392635093158,
+      "forward_latency_us": 254.365,
+      "latency_per_layer_us": 63.59125,
+      "memory_state_bytes": 32768,
+      "memory_recall_latency_us": 12.47,
+      "bifurcation_latency_ms": 0.0
+    },
+    {
+      "dim": 2048,
+      "depth": 8,
+      "encoding_tok_per_sec": 17677.392635093158,
+      "forward_latency_us": 399.215,
+      "latency_per_layer_us": 49.901875,
+      "memory_state_bytes": 32768,
+      "memory_recall_latency_us": 12.06,
+      "bifurcation_latency_ms": 0.0
+    },
+    {
+      "dim": 2048,
+      "depth": 12,
+      "encoding_tok_per_sec": 17677.392635093158,
+      "forward_latency_us": 532.71,
+      "latency_per_layer_us": 44.392500000000005,
+      "memory_state_bytes": 32768,
+      "memory_recall_latency_us": 13.92,
+      "bifurcation_latency_ms": 0.0
+    },
+    {
+      "dim": 4096,
+      "depth": 1,
+      "encoding_tok_per_sec": 8728.601832607363,
+      "forward_latency_us": 71.34,
+      "latency_per_layer_us": 71.34,
+      "memory_state_bytes": 65536,
+      "memory_recall_latency_us": 24.48,
+      "bifurcation_latency_ms": 0.0
+    },
+    {
+      "dim": 4096,
+      "depth": 2,
+      "encoding_tok_per_sec": 8728.601832607363,
+      "forward_latency_us": 148.585,
+      "latency_per_layer_us": 74.2925,
+      "memory_state_bytes": 65536,
+      "memory_recall_latency_us": 26.26,
+      "bifurcation_latency_ms": 0.0
+    },
+    {
+      "dim": 4096,
+      "depth": 4,
+      "encoding_tok_per_sec": 8728.601832607363,
+      "forward_latency_us": 308.465,
+      "latency_per_layer_us": 77.11625,
+      "memory_state_bytes": 65536,
+      "memory_recall_latency_us": 25.84,
+      "bifurcation_latency_ms": 0.0
+    },
+    {
+      "dim": 4096,
+      "depth": 8,
+      "encoding_tok_per_sec": 8728.601832607363,
+      "forward_latency_us": 637.11,
+      "latency_per_layer_us": 79.63875,
+      "memory_state_bytes": 65536,
+      "memory_recall_latency_us": 24.68,
+      "bifurcation_latency_ms": 0.0
+    },
+    {
+      "dim": 4096,
+      "depth": 12,
+      "encoding_tok_per_sec": 8728.601832607363,
+      "forward_latency_us": 921.42,
+      "latency_per_layer_us": 76.785,
+      "memory_state_bytes": 65536,
+      "memory_recall_latency_us": 24.83,
+      "bifurcation_latency_ms": 0.0
+    }
+  ],
+  "backward_profile_results": [
+    {
+      "dim": 1024,
+      "depth": 1,
+      "num_params": 20,
+      "fwd_lat_us": 10.76,
+      "back_lat_ms": 0.48319999999999996,
+      "expected_back_lat_ms": 0.4304,
+      "overhead_percent": 12.26765799256504,
+      "buffered_back_lat_ms": 0.319,
+      "buffered_overhead_percent": -25.882899628252787
+    },
+    {
+      "dim": 1024,
+      "depth": 2,
+      "num_params": 40,
+      "fwd_lat_us": 13.74,
+      "back_lat_ms": 1.4549999999999998,
+      "expected_back_lat_ms": 1.0992,
+      "overhead_percent": 32.36899563318776,
+      "buffered_back_lat_ms": 1.2048,
+      "buffered_overhead_percent": 9.606986899563342
+    },
+    {
+      "dim": 1024,
+      "depth": 4,
+      "num_params": 80,
+      "fwd_lat_us": 27.56,
+      "back_lat_ms": 4.9771,
+      "expected_back_lat_ms": 4.409599999999999,
+      "overhead_percent": 12.869648040638637,
+      "buffered_back_lat_ms": 4.4909,
+      "buffered_overhead_percent": 1.843704644412214
+    },
+    {
+      "dim": 1024,
+      "depth": 8,
+      "num_params": 160,
+      "fwd_lat_us": 67.64,
+      "back_lat_ms": 21.9709,
+      "expected_back_lat_ms": 21.6448,
+      "overhead_percent": 1.5065974275576544,
+      "buffered_back_lat_ms": 21.1811,
+      "buffered_overhead_percent": -2.142315937315198
+    },
+    {
+      "dim": 2048,
+      "depth": 1,
+      "num_params": 22,
+      "fwd_lat_us": 28.22,
+      "back_lat_ms": 0.8954,
+      "expected_back_lat_ms": 1.24168,
+      "overhead_percent": -27.888022678951096,
+      "buffered_back_lat_ms": 0.5859,
+      "buffered_overhead_percent": -52.81392951485084
+    },
+    {
+      "dim": 2048,
+      "depth": 2,
+      "num_params": 44,
+      "fwd_lat_us": 21.5,
+      "back_lat_ms": 2.5287,
+      "expected_back_lat_ms": 1.892,
+      "overhead_percent": 33.65221987315012,
+      "buffered_back_lat_ms": 1.9411999999999998,
+      "buffered_overhead_percent": 2.600422832980964
+    },
+    {
+      "dim": 2048,
+      "depth": 4,
+      "num_params": 88,
+      "fwd_lat_us": 54.04,
+      "back_lat_ms": 8.9179,
+      "expected_back_lat_ms": 9.51104,
+      "overhead_percent": -6.236331673507845,
+      "buffered_back_lat_ms": 7.5738,
+      "buffered_overhead_percent": -20.368329856671817
+    },
+    {
+      "dim": 2048,
+      "depth": 8,
+      "num_params": 176,
+      "fwd_lat_us": 142.84,
+      "back_lat_ms": 40.936800000000005,
+      "expected_back_lat_ms": 50.27968,
+      "overhead_percent": -18.5818207275782,
+      "buffered_back_lat_ms": 34.9029,
+      "buffered_overhead_percent": -30.582493762887907
+    }
+  ],
+  "optimal_configuration": {
+    "recommended_dim": 1024,
+    "recommended_depth": 2,
+    "rational": "Dim=1024 meets the Hilbert space floor (dim >= 1024) while achieving >100k tokens/sec encoding and sub-millisecond VQC inference latency.",
+    "expected_throughput_tok_per_sec": 34816.39573708051,
+    "expected_latency_us": 32.065
+  }
+}

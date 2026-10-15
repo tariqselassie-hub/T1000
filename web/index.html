@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
+<!-- Copyright (c) 2026 Terrence A. Jones SR. All rights reserved. -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>T-1000 Sovereign Quantum Molecular Engine & 3D Atomic Mesh</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Top Sovereign Reticle Header -->
+    <header>
+        <div class="brand-section">
+            <div class="brand-logo">
+                <span>T-1000</span>
+                <span class="reticle-tag">VQC // MIMETIC SIM</span>
+            </div>
+            <span style="color:var(--text-muted); font-size:12px; font-family:var(--font-mono);">|</span>
+            <span style="font-family:var(--font-mono); font-size:12px; color:var(--text-slate);">
+                3D QUANTUM MOLECULAR MANIFOLD
+            </span>
+        </div>
+
+        <div class="telemetry-strip">
+            <div class="telemetry-item">
+                <span>TARGET SILICON:</span>
+                <span class="val">ARTIX-7 XC7A35T</span>
+            </div>
+            <div class="telemetry-item">
+                <span>LINK:</span>
+                <span class="val-green">COM6 @ 3.0 MBaud</span>
+            </div>
+            <div class="telemetry-item">
+                <span>LATENCY:</span>
+                <span class="val">122.88 &mu;s</span>
+            </div>
+            <div class="telemetry-item">
+                <span>STATE VECTOR:</span>
+                <span class="val-green">2^10 HILBERT</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace Grid -->
+    <main class="dashboard-grid">
+        <!-- Left Panel: Control Deck & Experiment Discovery -->
+        <aside class="control-panel">
+            <div class="panel-header">
+                <span>[+] Molecular Ingestion</span>
+                <span style="color:var(--hardware-gold);">DECK A</span>
+            </div>
+
+            <!-- Live SMILES Input -->
+            <div class="panel-section">
+                <div class="section-label">
+                    <span>Target SMILES Vector</span>
+                    <span style="color:var(--quantum-green); font-size:10px;">LIVE 3D</span>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="input-smiles" value="NCc1cccc(CO)c1" placeholder="Enter valid SMILES string..." spellcheck="false">
+                </div>
+                <button id="btn-simulate" class="btn-primary" style="width:100%;">SIMULATE &amp; MESH</button>
+            </div>
+
+            <!-- Experiment JSON Loader -->
+            <div class="panel-section">
+                <div class="section-label">
+                    <span>Experiment Stream</span>
+                    <span style="color:var(--hardware-gold); font-size:10px;">DISK TELEMETRY</span>
+                </div>
+                <select id="select-experiment" style="margin-bottom:10px;">
+                    <option value="data/lead_109_convergence_analysis.json" selected>Lead #109 Attractor Convergence (MIMAC)</option>
+                    <option value="data/mimac_quantum_activity_cliffs.json">Top 20 MIMAC Quantum Activity Cliffs</option>
+                    <option value="data/zinc_pareto_leads.json">Search 1: ZINC Frontier Pareto Leads</option>
+                    <option value="data/zinc_quantum_anomalies.json">Search 3: ZINC Quantum Anomalies</option>
+                </select>
+
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <label for="file-upload" class="btn-secondary" style="display:inline-block; text-align:center; flex:1; cursor:pointer;">
+                        [#] LOAD CUSTOM JSON
+                    </label>
+                    <input type="file" id="file-upload" accept=".json" style="display:none;">
+                </div>
+            </div>
+
+            <!-- Molecule Selector List -->
+            <div class="panel-section" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
+                <div class="section-label">
+                    <span>Active Candidates</span>
+                    <span id="candidate-count" style="color:var(--text-slate); font-size:10px;">BATCH VIEW</span>
+                </div>
+                <div id="molecule-list" class="molecule-list">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- Center Viewport: 3D Atomic & Mesh Canvas -->
+        <section class="viewport-panel">
+            <div class="viewport-overlay-top">
+                <div class="overlay-badge">
+                    <span id="badge-id" style="color:var(--hardware-gold); font-weight:800;">#109</span>
+                    <span id="display-smiles" style="color:var(--quantum-green); font-weight:600;">NCc1cccc(CO)c1</span>
+                </div>
+                <div class="overlay-badge">
+                    <span style="color:var(--text-slate);">TOPOLOGY:</span>
+                    <span style="color:var(--text-white);">DISTANCE-GEOMETRY RELAXATION</span>
+                </div>
+            </div>
+
+            <div id="canvas-container"></div>
+
+            <!-- Viewport Overlay Controls -->
+            <div class="viewport-controls">
+                <button class="btn-secondary btn-render-mode active" data-mode="hybrid">HYBRID</button>
+                <button class="btn-secondary btn-render-mode" data-mode="spheres">ATOMIC CPK</button>
+                <button class="btn-secondary btn-render-mode" data-mode="mesh">DENSITY MESH</button>
+                <button class="btn-secondary btn-render-mode" data-mode="wireframe">WIREFRAME</button>
+                <button id="btn-toggle-spin" class="btn-secondary active">SPIN</button>
+                <button id="btn-reset-cam" class="btn-secondary">RESET CAM</button>
+            </div>
+        </section>
+
+        <!-- Right Panel: Biophysical & Quantum Telemetry Deck -->
+        <aside class="telemetry-panel">
+            <div class="panel-header">
+                <span>[Q] Hilbert Telemetry</span>
+                <span style="color:var(--quantum-green);">10-QUBIT VQC</span>
+            </div>
+
+            <!-- Biophysical Parameters -->
+            <div class="panel-section">
+                <div class="section-label">
+                    <span>Biophysical Descriptors</span>
+                    <span style="color:var(--hardware-gold); font-size:10px;">MOLECULAR METRICS</span>
+                </div>
+                <div class="metric-grid">
+                    <div class="metric-card">
+                        <div class="metric-title">Mol Weight</div>
+                        <div id="val-mw" class="metric-value">137.08 g/mol</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">LogP (Lipophilicity)</div>
+                        <div id="val-logp" class="metric-value gold">0.64</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">TPSA Polar Surface</div>
+                        <div id="val-tpsa" class="metric-value">46.3 Å²</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">Bioactivity Score</div>
+                        <div id="val-act" class="metric-value highlight">8.56</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Attractor Convergence Comparison -->
+            <div class="panel-section">
+                <div class="section-label">
+                    <span>Attractor Convergence</span>
+                    <span style="color:var(--hardware-gold); font-size:10px;">CLIFF RADAR</span>
+                </div>
+                <div id="attractor-comparison-container">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+
+            <!-- 10-Qubit Statevector Observables -->
+            <div class="panel-section" style="flex:1;">
+                <div class="section-label">
+                    <span>10-Qubit Pauli-Z Expectations &lang;Z_q&rang;</span>
+                    <span style="color:var(--quantum-green); font-size:10px;">HILBERT SPECTRUM</span>
+                </div>
+                <div id="qubit-bars" class="qubit-bar-container">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Vendored Offline Scripts -->
+    <script src="vendor/three.min.js"></script>
+    <script src="vendor/OrbitControls.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
