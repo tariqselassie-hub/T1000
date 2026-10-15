@@ -1,0 +1,225 @@
+{
+  "timestamp_rfc3339": "2026-10-13T13:15:00Z",
+  "host_cpu": "Intel Core Ultra 7 265 (20 Cores)",
+  "host_ram_gb": 16.0,
+  "n_qubits": 12,
+  "state_dimension": 4096,
+  "state_memory_bytes": 65536,
+  "circuit_depth": 3,
+  "num_quantum_params": 72,
+  "num_readout_params": 39,
+  "num_total_params": 111,
+  "epochs_trained": 15,
+  "batch_size": 50,
+  "learning_rate": 0.02,
+  "max_norm": 6.0,
+  "epoch_history": [
+    {
+      "epoch": 1,
+      "batch_count": 200,
+      "train_loss": 4.250121145202822,
+      "grad_norm": 6.014091702842987,
+      "epoch_time_ms": 22019.051900000002,
+      "clipped_batches": 65,
+      "clip_rate_pct": 32.5
+    },
+    {
+      "epoch": 2,
+      "batch_count": 200,
+      "train_loss": 4.201044083484385,
+      "grad_norm": 5.2315802904968045,
+      "epoch_time_ms": 21923.0121,
+      "clipped_batches": 70,
+      "clip_rate_pct": 35.0
+    },
+    {
+      "epoch": 3,
+      "batch_count": 200,
+      "train_loss": 4.165837831344671,
+      "grad_norm": 6.583845044362849,
+      "epoch_time_ms": 22673.0503,
+      "clipped_batches": 89,
+      "clip_rate_pct": 44.5
+    },
+    {
+      "epoch": 4,
+      "batch_count": 200,
+      "train_loss": 4.167528653873818,
+      "grad_norm": 9.091675931472093,
+      "epoch_time_ms": 22688.6841,
+      "clipped_batches": 111,
+      "clip_rate_pct": 55.50000000000001
+    },
+    {
+      "epoch": 5,
+      "batch_count": 200,
+      "train_loss": 4.1478152517123945,
+      "grad_norm": 9.48345507957015,
+      "epoch_time_ms": 23476.4368,
+      "clipped_batches": 118,
+      "clip_rate_pct": 59.0
+    },
+    {
+      "epoch": 6,
+      "batch_count": 200,
+      "train_loss": 4.093427823444837,
+      "grad_norm": 7.752336755292036,
+      "epoch_time_ms": 23645.709499999997,
+      "clipped_batches": 105,
+      "clip_rate_pct": 52.5
+    },
+    {
+      "epoch": 7,
+      "batch_count": 200,
+      "train_loss": 4.059527821664032,
+      "grad_norm": 7.568523424312822,
+      "epoch_time_ms": 23570.9179,
+      "clipped_batches": 106,
+      "clip_rate_pct": 53.0
+    },
+    {
+      "epoch": 8,
+      "batch_count": 200,
+      "train_loss": 8.002832669028933,
+      "grad_norm": 14.035946838880784,
+      "epoch_time_ms": 23577.8368,
+      "clipped_batches": 129,
+      "clip_rate_pct": 64.5
+    },
+    {
+      "epoch": 9,
+      "batch_count": 200,
+      "train_loss": 4.2693314725425315,
+      "grad_norm": 17.753604710767902,
+      "epoch_time_ms": 23524.8304,
+      "clipped_batches": 168,
+      "clip_rate_pct": 84.0
+    },
+    {
+      "epoch": 10,
+      "batch_count": 200,
+      "train_loss": 4.22958771550876,
+      "grad_norm": 23.976809887796808,
+      "epoch_time_ms": 23560.639,
+      "clipped_batches": 170,
+      "clip_rate_pct": 85.0
+    },
+    {
+      "epoch": 11,
+      "batch_count": 200,
+      "train_loss": 4.037493005819947,
+      "grad_norm": 15.261912255903615,
+      "epoch_time_ms": 23547.0398,
+      "clipped_batches": 147,
+      "clip_rate_pct": 73.5
+    },
+    {
+      "epoch": 12,
+      "batch_count": 200,
+      "train_loss": 4.013317535255637,
+      "grad_norm": 15.79643330094442,
+      "epoch_time_ms": 23547.8168,
+      "clipped_batches": 153,
+      "clip_rate_pct": 76.5
+    },
+    {
+      "epoch": 13,
+      "batch_count": 200,
+      "train_loss": 3.9667779619719696,
+      "grad_norm": 14.73826461245796,
+      "epoch_time_ms": 23555.130599999997,
+      "clipped_batches": 157,
+      "clip_rate_pct": 78.5
+    },
+    {
+      "epoch": 14,
+      "batch_count": 200,
+      "train_loss": 4.209107445469318,
+      "grad_norm": 17.473248676147026,
+      "epoch_time_ms": 23550.0528,
+      "clipped_batches": 166,
+      "clip_rate_pct": 83.0
+    },
+    {
+      "epoch": 15,
+      "batch_count": 200,
+      "train_loss": 4.148462735092247,
+      "grad_norm": 16.88016995247328,
+      "epoch_time_ms": 23491.2992,
+      "clipped_batches": 156,
+      "clip_rate_pct": 78.0
+    }
+  ],
+  "test_eval_time_ms": 229.2721,
+  "per_molecule_latency_us": 114.63605,
+  "throughput_molecules_per_sec": 8723.259393532837,
+  "logp_metrics": {
+    "initial_mse": 2.243652248781503,
+    "tuned_mse": 2.132321787015495,
+    "tuned_mae": 1.161073200306967,
+    "pearson_r": 0.31826925451005456,
+    "error_reduction_pct": 4.962019485259797
+  },
+  "qed_metrics": {
+    "initial_mse": 0.019974301958644015,
+    "tuned_mse": 0.02150270892554492,
+    "tuned_mae": 0.12504021269747403,
+    "pearson_r": 0.3239780996955154,
+    "error_reduction_pct": 0.0
+  },
+  "sas_metrics": {
+    "initial_mse": 0.7438047693564235,
+    "tuned_mse": 0.7339192958218794,
+    "tuned_mae": 0.6662410932848551,
+    "pearson_r": -0.6105881316969258,
+    "error_reduction_pct": 1.329041428854705
+  },
+  "unitary_norm": 0.9999999999999989,
+  "inverse_leads": [
+    {
+      "target_name": "Lead Alpha: High-QED Drug-Likeness Profile",
+      "target_logp": 2.5,
+      "target_qed": 0.88,
+      "target_sas": 2.1,
+      "discovered_smiles": "C[C@@H]1CC[C@@H](C)[NH+]([C@@H]2CCCC(C)(C)[C@@H]2[NH3+])C1",
+      "predicted_logp": 2.2510247785037087,
+      "predicted_qed": 0.7888954394281393,
+      "predicted_sas": 2.7549663675600446,
+      "actual_logp": 0.8789,
+      "actual_qed": 0.692451525251,
+      "actual_sas": 5.859484701100852,
+      "euclidean_error": 0.7065901531375303,
+      "chemical_validity": true
+    },
+    {
+      "target_name": "Lead Beta: Hydrophilic Readily-Synthesizable Scaffold",
+      "target_logp": 0.8,
+      "target_qed": 0.78,
+      "target_sas": 1.85,
+      "discovered_smiles": "C[C@@H]1CC[C@@H](C)[NH+]([C@@H]2CCCC(C)(C)[C@@H]2[NH3+])C1",
+      "predicted_logp": 2.2510247785037087,
+      "predicted_qed": 0.7888954394281393,
+      "predicted_sas": 2.7549663675600446,
+      "actual_logp": 0.8789,
+      "actual_qed": 0.692451525251,
+      "actual_sas": 5.859484701100852,
+      "euclidean_error": 1.7101216807844926,
+      "chemical_validity": true
+    },
+    {
+      "target_name": "Lead Gamma: Lipophilic High-Permeability Target",
+      "target_logp": 4.1,
+      "target_qed": 0.72,
+      "target_sas": 2.85,
+      "discovered_smiles": "C#CCOC(=O)CCNC(=O)NC12CC3CC(CC(C3)C1)C2",
+      "predicted_logp": 2.3959262791298626,
+      "predicted_qed": 0.7107551964219709,
+      "predicted_sas": 2.9387635283268527,
+      "actual_logp": 1.8209,
+      "actual_qed": 0.605355754845,
+      "actual_sas": 3.8118840225311335,
+      "euclidean_error": 1.7064090003614087,
+      "chemical_validity": true
+    }
+  ]
+}

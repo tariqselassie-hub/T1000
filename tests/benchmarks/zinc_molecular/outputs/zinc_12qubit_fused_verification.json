@@ -1,0 +1,48 @@
+{
+  "timestamp_rfc3339": "2026-10-13T20:45:00Z",
+  "host_cpu": "Intel Core Ultra 7 265 (20 Cores)",
+  "holdout_samples": 2000,
+  "full_param_count": 111,
+  "pruned_param_count": 99,
+  "fused_param_count": 98,
+  "max_diff_mode_c_logp": 2.220446049250313e-15,
+  "max_diff_mode_c_qed": 1.9984014443252818e-15,
+  "max_diff_mode_c_sas": 1.509903313490213e-14,
+  "max_diff_mode_c_overall": 1.509903313490213e-14,
+  "mode_c_exact_equivalence": true,
+  "max_diff_mode_d_overall": 2.042810365310288e-14,
+  "modes": [
+    {
+      "name": "Mode A: Baseline Circuit (108 Gates)",
+      "gates_per_molecule": 108,
+      "state_write_bytes_l3": 786432,
+      "latency_us": 11.13592,
+      "throughput_mols_per_sec": 89799.49568603223,
+      "speedup_vs_baseline": 1.0
+    },
+    {
+      "name": "Mode B: Pruned Canonical (84 Gates)",
+      "gates_per_molecule": 84,
+      "state_write_bytes_l3": 786432,
+      "latency_us": 9.85948,
+      "throughput_mols_per_sec": 101425.22729393437,
+      "speedup_vs_baseline": 1.1294632171270695
+    },
+    {
+      "name": "Mode C: Fused Observable Rotation (72 Gates + 12-Qubit AVX2)",
+      "gates_per_molecule": 72,
+      "state_write_bytes_l3": 0,
+      "latency_us": 7.766889999999999,
+      "throughput_mols_per_sec": 128751.6625058421,
+      "speedup_vs_baseline": 1.4337682135320573
+    },
+    {
+      "name": "Mode D: Fused Q11-Pruned (72 Gates + 11-Qubit AVX2)",
+      "gates_per_molecule": 72,
+      "state_write_bytes_l3": 0,
+      "latency_us": 7.65072,
+      "throughput_mols_per_sec": 130706.65244578288,
+      "speedup_vs_baseline": 1.4555388251040424
+    }
+  ]
+}

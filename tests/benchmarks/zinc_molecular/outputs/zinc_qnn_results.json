@@ -1,0 +1,20 @@
+{
+  "dataset_name": "ZINC 250k Drug Discovery Benchmark",
+  "n_qubits": 10,
+  "state_dim": 1024,
+  "state_memory_bytes": 16384,
+  "circuit_depth": 4,
+  "num_parameters": 80,
+  "test_molecules_count": 1000,
+  "total_inference_latency_ms": 23.105,
+  "per_molecule_latency_us": 23.105,
+  "throughput_molecules_per_sec": 43280.67517853279,
+  "initial_logp_mse": 1.9528634185848144,
+  "tuned_logp_mse": 1.9603830775742848,
+  "initial_qed_mse": 0.019523112057694234,
+  "tuned_qed_mse": 0.02112613033788688,
+  "initial_sas_mse": 0.7097371317608607,
+  "tuned_sas_mse": 0.8143486036744517,
+  "unitary_norm": 1.0000000000000004,
+  "grad_step_time_ms": 197.31162
+}

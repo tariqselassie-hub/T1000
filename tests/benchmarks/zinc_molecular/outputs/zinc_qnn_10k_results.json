@@ -1,0 +1,77 @@
+{
+  "timestamp_rfc3339": "2026-10-13T12:35:00Z",
+  "host_cpu": "Intel Core Ultra 7 265 (20 Cores)",
+  "host_ram_gb": 16.0,
+  "n_qubits": 10,
+  "state_dimension": 1024,
+  "state_memory_bytes": 16384,
+  "circuit_depth": 4,
+  "num_parameters": 80,
+  "train_sample_count": 10000,
+  "test_sample_count": 2000,
+  "epochs_trained": 5,
+  "batch_size": 50,
+  "learning_rate": 0.03,
+  "epoch_history": [
+    {
+      "epoch": 1,
+      "batch_count": 200,
+      "train_loss": 3.00418884773429,
+      "grad_norm": 0.15866602598706553,
+      "epoch_time_ms": 6213.2719
+    },
+    {
+      "epoch": 2,
+      "batch_count": 200,
+      "train_loss": 2.9765045756957704,
+      "grad_norm": 0.1015176016437514,
+      "epoch_time_ms": 6028.3596
+    },
+    {
+      "epoch": 3,
+      "batch_count": 200,
+      "train_loss": 2.9654541093171867,
+      "grad_norm": 0.09947390952127702,
+      "epoch_time_ms": 6026.758400000001
+    },
+    {
+      "epoch": 4,
+      "batch_count": 200,
+      "train_loss": 2.9622274941008793,
+      "grad_norm": 0.08652821405380356,
+      "epoch_time_ms": 5968.123699999999
+    },
+    {
+      "epoch": 5,
+      "batch_count": 200,
+      "train_loss": 2.947731761692741,
+      "grad_norm": 0.06701398795848894,
+      "epoch_time_ms": 6109.6422999999995
+    }
+  ],
+  "test_eval_time_ms": 49.450300000000006,
+  "per_molecule_latency_us": 24.725150000000003,
+  "throughput_molecules_per_sec": 40444.6484652267,
+  "logp_metrics": {
+    "initial_mse": 2.268599958669809,
+    "tuned_mse": 2.1230268091741835,
+    "tuned_mae": 1.1499082141637287,
+    "pearson_r": 0.49342237099139824,
+    "error_reduction_pct": 6.416871733568312
+  },
+  "qed_metrics": {
+    "initial_mse": 0.019479192023516334,
+    "tuned_mse": 0.019274742395122703,
+    "tuned_mae": 0.1123120281464699,
+    "pearson_r": 0.20817267661692127,
+    "error_reduction_pct": 1.0495796137068136
+  },
+  "sas_metrics": {
+    "initial_mse": 0.6898587977710402,
+    "tuned_mse": 0.6694568794100808,
+    "tuned_mae": 0.6447021954650785,
+    "pearson_r": 0.5190727738504648,
+    "error_reduction_pct": 2.957404968506419
+  },
+  "unitary_norm": 0.9999999999999993
+}

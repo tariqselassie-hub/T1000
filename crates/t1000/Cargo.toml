@@ -148,6 +148,6 @@ name = "zinc_protocol"
 path = "src/bin/screening/zinc_protocol.rs"
 
 [[bin]]
-name = "zinc_qnn_20ep_eval"
-path = "src/bin/screening/zinc_qnn_20ep_eval.rs"
+name = "zinc_dual_search"
+path = "src/bin/screening/zinc_dual_search.rs"
 

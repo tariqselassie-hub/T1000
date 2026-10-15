@@ -25,3 +25,7 @@ results/charts/
 **/*.vdi
 **/*.vds
 **/clockInfo.txt
+
+# Benchmark transient visual outputs
+tests/benchmarks/**/*.png
+tests/benchmarks/**/*.html

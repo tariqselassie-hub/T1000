@@ -48,10 +48,13 @@
 * **L2-Resident Tiled Butterfly Kernels:** Cache-conscious stride access for high qubit indices ($q \ge 16$).
 * **Beats Industry Baselines:** Up to **1.9x faster than Qiskit Aer** at 8 threads on deep Random Circuit Sampling benchmarks.
 
-### 3. SMILES Molecular Exploration (`t1000::smiles`, `t1000::molfeatures`)
+### 3. SMILES Molecular Exploration & Whole-Library 250k Screening (`zinc_dual_search`)
 * **Chemical Featurizer:** Native parser for OpenSMILES strings generating 19 molecular descriptors (atom counts, aromaticity, ring closures, molecular weight, heteroatom ratio).
 * **Quantum Feature Map:** Direct parameterized injection into Hilbert space ($|\psi(\text{SMILES})\rangle$) via parameterized $R_y(x_i)$ rotations.
-* **Drug Discovery Screening:** Scalable screening across molecular repositories like ZINC 250k.
+* **Whole-Library ZINC 250k Engine:** Screens all 249,455 drug candidates in **1.17 seconds** (**213,351 molecules/sec**) across 20 threads.
+* **Search 3 (Quantum Anomalies & Outliers):** Mines extreme zwitterions, highly charged amidinium/guanidinium motifs, and topological outliers based on Hilbert space dispersion.
+* **Search 1 (Frontier Pareto Drug Candidates):** Discovers top golden leads with $\text{QED} > 0.88$, $\text{SAS} < 1.45$, and $\text{logP} \in [2.4, 3.1]$.
+* Detailed Documentation: [`docs/zinc_quantum_screening.md`](docs/zinc_quantum_screening.md).
 
 ### 4. Statistical Quantum Verification (`t1000::rcs`)
 * **Frontier RCS Benchmark (`frontier_rcs`):** Deep Random Circuit Sampling (default: 14 qubits, 36 layers, 1,513 gates) benchmarking the optimized 256-bit AVX2 engine against a textbook scalar reference simulator and Qiskit Aer.
@@ -77,8 +80,11 @@
 * **Target Hardware:** AMD/Xilinx Artix-7 XC7A35T-1CPG236C FPGA (Digilent Basys 3).
 * **On-Chip 14-Qubit Memory:** 128 KB True Dual-Port Block RAM ping-pong matrix ($16,384$ complex amplitudes in Q1.15 fixed point).
 * **8-Lane DSP48E1 Butterfly Core:** Executes full 14-qubit state evolution in **$10.24\,\mu\text{s}$** ($169.1\times$ raw silicon compute speedup over host CPU AVX2 passes).
+* **Opcode 0x20 Autonomous Execution:** Executes 100 quantum layers entirely on-chip in **$2.006\text{ ms}$** (**49,845 layers/sec**, $50\times$ speedup over host roundtrips).
+* **Opcode 0x30 Chaos Streamer:** Streams 256-bit cryptographic entropy seeds at **4,179.5 seeds/sec** (133.7 KB/s), passing NIST SP 800-22 randomness tests.
 * **High-Speed Interconnect:** 3.0 MBaud UART interface locked to physical host port `COM6`.
-* **Physical Telemetry:** Dedicated 4-digit 7-segment display showing `1000`, 16-LED state readouts, and zero-drop burst throughput ($27,995\text{ gates/sec}$).
+* **Physical Telemetry:** Dedicated 4-digit 7-segment display showing `1000`, 16-LED state readouts, and zero-drop burst throughput.
+* Detailed Documentation: [`docs/fpga_architecture.md`](docs/fpga_architecture.md).
 
 ---
 
@@ -99,20 +105,22 @@ cargo run --release -p t1000 --bin mnist_qnn_train
 # Execute 14-qubit, 36-depth Random Circuit Sampling frontier benchmark
 cargo run --release -p t1000 --bin frontier_rcs -- --qubits 14 --depth 36
 
+# Execute ZINC 250k whole-library dual search (Search 3 Anomalies + Search 1 Pareto Leads)
+cargo run --release -p t1000 --bin zinc_dual_search
+
+# Generate all scientific research charts and telemetry figures
+python scripts/charting/chart_all.py
+
+# Verify physical Artix-7 FPGA autonomous layers and chaos streaming over COM6
+python scripts/fpga/test_chaos_streaming.py
+
+# Benchmark PC AVX2 CPU vs FPGA Silicon across 10-to-26 qubits
+python scripts/fpga/bench_pc_vs_fpga_scaling.py
 # Run sovereign Quantum Coherence Frontier Push (Dense 26Q + TN 64Q + Heptal 7^9 Qudits)
 cargo run --release -p t1000 --bin coherence_frontier_push
 
 # Run chemical SMILES quantum featurization & screening
 cargo run --release -p t1000 --bin zinc_protocol
-
-# Generate all scientific research charts and telemetry figures
-python scripts/charting/chart_all.py
-
-# Verify physical Artix-7 FPGA QPU hardware over COM6
-python scripts/fpga/test_1000_qpu.py
-
-# Benchmark PC AVX2 CPU vs FPGA Silicon across 10-to-26 qubits
-python scripts/fpga/bench_pc_vs_fpga_scaling.py
 ```
 
 ---

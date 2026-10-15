@@ -1,0 +1,20 @@
+{
+  "timestamp_rfc3339": "2026-10-13T20:15:00Z",
+  "host_cpu": "Intel Core Ultra 7 265 (20 Cores)",
+  "holdout_samples": 2000,
+  "full_param_count": 111,
+  "pruned_param_count": 99,
+  "full_gate_count": 108,
+  "pruned_gate_count": 84,
+  "max_abs_diff_logp": 2.220446049250313e-15,
+  "max_abs_diff_qed": 7.771561172376096e-16,
+  "max_abs_diff_sas": 9.325873406851315e-15,
+  "max_overall_diff": 9.325873406851315e-15,
+  "exact_bit_for_bit_equivalence": true,
+  "full_latency_us": 18.402849999999997,
+  "pruned_latency_us": 12.49345,
+  "latency_reduction_pct": 32.1113305819479,
+  "full_throughput_mols_per_sec": 54339.4093849594,
+  "pruned_throughput_mols_per_sec": 80041.94197759626,
+  "throughput_speedup_x": 1.4729998519224072
+}

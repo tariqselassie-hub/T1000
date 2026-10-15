@@ -1,0 +1,117 @@
+{
+  "timestamp_rfc3339": "2026-10-13T13:15:00Z",
+  "host_cpu": "Intel Core Ultra 7 265 (20 Cores)",
+  "host_ram_gb": 16.0,
+  "n_qubits": 12,
+  "state_dimension": 4096,
+  "state_memory_bytes": 65536,
+  "circuit_depth": 3,
+  "num_quantum_params": 72,
+  "num_readout_params": 39,
+  "num_total_params": 111,
+  "epochs_trained": 3,
+  "batch_size": 50,
+  "learning_rate": 0.03,
+  "max_norm": 4.0,
+  "epoch_history": [
+    {
+      "epoch": 1,
+      "batch_count": 50,
+      "train_loss": 19.618570630583417,
+      "grad_norm": 29.095159371488645,
+      "epoch_time_ms": 5566.6607,
+      "clipped_batches": 48,
+      "clip_rate_pct": 96.0
+    },
+    {
+      "epoch": 2,
+      "batch_count": 50,
+      "train_loss": 5.589703341167706,
+      "grad_norm": 38.363596918187575,
+      "epoch_time_ms": 5511.1748,
+      "clipped_batches": 49,
+      "clip_rate_pct": 98.0
+    },
+    {
+      "epoch": 3,
+      "batch_count": 50,
+      "train_loss": 4.797604564670851,
+      "grad_norm": 25.895089889429123,
+      "epoch_time_ms": 5478.1259,
+      "clipped_batches": 47,
+      "clip_rate_pct": 94.0
+    }
+  ],
+  "test_eval_time_ms": 104.7226,
+  "per_molecule_latency_us": 104.7226,
+  "throughput_molecules_per_sec": 9549.03717058209,
+  "logp_metrics": {
+    "initial_mse": 2.3965796283007217,
+    "tuned_mse": 2.1434046418953727,
+    "tuned_mae": 1.1648653260576571,
+    "pearson_r": 0.06083269622368715,
+    "error_reduction_pct": 10.564013121686298
+  },
+  "qed_metrics": {
+    "initial_mse": 0.01939941823645346,
+    "tuned_mse": 0.01890047754283154,
+    "tuned_mae": 0.10920561213486124,
+    "pearson_r": 0.13179267974820322,
+    "error_reduction_pct": 2.571936372217391
+  },
+  "sas_metrics": {
+    "initial_mse": 0.7703404789064352,
+    "tuned_mse": 0.7477204617797452,
+    "tuned_mae": 0.6671888929426051,
+    "pearson_r": -0.11289153761904909,
+    "error_reduction_pct": 2.9363661583513183
+  },
+  "unitary_norm": 1.0,
+  "inverse_leads": [
+    {
+      "target_name": "Lead Alpha: High-QED Drug-Likeness Profile",
+      "target_logp": 2.5,
+      "target_qed": 0.88,
+      "target_sas": 2.1,
+      "discovered_smiles": "C[C@@H]1CC[C@@H](C)[NH+]([C@@H]2CCCC(C)(C)[C@@H]2[NH3+])C1",
+      "predicted_logp": 2.4480199358844565,
+      "predicted_qed": 0.7334190826730659,
+      "predicted_sas": 2.980260183334708,
+      "actual_logp": 0.8789,
+      "actual_qed": 0.692451525251,
+      "actual_sas": 5.859484701100852,
+      "euclidean_error": 0.893893664120244,
+      "chemical_validity": true
+    },
+    {
+      "target_name": "Lead Beta: Hydrophilic Readily-Synthesizable Scaffold",
+      "target_logp": 0.8,
+      "target_qed": 0.78,
+      "target_sas": 1.85,
+      "discovered_smiles": "O=C1CSC(=S)N1CCN1C(=O)CSC1=S",
+      "predicted_logp": 2.429462068422919,
+      "predicted_qed": 0.7306664754615296,
+      "predicted_sas": 2.969331997430963,
+      "actual_logp": 0.7070000000000001,
+      "actual_qed": 0.72600379237,
+      "actual_sas": 3.0360470767469323,
+      "euclidean_error": 1.9774945131517494,
+      "chemical_validity": true
+    },
+    {
+      "target_name": "Lead Gamma: Lipophilic High-Permeability Target",
+      "target_logp": 4.1,
+      "target_qed": 0.72,
+      "target_sas": 2.85,
+      "discovered_smiles": "C[C@@H]1CC[C@@H](C)[NH+]([C@@H]2CCCC(C)(C)[C@@H]2[NH3+])C1",
+      "predicted_logp": 2.4480199358844565,
+      "predicted_qed": 0.7334190826730659,
+      "predicted_sas": 2.980260183334708,
+      "actual_logp": 0.8789,
+      "actual_qed": 0.692451525251,
+      "actual_sas": 5.859484701100852,
+      "euclidean_error": 1.6571620075832574,
+      "chemical_validity": true
+    }
+  ]
+}

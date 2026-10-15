@@ -1,0 +1,19 @@
+{
+  "total_molecules": 249455,
+  "inference_wall_clock_ms": 1149.0252,
+  "latency_us_per_mol": 4.606142189974144,
+  "throughput_mols_sec": 217101.41779309974,
+  "num_threads": 20,
+  "logp_mae": 1.1687442589461363,
+  "logp_rmse": 1.4523037715313598,
+  "logp_r2": -0.02522385617433409,
+  "qed_mae": 0.14061738912967273,
+  "qed_rmse": 0.1890214141479876,
+  "qed_r2": -0.8342995227251717,
+  "sas_mae": 1.701160894505696,
+  "sas_rmse": 1.8945764481284761,
+  "sas_r2": -4.150687008994824,
+  "mean_pareto_score": 0.19220091098994707,
+  "max_pareto_score": 0.6501246293608046,
+  "top_lead_smiles": "COc1ccc(NC(=O)c2cccc(OC)c2)cc1"
+}

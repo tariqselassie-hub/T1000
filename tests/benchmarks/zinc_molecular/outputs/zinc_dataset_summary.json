@@ -1,0 +1,51 @@
+{
+  "dataset_name": "ZINC 250k Drug Discovery Benchmark",
+  "source_csv": "C:\\Users\\zoddj\\zenith_workspace_divizion\\GuddaLM\\data\\zinc_250\\250k_rndm_zinc_drugs_clean_3.csv",
+  "total_source_molecules": 249455,
+  "train_molecules": 10000,
+  "test_molecules": 2000,
+  "feature_count": 19,
+  "features": [
+    "heavy_atoms",
+    "mw_est",
+    "n_c",
+    "n_n",
+    "n_o",
+    "n_s",
+    "n_f",
+    "n_cl",
+    "n_br",
+    "n_hal",
+    "n_arom",
+    "arom_ratio",
+    "n_hetero",
+    "hetero_ratio",
+    "n_double",
+    "n_triple",
+    "n_branches",
+    "n_chiral",
+    "n_rings"
+  ],
+  "targets": [
+    "logP",
+    "qed",
+    "SAS"
+  ],
+  "target_stats": {
+    "logP": {
+      "min": -5.2112,
+      "max": 7.3611,
+      "mean": 2.46641295892009
+    },
+    "qed": {
+      "min": 0.13987732243599998,
+      "max": 0.947476862175,
+      "mean": 0.726256718441011
+    },
+    "SAS": {
+      "min": 1.321876475447274,
+      "max": 6.7911760336257485,
+      "mean": 3.050214733818257
+    }
+  }
+}

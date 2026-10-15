@@ -121,6 +121,26 @@ def run_all_charts() -> None:
     else:
         print(f" [!] Skipped RCS FPGA Benchmark: {rcs_fpga_json.name} not found.")
 
+    # 9. Search 3: ZINC Quantum Chemical Anomalies
+    anom_json = exp_dir / "zinc_quantum_anomalies.json"
+    if anom_json.exists():
+        import chart_zinc_anomalies
+        chart_zinc_anomalies.main()
+        png = chart_dir / "zinc_quantum_anomalies.png"
+        size_kb = png.stat().st_size / 1024.0
+        generated.append(("Search 3: Quantum Anomalies", png.name, f"{size_kb:.1f} KB"))
+        print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
+
+    # 10. Search 1: ZINC Frontier Pareto Drug Leads
+    pareto_json = exp_dir / "zinc_pareto_leads.json"
+    if pareto_json.exists():
+        import chart_zinc_pareto
+        chart_zinc_pareto.main()
+        png = chart_dir / "zinc_pareto_leads.png"
+        size_kb = png.stat().st_size / 1024.0
+        generated.append(("Search 1: Frontier Pareto Leads", png.name, f"{size_kb:.1f} KB"))
+        print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
+
     print("\n╔═══════════════════════════════════════════════════════════════════════════════╗")
     print("║                        RENDERED ARTIFACT MANIFEST                             ║")
     print("╠═════════════════════════════════════╦══════════════════════════════════╦══════════╣")

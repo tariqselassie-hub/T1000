@@ -1,0 +1,360 @@
+{
+  "timestamp_rfc3339": "2026-10-13T13:15:00Z",
+  "host_cpu": "Intel Core Ultra 7 265 (20 Cores)",
+  "host_ram_gb": 16.0,
+  "n_qubits": 12,
+  "state_dimension": 4096,
+  "state_memory_bytes": 65536,
+  "circuit_depth": 3,
+  "num_quantum_params": 72,
+  "num_readout_params": 39,
+  "num_total_params": 111,
+  "epochs_trained": 30,
+  "batch_size": 50,
+  "learning_rate": 0.008,
+  "max_norm": 6.0,
+  "epoch_history": [
+    {
+      "epoch": 1,
+      "batch_count": 200,
+      "train_loss": 4.250121145202822,
+      "grad_norm": 6.014091702842987,
+      "epoch_time_ms": 22019.0519,
+      "clipped_batches": 65,
+      "clip_rate_pct": 32.5
+    },
+    {
+      "epoch": 2,
+      "batch_count": 200,
+      "train_loss": 4.201044083484385,
+      "grad_norm": 5.2315802904968045,
+      "epoch_time_ms": 21923.0121,
+      "clipped_batches": 70,
+      "clip_rate_pct": 35.0
+    },
+    {
+      "epoch": 3,
+      "batch_count": 200,
+      "train_loss": 4.165837831344671,
+      "grad_norm": 6.583845044362849,
+      "epoch_time_ms": 22673.0503,
+      "clipped_batches": 89,
+      "clip_rate_pct": 44.5
+    },
+    {
+      "epoch": 4,
+      "batch_count": 200,
+      "train_loss": 4.167528653873818,
+      "grad_norm": 9.091675931472093,
+      "epoch_time_ms": 22688.6841,
+      "clipped_batches": 111,
+      "clip_rate_pct": 55.50000000000001
+    },
+    {
+      "epoch": 5,
+      "batch_count": 200,
+      "train_loss": 4.1478152517123945,
+      "grad_norm": 9.48345507957015,
+      "epoch_time_ms": 23476.4368,
+      "clipped_batches": 118,
+      "clip_rate_pct": 59.0
+    },
+    {
+      "epoch": 6,
+      "batch_count": 200,
+      "train_loss": 4.093427823444837,
+      "grad_norm": 7.752336755292036,
+      "epoch_time_ms": 23645.709499999997,
+      "clipped_batches": 105,
+      "clip_rate_pct": 52.5
+    },
+    {
+      "epoch": 7,
+      "batch_count": 200,
+      "train_loss": 4.059527821664032,
+      "grad_norm": 7.568523424312822,
+      "epoch_time_ms": 23570.9179,
+      "clipped_batches": 106,
+      "clip_rate_pct": 53.0
+    },
+    {
+      "epoch": 8,
+      "batch_count": 200,
+      "train_loss": 8.002832669028933,
+      "grad_norm": 14.035946838880784,
+      "epoch_time_ms": 23577.8368,
+      "clipped_batches": 129,
+      "clip_rate_pct": 64.5
+    },
+    {
+      "epoch": 9,
+      "batch_count": 200,
+      "train_loss": 4.2693314725425315,
+      "grad_norm": 17.753604710767902,
+      "epoch_time_ms": 23524.8304,
+      "clipped_batches": 168,
+      "clip_rate_pct": 84.0
+    },
+    {
+      "epoch": 10,
+      "batch_count": 200,
+      "train_loss": 4.22958771550876,
+      "grad_norm": 23.976809887796808,
+      "epoch_time_ms": 23560.639,
+      "clipped_batches": 170,
+      "clip_rate_pct": 85.0
+    },
+    {
+      "epoch": 11,
+      "batch_count": 200,
+      "train_loss": 4.037493005819947,
+      "grad_norm": 15.261912255903615,
+      "epoch_time_ms": 23547.0398,
+      "clipped_batches": 147,
+      "clip_rate_pct": 73.5
+    },
+    {
+      "epoch": 12,
+      "batch_count": 200,
+      "train_loss": 4.013317535255637,
+      "grad_norm": 15.79643330094442,
+      "epoch_time_ms": 23547.8168,
+      "clipped_batches": 153,
+      "clip_rate_pct": 76.5
+    },
+    {
+      "epoch": 13,
+      "batch_count": 200,
+      "train_loss": 3.9667779619719696,
+      "grad_norm": 14.73826461245796,
+      "epoch_time_ms": 23555.130599999997,
+      "clipped_batches": 157,
+      "clip_rate_pct": 78.5
+    },
+    {
+      "epoch": 14,
+      "batch_count": 200,
+      "train_loss": 4.209107445469318,
+      "grad_norm": 17.473248676147026,
+      "epoch_time_ms": 23550.0528,
+      "clipped_batches": 166,
+      "clip_rate_pct": 83.0
+    },
+    {
+      "epoch": 15,
+      "batch_count": 200,
+      "train_loss": 4.148462735092247,
+      "grad_norm": 16.88016995247328,
+      "epoch_time_ms": 23491.2992,
+      "clipped_batches": 156,
+      "clip_rate_pct": 78.0
+    },
+    {
+      "epoch": 16,
+      "batch_count": 200,
+      "train_loss": 4.074267892706317,
+      "grad_norm": 16.245992455280636,
+      "epoch_time_ms": 23299.2048,
+      "clipped_batches": 153,
+      "clip_rate_pct": 76.5
+    },
+    {
+      "epoch": 17,
+      "batch_count": 200,
+      "train_loss": 4.010093326146671,
+      "grad_norm": 14.676675146867824,
+      "epoch_time_ms": 22133.224299999998,
+      "clipped_batches": 153,
+      "clip_rate_pct": 76.5
+    },
+    {
+      "epoch": 18,
+      "batch_count": 200,
+      "train_loss": 3.9862232563941458,
+      "grad_norm": 14.322254233133023,
+      "epoch_time_ms": 22810.9832,
+      "clipped_batches": 154,
+      "clip_rate_pct": 77.0
+    },
+    {
+      "epoch": 19,
+      "batch_count": 200,
+      "train_loss": 4.103157746223101,
+      "grad_norm": 14.735080562662711,
+      "epoch_time_ms": 24005.8295,
+      "clipped_batches": 152,
+      "clip_rate_pct": 76.0
+    },
+    {
+      "epoch": 20,
+      "batch_count": 200,
+      "train_loss": 4.096453578008799,
+      "grad_norm": 14.778873279118914,
+      "epoch_time_ms": 24002.4239,
+      "clipped_batches": 159,
+      "clip_rate_pct": 79.5
+    },
+    {
+      "epoch": 21,
+      "batch_count": 200,
+      "train_loss": 4.026810970028641,
+      "grad_norm": 12.699941447707895,
+      "epoch_time_ms": 25453.726899999998,
+      "clipped_batches": 140,
+      "clip_rate_pct": 70.0
+    },
+    {
+      "epoch": 22,
+      "batch_count": 200,
+      "train_loss": 4.0546196905919745,
+      "grad_norm": 12.514614862711394,
+      "epoch_time_ms": 27027.7838,
+      "clipped_batches": 146,
+      "clip_rate_pct": 73.0
+    },
+    {
+      "epoch": 23,
+      "batch_count": 200,
+      "train_loss": 4.023415449667904,
+      "grad_norm": 13.02797429514535,
+      "epoch_time_ms": 23708.3122,
+      "clipped_batches": 143,
+      "clip_rate_pct": 71.5
+    },
+    {
+      "epoch": 24,
+      "batch_count": 200,
+      "train_loss": 3.987769906624772,
+      "grad_norm": 12.008965080285407,
+      "epoch_time_ms": 23638.765,
+      "clipped_batches": 139,
+      "clip_rate_pct": 69.5
+    },
+    {
+      "epoch": 25,
+      "batch_count": 200,
+      "train_loss": 5.449310905580054,
+      "grad_norm": 29.495276343305058,
+      "epoch_time_ms": 23640.182200000003,
+      "clipped_batches": 159,
+      "clip_rate_pct": 79.5
+    },
+    {
+      "epoch": 26,
+      "batch_count": 200,
+      "train_loss": 4.12644791765579,
+      "grad_norm": 12.224980471061444,
+      "epoch_time_ms": 23634.63,
+      "clipped_batches": 147,
+      "clip_rate_pct": 73.5
+    },
+    {
+      "epoch": 27,
+      "batch_count": 200,
+      "train_loss": 4.103999376335155,
+      "grad_norm": 12.428057166305987,
+      "epoch_time_ms": 23717.299199999998,
+      "clipped_batches": 147,
+      "clip_rate_pct": 73.5
+    },
+    {
+      "epoch": 28,
+      "batch_count": 200,
+      "train_loss": 4.0651192301462835,
+      "grad_norm": 12.038579729604514,
+      "epoch_time_ms": 29940.175,
+      "clipped_batches": 146,
+      "clip_rate_pct": 73.0
+    },
+    {
+      "epoch": 29,
+      "batch_count": 200,
+      "train_loss": 4.0354370559106645,
+      "grad_norm": 11.888703126751732,
+      "epoch_time_ms": 30124.6899,
+      "clipped_batches": 141,
+      "clip_rate_pct": 70.5
+    },
+    {
+      "epoch": 30,
+      "batch_count": 200,
+      "train_loss": 4.0095510321936505,
+      "grad_norm": 11.89246112084444,
+      "epoch_time_ms": 26833.3402,
+      "clipped_batches": 137,
+      "clip_rate_pct": 68.5
+    }
+  ],
+  "test_eval_time_ms": 218.00549999999998,
+  "per_molecule_latency_us": 109.00275,
+  "throughput_molecules_per_sec": 9174.080470446846,
+  "logp_metrics": {
+    "initial_mse": 2.1323217870154956,
+    "tuned_mse": 2.1821962609599748,
+    "tuned_mae": 1.1791632395599432,
+    "pearson_r": -0.15433604621576372,
+    "error_reduction_pct": 0.0
+  },
+  "qed_metrics": {
+    "initial_mse": 0.02150270892554492,
+    "tuned_mse": 0.01858684289284045,
+    "tuned_mae": 0.11244498242058545,
+    "pearson_r": 0.28690340684565185,
+    "error_reduction_pct": 13.560459023097607
+  },
+  "sas_metrics": {
+    "initial_mse": 0.7339192958218794,
+    "tuned_mse": 0.6472826521288035,
+    "tuned_mae": 0.6327821208955476,
+    "pearson_r": 0.5859456548562401,
+    "error_reduction_pct": 11.804655387355071
+  },
+  "unitary_norm": 0.9999999999999994,
+  "inverse_leads": [
+    {
+      "target_name": "Lead Alpha: High-QED Drug-Likeness Profile",
+      "target_logp": 2.5,
+      "target_qed": 0.88,
+      "target_sas": 2.1,
+      "discovered_smiles": "CO[C@@H]1CCC[C@@H]([NH2+]C2C(C)(C)C2(C)C)C1",
+      "predicted_logp": 2.420162876433413,
+      "predicted_qed": 0.7972738341243795,
+      "predicted_sas": 3.1020298193908555,
+      "actual_logp": 1.942,
+      "actual_qed": 0.786208518253,
+      "actual_sas": 4.534036146718415,
+      "euclidean_error": 1.0086036603980464,
+      "chemical_validity": true
+    },
+    {
+      "target_name": "Lead Beta: Hydrophilic Readily-Synthesizable Scaffold",
+      "target_logp": 0.8,
+      "target_qed": 0.78,
+      "target_sas": 1.85,
+      "discovered_smiles": "COC1CCC(CC(=O)N2CCC(O)(C(F)(F)F)CC2)CC1",
+      "predicted_logp": 2.3180863709602018,
+      "predicted_qed": 0.7391289829066506,
+      "predicted_sas": 2.930244317976185,
+      "actual_logp": 2.4975,
+      "actual_qed": 0.867071956444,
+      "actual_sas": 2.74626028026368,
+      "euclidean_error": 1.8636481578487911,
+      "chemical_validity": true
+    },
+    {
+      "target_name": "Lead Gamma: Lipophilic High-Permeability Target",
+      "target_logp": 4.1,
+      "target_qed": 0.72,
+      "target_sas": 2.85,
+      "discovered_smiles": "CC[C@@H](C(=O)c1ccc(C)cc1)[C@@H]1c2cc(Br)ccc2OC(=O)[C@@H]1C(=O)OC",
+      "predicted_logp": 2.4293223717983863,
+      "predicted_qed": 0.7236304886897597,
+      "predicted_sas": 3.045094645756052,
+      "actual_logp": 4.4584199999999985,
+      "actual_qed": 0.281601940509,
+      "actual_sas": 3.554040060127755,
+      "euclidean_error": 1.6820341371756322,
+      "chemical_validity": true
+    }
+  ]
+}
