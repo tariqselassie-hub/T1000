@@ -98,7 +98,7 @@ fn benchmark_gradients(full_qubits: usize, full_depth: usize) -> GradientBenchma
         )
     };
 
-    let (cq, cd) = (16, 4);
+    let (cq, cd) = (full_qubits.min(12), full_depth.min(4));
     let engine = engine_for(cq, cd);
     let x: Vec<f64> = (0..cq).map(|q| 0.1 * q as f64).collect();
     let w = engine.ansatz.weights.clone();
@@ -158,6 +158,49 @@ fn ref_cz(psi: &mut [Complex64], q1: usize, q2: usize) {
     }
 }
 
+fn ref_cnot(psi: &mut [Complex64], ctrl: usize, target: usize) {
+    let cm = 1usize << ctrl;
+    let tm = 1usize << target;
+    for i in 0..psi.len() {
+        if (i & cm != 0) && (i & tm == 0) {
+            let j = i | tm;
+            psi.swap(i, j);
+        }
+    }
+}
+
+fn ref_anticnot(psi: &mut [Complex64], ctrl: usize, target: usize) {
+    let cm = 1usize << ctrl;
+    let tm = 1usize << target;
+    for i in 0..psi.len() {
+        if (i & cm == 0) && (i & tm == 0) {
+            let j = i | tm;
+            psi.swap(i, j);
+        }
+    }
+}
+
+fn ref_swap(psi: &mut [Complex64], q1: usize, q2: usize) {
+    let m1 = 1usize << q1;
+    let m2 = 1usize << q2;
+    for i in 0..psi.len() {
+        if (i & m1 != 0) && (i & m2 == 0) {
+            let j = (i ^ m1) | m2;
+            psi.swap(i, j);
+        }
+    }
+}
+
+fn ref_cp(psi: &mut [Complex64], ctrl: usize, target: usize, theta: f64) {
+    let both = (1usize << ctrl) | (1usize << target);
+    let phase = Complex64::from_polar(1.0, theta);
+    for i in 0..psi.len() {
+        if (i & both) == both {
+            psi[i] *= phase;
+        }
+    }
+}
+
 fn run_reference(ops: &[CircuitOp], init: &[Complex64]) -> (Vec<Complex64>, f64) {
     let mut psi = init.to_vec();
     let t0 = Instant::now();
@@ -165,13 +208,23 @@ fn run_reference(ops: &[CircuitOp], init: &[Complex64]) -> (Vec<Complex64>, f64)
         match op {
             CircuitOp::Ry { qubit, theta } => ref_apply_1q(&mut psi, *qubit, ref_ry(*theta)),
             CircuitOp::Rz { qubit, theta } => ref_apply_1q(&mut psi, *qubit, ref_rz(*theta)),
+            CircuitOp::Unitary1Q { qubit, matrix } => {
+                let m = [
+                    [matrix.u00(), matrix.u01()],
+                    [matrix.u10(), matrix.u11()],
+                ];
+                ref_apply_1q(&mut psi, *qubit, m);
+            }
             CircuitOp::CZ { q1, q2 } => ref_cz(&mut psi, *q1, *q2),
+            CircuitOp::CNOT { control, target } => ref_cnot(&mut psi, *control, *target),
+            CircuitOp::AntiCNOT { control, target } => ref_anticnot(&mut psi, *control, *target),
+            CircuitOp::SWAP { q1, q2 } => ref_swap(&mut psi, *q1, *q2),
+            CircuitOp::ControlledPhase { control, target, theta } => ref_cp(&mut psi, *control, *target, *theta),
             CircuitOp::RademacherPhase { signs } => {
                 for (q, s) in signs.iter().enumerate() {
                     ref_apply_1q(&mut psi, q, ref_rz(s * std::f64::consts::PI));
                 }
             }
-            other => panic!("reference engine does not implement {other:?}"),
         }
     }
     (psi, t0.elapsed().as_secs_f64())
@@ -184,9 +237,7 @@ fn run_reference(ops: &[CircuitOp], init: &[Complex64]) -> (Vec<Complex64>, f64)
 fn run_optimized(ansatz: &CircuitAnsatz, init: &QuantumState) -> (QuantumState, Vec<LayerTelemetry>, f64) {
     let mut state = init.clone();
     let t0 = Instant::now();
-    if ansatz.use_pi_layer {
-        t1000::PiPhaseLayer::new(ansatz.n_qubits).forward_in_place(&mut state);
-    }
+    ansatz.apply_pre_init(&mut state);
     let mut layers = Vec::with_capacity(ansatz.depth);
     for layer in 0..ansatz.depth {
         let l0 = Instant::now();
@@ -208,9 +259,13 @@ fn export_circuit(dir: &std::path::Path, qubits: usize, depth: usize, ops: &[Cir
         .map(|op| match op {
             CircuitOp::Ry { qubit, theta } => serde_json::json!({"op": "ry", "qubit": qubit, "theta": theta}),
             CircuitOp::Rz { qubit, theta } => serde_json::json!({"op": "rz", "qubit": qubit, "theta": theta}),
+            CircuitOp::Unitary1Q { qubit, .. } => serde_json::json!({"op": "unitary_1q", "qubit": qubit}),
             CircuitOp::CZ { q1, q2 } => serde_json::json!({"op": "cz", "q1": q1, "q2": q2}),
+            CircuitOp::CNOT { control, target } => serde_json::json!({"op": "cnot", "control": control, "target": target}),
+            CircuitOp::AntiCNOT { control, target } => serde_json::json!({"op": "anticnot", "control": control, "target": target}),
+            CircuitOp::SWAP { q1, q2 } => serde_json::json!({"op": "swap", "q1": q1, "q2": q2}),
+            CircuitOp::ControlledPhase { control, target, theta } => serde_json::json!({"op": "cp", "control": control, "target": target, "theta": theta}),
             CircuitOp::RademacherPhase { signs } => serde_json::json!({"op": "rademacher", "signs": signs}),
-            other => panic!("export does not support {other:?}"),
         })
         .collect();
     let circuit = serde_json::json!({
@@ -241,15 +296,44 @@ fn main() {
         .and_then(|i| args.get(i + 1))
         .map(PathBuf::from);
 
-    let qubits = 20;
-    let depth = 12;
+    let qubits = args
+        .iter()
+        .position(|a| a == "--qubits" || a == "-q")
+        .and_then(|i| args.get(i + 1))
+        .and_then(|s| s.parse::<usize>().ok())
+        .unwrap_or(10);
+
+    let depth = args
+        .iter()
+        .position(|a| a == "--depth" || a == "-d")
+        .and_then(|i| args.get(i + 1))
+        .and_then(|s| s.parse::<usize>().ok())
+        .unwrap_or(36);
+
+    let pre_init_str = args
+        .iter()
+        .position(|a| a == "--pre-init" || a == "-p")
+        .and_then(|i| args.get(i + 1))
+        .map(|s| s.as_str())
+        .unwrap_or("rademacher");
+
+    let pre_init = match pre_init_str {
+        "bell-ghz" | "ghz" => t1000::PreInitCircuit::BellGhz,
+        "alt-bell-ghz" | "alt-ghz" => t1000::PreInitCircuit::AltBellGhz,
+        "qft" => t1000::PreInitCircuit::Qft,
+        "iqft" => t1000::PreInitCircuit::Iqft,
+        "none" => t1000::PreInitCircuit::None,
+        _ => t1000::PreInitCircuit::RademacherPi,
+    };
+
     let dim = 1usize << qubits;
 
     println!("=========================================================================");
-    println!(" 20-QUBIT RCS: OPTIMIZED AVX2 ENGINE vs SCALAR REFERENCE SIMULATOR");
+    println!(" {qubits}-QUBIT RCS: OPTIMIZED AVX2 ENGINE vs SCALAR REFERENCE SIMULATOR");
+    println!(" (Circuit Depth: {depth} Layers | Pre-Init: {pre_init:?})");
     println!("=========================================================================");
 
-    let ansatz = CircuitAnsatz::new(qubits, depth).with_pi_layer(true);
+    let ansatz = CircuitAnsatz::new(qubits, depth).with_pre_init(pre_init);
     let ops: Vec<CircuitOp> = ansatz.to_dag(&ansatz.weights).nodes.into_iter().map(|n| n.op).collect();
     println!("[CONFIG] {qubits} qubits | depth {depth} | {} gates | dim {dim}", ops.len());
 
@@ -400,9 +484,16 @@ fn main() {
 
 fn profile_rademacher_phase_layer(qubits: usize) {
     let num_states = 1 << qubits;
+    let bytes = num_states * 16;
+    let size_str = if bytes < 1024 * 1024 {
+        format!("{:.1} KB", bytes as f64 / 1024.0)
+    } else {
+        format!("{:.1} MB", bytes as f64 / (1024.0 * 1024.0))
+    };
+
     println!("\n=======================================================");
     println!("[PROFILE] RADEMACHER PHASE LAYER: fused kernel vs per-qubit Rz");
-    println!("[CONFIG] {} Qubits | State Size: {} Complex Amplitudes (16 MB)", qubits, num_states);
+    println!("[CONFIG] {} Qubits | State Size: {} Complex Amplitudes ({})", qubits, num_states, size_str);
     println!("-------------------------------------------------------");
 
     let base_state = QuantumState::new(num_states);
@@ -412,7 +503,7 @@ fn profile_rademacher_phase_layer(qubits: usize) {
     let mut s_warm = base_state.clone();
     pi_layer.forward_in_place(&mut s_warm);
 
-    // 1. Sequential per-qubit Rz (one pass over 16 MB per qubit)
+    // 1. Sequential per-qubit Rz (one pass over statevector per qubit)
     let iters = 5;
     let t0 = Instant::now();
     for _ in 0..iters {
@@ -424,7 +515,7 @@ fn profile_rademacher_phase_layer(qubits: usize) {
     }
     let seq_dur_ms = (t0.elapsed().as_secs_f64() * 1000.0) / (iters as f64);
 
-    // 2. Fused kernel (single pass over 16 MB)
+    // 2. Fused kernel (single pass over statevector)
     let iters_avx = 20;
     let t1 = Instant::now();
     for _ in 0..iters_avx {
@@ -433,8 +524,8 @@ fn profile_rademacher_phase_layer(qubits: usize) {
     }
     let fused_dur_ms = (t1.elapsed().as_secs_f64() * 1000.0) / (iters_avx as f64);
 
-    println!("  Per-qubit Rz loop  : {:.3} ms ({} passes, includes 16 MB clone)", seq_dur_ms, qubits);
-    println!("  Fused kernel       : {:.3} ms (1 pass, includes 16 MB clone)", fused_dur_ms);
+    println!("  Per-qubit Rz loop  : {:.3} ms ({} passes, includes {} clone)", seq_dur_ms, qubits, size_str);
+    println!("  Fused kernel       : {:.3} ms (1 pass, includes {} clone)", fused_dur_ms, size_str);
     println!("  Speedup            : {:.2}x", seq_dur_ms / fused_dur_ms);
     println!("=======================================================");
 }
