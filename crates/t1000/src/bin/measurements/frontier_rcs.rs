@@ -301,7 +301,7 @@ fn main() {
         .position(|a| a == "--qubits" || a == "-q")
         .and_then(|i| args.get(i + 1))
         .and_then(|s| s.parse::<usize>().ok())
-        .unwrap_or(10);
+        .unwrap_or(14);
 
     let depth = args
         .iter()
@@ -468,7 +468,7 @@ fn main() {
 
     // Always write to <workspace>/results/experiments, whatever the current directory is.
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let ws_root = manifest_dir.ancestors().nth(3).unwrap_or(&manifest_dir).to_path_buf();
+    let ws_root = manifest_dir.ancestors().nth(2).unwrap_or(&manifest_dir).to_path_buf();
     let out_path = ws_root.join("results/experiments/frontier_rcs_results.json");
     if let Some(parent) = out_path.parent() {
         let _ = fs::create_dir_all(parent);

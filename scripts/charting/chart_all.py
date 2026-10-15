@@ -22,6 +22,7 @@ from chart_mnist_qnn import chart_mnist_qnn
 from chart_qnn_scaling import chart_qnn_scaling
 from chart_lattice_phase import chart_lattice_phase
 from chart_lattice_quench import chart_lattice_quench
+from chart_frontier_rcs import chart_frontier_rcs
 
 def run_all_charts() -> None:
     ws_root = current_dir.parents[1]
@@ -76,6 +77,16 @@ def run_all_charts() -> None:
         print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
     else:
         print(f" [!] Skipped Quench Dynamics: {quench_json.name} not found.")
+
+    # 5. 14-Qubit 36-Depth Frontier RCS Chaos & Telemetry
+    rcs_json = exp_dir / "frontier_rcs_results.json"
+    if rcs_json.exists():
+        png = chart_frontier_rcs(rcs_json, chart_dir)
+        size_kb = png.stat().st_size / 1024.0
+        generated.append(("14-Qubit 36-Depth Frontier RCS", png.name, f"{size_kb:.1f} KB"))
+        print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
+    else:
+        print(f" [!] Skipped Frontier RCS: {rcs_json.name} not found.")
 
     print("\n╔═══════════════════════════════════════════════════════════════════════════════╗")
     print("║                        RENDERED ARTIFACT MANIFEST                             ║")

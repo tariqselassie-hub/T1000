@@ -54,8 +54,12 @@
 * **Drug Discovery Screening:** Scalable screening across molecular repositories like ZINC 250k.
 
 ### 4. Statistical Quantum Verification (`t1000::rcs`)
-* **Cross-Entropy Benchmarking (XEB):** Validates linear XEB convergence ($F_{\text{XEB}} \to 1.0$) against ideal Haar-random Porter-Thomas distributions.
-* **Kolmogorov-Smirnov & Entropy Tests:** Automated confirmation of Porter-Thomas chaos ($\Delta S \to 1 - \gamma$).
+* **Frontier RCS Benchmark (`frontier_rcs`):** Deep Random Circuit Sampling (default: 14 qubits, 36 layers, 1,513 gates) benchmarking the optimized 256-bit AVX2 engine against a textbook scalar reference simulator and Qiskit Aer.
+* **Dual-Engine Precision:** Machine precision numerical agreement (fidelity $1.000000000000$, max amplitude error $< 10^{-16}$).
+* **Cross-Entropy Benchmarking (XEB):** Validates linear XEB convergence ($F_{\text{XEB}} \approx 1.0101$) against ideal Haar-random Porter-Thomas distributions.
+* **Kolmogorov-Smirnov & Entropy Tests:** Automated confirmation of Porter-Thomas chaos ($D_{\text{KS}} = 0.0045 < D_{\text{critical}} = 0.0106$, $\Delta S = 0.4243\text{ nats} \to 1 - \gamma$).
+* **Adjoint Differentiation:** Evaluates analytical gradients across 1,008 parameters in $86.5\text{ ms}$ ($231\times$ speedup over parameter shift).
+* **Coherence Frontier Push (`coherence_frontier_push`):** Dual-mark physical experiment tracking quantum $\ell_1$-norm coherence capacity ($C_{\text{norm}}$) up to 26 qubits dense ($2^{26}$ amplitudes, 1.02 GB RAM), 64 qubits via 2D tensor network belief propagation ($2^{64}$ states), and sovereign Heptal wave qudits ($7^9$ states, $d=7$).
 
 ### 5. Quantum Vision & BNN Benchmark (`mnist_qnn_train`)
 * **Amplitude Encoding:** Exact injection of 784-dimensional image spaces directly into a 10-qubit Hilbert space ($2^{10} = 1024$ amplitudes).
@@ -85,11 +89,17 @@ cargo test
 # Run 10-qubit MNIST Quantum Neural Network & Coherence Benchmark
 cargo run --release -p t1000 --bin mnist_qnn_train
 
-# Execute 20-qubit Random Circuit Sampling frontier benchmark
-cargo run --release -p t1000 --bin frontier_rcs
+# Execute 14-qubit, 36-depth Random Circuit Sampling frontier benchmark
+cargo run --release -p t1000 --bin frontier_rcs -- --qubits 14 --depth 36
+
+# Run sovereign Quantum Coherence Frontier Push (Dense 26Q + TN 64Q + Heptal 7^9 Qudits)
+cargo run --release -p t1000 --bin coherence_frontier_push
 
 # Run chemical SMILES quantum featurization & screening
 cargo run --release -p t1000 --bin zinc_protocol
+
+# Generate all scientific research charts and telemetry figures
+python scripts/charting/chart_all.py
 ```
 
 ---

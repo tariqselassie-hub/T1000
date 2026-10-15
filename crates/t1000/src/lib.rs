@@ -16,6 +16,7 @@ pub mod baselines;
 pub mod compiler;
 pub mod diagonal;
 pub mod feature_map;
+pub mod heptal_wave;
 pub mod ingest;
 pub mod lattice;
 pub mod measurements;
@@ -40,6 +41,7 @@ pub use adjoint::{adjoint_gradient, AdjointResult};
 pub use ansatz::{CircuitAnsatz, DeepQuantumNeuralNetwork, PiPhaseLayer, PreInitCircuit, RademacherPhaseLayer, VariationalQuantumLayer};
 pub use compiler::{CircuitBuilder, CircuitDag, CircuitOp, CompiledCircuit, CompilerTelemetry, ScheduledStage};
 pub use feature_map::{DataEncodingLayer, EncodingKind};
+pub use heptal_wave::{evolve_heptal_wave_cycle, HeptalWaveState};
 pub use ingest::{tokenize_text, CorpusIngestor, IngestedDoc, IngestionTelemetry};
 pub use lattice::{
     extract_lattice_frame, render_lattice_ascii, BoundaryCondition, LatticeConfig, LatticeFrame,

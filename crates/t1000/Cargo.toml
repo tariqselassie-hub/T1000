@@ -24,6 +24,10 @@ thiserror = { workspace = true }
 # =========================================================================
 
 [[bin]]
+name = "coherence_frontier_push"
+path = "src/bin/measurements/coherence_frontier_push.rs"
+
+[[bin]]
 name = "frontier_rcs"
 path = "src/bin/measurements/frontier_rcs.rs"
 
