@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 use crate::state::QuantumState;
 use t1000_core::{interference, POVM};
 use num_complex::Complex64;

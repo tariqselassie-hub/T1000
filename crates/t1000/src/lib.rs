@@ -18,12 +18,11 @@ pub mod diagonal;
 pub mod feature_map;
 pub mod ingest;
 pub mod lattice;
+pub mod measurements;
 pub mod memory;
 pub mod molfeatures;
-pub mod observable;
 pub mod optimizer;
 pub mod parallel;
-pub mod povm_readout;
 pub mod protocol;
 pub mod rcs;
 pub mod simd;
@@ -32,6 +31,10 @@ pub mod state;
 pub mod tensor_network;
 pub mod tiled_butterfly;
 pub mod trainer;
+
+// Backwards-compatible module aliases
+pub use measurements::observable;
+pub use measurements::povm_readout;
 
 pub use adjoint::{adjoint_gradient, AdjointResult};
 pub use ansatz::{CircuitAnsatz, DeepQuantumNeuralNetwork, PiPhaseLayer, PreInitCircuit, RademacherPhaseLayer, VariationalQuantumLayer};
@@ -42,10 +45,9 @@ pub use lattice::{
     extract_lattice_frame, render_lattice_ascii, BoundaryCondition, LatticeConfig, LatticeFrame,
     LatticeTrotterEvolver, LatticeVqeEngine,
 };
+pub use measurements::{PauliObservable, POVMClassifier};
 pub use memory::{MemoryEntry, QuantumAssociativeMemory};
-pub use observable::PauliObservable;
 pub use optimizer::{AdamOptimizer, ParameterShiftEngine};
-pub use povm_readout::POVMClassifier;
 pub use rcs::{DistributionMetrics, RcsConfig, RcsRunReport, RcsSimulator};
 pub use smiles::{
     BondKind, ParsedSmiles, SmilesAtom, SmilesError, SmilesExplorer, SmilesFeatures, SmilesFeaturizer,
