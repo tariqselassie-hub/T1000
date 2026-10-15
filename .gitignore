@@ -29,3 +29,12 @@ results/charts/
 # Benchmark transient visual outputs
 tests/benchmarks/**/*.png
 tests/benchmarks/**/*.html
+
+# Dataset transient renders and raw archives
+data/mimac/*.gif
+data/mimac/*.png
+data/mimac/*.png.png
+data/mimac/*.pdf
+*.zip
+*.tar.gz
+

@@ -141,6 +141,26 @@ def run_all_charts() -> None:
         generated.append(("Search 1: Frontier Pareto Leads", png.name, f"{size_kb:.1f} KB"))
         print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
 
+    # 11. MIMAC Search A: Quantum Activity Cliffs & Magic Switches
+    mimac_json = exp_dir / "mimac_quantum_activity_cliffs.json"
+    if mimac_json.exists():
+        import chart_mimac_activity_cliffs
+        chart_mimac_activity_cliffs.main()
+        png = chart_dir / "mimac_quantum_activity_cliffs.png"
+        size_kb = png.stat().st_size / 1024.0
+        generated.append(("MIMAC: Quantum Activity Cliffs", png.name, f"{size_kb:.1f} KB"))
+        print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
+
+    # 12. Lead #109 Attractor Analysis (Convergence of 3 Magic Switches)
+    lead_json = exp_dir / "lead_109_convergence_analysis.json"
+    if lead_json.exists():
+        import chart_lead_109_attractor
+        chart_lead_109_attractor.main()
+        png = chart_dir / "lead_109_attractor_analysis.png"
+        size_kb = png.stat().st_size / 1024.0
+        generated.append(("Lead #109 Attractor Convergence", png.name, f"{size_kb:.1f} KB"))
+        print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
+
     print("\n╔═══════════════════════════════════════════════════════════════════════════════╗")
     print("║                        RENDERED ARTIFACT MANIFEST                             ║")
     print("╠═════════════════════════════════════╦══════════════════════════════════╦══════════╣")
