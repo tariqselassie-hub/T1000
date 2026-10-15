@@ -25,6 +25,7 @@ from chart_lattice_quench import chart_lattice_quench
 from chart_frontier_rcs import chart_frontier_rcs
 from chart_pc_vs_fpga import chart_pc_vs_fpga
 from chart_fpga_26q import chart_fpga_26q
+from chart_frontier_rcs_fpga import chart_frontier_rcs_fpga
 
 def run_all_charts() -> None:
     ws_root = current_dir.parents[1]
@@ -109,6 +110,16 @@ def run_all_charts() -> None:
         print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
     else:
         print(f" [!] Skipped 26-Qubit FPGA Telemetry: {fpga_26q_json.name} not found.")
+
+    # 8. 14-Qubit 36-Depth Frontier RCS FPGA Hardware Benchmark
+    rcs_fpga_json = exp_dir / "frontier_rcs_fpga_results.json"
+    if rcs_fpga_json.exists():
+        png = chart_frontier_rcs_fpga(rcs_fpga_json, chart_dir)
+        size_kb = png.stat().st_size / 1024.0
+        generated.append(("14Q 36D RCS FPGA Benchmark", png.name, f"{size_kb:.1f} KB"))
+        print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
+    else:
+        print(f" [!] Skipped RCS FPGA Benchmark: {rcs_fpga_json.name} not found.")
 
     print("\n╔═══════════════════════════════════════════════════════════════════════════════╗")
     print("║                        RENDERED ARTIFACT MANIFEST                             ║")

@@ -1,0 +1,2 @@
+qubits,depth,num_runs,pc_cpu_ms,fpga_silicon_ms,fpga_wall_ms,silicon_speedup,wall_speedup,throughput_gates_sec
+14,36,100,62.340,0.3686,1.0492,169.1,59.4,960165
