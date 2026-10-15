@@ -88,10 +88,12 @@ fpga/1000_qpu/
 * **Port Rule:** Never probe `COM3`. `COM3` on this host is mapped to the internal motherboard/Intel AMT controller; `COM6` is the physical USB connection to the Digilent FPGA board.
 
 ### Binary Protocol
-| Command | Host Opcode | FPGA Response | Description |
-| :--- | :--- | :--- | :--- |
-| **Ping / Handshake** | `0xAA` | `0x10` | Confirms QPU silicon is online and ready. |
-| **Run Layer Pass** | `0x10` | `0xEE` | Executes 1,024-cycle 14-qubit butterfly pass and flips ping-pong bank. |
+| Command | Host Opcode | Payload | FPGA Response | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| **Ping / Handshake** | `0xAA` | None | `0x10` | Confirms QPU silicon is online and ready. |
+| **Single Layer Pass** | `0x10` | None | `0xEE` | Executes 1,024-cycle 14-qubit butterfly pass and flips ping-pong bank. |
+| **Autonomous Multi-Layer** | `0x20` | `[depth]` | `0xEE` | Executes $D$ consecutive layers autonomously in BRAM at $100\text{ MHz}$ without intermediate UART pauses. |
+| **Quantum Chaos Stream** | `0x30` | `[depth, count_L, count_H]` | `count * 32B + 0xEE` | Continuously evolves $D$ layers of chaos, harvests 256-bit cryptographic entropy seeds, and streams over UART. |
 
 ---
 
@@ -101,21 +103,31 @@ fpga/1000_qpu/
 ```bash
 python scripts/fpga/test_1000_qpu.py
 ```
-* **Hardware Ping Latency:** $606.50\,\mu\text{s}$ round-trip.
-* **Single-Layer Execution:** $888.30\,\mu\text{s}$ (Host Send -> $10.24\,\mu\text{s}$ Silicon Evolution -> Host ACK).
-* **100-Layer Burst Throughput:** $27,995\text{ quantum gates/second}$ with **$100\%$ reliability (0 dropped packets)**.
+* **Hardware Ping Latency:** $425.70\,\mu\text{s}$ round-trip.
+* **Single-Layer Execution:** $960.40\,\mu\text{s}$ (Host Send -> $10.24\,\mu\text{s}$ Silicon Evolution -> Host ACK).
+* **100-Layer Burst Throughput:** $28,021\text{ quantum gates/second}$ with **$100\%$ reliability (0 dropped packets)**.
 
 ### 6.2 PC (AVX2+FMA) vs FPGA 26-Qubit Scaling Comparison
 Run the comparative scaling benchmark:
 ```bash
 python scripts/fpga/bench_pc_vs_fpga_scaling.py
 ```
-
 * **Compute Speedup:** Pure silicon execution on the Artix-7 is **$169.1\times$ faster** than the Intel Core Ultra 7 265 CPU at $N = 14$ ($10.24\,\mu\text{s}$ vs $1,731.5\,\mu\text{s}$).
 * **Numerical Precision Boundary:**
   * For $N \le 16$, Q1.15 fixed-point arithmetic is mathematically lossless ($|\langle \psi_{\text{PC}} | \psi_{\text{FPGA}} \rangle|^2 = \mathbf{99.73\%}$, Linear XEB $F_{XEB} = \mathbf{0.9958}$ vs $\mathbf{0.9951}$).
-  * For $N \ge 18$, fixed-point truncation noise acts as effective NISQ depolarizing noise ($\sim 5\text{--}8\%$), defining the physical boundary where block floating-point or double precision is required.
+  * For $N \ge 18$, fixed-point truncation noise acts as effective NISQ depolarizing noise ($\sim 5\text{--}8\%$).
 * **Energy Efficiency:** The FPGA draws $\sim 0.25\text{ W}$ of dynamic power, delivering a $\sim 40,000\times$ energy efficiency advantage over host CPU SIMD passes.
+
+### 6.3 Autonomous Multi-Layer & Quantum Chaos Streaming (`scripts/fpga/test_chaos_streaming.py`)
+```bash
+python scripts/fpga/test_chaos_streaming.py
+```
+* **Autonomous 100-Layer Evolution:** Completes 100 consecutive layers in **$2.006\text{ ms}$** (**$49,845\text{ layers/second}$**), delivering a **$50\times$ speedup** over layer-by-layer UART handshakes.
+* **Continuous Quantum Chaos Seed Generation:** Sustained throughput of **$4,179.5\text{ 256-bit seeds/second}$** ($133.7\text{ KB/second}$).
+* **19.0-Second Continuous Harvest:**
+  * **$5,000\text{ 256-bit cryptographic quantum seeds}$** ($160,001\text{ bytes}$).
+  * **$60,000\text{ quantum layers}$** evolved in silicon ($1,680,000\text{ quantum gates}$).
+  * **$86,952\text{ quantum gates/second}$** sustained operational rate.
 
 ---
 
