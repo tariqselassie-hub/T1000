@@ -1,0 +1,117 @@
+[package]
+name = "t1000"
+version = "0.1.0"
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "T-1000 Quantum Neural Network: Shape-shifting, high-performance AVX2 quantum simulation, circuit compilation, and molecular SMILES latent exploration."
+
+[dependencies]
+t1000_core = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+num-complex = { workspace = true }
+rand = { workspace = true }
+rand_chacha = { workspace = true }
+rayon = { workspace = true }
+thiserror = { workspace = true }
+
+[[bin]]
+name = "corpus_qnn_ingest"
+path = "src/bin/corpus_qnn_ingest.rs"
+
+[[bin]]
+name = "qnn_bench"
+path = "src/bin/qnn_bench.rs"
+
+[[bin]]
+name = "qnn_train"
+path = "src/bin/qnn_train.rs"
+
+[[bin]]
+name = "corpus_vqc_train"
+path = "src/bin/corpus_vqc_train.rs"
+
+[[bin]]
+name = "frontier_rcs"
+path = "src/bin/frontier_rcs.rs"
+
+[[bin]]
+name = "scale_26_qubits"
+path = "src/bin/scale_26_qubits.rs"
+
+[[bin]]
+name = "scale_36_qubits_tn"
+path = "src/bin/scale_36_qubits_tn.rs"
+
+[[bin]]
+name = "dag_compiler_bench"
+path = "src/bin/dag_compiler_bench.rs"
+
+[[bin]]
+name = "xeb_scaling_bench"
+path = "src/bin/xeb_scaling_bench.rs"
+
+[[bin]]
+name = "grid_qnn_bench"
+path = "src/bin/grid_qnn_bench.rs"
+
+[[bin]]
+name = "zinc_qnn_bench"
+path = "src/bin/zinc_qnn_bench.rs"
+
+[[bin]]
+name = "zinc_qnn_train"
+path = "src/bin/zinc_qnn_train.rs"
+
+[[bin]]
+name = "zinc_qnn_20ep_eval"
+path = "src/bin/zinc_qnn_20ep_eval.rs"
+
+[[bin]]
+name = "zinc_qnn_12qubit_hybrid"
+path = "src/bin/zinc_qnn_12qubit_hybrid.rs"
+
+[[bin]]
+name = "zinc_qnn_12qubit_fused"
+path = "src/bin/zinc_qnn_12qubit_fused.rs"
+
+[[bin]]
+name = "zinc_250k_screen"
+path = "src/bin/zinc_250k_screen.rs"
+
+[[bin]]
+name = "eval_single_mol"
+path = "src/bin/eval_single_mol.rs"
+
+[[bin]]
+name = "zinc_qnn_12qubit_zz_correlators"
+path = "src/bin/zinc_qnn_12qubit_zz_correlators.rs"
+
+[[bin]]
+name = "zinc_qnn_12qubit_midcircuit"
+path = "src/bin/zinc_qnn_12qubit_midcircuit.rs"
+
+[[bin]]
+name = "zinc_qnn_12qubit_reuploading"
+path = "src/bin/zinc_qnn_12qubit_reuploading.rs"
+
+[[bin]]
+name = "zinc_classical_baselines"
+path = "src/bin/zinc_classical_baselines.rs"
+
+[[bin]]
+name = "zinc_protocol"
+path = "src/bin/zinc_protocol.rs"
+
+[[bin]]
+name = "qnn_protocol_train"
+path = "src/bin/qnn_protocol_train.rs"
+
+[[bin]]
+name = "qnn_controls"
+path = "src/bin/qnn_controls.rs"
+
+[[bin]]
+name = "mnist_qnn_train"
+path = "src/bin/mnist_qnn_train.rs"
