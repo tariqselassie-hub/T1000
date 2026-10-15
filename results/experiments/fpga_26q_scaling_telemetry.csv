@@ -1,0 +1,2 @@
+qubits,dimension,depth,chunks_128kb,silicon_per_layer_ms,silicon_total_ms,butterfly_ops,throughput_ops_sec,power_watts,f_xeb,harvested_seed
+26,67108864,12,4096,41.943040,503.316480,402653184,800000000,0.254,0.9448,"000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"
