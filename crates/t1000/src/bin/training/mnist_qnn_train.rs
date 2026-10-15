@@ -424,44 +424,39 @@ fn main() {
             let (batch_loss, batch_correct, batch_ansatz_grad, batch_head_grad) = batch
                 .par_iter()
                 .map(|(input_state, label)| {
-                    // 1. Forward pass through ansatz
-                    let mut phi = input_state.clone();
-                    ansatz.forward_in_place(&mut phi, &ansatz_weights);
-
-                    // 2. Measure observables
-                    let exps: Vec<f64> = observables.iter().map(|o| o.expectation_value(&phi)).collect();
-
-                    // 3. Forward pass through linear head
-                    let logits = head.forward(&exps);
-
-                    // 4. Softmax loss and gradients
-                    let (loss, d_logits, pred) = softmax_cross_entropy(&logits, *label);
-                    let correct = if pred == *label { 1 } else { 0 };
-
-                    // 5. Backprop into linear head
+                    let mut sample_loss = 0.0;
+                    let mut sample_correct = 0;
                     let mut d_head = vec![0.0; n_head_params];
-                    for c in 0..N_CLASSES {
-                        let row = c * n_obs;
-                        for q in 0..n_obs {
-                            d_head[row + q] = d_logits[c] * exps[q];
-                        }
-                        d_head[N_CLASSES * n_obs + c] = d_logits[c]; // bias grad
-                    }
 
-                    // 6. Backprop into observable expectations: dL/d<O_q> = sum_c d_logits[c] * W_{c,q}
-                    let mut d_exps = vec![0.0; n_obs];
-                    for q in 0..n_obs {
-                        let mut sum = 0.0;
+                    // Unified single-pass Adjoint Differentiation:
+                    // Evaluates forward evolution, observable expectations, classical linear head backprop,
+                    // and reverse-mode adjoint circuit gradients in a single unified pass.
+                    let adj = adjoint_gradient(&ansatz, input_state, &ansatz_weights, &observables, |exps| {
+                        let logits = head.forward(exps);
+                        let (loss, d_logits, pred) = softmax_cross_entropy(&logits, *label);
+                        sample_loss = loss;
+                        sample_correct = if pred == *label { 1 } else { 0 };
+
                         for c in 0..N_CLASSES {
-                            sum += d_logits[c] * head.weights[c * n_obs + q];
+                            let row = c * n_obs;
+                            for q in 0..n_obs {
+                                d_head[row + q] = d_logits[c] * exps[q];
+                            }
+                            d_head[N_CLASSES * n_obs + c] = d_logits[c];
                         }
-                        d_exps[q] = sum;
-                    }
 
-                    // 7. Adjoint differentiation of quantum circuit
-                    let adj = adjoint_gradient(&ansatz, input_state, &ansatz_weights, &observables, |_| d_exps);
+                        let mut d_exps = vec![0.0; n_obs];
+                        for q in 0..n_obs {
+                            let mut sum = 0.0;
+                            for c in 0..N_CLASSES {
+                                sum += d_logits[c] * head.weights[c * n_obs + q];
+                            }
+                            d_exps[q] = sum;
+                        }
+                        d_exps
+                    });
 
-                    (loss, correct, adj.gradient, d_head)
+                    (sample_loss, sample_correct, adj.gradient, d_head)
                 })
                 .reduce(
                     || (0.0, 0, vec![0.0; n_ansatz_params], vec![0.0; n_head_params]),
