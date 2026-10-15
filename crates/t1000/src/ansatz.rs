@@ -175,6 +175,29 @@ impl PiPhaseLayer {
 /// Type alias for bare-metal Walsh-Rademacher phase operations.
 pub type RademacherPhaseLayer = PiPhaseLayer;
 
+/// Pre-initialization functional applied to Hilbert space prior to the variational ansatz layers.
+/// Modeled after Weed / Qrack pre-quantum functionals (BELL_GHZ, ALT_BELL_GHZ, QFT, IQFT).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub enum PreInitCircuit {
+    /// Zero pre-initialization; state starts in |0...0> or caller-provided input.
+    #[default]
+    None,
+    /// Bipolar ±π Walsh-Rademacher phase scramble.
+    RademacherPi,
+    /// Canonical Greenberger-Horne-Zeilinger maximally entangled superposition:
+    /// H(0) followed by CNOT chain (0->1, 1->2, ..., n-2->n-1).
+    /// Prepares 1/√2 (|00...0> + |11...1>).
+    BellGhz,
+    /// Alternate Greenberger-Horne-Zeilinger superposition with alternating parity:
+    /// H(0) followed by AntiCNOT chain (0-controlled NOT).
+    /// Prepares 1/√2 (|0101...> + |1010...>).
+    AltBellGhz,
+    /// Full register Quantum Fourier Transform (QFT).
+    Qft,
+    /// Full register Inverse Quantum Fourier Transform (IQFT).
+    Iqft,
+}
+
 /// Canonical Hardware-Efficient Parameterized Circuit Ansatz (W(θ)).
 /// Alternates Single-Qubit Rotations (Ry, Rz) with Entanglement Blocks (CZ / CNOT).
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -184,6 +207,7 @@ pub struct CircuitAnsatz {
     pub depth: usize,
     pub weights: Vec<f64>,
     pub use_pi_layer: bool,
+    pub pre_init: PreInitCircuit,
 }
 
 impl CircuitAnsatz {
@@ -212,12 +236,68 @@ impl CircuitAnsatz {
             depth,
             weights,
             use_pi_layer: false,
+            pre_init: PreInitCircuit::None,
         }
     }
 
     pub fn with_pi_layer(mut self, enabled: bool) -> Self {
         self.use_pi_layer = enabled;
+        if enabled {
+            self.pre_init = PreInitCircuit::RademacherPi;
+        } else if self.pre_init == PreInitCircuit::RademacherPi {
+            self.pre_init = PreInitCircuit::None;
+        }
         self
+    }
+
+    pub fn with_pre_init(mut self, pre_init: PreInitCircuit) -> Self {
+        self.use_pi_layer = pre_init == PreInitCircuit::RademacherPi;
+        self.pre_init = pre_init;
+        self
+    }
+
+    pub fn with_bell_ghz(self) -> Self {
+        self.with_pre_init(PreInitCircuit::BellGhz)
+    }
+
+    pub fn with_alt_bell_ghz(self) -> Self {
+        self.with_pre_init(PreInitCircuit::AltBellGhz)
+    }
+
+    pub fn with_qft(self) -> Self {
+        self.with_pre_init(PreInitCircuit::Qft)
+    }
+
+    pub fn with_iqft(self) -> Self {
+        self.with_pre_init(PreInitCircuit::Iqft)
+    }
+
+    /// In-place pre-initialization functional applied to statevector prior to variational layers:
+    pub fn apply_pre_init(&self, state: &mut QuantumState) {
+        match self.pre_init {
+            PreInitCircuit::None => {
+                if self.use_pi_layer {
+                    let pi_layer = PiPhaseLayer::new(self.n_qubits);
+                    pi_layer.forward_in_place(state);
+                }
+            }
+            PreInitCircuit::RademacherPi => {
+                let pi_layer = PiPhaseLayer::new(self.n_qubits);
+                pi_layer.forward_in_place(state);
+            }
+            PreInitCircuit::BellGhz => {
+                apply_bell_ghz(state, self.n_qubits);
+            }
+            PreInitCircuit::AltBellGhz => {
+                apply_alt_bell_ghz(state, self.n_qubits);
+            }
+            PreInitCircuit::Qft => {
+                apply_qft(state, self.n_qubits);
+            }
+            PreInitCircuit::Iqft => {
+                apply_iqft(state, self.n_qubits);
+            }
+        }
     }
 
     pub fn param_count(&self) -> usize {
@@ -235,10 +315,7 @@ impl CircuitAnsatz {
         assert_eq!(self.dim, state.dim);
         assert_eq!(weights.len(), self.param_count());
 
-        if self.use_pi_layer {
-            let pi_layer = PiPhaseLayer::new(self.n_qubits);
-            pi_layer.forward_in_place(state);
-        }
+        self.apply_pre_init(state);
 
         for layer in 0..self.depth {
             self.forward_layer_into(layer, weights, state);
@@ -265,10 +342,7 @@ impl CircuitAnsatz {
         let expected_len = 2 * self.n_qubits * (self.depth - 1) + self.n_qubits;
         assert_eq!(pruned_weights.len(), expected_len);
 
-        if self.use_pi_layer {
-            let pi_layer = PiPhaseLayer::new(self.n_qubits);
-            pi_layer.forward_in_place(state);
-        }
+        self.apply_pre_init(state);
 
         for layer in 0..(self.depth - 1) {
             self.forward_layer_into(layer, pruned_weights, state);
@@ -289,10 +363,7 @@ impl CircuitAnsatz {
         assert_eq!(self.dim, state.dim);
         self.assert_full_layer_weights(pruned_weights);
 
-        if self.use_pi_layer {
-            let pi_layer = PiPhaseLayer::new(self.n_qubits);
-            pi_layer.forward_in_place(state);
-        }
+        self.apply_pre_init(state);
 
         for layer in 0..(self.depth - 1) {
             self.forward_layer_into(layer, pruned_weights, state);
@@ -313,10 +384,7 @@ impl CircuitAnsatz {
 
         out.copy_from(state);
 
-        if self.use_pi_layer {
-            let pi_layer = PiPhaseLayer::new(self.n_qubits);
-            pi_layer.forward_in_place(out);
-        }
+        self.apply_pre_init(out);
 
         // Full layers 0..(depth - 1)
         for layer in 0..(self.depth - 1) {
@@ -343,10 +411,7 @@ impl CircuitAnsatz {
 
         out.copy_from(state);
 
-        if self.use_pi_layer {
-            let pi_layer = PiPhaseLayer::new(self.n_qubits);
-            pi_layer.forward_in_place(out);
-        }
+        self.apply_pre_init(out);
 
         // Full layers 0..(depth - 1)
         for layer in 0..(self.depth - 1) {
@@ -545,10 +610,7 @@ impl CircuitAnsatz {
         self.assert_readout_width(z_final.len());
         out_state.copy_from(state);
 
-        if self.use_pi_layer {
-            let pi_layer = PiPhaseLayer::new(self.n_qubits);
-            pi_layer.forward_in_place(out_state);
-        }
+        self.apply_pre_init(out_state);
 
         // Layer 0
         self.forward_layer_into(0, pruned_weights, out_state);
@@ -604,10 +666,7 @@ impl CircuitAnsatz {
         self.assert_multi_layer_depth();
         self.assert_pruned_weights(pruned_weights);
         self.assert_readout_width(z_final.len());
-        if self.use_pi_layer {
-            let pi_layer = PiPhaseLayer::new(self.n_qubits);
-            pi_layer.forward_in_place(state);
-        }
+        self.apply_pre_init(state);
 
         // Layer 0 evolution
         self.forward_layer_into(0, pruned_weights, state);
@@ -661,10 +720,7 @@ impl CircuitAnsatz {
         self.assert_multi_layer_depth();
         self.assert_pruned_weights(pruned_weights);
         self.assert_readout_width(z_final.len());
-        if self.use_pi_layer {
-            let pi_layer = PiPhaseLayer::new(self.n_qubits);
-            pi_layer.forward_in_place(state);
-        }
+        self.apply_pre_init(state);
 
         // Layer 0 evolution
         self.forward_layer_into(0, pruned_weights, state);
@@ -804,11 +860,37 @@ impl CircuitAnsatz {
         assert_eq!(weights.len(), self.param_count());
         let mut builder = crate::compiler::CircuitBuilder::new(self.n_qubits);
 
-        if self.use_pi_layer {
-            let signs: Vec<f64> = (0..self.n_qubits)
-                .map(|i| if i % 2 == 0 { 1.0 } else { -1.0 })
-                .collect();
-            builder.rademacher(signs);
+        match self.pre_init {
+            PreInitCircuit::None => {
+                if self.use_pi_layer {
+                    let signs: Vec<f64> = (0..self.n_qubits)
+                        .map(|i| if i % 2 == 0 { 1.0 } else { -1.0 })
+                        .collect();
+                    builder.rademacher(signs);
+                }
+            }
+            PreInitCircuit::RademacherPi => {
+                let signs: Vec<f64> = (0..self.n_qubits)
+                    .map(|i| if i % 2 == 0 { 1.0 } else { -1.0 })
+                    .collect();
+                builder.rademacher(signs);
+            }
+            PreInitCircuit::BellGhz => {
+                let qubits: Vec<usize> = (0..self.n_qubits).collect();
+                builder.bell_ghz(&qubits);
+            }
+            PreInitCircuit::AltBellGhz => {
+                let qubits: Vec<usize> = (0..self.n_qubits).collect();
+                builder.alt_bell_ghz(&qubits);
+            }
+            PreInitCircuit::Qft => {
+                let qubits: Vec<usize> = (0..self.n_qubits).collect();
+                builder.qft(&qubits);
+            }
+            PreInitCircuit::Iqft => {
+                let qubits: Vec<usize> = (0..self.n_qubits).collect();
+                builder.iqft(&qubits);
+            }
         }
 
         let mut p_idx = 0;
@@ -855,5 +937,190 @@ pub(crate) fn entangling_pairs(n_qubits: usize, layer_idx: usize) -> impl Iterat
 #[inline(always)]
 fn apply_single_qubit_ry(state: &mut QuantumState, qubit: usize, theta: f64) {
     crate::simd::apply_ry_kernel(&mut state.real, &mut state.imag, qubit, theta);
+}
+
+/// Prepares canonical Greenberger-Horne-Zeilinger state 1/√2 (|00...0> + |11...1>) on statevector.
+pub fn apply_bell_ghz(state: &mut QuantumState, n_qubits: usize) {
+    if n_qubits == 0 {
+        return;
+    }
+    crate::compiler::executor::apply_hadamard_op(&mut state.real, &mut state.imag, 0);
+    for i in 1..n_qubits {
+        crate::compiler::executor::apply_cnot_op(&mut state.real, &mut state.imag, i - 1, i);
+    }
+}
+
+/// Prepares alternate Greenberger-Horne-Zeilinger state 1/√2 (|0101...> + |1010...>) on statevector.
+pub fn apply_alt_bell_ghz(state: &mut QuantumState, n_qubits: usize) {
+    if n_qubits == 0 {
+        return;
+    }
+    crate::compiler::executor::apply_hadamard_op(&mut state.real, &mut state.imag, 0);
+    for i in 1..n_qubits {
+        crate::compiler::executor::apply_anticnot_op(&mut state.real, &mut state.imag, i - 1, i);
+    }
+}
+
+/// Performs full register Quantum Fourier Transform (QFT) in-place on statevector.
+pub fn apply_qft(state: &mut QuantumState, n_qubits: usize) {
+    if n_qubits == 0 {
+        return;
+    }
+    for j in 0..n_qubits {
+        crate::compiler::executor::apply_hadamard_op(&mut state.real, &mut state.imag, j);
+        for k in (j + 1)..n_qubits {
+            let theta = std::f64::consts::PI / (1usize << (k - j)) as f64;
+            crate::compiler::executor::apply_controlled_phase_op(
+                &mut state.real,
+                &mut state.imag,
+                k,
+                j,
+                theta,
+            );
+        }
+    }
+    for j in 0..(n_qubits / 2) {
+        crate::compiler::executor::apply_swap_op(
+            &mut state.real,
+            &mut state.imag,
+            j,
+            n_qubits - 1 - j,
+        );
+    }
+}
+
+/// Performs full register Inverse Quantum Fourier Transform (IQFT) in-place on statevector.
+pub fn apply_iqft(state: &mut QuantumState, n_qubits: usize) {
+    if n_qubits == 0 {
+        return;
+    }
+    for j in 0..(n_qubits / 2) {
+        crate::compiler::executor::apply_swap_op(
+            &mut state.real,
+            &mut state.imag,
+            j,
+            n_qubits - 1 - j,
+        );
+    }
+    for j in (0..n_qubits).rev() {
+        for k in ((j + 1)..n_qubits).rev() {
+            let theta = -std::f64::consts::PI / (1usize << (k - j)) as f64;
+            crate::compiler::executor::apply_controlled_phase_op(
+                &mut state.real,
+                &mut state.imag,
+                k,
+                j,
+                theta,
+            );
+        }
+        crate::compiler::executor::apply_hadamard_op(&mut state.real, &mut state.imag, j);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_bell_ghz_preparation() {
+        let n_qubits = 4;
+        let mut state = QuantumState::ground(1 << n_qubits);
+        apply_bell_ghz(&mut state, n_qubits);
+
+        let inv_sqrt2 = std::f64::consts::FRAC_1_SQRT_2;
+        let last_idx = (1 << n_qubits) - 1;
+
+        assert!((state.real[0] - inv_sqrt2).abs() < 1e-12);
+        assert!((state.real[last_idx] - inv_sqrt2).abs() < 1e-12);
+
+        for i in 1..last_idx {
+            assert!(state.real[i].abs() < 1e-12);
+            assert!(state.imag[i].abs() < 1e-12);
+        }
+    }
+
+    #[test]
+    fn test_alt_bell_ghz_preparation() {
+        let n_qubits = 4;
+        let mut state = QuantumState::ground(1 << n_qubits);
+        apply_alt_bell_ghz(&mut state, n_qubits);
+
+        // Branch 0 starts at 0 -> 1 -> 0 -> 1 -> binary 0101_2 = 5
+        // Branch 1 starts at 1 -> 0 -> 1 -> 0 -> binary 1010_2 = 10
+        let inv_sqrt2 = std::f64::consts::FRAC_1_SQRT_2;
+        let mut branch0 = 0usize;
+        let mut branch1 = 0usize;
+        let mut b0 = 0usize;
+        let mut b1 = 1usize;
+        for q in 0..n_qubits {
+            branch0 |= b0 << q;
+            branch1 |= b1 << q;
+            b0 = 1 - b0;
+            b1 = 1 - b1;
+        }
+
+        assert!((state.real[branch0] - inv_sqrt2).abs() < 1e-12);
+        assert!((state.real[branch1] - inv_sqrt2).abs() < 1e-12);
+
+        for i in 0..(1 << n_qubits) {
+            if i != branch0 && i != branch1 {
+                assert!(state.real[i].abs() < 1e-12);
+                assert!(state.imag[i].abs() < 1e-12);
+            }
+        }
+    }
+
+    #[test]
+    fn test_qft_iqft_roundtrip_identity() {
+        let n_qubits = 6;
+        let dim = 1 << n_qubits;
+        let mut state = QuantumState::new(dim);
+
+        // Initial arbitrary superposition state
+        for i in 0..dim {
+            state.real[i] = ((i * 7 + 3) as f64).sin();
+            state.imag[i] = ((i * 11 + 5) as f64).cos();
+        }
+        state.normalize();
+
+        let original = state.clone();
+
+        // Apply QFT then IQFT
+        apply_qft(&mut state, n_qubits);
+        apply_iqft(&mut state, n_qubits);
+
+        let fidelity = state.fidelity(&original);
+        assert!(
+            (fidelity - 1.0).abs() < 1e-12,
+            "QFT -> IQFT fidelity must be 1.0, got {}",
+            fidelity
+        );
+    }
+
+    #[test]
+    fn test_circuit_ansatz_with_pre_init_dag_equivalence() {
+        let n_qubits = 5;
+        let depth = 2;
+        let ansatz = CircuitAnsatz::new(n_qubits, depth).with_bell_ghz();
+        let weights = ansatz.weights.clone();
+
+        let input = QuantumState::new(1 << n_qubits);
+
+        // 1. Direct in-place evolution
+        let mut state_direct = input.clone();
+        ansatz.forward_in_place(&mut state_direct, &weights);
+
+        // 2. DAG compiled evolution
+        let compiled = ansatz.compile(&weights);
+        let mut state_compiled = input.clone();
+        compiled.execute(&mut state_compiled);
+
+        let fidelity = state_direct.fidelity(&state_compiled);
+        assert!(
+            (fidelity - 1.0).abs() < 1e-12,
+            "Direct and DAG compiled evolution must match, got fidelity {}",
+            fidelity
+        );
+    }
 }
 

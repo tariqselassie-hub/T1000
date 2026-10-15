@@ -46,6 +46,19 @@ impl QuantumState {
         }
     }
 
+    /// Initialize computational basis ground state |0...0>:
+    /// Real amplitude of index 0 is 1.0; all others are 0.0.
+    pub fn ground(dim: usize) -> Self {
+        assert_valid_dim(dim);
+        let mut real = vec![0.0; dim];
+        real[0] = 1.0;
+        Self {
+            dim,
+            real,
+            imag: vec![0.0; dim],
+        }
+    }
+
     /// Construct state from interleaved (real, imag) amplitude slice:
     pub fn from_amplitudes(dim: usize, amps: &[(f64, f64)]) -> Self {
         assert_valid_dim(dim);

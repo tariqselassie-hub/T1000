@@ -129,6 +129,31 @@ impl CompiledCircuit {
                             *target,
                         );
                     }
+                    CircuitOp::AntiCNOT { control, target } => {
+                        apply_anticnot_op(
+                            &mut state.real,
+                            &mut state.imag,
+                            *control,
+                            *target,
+                        );
+                    }
+                    CircuitOp::SWAP { q1, q2 } => {
+                        apply_swap_op(
+                            &mut state.real,
+                            &mut state.imag,
+                            *q1,
+                            *q2,
+                        );
+                    }
+                    CircuitOp::ControlledPhase { control, target, theta } => {
+                        apply_controlled_phase_op(
+                            &mut state.real,
+                            &mut state.imag,
+                            *control,
+                            *target,
+                            *theta,
+                        );
+                    }
                     CircuitOp::RademacherPhase { signs } => {
                         crate::simd::apply_rademacher_phase_kernel(
                             &mut state.real,
@@ -203,6 +228,106 @@ pub fn apply_cnot_op(real: &mut [f64], imag: &mut [f64], control: usize, target:
             imag[i] = i1;
             real[partner] = r0;
             imag[partner] = i0;
+        }
+    }
+}
+
+/// Applies Hadamard gate: H = (1/√2) [1, 1; 1, -1]
+pub fn apply_hadamard_op(real: &mut [f64], imag: &mut [f64], qubit: usize) {
+    let n_qubits = crate::simd::assert_statevector(real, imag);
+    crate::simd::assert_qubit(qubit, n_qubits);
+    let dim = real.len();
+    let mask = 1 << qubit;
+    let inv_sqrt2 = std::f64::consts::FRAC_1_SQRT_2;
+
+    for i in 0..dim {
+        if (i & mask) == 0 {
+            let partner = i | mask;
+            let r0 = real[i];
+            let i0 = imag[i];
+            let r1 = real[partner];
+            let i1 = imag[partner];
+
+            real[i] = (r0 + r1) * inv_sqrt2;
+            imag[i] = (i0 + i1) * inv_sqrt2;
+            real[partner] = (r0 - r1) * inv_sqrt2;
+            imag[partner] = (i0 - i1) * inv_sqrt2;
+        }
+    }
+}
+
+/// Applies AntiCNOT gate (flips target if control is 0).
+pub fn apply_anticnot_op(real: &mut [f64], imag: &mut [f64], control: usize, target: usize) {
+    let n_qubits = crate::simd::assert_statevector(real, imag);
+    crate::simd::assert_qubit_pair(control, target, n_qubits);
+    let dim = real.len();
+    let ctrl_mask = 1 << control;
+    let target_mask = 1 << target;
+
+    for i in 0..dim {
+        if (i & ctrl_mask) == 0 && (i & target_mask) == 0 {
+            let partner = i | target_mask;
+            let r0 = real[i];
+            let i0 = imag[i];
+            let r1 = real[partner];
+            let i1 = imag[partner];
+
+            real[i] = r1;
+            imag[i] = i1;
+            real[partner] = r0;
+            imag[partner] = i0;
+        }
+    }
+}
+
+/// Applies two-qubit SWAP gate.
+pub fn apply_swap_op(real: &mut [f64], imag: &mut [f64], q1: usize, q2: usize) {
+    let n_qubits = crate::simd::assert_statevector(real, imag);
+    crate::simd::assert_qubit_pair(q1, q2, n_qubits);
+    let dim = real.len();
+    let m1 = 1 << q1;
+    let m2 = 1 << q2;
+
+    for i in 0..dim {
+        if (i & m1) != 0 && (i & m2) == 0 {
+            let partner = (i ^ m1) | m2;
+            let r0 = real[i];
+            let i0 = imag[i];
+            let r1 = real[partner];
+            let i1 = imag[partner];
+
+            real[i] = r1;
+            imag[i] = i1;
+            real[partner] = r0;
+            imag[partner] = i0;
+        }
+    }
+}
+
+/// Applies two-qubit Controlled-Phase gate: multiplies state |11> by exp(i theta).
+pub fn apply_controlled_phase_op(
+    real: &mut [f64],
+    imag: &mut [f64],
+    control: usize,
+    target: usize,
+    theta: f64,
+) {
+    let n_qubits = crate::simd::assert_statevector(real, imag);
+    crate::simd::assert_qubit_pair(control, target, n_qubits);
+    let dim = real.len();
+    let ctrl_mask = 1 << control;
+    let target_mask = 1 << target;
+    let both_mask = ctrl_mask | target_mask;
+
+    let cos_t = theta.cos();
+    let sin_t = theta.sin();
+
+    for i in 0..dim {
+        if (i & both_mask) == both_mask {
+            let r = real[i];
+            let im = imag[i];
+            real[i] = r * cos_t - im * sin_t;
+            imag[i] = r * sin_t + im * cos_t;
         }
     }
 }

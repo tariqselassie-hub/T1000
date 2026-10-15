@@ -44,7 +44,11 @@ impl ScheduledStage {
                 CircuitOp::Ry { .. } | CircuitOp::Rz { .. } | CircuitOp::Unitary1Q { .. } => {
                     has_1q = true;
                 }
-                CircuitOp::CZ { .. } | CircuitOp::CNOT { .. } => {
+                CircuitOp::CZ { .. }
+                | CircuitOp::CNOT { .. }
+                | CircuitOp::AntiCNOT { .. }
+                | CircuitOp::SWAP { .. }
+                | CircuitOp::ControlledPhase { .. } => {
                     has_2q = true;
                 }
                 CircuitOp::RademacherPhase { .. } => {

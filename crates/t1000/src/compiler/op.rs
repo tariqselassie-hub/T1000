@@ -151,6 +151,12 @@ pub enum CircuitOp {
     CZ { q1: usize, q2: usize },
     /// Two-qubit CNOT (Controlled-NOT) gate
     CNOT { control: usize, target: usize },
+    /// Two-qubit AntiCNOT (0-controlled NOT) gate (flips target if control is 0)
+    AntiCNOT { control: usize, target: usize },
+    /// Two-qubit SWAP gate
+    SWAP { q1: usize, q2: usize },
+    /// Two-qubit Controlled-Phase gate: diag(1, 1, 1, exp(i theta))
+    ControlledPhase { control: usize, target: usize, theta: f64 },
     /// Multi-qubit Walsh-Rademacher ±π diagonal phase layer
     RademacherPhase { signs: Vec<f64> },
 }
@@ -162,8 +168,10 @@ impl CircuitOp {
             CircuitOp::Ry { qubit, .. }
             | CircuitOp::Rz { qubit, .. }
             | CircuitOp::Unitary1Q { qubit, .. } => vec![*qubit],
-            CircuitOp::CZ { q1, q2 } => vec![*q1, *q2],
-            CircuitOp::CNOT { control, target } => vec![*control, *target],
+            CircuitOp::CZ { q1, q2 } | CircuitOp::SWAP { q1, q2 } => vec![*q1, *q2],
+            CircuitOp::CNOT { control, target }
+            | CircuitOp::AntiCNOT { control, target }
+            | CircuitOp::ControlledPhase { control, target, .. } => vec![*control, *target],
             CircuitOp::RademacherPhase { signs } => (0..signs.len()).collect(),
         }
     }
@@ -174,8 +182,10 @@ impl CircuitOp {
             CircuitOp::Ry { qubit, .. }
             | CircuitOp::Rz { qubit, .. }
             | CircuitOp::Unitary1Q { qubit, .. } => *qubit == q,
-            CircuitOp::CZ { q1, q2 } => *q1 == q || *q2 == q,
-            CircuitOp::CNOT { control, target } => *control == q || *target == q,
+            CircuitOp::CZ { q1, q2 } | CircuitOp::SWAP { q1, q2 } => *q1 == q || *q2 == q,
+            CircuitOp::CNOT { control, target }
+            | CircuitOp::AntiCNOT { control, target }
+            | CircuitOp::ControlledPhase { control, target, .. } => *control == q || *target == q,
             CircuitOp::RademacherPhase { signs } => q < signs.len(),
         }
     }
@@ -192,9 +202,15 @@ impl CircuitOp {
     /// All diagonal gates commute with each other.
     pub fn is_diagonal(&self) -> bool {
         match self {
-            CircuitOp::Rz { .. } | CircuitOp::CZ { .. } | CircuitOp::RademacherPhase { .. } => true,
+            CircuitOp::Rz { .. }
+            | CircuitOp::CZ { .. }
+            | CircuitOp::ControlledPhase { .. }
+            | CircuitOp::RademacherPhase { .. } => true,
             CircuitOp::Unitary1Q { matrix, .. } => matrix.is_diagonal(1e-12),
-            CircuitOp::Ry { .. } | CircuitOp::CNOT { .. } => false,
+            CircuitOp::Ry { .. }
+            | CircuitOp::CNOT { .. }
+            | CircuitOp::AntiCNOT { .. }
+            | CircuitOp::SWAP { .. } => false,
         }
     }
 

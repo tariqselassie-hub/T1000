@@ -10,7 +10,10 @@ pub mod op;
 pub mod scheduler;
 
 pub use dag::{CircuitDag, DagNode};
-pub use executor::{apply_cnot_op, apply_unitary2x2_op, CompiledCircuit, CompilerTelemetry};
+pub use executor::{
+    apply_anticnot_op, apply_cnot_op, apply_controlled_phase_op, apply_hadamard_op,
+    apply_swap_op, apply_unitary2x2_op, CompiledCircuit, CompilerTelemetry,
+};
 pub use fusion::{optimize_dag_fusion, FusionStats};
 pub use op::{CircuitOp, Unitary2x2};
 pub use scheduler::{schedule_circuit_dag, ScheduledStage, StageKind};
@@ -40,6 +43,15 @@ impl CircuitBuilder {
         self
     }
 
+    /// Appends a single-qubit Hadamard gate.
+    pub fn hadamard(&mut self, qubit: usize) -> &mut Self {
+        self.dag.add_op(CircuitOp::Unitary1Q {
+            qubit,
+            matrix: Unitary2x2::hadamard(),
+        });
+        self
+    }
+
     /// Appends a general single-qubit 2x2 complex unitary.
     pub fn unitary_1q(&mut self, qubit: usize, matrix: Unitary2x2) -> &mut Self {
         self.dag.add_op(CircuitOp::Unitary1Q { qubit, matrix });
@@ -58,9 +70,95 @@ impl CircuitBuilder {
         self
     }
 
+    /// Appends a two-qubit AntiCNOT gate (flips target if control is 0).
+    pub fn anticnot(&mut self, control: usize, target: usize) -> &mut Self {
+        self.dag.add_op(CircuitOp::AntiCNOT { control, target });
+        self
+    }
+
+    /// Appends a two-qubit SWAP gate.
+    pub fn swap(&mut self, q1: usize, q2: usize) -> &mut Self {
+        self.dag.add_op(CircuitOp::SWAP { q1, q2 });
+        self
+    }
+
+    /// Appends a two-qubit Controlled-Phase gate: diag(1, 1, 1, exp(i theta)).
+    pub fn controlled_phase(&mut self, control: usize, target: usize, theta: f64) -> &mut Self {
+        self.dag.add_op(CircuitOp::ControlledPhase {
+            control,
+            target,
+            theta,
+        });
+        self
+    }
+
     /// Appends a multi-qubit Walsh-Rademacher ±π phase layer.
     pub fn rademacher(&mut self, signs: Vec<f64>) -> &mut Self {
         self.dag.add_op(CircuitOp::RademacherPhase { signs });
+        self
+    }
+
+    /// Appends a Bell/GHZ state preparation block across the specified slice of qubits:
+    /// H(qubits[0]) followed by a chain of CNOT(qubits[i-1], qubits[i]).
+    pub fn bell_ghz(&mut self, qubits: &[usize]) -> &mut Self {
+        if qubits.is_empty() {
+            return self;
+        }
+        self.hadamard(qubits[0]);
+        for i in 1..qubits.len() {
+            self.cnot(qubits[i - 1], qubits[i]);
+        }
+        self
+    }
+
+    /// Appends an Alternate Bell/GHZ state preparation block across the specified slice of qubits:
+    /// H(qubits[0]) followed by a chain of AntiCNOT(qubits[i-1], qubits[i]).
+    pub fn alt_bell_ghz(&mut self, qubits: &[usize]) -> &mut Self {
+        if qubits.is_empty() {
+            return self;
+        }
+        self.hadamard(qubits[0]);
+        for i in 1..qubits.len() {
+            self.anticnot(qubits[i - 1], qubits[i]);
+        }
+        self
+    }
+
+    /// Appends a Quantum Fourier Transform (QFT) block across the specified slice of qubits.
+    pub fn qft(&mut self, qubits: &[usize]) -> &mut Self {
+        let n = qubits.len();
+        if n == 0 {
+            return self;
+        }
+        for j in 0..n {
+            self.hadamard(qubits[j]);
+            for k in (j + 1)..n {
+                let theta = std::f64::consts::PI / (1usize << (k - j)) as f64;
+                self.controlled_phase(qubits[k], qubits[j], theta);
+            }
+        }
+        for j in 0..(n / 2) {
+            self.swap(qubits[j], qubits[n - 1 - j]);
+        }
+        self
+    }
+
+    /// Appends an Inverse Quantum Fourier Transform (IQFT) block across the specified slice of qubits.
+    pub fn iqft(&mut self, qubits: &[usize]) -> &mut Self {
+        let n = qubits.len();
+        if n == 0 {
+            return self;
+        }
+        for j in 0..(n / 2) {
+            self.swap(qubits[j], qubits[n - 1 - j]);
+        }
+        for j in (0..n).rev() {
+            for k in ((j + 1)..n).rev() {
+                let theta = -std::f64::consts::PI / (1usize << (k - j)) as f64;
+                self.controlled_phase(qubits[k], qubits[j], theta);
+            }
+            self.hadamard(qubits[j]);
+        }
         self
     }
 

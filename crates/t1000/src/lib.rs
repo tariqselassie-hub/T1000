@@ -33,7 +33,7 @@ pub mod tiled_butterfly;
 pub mod trainer;
 
 pub use adjoint::{adjoint_gradient, AdjointResult};
-pub use ansatz::{CircuitAnsatz, DeepQuantumNeuralNetwork, PiPhaseLayer, RademacherPhaseLayer, VariationalQuantumLayer};
+pub use ansatz::{CircuitAnsatz, DeepQuantumNeuralNetwork, PiPhaseLayer, PreInitCircuit, RademacherPhaseLayer, VariationalQuantumLayer};
 pub use compiler::{CircuitBuilder, CircuitDag, CircuitOp, CompiledCircuit, CompilerTelemetry, ScheduledStage};
 pub use feature_map::{DataEncodingLayer, EncodingKind};
 pub use ingest::{tokenize_text, CorpusIngestor, IngestedDoc, IngestionTelemetry};
