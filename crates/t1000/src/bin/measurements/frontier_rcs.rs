@@ -246,6 +246,11 @@ fn run_optimized(ansatz: &CircuitAnsatz, init: &QuantumState) -> (QuantumState, 
             layer: layer + 1,
             latency_seconds: l0.elapsed().as_secs_f64(),
         });
+
+        // Periodic L2 norm verification to verify numerical stability under deep randomized benchmarking passes
+        if (layer + 1) % 4 == 0 || layer + 1 == ansatz.depth {
+            state.assert_normalized(1e-10);
+        }
     }
     (state, layers, t0.elapsed().as_secs_f64())
 }

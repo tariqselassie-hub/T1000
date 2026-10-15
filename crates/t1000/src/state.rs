@@ -131,6 +131,34 @@ impl QuantumState {
         crate::simd::normalize_kernel(&mut self.real, &mut self.imag);
     }
 
+    /// Returns the L2 norm squared: \sum_i (|re_i|^2 + |im_i|^2) via hardware-accelerated AVX2+FMA.
+    #[inline(always)]
+    pub fn l2_norm_sq(&self) -> f64 {
+        let (re, _) = crate::simd::inner_product_kernel(
+            &self.real, &self.imag, &self.real, &self.imag,
+        );
+        re
+    }
+
+    /// Returns the L2 norm: \sqrt{\sum_i (|re_i|^2 + |im_i|^2)}.
+    #[inline(always)]
+    pub fn l2_norm(&self) -> f64 {
+        self.l2_norm_sq().sqrt()
+    }
+
+    /// Asserts that the statevector is normalized within numerical tolerance epsilon.
+    #[inline(always)]
+    pub fn assert_normalized(&self, epsilon: f64) {
+        let norm_sq = self.l2_norm_sq();
+        assert!(
+            (norm_sq - 1.0).abs() <= epsilon,
+            "L2 norm numerical stability assertion failed: ||psi||^2 = {:.14} (diff = {:.2e}, tolerance = {:.2e})",
+            norm_sq,
+            (norm_sq - 1.0).abs(),
+            epsilon
+        );
+    }
+
     /// Hardware-vectorized inner product <self | other> (AVX2 + FMA).
     pub fn inner_product(&self, other: &Self) -> Complex64 {
         assert_eq!(self.dim, other.dim);

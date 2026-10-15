@@ -100,6 +100,11 @@ impl RcsSimulator {
             let l_start = Instant::now();
             ansatz.forward_layer_into(layer_idx, &ansatz.weights, &mut state);
             layer_latencies.push(l_start.elapsed().as_secs_f64());
+
+            // Periodic L2 norm verification to verify numerical stability under deep randomized benchmarking passes
+            if (layer_idx + 1) % 4 == 0 || layer_idx + 1 == depth {
+                state.assert_normalized(1e-10);
+            }
         }
 
         state.normalize();

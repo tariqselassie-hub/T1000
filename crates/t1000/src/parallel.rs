@@ -12,8 +12,13 @@
 use rayon::prelude::*;
 use std::sync::OnceLock;
 
-/// Smallest statevector (in amplitudes) that is split across threads.
-pub const PARALLEL_MIN_DIM: usize = 1 << 14;
+/// Minimum number of qubits required to engage multithreading.
+/// States with <= 16 qubits (dim <= 65,536 amplitudes, <= 1MB) fit in cache
+/// and execute sequentially via AVX2 to eliminate threadpool scheduling overhead.
+pub const PARALLEL_MIN_QUBITS: usize = 17;
+
+/// Smallest statevector (in amplitudes) that is split across threads (2^17 = 131,072).
+pub const PARALLEL_MIN_DIM: usize = 1 << PARALLEL_MIN_QUBITS;
 
 /// Target number of work items per thread, for load balancing.
 const TASKS_PER_THREAD: usize = 4;

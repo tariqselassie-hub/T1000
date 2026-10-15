@@ -319,6 +319,11 @@ impl CircuitAnsatz {
 
         for layer in 0..self.depth {
             self.forward_layer_into(layer, weights, state);
+
+            // Periodic L2 norm verification to verify numerical stability under deep passes
+            if (layer + 1) % 4 == 0 || layer + 1 == self.depth {
+                state.assert_normalized(1e-10);
+            }
         }
 
         state.normalize();
@@ -838,8 +843,16 @@ impl CircuitAnsatz {
             weights.len()
         );
 
-        for q in 0..n {
-            crate::parallel::apply_ry(&mut out.real, &mut out.imag, q, weights[p_start + 2 * q]);
+        if n <= 16 {
+            // Qubit Threshold Guard: Sequential AVX2 path for <=16 qubits (reclaims threadpool dispatch overhead)
+            for q in 0..n {
+                crate::simd::apply_ry_kernel(&mut out.real, &mut out.imag, q, weights[p_start + 2 * q]);
+            }
+        } else {
+            // Multithreaded AVX2 + Tiled Butterfly path for >=17 qubits
+            for q in 0..n {
+                crate::parallel::apply_ry(&mut out.real, &mut out.imag, q, weights[p_start + 2 * q]);
+            }
         }
 
         let theta_rz: Vec<f64> = (0..n).map(|q| weights[p_start + 2 * q + 1]).collect();

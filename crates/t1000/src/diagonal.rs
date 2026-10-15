@@ -123,5 +123,11 @@ pub fn apply_rz_cz_layer(real: &mut [f64], imag: &mut [f64], theta_rz: &[f64], c
     let plan = DiagonalPlan::new(n_qubits, theta_rz, cz_pairs);
     let block = 1usize << plan.lo_bits;
     debug_assert_eq!(plan.n_qubits, n_qubits);
-    crate::parallel::for_each_block(real, imag, block, |h, re, im| plan.apply_block(h, re, im));
+    if n_qubits <= 16 {
+        for (h, (re, im)) in real.chunks_mut(block).zip(imag.chunks_mut(block)).enumerate() {
+            plan.apply_block(h, re, im);
+        }
+    } else {
+        crate::parallel::for_each_block(real, imag, block, |h, re, im| plan.apply_block(h, re, im));
+    }
 }
