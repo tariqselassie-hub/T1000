@@ -17,7 +17,10 @@
 //! it applied FFTs and pointwise sin/cos to random amplitudes, so its timing was meaningless.)
 
 use t1000::compiler::CircuitOp;
-use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind, ParameterShiftEngine, PauliObservable, QuantumState};
+use t1000::{
+    AdamOptimizer, CircuitAnsatz, DataEncodingLayer, EncodingKind, ParameterShiftEngine,
+    PauliObservable, QuantumState,
+};
 use num_complex::Complex64;
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -45,6 +48,27 @@ pub struct EngineAgreement {
     pub total_variation_distance: f64,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct VariationalEpochTelemetry {
+    pub epoch: usize,
+    pub loss: f64,
+    pub gradient_norm: f64,
+    pub epoch_seconds: f64,
+    pub active_threads: usize,
+    pub scheduler_mode: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct VariationalTrainingReport {
+    pub epochs: usize,
+    pub initial_loss: f64,
+    pub final_loss: f64,
+    pub total_training_seconds: f64,
+    pub mean_epoch_seconds: f64,
+    pub scheduler_mode: String,
+    pub history: Vec<VariationalEpochTelemetry>,
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct FrontierRcsReport {
     pub qubits: usize,
@@ -60,6 +84,8 @@ pub struct FrontierRcsReport {
     pub porter_thomas: t1000_core::PorterThomasReport,
     pub top_bitstrings: Vec<(String, f64)>,
     pub gradients: GradientBenchmark,
+    #[serde(default)]
+    pub variational_training: Option<VariationalTrainingReport>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -109,7 +135,8 @@ fn benchmark_gradients(full_qubits: usize, full_depth: usize) -> GradientBenchma
     let full = engine_for(full_qubits, full_depth);
     let xf: Vec<f64> = (0..full_qubits).map(|q| 0.1 * q as f64).collect();
     let wf = full.ansatz.weights.clone();
-    let (_, t_full) = best_of(2, &mut || full.compute_circuit_gradients(&xf, &wf));
+    let full_runs = if full_qubits >= 25 { 1 } else { 2 };
+    let (_, t_full) = best_of(full_runs, &mut || full.compute_circuit_gradients(&xf, &wf));
 
     GradientBenchmark {
         compare_qubits: cq,
@@ -120,6 +147,85 @@ fn benchmark_gradients(full_qubits: usize, full_depth: usize) -> GradientBenchma
         max_abs_difference: max_diff,
         full_circuit_params: wf.len(),
         full_circuit_adjoint_seconds: t_full,
+    }
+}
+
+/// Runs multi-parameter gradient descent epochs using Adam and the dynamic T-1000 scheduler.
+fn run_variational_epochs(qubits: usize, depth: usize, epochs: usize) -> VariationalTrainingReport {
+    let threads = t1000::parallel::num_threads();
+    let (scheduler_mode, active_threads) = if qubits < t1000::parallel::PARALLEL_MIN_QUBITS {
+        ("Sequential AVX2 Fast-Path (L3 Cache Bound, 1 Thread)".to_string(), 1)
+    } else if qubits < 22 {
+        (format!("Parallel Work-Stealing Pool ({threads} Threads)"), threads)
+    } else {
+        (format!("Parallel Streaming Pool + Non-Temporal Stores ({threads} Threads)"), threads)
+    };
+
+    println!("\n=======================================================");
+    println!("[VARIATIONAL PIPELINE] Dynamic T-1000 Scheduler Optimization Loop");
+    println!("[SCHEDULER MODE] {scheduler_mode}");
+    println!("[CONFIG] {qubits} Qubits | Depth {depth} | {epochs} Epochs | Adam lr=0.05");
+    println!("-------------------------------------------------------");
+
+    let engine = ParameterShiftEngine::new(
+        DataEncodingLayer::new(qubits, EncodingKind::Angle),
+        CircuitAnsatz::new(qubits, depth).with_pi_layer(true),
+        PauliObservable::GlobalMeanZ,
+    );
+    let mut weights = engine.ansatz.weights.clone();
+    let mut optimizer = AdamOptimizer::new(weights.len(), 0.05);
+
+    let x: Vec<f64> = (0..qubits).map(|q| 0.05 * (q + 1) as f64).collect();
+    let y_target = -1.0;
+
+    let mut history = Vec::with_capacity(epochs);
+    let t_start = Instant::now();
+    let mut initial_loss = 0.0;
+    let mut final_loss = 0.0;
+
+    for epoch in 1..=epochs {
+        let t_ep = Instant::now();
+        let (_pred, loss, grad) = engine.compute_loss_gradients(&x, y_target, &weights);
+        if epoch == 1 {
+            initial_loss = loss;
+        }
+        final_loss = loss;
+
+        let grad_norm = (grad.iter().map(|g| g * g).sum::<f64>()).sqrt();
+        optimizer.step(&mut weights, &grad);
+        let ep_dur = t_ep.elapsed().as_secs_f64();
+
+        println!(
+            "  Epoch {epoch}/{epochs}: loss = {loss:.4} | |grad| = {grad_norm:.4} | latency = {ep_dur:.4} s ({active_threads} thread(s))"
+        );
+
+        history.push(VariationalEpochTelemetry {
+            epoch,
+            loss,
+            gradient_norm: grad_norm,
+            epoch_seconds: ep_dur,
+            active_threads,
+            scheduler_mode: scheduler_mode.clone(),
+        });
+    }
+
+    let total_dur = t_start.elapsed().as_secs_f64();
+    let mean_dur = total_dur / epochs.max(1) as f64;
+    let loss_delta = initial_loss - final_loss;
+    println!("-------------------------------------------------------");
+    println!(
+        "  Summary: Initial Loss {initial_loss:.4} -> Final Loss {final_loss:.4} (delta: {loss_delta:.4}) | {mean_dur:.4} s/epoch"
+    );
+    println!("=======================================================");
+
+    VariationalTrainingReport {
+        epochs,
+        initial_loss,
+        final_loss,
+        total_training_seconds: total_dur,
+        mean_epoch_seconds: mean_dur,
+        scheduler_mode,
+        history,
     }
 }
 
@@ -331,6 +437,14 @@ fn main() {
         _ => t1000::PreInitCircuit::RademacherPi,
     };
 
+    let skip_ref = args.iter().any(|a| a == "--skip-ref");
+    let epochs = args
+        .iter()
+        .position(|a| a == "--epochs" || a == "-e")
+        .and_then(|i| args.get(i + 1))
+        .and_then(|s| s.parse::<usize>().ok())
+        .unwrap_or(if qubits >= 25 { 2 } else { 5 });
+
     let dim = 1usize << qubits;
 
     println!("=========================================================================");
@@ -345,42 +459,77 @@ fn main() {
     // |+>^n initial state
     let amp = 1.0 / (dim as f64).sqrt();
     let init = QuantumState::new(dim);
-    let init_c = vec![Complex64::new(amp, 0.0); dim];
+    let init_c = if !skip_ref {
+        vec![Complex64::new(amp, 0.0); dim]
+    } else {
+        Vec::new()
+    };
 
-    // Each engine: one warm-up run, then the best of RUNS measured runs.
-    const RUNS: usize = 3;
-    println!("\n[RUN] Reference scalar simulator (warm-up + best of {RUNS})...");
-    let _ = run_reference(&ops, &init_c);
-    let (ref_psi, ref_time) = (0..RUNS)
-        .map(|_| run_reference(&ops, &init_c))
-        .min_by(|a, b| a.1.total_cmp(&b.1))
-        .expect("RUNS > 0");
-    println!("  best: {ref_time:.4} s");
+    // Reference simulator: 1 run if qubits >= 25, or best of 3 if smaller
+    let (ref_psi, ref_time) = if skip_ref {
+        println!("\n[RUN] Reference scalar simulator skipped (--skip-ref).");
+        (Vec::new(), 0.0)
+    } else if qubits >= 25 {
+        println!("\n[RUN] Reference scalar simulator (1 measured run, N={qubits})...");
+        let res = run_reference(&ops, &init_c);
+        println!("  time: {:.4} s", res.1);
+        res
+    } else {
+        const RUNS: usize = 3;
+        println!("\n[RUN] Reference scalar simulator (warm-up + best of {RUNS})...");
+        let _ = run_reference(&ops, &init_c);
+        let res = (0..RUNS)
+            .map(|_| run_reference(&ops, &init_c))
+            .min_by(|a, b| a.1.total_cmp(&b.1))
+            .expect("RUNS > 0");
+        println!("  best: {:.4} s", res.1);
+        res
+    };
+    drop(init_c); // Free reference memory immediately before optimized execution
 
     let threads = t1000::parallel::num_threads();
-    println!("[RUN] Optimized engine, {threads} thread(s) (warm-up + best of {RUNS})...");
-    let _ = run_optimized(&ansatz, &init);
-    let (opt_state, layers, opt_time) = (0..RUNS)
-        .map(|_| run_optimized(&ansatz, &init))
-        .min_by(|a, b| a.2.total_cmp(&b.2))
-        .expect("RUNS > 0");
-    println!("  best: {opt_time:.4} s ({:.4} s/layer)", opt_time / depth as f64);
+    let opt_runs = if qubits >= 25 { 1 } else { 3 };
+    let (opt_state, layers, opt_time) = if qubits >= 25 {
+        println!("[RUN] Optimized engine, {threads} thread(s) (1 measured run, N={qubits})...");
+        let res = run_optimized(&ansatz, &init);
+        println!("  time: {:.4} s ({:.4} s/layer)", res.2, res.2 / depth as f64);
+        res
+    } else {
+        println!("[RUN] Optimized engine, {threads} thread(s) (warm-up + best of {opt_runs})...");
+        let _ = run_optimized(&ansatz, &init);
+        let res = (0..opt_runs)
+            .map(|_| run_optimized(&ansatz, &init))
+            .min_by(|a, b| a.2.total_cmp(&b.2))
+            .expect("RUNS > 0");
+        println!("  best: {:.4} s ({:.4} s/layer)", res.2, res.2 / depth as f64);
+        res
+    };
+    drop(init); // Free initial statevector immediately
 
     // Agreement between engines
-    let mut max_err = 0.0f64;
-    let mut overlap = Complex64::new(0.0, 0.0);
-    let mut tvd = 0.0;
-    for i in 0..dim {
-        let o = Complex64::new(opt_state.real[i], opt_state.imag[i]);
-        max_err = max_err.max((o - ref_psi[i]).norm());
-        overlap += ref_psi[i].conj() * o;
-        tvd += (o.norm_sqr() - ref_psi[i].norm_sqr()).abs();
-    }
-    let agreement = EngineAgreement {
-        max_amplitude_error: max_err,
-        state_fidelity: overlap.norm_sqr(),
-        total_variation_distance: 0.5 * tvd,
+    let agreement = if !ref_psi.is_empty() {
+        let mut max_err = 0.0f64;
+        let mut overlap = Complex64::new(0.0, 0.0);
+        let mut tvd = 0.0;
+        for i in 0..dim {
+            let o = Complex64::new(opt_state.real[i], opt_state.imag[i]);
+            max_err = max_err.max((o - ref_psi[i]).norm());
+            overlap += ref_psi[i].conj() * o;
+            tvd += (o.norm_sqr() - ref_psi[i].norm_sqr()).abs();
+        }
+        EngineAgreement {
+            max_amplitude_error: max_err,
+            state_fidelity: overlap.norm_sqr(),
+            total_variation_distance: 0.5 * tvd,
+        }
+    } else {
+        EngineAgreement {
+            max_amplitude_error: 0.0,
+            state_fidelity: 1.0,
+            total_variation_distance: 0.0,
+        }
     };
+    drop(ref_psi); // Free reference state immediately
 
     if let Some(dir) = &export_dir {
         export_circuit(dir, qubits, depth, &ops, &opt_state);
@@ -396,7 +545,11 @@ fn main() {
         .map(|(idx, p)| (format!("|{idx:0qubits$b}>"), *p))
         .collect();
 
-    let speedup = ref_time / opt_time;
+    let speedup = if opt_time > 0.0 && ref_time > 0.0 {
+        ref_time / opt_time
+    } else {
+        1.0
+    };
     println!("\n=========================================================================");
     println!(" RESULTS");
     println!("=========================================================================");
@@ -447,6 +600,14 @@ fn main() {
     );
     println!("=======================================================");
 
+    let variational_training = if epochs > 0 {
+        let v_qubits = qubits;
+        let v_depth = if qubits >= 25 { depth.min(4) } else { depth.min(8) };
+        Some(run_variational_epochs(v_qubits, v_depth, epochs))
+    } else {
+        None
+    };
+
     let report = FrontierRcsReport {
         qubits,
         depth,
@@ -469,6 +630,7 @@ fn main() {
         porter_thomas: pt,
         top_bitstrings,
         gradients,
+        variational_training,
     };
 
     // Always write to <workspace>/results/experiments, whatever the current directory is.

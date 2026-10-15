@@ -482,6 +482,10 @@ unsafe fn apply_ry_avx2(real: &mut [f64], imag: &mut [f64], qubit: usize, theta:
         let s_vec = _mm256_set1_pd(s);
         let neg_s_vec = _mm256_set1_pd(-s);
 
+        let use_stream = dim >= (1 << 22)
+            && ((real.as_ptr() as usize) & 31 == 0)
+            && ((imag.as_ptr() as usize) & 31 == 0);
+
         let mut base = 0;
         while base < dim {
             let p_base = base + block_size;
@@ -505,14 +509,25 @@ unsafe fn apply_ry_avx2(real: &mut [f64], imag: &mut [f64], qubit: usize, theta:
                 // new_i1 = s * i0 + c * i1
                 let new_i1 = _mm256_fmadd_pd(i0, s_vec, _mm256_mul_pd(i1, c_vec));
 
-                _mm256_storeu_pd(real.as_mut_ptr().add(idx0), new_r0);
-                _mm256_storeu_pd(real.as_mut_ptr().add(idx1), new_r1);
-                _mm256_storeu_pd(imag.as_mut_ptr().add(idx0), new_i0);
-                _mm256_storeu_pd(imag.as_mut_ptr().add(idx1), new_i1);
+                if use_stream {
+                    _mm256_stream_pd(real.as_mut_ptr().add(idx0), new_r0);
+                    _mm256_stream_pd(real.as_mut_ptr().add(idx1), new_r1);
+                    _mm256_stream_pd(imag.as_mut_ptr().add(idx0), new_i0);
+                    _mm256_stream_pd(imag.as_mut_ptr().add(idx1), new_i1);
+                } else {
+                    _mm256_storeu_pd(real.as_mut_ptr().add(idx0), new_r0);
+                    _mm256_storeu_pd(real.as_mut_ptr().add(idx1), new_r1);
+                    _mm256_storeu_pd(imag.as_mut_ptr().add(idx0), new_i0);
+                    _mm256_storeu_pd(imag.as_mut_ptr().add(idx1), new_i1);
+                }
 
                 k += 4;
             }
             base += stride;
+        }
+
+        if use_stream {
+            _mm_sfence();
         }
     } else {
         // Fallback to scalar for low qubit strides (q=0, q=1)
@@ -536,6 +551,10 @@ unsafe fn apply_rz_avx2(real: &mut [f64], imag: &mut [f64], qubit: usize, theta:
         let c_pos_v = _mm256_set1_pd(c_pos);
         let s_pos_v = _mm256_set1_pd(s_pos);
 
+        let use_stream = dim >= (1 << 22)
+            && ((real.as_ptr() as usize) & 31 == 0)
+            && ((imag.as_ptr() as usize) & 31 == 0);
+
         let mut base = 0;
         while base < dim {
             // Block 0: bit q is 0 -> multiply by exp(-i theta/2)
@@ -550,8 +569,13 @@ unsafe fn apply_rz_avx2(real: &mut [f64], imag: &mut [f64], qubit: usize, theta:
                 // new_im = r * s_neg + im * c_neg
                 let new_im = _mm256_fmadd_pd(r, s_neg_v, _mm256_mul_pd(im, c_neg_v));
 
-                _mm256_storeu_pd(real.as_mut_ptr().add(idx), new_r);
-                _mm256_storeu_pd(imag.as_mut_ptr().add(idx), new_im);
+                if use_stream {
+                    _mm256_stream_pd(real.as_mut_ptr().add(idx), new_r);
+                    _mm256_stream_pd(imag.as_mut_ptr().add(idx), new_im);
+                } else {
+                    _mm256_storeu_pd(real.as_mut_ptr().add(idx), new_r);
+                    _mm256_storeu_pd(imag.as_mut_ptr().add(idx), new_im);
+                }
                 k += 4;
             }
 
@@ -568,12 +592,21 @@ unsafe fn apply_rz_avx2(real: &mut [f64], imag: &mut [f64], qubit: usize, theta:
                 // new_im = r * s_pos + im * c_pos
                 let new_im = _mm256_fmadd_pd(r, s_pos_v, _mm256_mul_pd(im, c_pos_v));
 
-                _mm256_storeu_pd(real.as_mut_ptr().add(idx), new_r);
-                _mm256_storeu_pd(imag.as_mut_ptr().add(idx), new_im);
+                if use_stream {
+                    _mm256_stream_pd(real.as_mut_ptr().add(idx), new_r);
+                    _mm256_stream_pd(imag.as_mut_ptr().add(idx), new_im);
+                } else {
+                    _mm256_storeu_pd(real.as_mut_ptr().add(idx), new_r);
+                    _mm256_storeu_pd(imag.as_mut_ptr().add(idx), new_im);
+                }
                 k += 4;
             }
 
             base += stride;
+        }
+
+        if use_stream {
+            _mm_sfence();
         }
     } else {
         apply_rz_scalar(real, imag, qubit, theta);
@@ -590,6 +623,10 @@ unsafe fn apply_cz_avx2(real: &mut [f64], imag: &mut [f64], q1: usize, q2: usize
 
     let sign_mask = _mm256_set1_pd(-0.0); // Sign-flip bitmask in IEEE 754
 
+    let use_stream = dim >= (1 << 22)
+        && ((real.as_ptr() as usize) & 31 == 0)
+        && ((imag.as_ptr() as usize) & 31 == 0);
+
     let mut i = 0;
     while i < dim {
         // If all 4 indices in chunk have both bits set
@@ -601,8 +638,13 @@ unsafe fn apply_cz_avx2(real: &mut [f64], imag: &mut [f64], q1: usize, q2: usize
         if in_cz {
             let r = _mm256_loadu_pd(real.as_ptr().add(i));
             let im = _mm256_loadu_pd(imag.as_ptr().add(i));
-            _mm256_storeu_pd(real.as_mut_ptr().add(i), _mm256_xor_pd(r, sign_mask));
-            _mm256_storeu_pd(imag.as_mut_ptr().add(i), _mm256_xor_pd(im, sign_mask));
+            if use_stream {
+                _mm256_stream_pd(real.as_mut_ptr().add(i), _mm256_xor_pd(r, sign_mask));
+                _mm256_stream_pd(imag.as_mut_ptr().add(i), _mm256_xor_pd(im, sign_mask));
+            } else {
+                _mm256_storeu_pd(real.as_mut_ptr().add(i), _mm256_xor_pd(r, sign_mask));
+                _mm256_storeu_pd(imag.as_mut_ptr().add(i), _mm256_xor_pd(im, sign_mask));
+            }
         } else {
             // Scalar fallback for boundary elements
             for k in 0..4 {
@@ -614,6 +656,10 @@ unsafe fn apply_cz_avx2(real: &mut [f64], imag: &mut [f64], q1: usize, q2: usize
             }
         }
         i += 4;
+    }
+
+    if use_stream {
+        _mm_sfence();
     }
 }
 
@@ -740,6 +786,9 @@ unsafe fn apply_rademacher_phase_avx2(real: &mut [f64], imag: &mut [f64], signs:
     let mask_neg = _mm256_set_pd(-0.0, 0.0, 0.0, -0.0);
 
     let chunks = dim / 4;
+    let use_stream = dim >= (1 << 22)
+        && ((real.as_ptr() as usize) & 31 == 0)
+        && ((imag.as_ptr() as usize) & 31 == 0);
 
     if rem == 0 || rem == 2 {
         let c_sign = if rem == 0 { prod_s } else { -prod_s };
@@ -757,8 +806,13 @@ unsafe fn apply_rademacher_phase_avx2(real: &mut [f64], imag: &mut [f64], signs:
             let r_vec = _mm256_loadu_pd(r_ptr);
             let im_vec = _mm256_loadu_pd(im_ptr);
 
-            _mm256_storeu_pd(r_ptr, _mm256_xor_pd(r_vec, mask));
-            _mm256_storeu_pd(im_ptr, _mm256_xor_pd(im_vec, mask));
+            if use_stream {
+                _mm256_stream_pd(r_ptr, _mm256_xor_pd(r_vec, mask));
+                _mm256_stream_pd(im_ptr, _mm256_xor_pd(im_vec, mask));
+            } else {
+                _mm256_storeu_pd(r_ptr, _mm256_xor_pd(r_vec, mask));
+                _mm256_storeu_pd(im_ptr, _mm256_xor_pd(im_vec, mask));
+            }
         }
     } else {
         let c_im = if rem == 1 { -prod_s } else { prod_s };
@@ -780,9 +834,18 @@ unsafe fn apply_rademacher_phase_avx2(real: &mut [f64], imag: &mut [f64], signs:
             let r_vec = _mm256_loadu_pd(r_ptr);
             let im_vec = _mm256_loadu_pd(im_ptr);
 
-            _mm256_storeu_pd(r_ptr, _mm256_xor_pd(im_vec, mask_r));
-            _mm256_storeu_pd(im_ptr, _mm256_xor_pd(r_vec, mask_im));
+            if use_stream {
+                _mm256_stream_pd(r_ptr, _mm256_xor_pd(im_vec, mask_r));
+                _mm256_stream_pd(im_ptr, _mm256_xor_pd(r_vec, mask_im));
+            } else {
+                _mm256_storeu_pd(r_ptr, _mm256_xor_pd(im_vec, mask_r));
+                _mm256_storeu_pd(im_ptr, _mm256_xor_pd(r_vec, mask_im));
+            }
         }
+    }
+
+    if use_stream {
+        _mm_sfence();
     }
 
     let rem_start = chunks * 4;
