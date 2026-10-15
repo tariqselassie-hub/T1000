@@ -9,3 +9,19 @@ __pycache__/
 *$py.class
 results/charts/
 
+# Vivado / FPGA transient build artifacts
+.Xil/
+**/.Xil/
+**/*.cache/
+**/*.hw/
+**/*.runs/
+**/*.ip_user_files/
+**/*.jou
+**/*.log
+**/*.dcp
+**/*.pb
+**/*.wdf
+**/*.wpc
+**/*.vdi
+**/*.vds
+**/clockInfo.txt

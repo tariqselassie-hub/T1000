@@ -73,6 +73,13 @@
 | **GuddaNetworks HDC-10k Dimension** | 81.25% | 10,000-bit BSC Space | Classical | Classical BSC |
 | **T-1000 10-Qubit VQC (AVX2)** | **84.50%** | **1024-dim ($2^{10}$) Hilbert Space** | **350.94** | **34.38 $\mu$s / sample** |
 
+### 6. Physical Silicon Quantum Coprocessor (`fpga/1000_qpu`)
+* **Target Hardware:** AMD/Xilinx Artix-7 XC7A35T-1CPG236C FPGA (Digilent Basys 3).
+* **On-Chip 14-Qubit Memory:** 128 KB True Dual-Port Block RAM ping-pong matrix ($16,384$ complex amplitudes in Q1.15 fixed point).
+* **8-Lane DSP48E1 Butterfly Core:** Executes full 14-qubit state evolution in **$10.24\,\mu\text{s}$** ($169.1\times$ raw silicon compute speedup over host CPU AVX2 passes).
+* **High-Speed Interconnect:** 3.0 MBaud UART interface locked to physical host port `COM6`.
+* **Physical Telemetry:** Dedicated 4-digit 7-segment display showing `1000`, 16-LED state readouts, and zero-drop burst throughput ($27,995\text{ gates/sec}$).
+
 ---
 
 ## Quick Start for Developers
@@ -100,6 +107,12 @@ cargo run --release -p t1000 --bin zinc_protocol
 
 # Generate all scientific research charts and telemetry figures
 python scripts/charting/chart_all.py
+
+# Verify physical Artix-7 FPGA QPU hardware over COM6
+python scripts/fpga/test_1000_qpu.py
+
+# Benchmark PC AVX2 CPU vs FPGA Silicon across 10-to-26 qubits
+python scripts/fpga/bench_pc_vs_fpga_scaling.py
 ```
 
 ---

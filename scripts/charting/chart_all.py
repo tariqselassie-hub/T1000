@@ -23,6 +23,7 @@ from chart_qnn_scaling import chart_qnn_scaling
 from chart_lattice_phase import chart_lattice_phase
 from chart_lattice_quench import chart_lattice_quench
 from chart_frontier_rcs import chart_frontier_rcs
+from chart_pc_vs_fpga import chart_pc_vs_fpga
 
 def run_all_charts() -> None:
     ws_root = current_dir.parents[1]
@@ -87,6 +88,16 @@ def run_all_charts() -> None:
         print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
     else:
         print(f" [!] Skipped Frontier RCS: {rcs_json.name} not found.")
+
+    # 6. PC vs FPGA 26-Qubit Scaling
+    pc_fpga_csv = exp_dir / "pc_vs_fpga_26q_scaling.csv"
+    if pc_fpga_csv.exists():
+        png = chart_pc_vs_fpga(pc_fpga_csv, chart_dir)
+        size_kb = png.stat().st_size / 1024.0
+        generated.append(("PC vs FPGA 26-Qubit Scaling", png.name, f"{size_kb:.1f} KB"))
+        print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
+    else:
+        print(f" [!] Skipped PC vs FPGA Scaling: {pc_fpga_csv.name} not found.")
 
     print("\n╔═══════════════════════════════════════════════════════════════════════════════╗")
     print("║                        RENDERED ARTIFACT MANIFEST                             ║")
