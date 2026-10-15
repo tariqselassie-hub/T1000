@@ -193,7 +193,35 @@ class QuantumMolecularDashboard {
 
         let molecules = [];
 
-        if (data.lead_molecule && data.precursors) {
+        if (data.elements) {
+            // Period 1 & 2 Atomic Quantum Shells
+            data.elements.forEach(el => {
+                molecules.push({
+                    is_atom: true,
+                    id: el.z,
+                    symbol: el.symbol,
+                    name: el.name,
+                    smiles: `[${el.symbol}]`,
+                    config_str: el.config_str,
+                    term_symbol: el.term_symbol,
+                    energy_hartree: el.energy_hartree,
+                    energy_ev: el.energy_ev,
+                    ionization_ev: el.ionization_ev,
+                    electron_affinity_ev: el.electron_affinity_ev,
+                    electronegativity: el.electronegativity,
+                    covalent_radius_pm: el.covalent_radius_pm,
+                    vdw_radius_pm: el.vdw_radius_pm,
+                    electrons: el.electrons,
+                    neutrons: el.neutrons,
+                    mass_amu: el.mass_amu,
+                    occupations: el.occupations,
+                    shell_electrons: el.shell_electrons,
+                    z_expectations: el.z_expectations,
+                    tag: `${el.symbol} (Z=${el.z})`,
+                    display_metric: el.config_str
+                });
+            });
+        } else if (data.lead_molecule && data.precursors) {
             // Lead Attractor Experiment Format
             molecules.push({
                 id: data.lead_molecule.id,
@@ -385,7 +413,68 @@ class QuantumMolecularDashboard {
         `;
     }
 
+    renderAtomicMatrixCard(meta) {
+        const compEl = document.getElementById('attractor-comparison-container');
+        const titleEl = document.getElementById('section-comparison-title');
+        if (titleEl) titleEl.textContent = 'Atomic Quantum Shell Matrix';
+        if (!compEl) return;
+
+        compEl.innerHTML = `
+            <div class="comparison-strip">
+                <div class="comparison-header">
+                    <span>${meta.name.toUpperCase()} (Z = ${meta.id})</span>
+                    <span style="color:var(--quantum-green);">${meta.config_str}</span>
+                </div>
+                <table class="comparison-table">
+                    <tr>
+                        <td>Ground State Spectroscopic Term</td>
+                        <td class="val-col" style="color:var(--hardware-gold); font-weight:700;">${meta.term_symbol}</td>
+                    </tr>
+                    <tr>
+                        <td>Exact Ground Energy E₀</td>
+                        <td class="val-col" style="color:var(--quantum-green);">${meta.energy_hartree.toFixed(4)} Ha (${meta.energy_ev.toFixed(1)} eV)</td>
+                    </tr>
+                    <tr>
+                        <td>Nucleus Composition</td>
+                        <td class="val-col">${meta.id} Protons + ${meta.neutrons} Neutrons (${meta.mass_amu} amu)</td>
+                    </tr>
+                    <tr>
+                        <td>Subshell Electron Occupancy</td>
+                        <td class="val-col">1s: ${meta.shell_electrons['1s']} | 2s: ${meta.shell_electrons['2s']} | 2p: ${meta.shell_electrons['2p']}</td>
+                    </tr>
+                    <tr>
+                        <td>Atomic Radii</td>
+                        <td class="val-col">Covalent: ${meta.covalent_radius_pm} pm | VdW: ${meta.vdw_radius_pm} pm</td>
+                    </tr>
+                    <tr>
+                        <td>Electron Affinity / Pauling EN</td>
+                        <td class="val-col">${meta.electron_affinity_ev > 0 ? '+' : ''}${meta.electron_affinity_ev.toFixed(2)} eV | EN: ${meta.electronegativity}</td>
+                    </tr>
+                </table>
+            </div>
+        `;
+    }
+
     loadSMILES(smiles, meta = {}) {
+        if (meta.is_atom) {
+            document.getElementById('input-smiles').value = smiles;
+            document.getElementById('display-smiles').textContent = `${meta.name} (${meta.symbol}, Z=${meta.id})`;
+            document.getElementById('badge-id').textContent = `Z=${meta.id}`;
+
+            this.buildAtomicMesh(meta);
+            document.getElementById('title-m1').textContent = 'Ground State E₀';
+            document.getElementById('val-mw').textContent = `${meta.energy_hartree.toFixed(3)} Ha`;
+            document.getElementById('title-m2').textContent = 'Term Symbol';
+            document.getElementById('val-logp').textContent = meta.term_symbol;
+            document.getElementById('title-m3').textContent = '1st Ionization';
+            document.getElementById('val-tpsa').textContent = `${meta.ionization_ev.toFixed(2)} eV`;
+            document.getElementById('title-m4').textContent = 'Electronegativity';
+            document.getElementById('val-act').textContent = meta.electronegativity > 0 ? meta.electronegativity.toFixed(2) : '0.00 (Inert)';
+            this.renderAtomicMatrixCard(meta);
+            this.renderQubitBars(meta.z_expectations, true);
+            return;
+        }
+
         document.getElementById('input-smiles').value = smiles;
         document.getElementById('display-smiles').textContent = smiles;
         document.getElementById('badge-id').textContent = meta.id ? `#${meta.id}` : '#CUSTOM';
@@ -699,6 +788,178 @@ class QuantumMolecularDashboard {
         this.applyRenderMode();
     }
 
+    buildAtomicMesh(atom) {
+        while (this.molGroup.children.length > 0) {
+            const obj = this.molGroup.children[0];
+            this.molGroup.remove(obj);
+            if (obj.geometry) obj.geometry.dispose();
+            if (obj.material) obj.material.dispose();
+        }
+
+        this.atomMeshes = [];
+        this.bondMeshes = [];
+        this.cloudMeshes = [];
+
+        // 1. Central Nucleus Cluster (Protons + Neutrons)
+        const protonMat = new THREE.MeshStandardMaterial({
+            color: 0xffb300,
+            emissive: 0xffb300,
+            emissiveIntensity: 0.35,
+            roughness: 0.2
+        });
+        const neutronMat = new THREE.MeshStandardMaterial({
+            color: 0x64748b,
+            roughness: 0.4
+        });
+        const nucleonGeo = new THREE.SphereGeometry(0.24, 16, 16);
+
+        const nProtons = atom.id;
+        const nNeutrons = atom.neutrons !== undefined ? atom.neutrons : (atom.id > 1 ? atom.id : 0);
+        const totalNucleons = nProtons + nNeutrons;
+
+        for (let i = 0; i < totalNucleons; i++) {
+            const isProton = (i < nProtons);
+            const mesh = new THREE.Mesh(nucleonGeo, isProton ? protonMat : neutronMat);
+            const phi = Math.acos(-1 + (2 * (i + 0.5)) / totalNucleons);
+            const theta = Math.sqrt(totalNucleons * Math.PI) * phi;
+            const r = 0.45 * Math.cbrt(totalNucleons / 3.0);
+            mesh.position.set(
+                r * Math.sin(phi) * Math.cos(theta),
+                r * Math.sin(phi) * Math.sin(theta),
+                r * Math.cos(phi)
+            );
+            mesh.castShadow = true;
+            this.molGroup.add(mesh);
+            this.atomMeshes.push(mesh);
+        }
+
+        // 2. 1s Core Quantum Orbital Ring & Cloud
+        const ring1sGeo = new THREE.TorusGeometry(2.2, 0.035, 16, 64);
+        const ring1sMat = new THREE.MeshBasicMaterial({ color: 0xffb300, transparent: true, opacity: 0.6 });
+        const ring1s = new THREE.Mesh(ring1sGeo, ring1sMat);
+        ring1s.rotation.x = Math.PI / 2.5;
+        this.molGroup.add(ring1s);
+        this.bondMeshes.push(ring1s);
+
+        const cloud1sGeo = new THREE.SphereGeometry(2.2, 24, 24);
+        const cloud1sMat = new THREE.MeshStandardMaterial({
+            color: 0xffb300,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.12
+        });
+        const cloud1s = new THREE.Mesh(cloud1sGeo, cloud1sMat);
+        this.molGroup.add(cloud1s);
+        this.cloudMeshes.push(cloud1s);
+
+        // 3. 2s Valence Orbital Shell (For Z >= 3)
+        if (atom.id >= 3) {
+            const ring2sGeo = new THREE.TorusGeometry(4.6, 0.035, 16, 64);
+            const ring2sMat = new THREE.MeshBasicMaterial({ color: 0x00e676, transparent: true, opacity: 0.5 });
+            const ring2s = new THREE.Mesh(ring2sGeo, ring2sMat);
+            ring2s.rotation.x = Math.PI / 1.8;
+            ring2s.rotation.y = Math.PI / 6;
+            this.molGroup.add(ring2s);
+            this.bondMeshes.push(ring2s);
+
+            const cloud2sGeo = new THREE.SphereGeometry(4.6, 24, 24);
+            const cloud2sMat = new THREE.MeshStandardMaterial({
+                color: 0x00e676,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.08
+            });
+            const cloud2s = new THREE.Mesh(cloud2sGeo, cloud2sMat);
+            this.molGroup.add(cloud2s);
+            this.cloudMeshes.push(cloud2s);
+        }
+
+        // 4. 2p Dumbbell Probability Lobes (For Boron through Neon, Z >= 5)
+        if (atom.id >= 5) {
+            const pLobeGeo = new THREE.SphereGeometry(1.2, 20, 20);
+            pLobeGeo.scale(0.8, 1.8, 0.8);
+            const pLobeMat = new THREE.MeshStandardMaterial({
+                color: 0x00ff88,
+                transparent: true,
+                opacity: 0.22,
+                roughness: 0.2
+            });
+
+            // 2px lobes
+            const pxLobePos = new THREE.Mesh(pLobeGeo, pLobeMat);
+            pxLobePos.rotation.z = Math.PI / 2;
+            pxLobePos.position.set(2.4, 0, 0);
+            this.molGroup.add(pxLobePos);
+            this.cloudMeshes.push(pxLobePos);
+
+            const pxLobeNeg = new THREE.Mesh(pLobeGeo, pLobeMat);
+            pxLobeNeg.rotation.z = Math.PI / 2;
+            pxLobeNeg.position.set(-2.4, 0, 0);
+            this.molGroup.add(pxLobeNeg);
+            this.cloudMeshes.push(pxLobeNeg);
+
+            // 2py lobes (if Z >= 6)
+            if (atom.id >= 6) {
+                const pyLobePos = new THREE.Mesh(pLobeGeo, pLobeMat);
+                pyLobePos.position.set(0, 2.4, 0);
+                this.molGroup.add(pyLobePos);
+                this.cloudMeshes.push(pyLobePos);
+
+                const pyLobeNeg = new THREE.Mesh(pLobeGeo, pLobeMat);
+                pyLobeNeg.position.set(0, -2.4, 0);
+                this.molGroup.add(pyLobeNeg);
+                this.cloudMeshes.push(pyLobeNeg);
+            }
+
+            // 2pz lobes (if Z >= 7)
+            if (atom.id >= 7) {
+                const pzLobePos = new THREE.Mesh(pLobeGeo, pLobeMat);
+                pzLobePos.rotation.x = Math.PI / 2;
+                pzLobePos.position.set(0, 0, 2.4);
+                this.molGroup.add(pzLobePos);
+                this.cloudMeshes.push(pzLobePos);
+
+                const pzLobeNeg = new THREE.Mesh(pLobeGeo, pLobeMat);
+                pzLobeNeg.rotation.x = Math.PI / 2;
+                pzLobeNeg.position.set(0, 0, -2.4);
+                this.molGroup.add(pzLobeNeg);
+                this.cloudMeshes.push(pzLobeNeg);
+            }
+        }
+
+        // 5. Orbiting Electron Particles
+        const electronGeo = new THREE.SphereGeometry(0.18, 16, 16);
+        const electronMat = new THREE.MeshStandardMaterial({
+            color: 0x00ff88,
+            emissive: 0x00e676,
+            emissiveIntensity: 0.6
+        });
+
+        // 1s electrons (up to 2)
+        const n1s = Math.min(2, atom.id);
+        for (let e = 0; e < n1s; e++) {
+            const elMesh = new THREE.Mesh(electronGeo, electronMat);
+            const ang = (e / n1s) * Math.PI * 2;
+            elMesh.position.set(2.2 * Math.cos(ang), 0.5 * Math.sin(ang), 2.2 * Math.sin(ang));
+            this.molGroup.add(elMesh);
+            this.atomMeshes.push(elMesh);
+        }
+
+        // 2s and 2p valence electrons (from Z=3 upwards)
+        if (atom.id > 2) {
+            const nValence = atom.id - 2;
+            for (let e = 0; e < nValence; e++) {
+                const elMesh = new THREE.Mesh(electronGeo, electronMat);
+                const ang = (e / nValence) * Math.PI * 2;
+                elMesh.position.set(4.6 * Math.cos(ang), 1.2 * Math.sin(ang), 4.6 * Math.sin(ang));
+                this.molGroup.add(elMesh);
+                this.atomMeshes.push(elMesh);
+            }
+        }
+
+        this.applyRenderMode();
+    }
+
     setRenderMode(mode) {
         this.renderMode = mode;
         this.applyRenderMode();
@@ -739,10 +1000,18 @@ class QuantumMolecularDashboard {
         });
     }
 
-    renderQubitBars(zExps) {
+    renderQubitBars(zExps, isAtomic = false) {
         const container = document.getElementById('qubit-bars');
         if (!container) return;
         container.innerHTML = '';
+
+        const atomicLabels = [
+            "1s_α", "1s_β",
+            "2s_α", "2s_β",
+            "2px_α", "2px_β",
+            "2py_α", "2py_β",
+            "2pz_α", "2pz_β"
+        ];
 
         zExps.slice(0, 10).forEach((val, q) => {
             const row = document.createElement('div');
@@ -753,9 +1022,10 @@ class QuantumMolecularDashboard {
             const widthPct = Math.abs(clamped) * 50.0;
             const leftPct = clamped >= 0 ? 50.0 : (50.0 - widthPct);
             const barColor = clamped >= 0 ? 'var(--quantum-green)' : 'var(--alert-red)';
+            const label = isAtomic ? atomicLabels[q] : `Q${q}`;
 
             row.innerHTML = `
-                <span class="qubit-label">Q${q}</span>
+                <span class="qubit-label" style="${isAtomic ? 'width:38px; font-size:9px;' : ''}">${label}</span>
                 <div class="qubit-bar-bg">
                     <div class="qubit-bar-center"></div>
                     <div class="qubit-bar-fill" style="left:${leftPct}%; width:${widthPct}%; background:${barColor};"></div>
