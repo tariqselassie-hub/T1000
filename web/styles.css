@@ -338,30 +338,30 @@ button.btn-secondary.active {
 .metric-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-top: 8px;
+    gap: 6px;
+    margin-top: 6px;
 }
 
 .metric-card {
     background: var(--bg-root);
     border: 1px solid var(--border-color);
-    padding: 10px 12px;
+    padding: 6px 10px;
     border-radius: 2px;
 }
 
 .metric-title {
     font-family: var(--font-mono);
-    font-size: 10px;
+    font-size: 9px;
     color: var(--text-muted);
     text-transform: uppercase;
 }
 
 .metric-value {
     font-family: var(--font-mono);
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--text-white);
-    margin-top: 4px;
+    margin-top: 2px;
 }
 
 .metric-value.highlight {
@@ -376,26 +376,27 @@ button.btn-secondary.active {
 .qubit-bar-container {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    margin-top: 10px;
+    gap: 3px;
+    margin-top: 6px;
 }
 
 .qubit-row {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 10px;
 }
 
 .qubit-label {
-    width: 28px;
+    width: 26px;
     color: var(--text-slate);
+    font-size: 9px;
 }
 
 .qubit-bar-bg {
     flex: 1;
-    height: 14px;
+    height: 10px;
     background: #080c14;
     border: 1px solid var(--border-color);
     position: relative;
@@ -421,10 +422,10 @@ button.btn-secondary.active {
 }
 
 .qubit-val {
-    width: 48px;
+    width: 44px;
     text-align: right;
     color: var(--text-slate);
-    font-size: 10px;
+    font-size: 9px;
 }
 
 /* Attractor Comparison Strip */
@@ -432,16 +433,16 @@ button.btn-secondary.active {
     background: rgba(255, 179, 0, 0.05);
     border: 1px solid rgba(255, 179, 0, 0.2);
     border-radius: 2px;
-    padding: 12px;
-    margin-top: 10px;
+    padding: 8px 10px;
+    margin-top: 6px;
 }
 
 .comparison-header {
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 10px;
     color: var(--hardware-gold);
     font-weight: 700;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     display: flex;
     justify-content: space-between;
 }

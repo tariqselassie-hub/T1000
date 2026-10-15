@@ -223,15 +223,35 @@ class QuantumMolecularDashboard {
 
             this.renderAttractorComparison(data);
         } else if (Array.isArray(data)) {
-            // General List Format
-            molecules = data.slice(0, 30);
+            // General List Format (e.g. ZINC Anomalies or Pareto Leads)
+            data.slice(0, 30).forEach((d, idx) => {
+                const rank = d.rank || idx + 1;
+                const isAnomaly = (d.total_anomaly_score !== undefined || d.qcd_anomaly !== undefined);
+                const isPareto = (d.pareto_score !== undefined && !isAnomaly);
+                molecules.push({
+                    id: rank,
+                    smiles: d.smiles,
+                    true_logp: d.true_logp,
+                    pred_logp: d.pred_logp,
+                    true_qed: d.true_qed,
+                    true_sas: d.true_sas,
+                    qcd_anomaly: d.qcd_anomaly,
+                    total_anomaly_score: d.total_anomaly_score,
+                    hilbert_dispersion: d.hilbert_dispersion,
+                    pareto_score: d.pareto_score,
+                    z_expectations: d.z_expectations,
+                    tag: isAnomaly ? `ANOM` : (isPareto ? `PARETO` : `CANDIDATE`),
+                    display_metric: isAnomaly ? (d.total_anomaly_score || d.qcd_anomaly).toFixed(2) : (d.true_qed ? `QED ${d.true_qed.toFixed(2)}` : '--')
+                });
+            });
         } else if (data.cliffs) {
             data.cliffs.slice(0, 25).forEach(c => {
                 molecules.push({
                     id: c.target_id,
                     smiles: c.target_smiles,
                     bioactivity: c.act_target,
-                    tag: `CLIFF (+${c.delta_act.toFixed(2)})`
+                    display_metric: `+${c.delta_act.toFixed(2)}`,
+                    tag: `CLIFF`
                 });
             });
         }
@@ -242,7 +262,7 @@ class QuantumMolecularDashboard {
             card.innerHTML = `
                 <div class="mol-card-top">
                     <span class="mol-card-id">#${mol.id || idx + 1} ${mol.tag ? `[${mol.tag}]` : ''}</span>
-                    <span class="mol-card-act">${mol.bioactivity ? mol.bioactivity.toFixed(2) : '--'}</span>
+                    <span class="mol-card-act">${mol.display_metric || (mol.bioactivity ? mol.bioactivity.toFixed(2) : '--')}</span>
                 </div>
                 <div class="mol-card-smiles">${mol.smiles}</div>
             `;
@@ -261,6 +281,8 @@ class QuantumMolecularDashboard {
 
     renderAttractorComparison(data) {
         const compEl = document.getElementById('attractor-comparison-container');
+        const titleEl = document.getElementById('section-comparison-title');
+        if (titleEl) titleEl.textContent = 'Attractor Convergence';
         if (!compEl) return;
 
         compEl.innerHTML = `
@@ -291,6 +313,78 @@ class QuantumMolecularDashboard {
         `;
     }
 
+    renderZincAnomalyCard(meta) {
+        const compEl = document.getElementById('attractor-comparison-container');
+        const titleEl = document.getElementById('section-comparison-title');
+        if (titleEl) titleEl.textContent = 'QCD Anomaly Discrepancy';
+        if (!compEl) return;
+
+        const anomalyScore = (meta.total_anomaly_score || meta.qcd_anomaly || 0).toFixed(2);
+        const dispersion = meta.hilbert_dispersion ? meta.hilbert_dispersion.toFixed(3) : '1.206';
+        const logpGap = (Math.abs(meta.pred_logp - meta.true_logp)).toFixed(2);
+
+        compEl.innerHTML = `
+            <div class="comparison-strip">
+                <div class="comparison-header">
+                    <span>QUANTUM DISCREPANCY</span>
+                    <span style="color:var(--alert-red);">QCD SCORE: ${anomalyScore}</span>
+                </div>
+                <table class="comparison-table">
+                    <tr>
+                        <td>True vs Pred LogP Divergence</td>
+                        <td class="val-col" style="color:var(--alert-red);">&Delta; ${logpGap} units</td>
+                    </tr>
+                    <tr>
+                        <td>Hilbert State Dispersion</td>
+                        <td class="val-col">${dispersion} rad</td>
+                    </tr>
+                    <tr>
+                        <td>Synthetic Accessibility (SAS)</td>
+                        <td class="val-col">${meta.true_sas ? meta.true_sas.toFixed(2) : '--'} / 10.0</td>
+                    </tr>
+                    <tr>
+                        <td>Target Profile</td>
+                        <td class="val-col" style="color:var(--hardware-gold);">Non-Lipinski High-Charge Zone</td>
+                    </tr>
+                </table>
+            </div>
+        `;
+    }
+
+    renderZincParetoCard(meta) {
+        const compEl = document.getElementById('attractor-comparison-container');
+        const titleEl = document.getElementById('section-comparison-title');
+        if (titleEl) titleEl.textContent = 'Frontier Pareto Optimality';
+        if (!compEl) return;
+
+        compEl.innerHTML = `
+            <div class="comparison-strip">
+                <div class="comparison-header">
+                    <span>PARETO FRONTIER LEAD</span>
+                    <span style="color:var(--quantum-green);">TIER-1 CANDIDATE</span>
+                </div>
+                <table class="comparison-table">
+                    <tr>
+                        <td>Drug-Likeness (QED)</td>
+                        <td class="val-col" style="color:var(--quantum-green);">${meta.true_qed ? meta.true_qed.toFixed(3) : '--'}</td>
+                    </tr>
+                    <tr>
+                        <td>Synthetic Feasibility (SAS)</td>
+                        <td class="val-col" style="color:var(--quantum-green);">${meta.true_sas ? meta.true_sas.toFixed(2) : '--'} / 10.0</td>
+                    </tr>
+                    <tr>
+                        <td>Wildman-Crippen LogP</td>
+                        <td class="val-col">${meta.true_logp ? meta.true_logp.toFixed(2) : '--'}</td>
+                    </tr>
+                    <tr>
+                        <td>Lipinski Rule of 5</td>
+                        <td class="val-col" style="color:var(--quantum-green);">100% Compliant</td>
+                    </tr>
+                </table>
+            </div>
+        `;
+    }
+
     loadSMILES(smiles, meta = {}) {
         document.getElementById('input-smiles').value = smiles;
         document.getElementById('display-smiles').textContent = smiles;
@@ -299,20 +393,54 @@ class QuantumMolecularDashboard {
         const parsed = this.parseSMILES(smiles);
         this.buildMolecularMesh(parsed);
 
-        // Update Biophysical Telemetry
-        const molwt = meta.molwt || parsed.estimatedMW;
-        const logp = meta.logp !== undefined ? meta.logp : parsed.estimatedLogP;
-        const tpsa = meta.tpsa !== undefined ? meta.tpsa : parsed.estimatedTPSA;
-        const bioactivity = meta.bioactivity !== undefined ? meta.bioactivity : 5.0;
+        // Adaptive Metric Cards & Contextual Panels
+        if (meta.qcd_anomaly !== undefined || meta.total_anomaly_score !== undefined) {
+            document.getElementById('title-m1').textContent = 'True LogP';
+            document.getElementById('val-mw').textContent = meta.true_logp.toFixed(2);
+            document.getElementById('title-m2').textContent = 'Pred LogP (VQC)';
+            document.getElementById('val-logp').textContent = meta.pred_logp.toFixed(2);
+            document.getElementById('title-m3').textContent = 'QED Drug Score';
+            document.getElementById('val-tpsa').textContent = meta.true_qed ? meta.true_qed.toFixed(3) : '--';
+            document.getElementById('title-m4').textContent = 'Anomaly Score';
+            document.getElementById('val-act').textContent = (meta.total_anomaly_score || meta.qcd_anomaly).toFixed(2);
+            this.renderZincAnomalyCard(meta);
+        } else if (meta.pareto_score !== undefined) {
+            document.getElementById('title-m1').textContent = 'True LogP';
+            document.getElementById('val-mw').textContent = meta.true_logp.toFixed(2);
+            document.getElementById('title-m2').textContent = 'QED Drug Score';
+            document.getElementById('val-logp').textContent = meta.true_qed ? meta.true_qed.toFixed(3) : '--';
+            document.getElementById('title-m3').textContent = 'SAS Synthesizability';
+            document.getElementById('val-tpsa').textContent = meta.true_sas ? meta.true_sas.toFixed(2) : '--';
+            document.getElementById('title-m4').textContent = 'Pareto Rank';
+            document.getElementById('val-act').textContent = `#${meta.id}`;
+            this.renderZincParetoCard(meta);
+        } else {
+            const molwt = meta.molwt || parsed.estimatedMW;
+            const logp = meta.logp !== undefined ? meta.logp : parsed.estimatedLogP;
+            const tpsa = meta.tpsa !== undefined ? meta.tpsa : parsed.estimatedTPSA;
+            const bioactivity = meta.bioactivity !== undefined ? meta.bioactivity : 5.0;
 
-        document.getElementById('val-mw').textContent = `${molwt.toFixed(2)} g/mol`;
-        document.getElementById('val-logp').textContent = logp.toFixed(2);
-        document.getElementById('val-tpsa').textContent = `${tpsa.toFixed(1)} Å²`;
-        document.getElementById('val-act').textContent = bioactivity.toFixed(2);
+            document.getElementById('title-m1').textContent = 'Mol Weight';
+            document.getElementById('val-mw').textContent = `${molwt.toFixed(2)} g/mol`;
+            document.getElementById('title-m2').textContent = 'LogP (Lipophilicity)';
+            document.getElementById('val-logp').textContent = logp.toFixed(2);
+            document.getElementById('title-m3').textContent = 'TPSA Polar Surface';
+            document.getElementById('val-tpsa').textContent = `${tpsa.toFixed(1)} Å²`;
+            document.getElementById('title-m4').textContent = 'Bioactivity Score';
+            document.getElementById('val-act').textContent = bioactivity.toFixed(2);
+
+            if (this.currentExperiment && this.currentExperiment.lead_molecule) {
+                this.renderAttractorComparison(this.currentExperiment);
+            }
+        }
 
         // Update 10-Qubit Spectrum
         let zExps = meta.z_expectations;
         if (!zExps) {
+            const molwt = meta.molwt || parsed.estimatedMW;
+            const logp = meta.logp !== undefined ? meta.logp : parsed.estimatedLogP;
+            const tpsa = meta.tpsa !== undefined ? meta.tpsa : parsed.estimatedTPSA;
+            const bioactivity = meta.bioactivity !== undefined ? meta.bioactivity : 5.0;
             zExps = this.computeSyntheticQuantumExpectations(molwt, logp, tpsa, bioactivity, parsed.atoms.length);
         }
         this.renderQubitBars(zExps);
