@@ -229,7 +229,7 @@ fn run_magnon_quench(
 
 fn save_telemetry(frames: &[LatticeFrame], relative_path: &str) {
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let ws_root = manifest_dir.ancestors().nth(3).unwrap_or(&manifest_dir).to_path_buf();
+    let ws_root = manifest_dir.ancestors().nth(2).unwrap_or(&manifest_dir).to_path_buf();
     let out_path = ws_root.join(relative_path);
 
     if let Some(parent) = out_path.parent() {

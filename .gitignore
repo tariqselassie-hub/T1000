@@ -3,3 +3,9 @@
 Cargo.lock
 .DS_Store
 Thumbs.db
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+results/charts/
+

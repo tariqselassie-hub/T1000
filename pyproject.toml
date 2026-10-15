@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
+# Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
+[project]
+name = "t1000-charting"
+version = "0.1.0"
+description = "Sovereign telemetry and scientific visualization suite for T-1000 Quantum Engine"
+authors = [{ name = "Terrence A. Jones SR" }]
+requires-python = ">=3.11"
+dependencies = [
+    "matplotlib>=3.10.0",
+    "numpy>=2.2.0",
+    "pandas>=2.2.0",
+    "scipy>=1.15.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
