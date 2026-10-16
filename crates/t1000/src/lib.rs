@@ -39,9 +39,14 @@ pub mod zipper;
 pub mod qssm;
 pub mod telemetry;
 pub mod engine;
+pub mod chemistry;
 
 pub use engine::{FpgaDeviceInfo, SystemManifestReport, T1000Engine};
 pub use telemetry::QuantumTelemetryReport;
+pub use chemistry::{
+    list_period_molecules, simulate_period_molecule, JordanWignerHamiltonian, MolecularQuantumReport,
+    PauliOp, PauliTerm, Period12Molecule, Period12MoleculeMetadata,
+};
 
 // Backwards-compatible module aliases
 pub use measurements::observable;

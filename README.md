@@ -54,6 +54,7 @@
 * **Whole-Library ZINC 250k Engine:** Screens all 249,455 drug candidates in **1.17 seconds** (**213,351 molecules/sec**) across 20 threads.
 * **Search 3 (Quantum Anomalies & Outliers):** Mines extreme zwitterions, highly charged amidinium/guanidinium motifs, and topological outliers based on Hilbert space dispersion.
 * **Search 1 (Frontier Pareto Drug Candidates):** Discovers top golden leads with $\text{QED} > 0.88$, $\text{SAS} < 1.45$, and $\text{logP} \in [2.4, 3.1]$.
+* **Period 1 & 2 Molecular Quantum Shells (`t1000::chemistry`):** Second-quantized Jordan-Wigner Hamiltonian simulations for 9 fundamental molecules from $\text{H}_2$ ($4\text{Q}$) up to all-electron Methane $\text{CH}_4$ ($18\text{Q}$), evaluating ground-state energies, 18-body Pauli-Z orbital occupations, and single-orbital Von Neumann entanglement entropies.
 * Detailed Documentation: [`docs/zinc_quantum_screening.md`](docs/zinc_quantum_screening.md).
 
 ### 4. Statistical Quantum Verification (`t1000::rcs`)

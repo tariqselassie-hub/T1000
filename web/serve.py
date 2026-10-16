@@ -920,6 +920,8 @@ class SovereignHandler(http.server.SimpleHTTPRequestHandler):
             self.handle_api_compiler_schedule()
         elif self.path == "/api/zipper/run":
             self.handle_api_zipper_run()
+        elif self.path == "/api/molecules/simulate":
+            self.handle_api_molecules_simulate()
         else:
             self.send_error(404, "Endpoint not found")
 
@@ -933,6 +935,7 @@ class SovereignHandler(http.server.SimpleHTTPRequestHandler):
             "max_dense_qubits": 26,
             "zipper_max_qubits": 200,
             "heptal_qudit_radix": 7,
+            "period_molecules_max_qubits": 18,
             "cohesion_status": "PHASE_5_OPERATIONAL",
             "timestamp": time.time(),
         }
@@ -1078,6 +1081,29 @@ class SovereignHandler(http.server.SimpleHTTPRequestHandler):
 
         res = simulate_coherence_schedule(qubits, layers, auto_dd, thresh)
         self.send_json_response(res)
+
+    def handle_api_molecules_simulate(self):
+        try:
+            content_length = int(self.headers.get("Content-Length", 0))
+            raw_body = self.rfile.read(content_length)
+            payload = json.loads(raw_body.decode("utf-8"))
+        except Exception:
+            payload = {}
+
+        formula = payload.get("formula", "CH4").upper()
+        json_file = WEB_DIR / "data" / "period_1_2_molecules_quantum.json"
+        if json_file.exists():
+            try:
+                with open(json_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                for m in data.get("molecules", []):
+                    if m.get("formula", "").upper() == formula:
+                        self.send_json_response(m)
+                        return
+            except Exception as e:
+                self.send_json_response({"error": str(e)}, status=500)
+                return
+        self.send_json_response({"error": f"Molecule {formula} not found in database"}, status=404)
 
     def send_json_response(self, data: Dict[str, Any], status: int = 200):
         body = json.dumps(data).encode("utf-8")

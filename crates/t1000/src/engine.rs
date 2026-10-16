@@ -17,6 +17,7 @@ use crate::canonical::{CanonicalAlgorithm, CanonicalExecutionReport, CanonicalRu
 use crate::coherence::NoiseChannelParams;
 use crate::compiler::CircuitBuilder;
 use crate::heptal_wave::{HeptalZipperConfig, HeptalZipperEngine, HeptalZipperReport};
+use crate::chemistry::{MolecularQuantumReport, Period12Molecule, Period12MoleculeMetadata};
 use crate::smiles::{SmilesError, SmilesExplorer, SmilesFeatures, SmilesFeaturizer, SmilesPropertyProfile};
 use crate::state::QuantumState;
 use crate::telemetry::QuantumTelemetryReport;
@@ -44,6 +45,7 @@ pub struct SystemManifestReport {
     pub max_dense_qubits: usize,
     pub zipper_max_qubits: usize,
     pub heptal_qudit_radix: usize,
+    pub period_molecules_max_qubits: usize,
 }
 
 /// Master engine facade coordinating all T-1000 quantum simulation and screening pipelines.
@@ -182,7 +184,21 @@ impl T1000Engine {
     }
 
     // =========================================================================
-    // 6. Hardware Silicon Coprocessor Status
+    // 6. Period 1 & 2 Molecular Simulation (up to 18 Qubits)
+    // =========================================================================
+
+    /// Simulates a Period 1 or 2 molecule in second-quantized spin-orbital space up to 18 qubits.
+    pub fn simulate_period_molecule(&self, mol: Period12Molecule) -> MolecularQuantumReport {
+        crate::chemistry::simulate_period_molecule(mol)
+    }
+
+    /// Lists metadata and orbital specifications for all supported Period 1 & 2 molecules.
+    pub fn list_period_molecules(&self) -> Vec<Period12MoleculeMetadata> {
+        crate::chemistry::list_period_molecules()
+    }
+
+    // =========================================================================
+    // 7. Hardware Silicon Coprocessor Status
     // =========================================================================
 
     /// Queries the operational status of the physical AMD/Xilinx Artix-7 FPGA coprocessor.
@@ -208,6 +224,7 @@ impl T1000Engine {
             max_dense_qubits: 26,
             zipper_max_qubits: 200,
             heptal_qudit_radix: 7,
+            period_molecules_max_qubits: 18,
         }
     }
 }
@@ -248,5 +265,27 @@ mod tests {
         let heptal_report = engine.run_heptal_wave(14);
         assert_eq!(heptal_report.total_qudits, 14);
         assert!((heptal_report.mean_complementarity_fidelity - 1.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn test_master_engine_period_1_2_molecules() {
+        let engine = T1000Engine::new();
+        let mols = engine.list_period_molecules();
+        assert_eq!(mols.len(), 9);
+
+        // Verify H2 (4 qubits)
+        let h2_rep = engine.simulate_period_molecule(Period12Molecule::H2);
+        assert_eq!(h2_rep.qubits, 4);
+        assert_eq!(h2_rep.electrons, 2);
+        assert!(h2_rep.ground_state_energy < -1.13);
+
+        // Verify Methane CH4 (flagship 18 qubits)
+        let ch4_rep = engine.simulate_period_molecule(Period12Molecule::CH4);
+        assert_eq!(ch4_rep.qubits, 18);
+        assert_eq!(ch4_rep.electrons, 10);
+        assert_eq!(ch4_rep.spin_orbital_labels.len(), 18);
+        assert_eq!(ch4_rep.orbital_occupations.len(), 18);
+        assert!(ch4_rep.ground_state_energy < -40.0);
+        assert!(ch4_rep.total_orbital_entropy > 0.0);
     }
 }

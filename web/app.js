@@ -277,7 +277,38 @@ class QuantumMolecularDashboard {
 
         let molecules = [];
 
-        if (data.elements) {
+        if (data.molecules) {
+            // Period 1 & 2 Molecular Quantum Series (H2 to CH4, 4 to 18 Qubits)
+            data.molecules.forEach(m => {
+                molecules.push({
+                    is_period_molecule: true,
+                    id: m.id,
+                    symbol: m.formula,
+                    name: m.name,
+                    formula: m.formula,
+                    smiles: m.smiles,
+                    qubits: m.qubits,
+                    electrons: m.electrons,
+                    energy_hartree: m.energy_hartree,
+                    energy_ev: m.energy_ev,
+                    hf_energy: m.hf_energy,
+                    correlation_energy_ev: m.correlation_energy_ev,
+                    nuclear_repulsion: m.nuclear_repulsion,
+                    equilibrium_distance_angstrom: m.equilibrium_distance_angstrom,
+                    dipole_moment_debye: m.dipole_moment_debye,
+                    symmetry_group: m.symmetry_group,
+                    spin_orbitals: m.spin_orbitals,
+                    occupations: m.occupations,
+                    z_expectations: m.z_expectations,
+                    orbital_entropies: m.orbital_entropies,
+                    total_orbital_entropy: m.total_orbital_entropy,
+                    atoms: m.atoms,
+                    bonds: m.bonds,
+                    tag: `${m.formula} (${m.qubits}Q)`,
+                    display_metric: `${m.qubits} Qubits`
+                });
+            });
+        } else if (data.elements) {
             // Period 1 & 2 Atomic Quantum Shells
             data.elements.forEach(el => {
                 molecules.push({
@@ -484,6 +515,52 @@ class QuantumMolecularDashboard {
         `;
     }
 
+    renderPeriodMoleculeCard(meta) {
+        const compEl = document.getElementById('attractor-comparison-container');
+        const titleEl = document.getElementById('section-comparison-title');
+        if (titleEl) titleEl.textContent = 'Molecular Quantum Orbital Matrix';
+        if (!compEl) return;
+
+        compEl.innerHTML = `
+            <div class="comparison-strip">
+                <div class="comparison-header">
+                    <span>${meta.name.toUpperCase()} (${meta.formula})</span>
+                    <span style="color:var(--hardware-gold);">${meta.qubits} QUBITS / ${meta.electrons} e⁻</span>
+                </div>
+                <table class="comparison-table">
+                    <tr>
+                        <td>Symmetry / State</td>
+                        <td class="val-col" style="color:var(--hardware-gold); font-weight:700;">${meta.symmetry_group}</td>
+                    </tr>
+                    <tr>
+                        <td>Ground Energy E₀</td>
+                        <td class="val-col" style="color:var(--quantum-green);">${meta.energy_hartree.toFixed(4)} Ha (${meta.energy_ev.toFixed(1)} eV)</td>
+                    </tr>
+                    <tr>
+                        <td>HF Reference Energy</td>
+                        <td class="val-col">${meta.hf_energy.toFixed(4)} Ha</td>
+                    </tr>
+                    <tr>
+                        <td>Correlation Energy ΔE</td>
+                        <td class="val-col" style="color:var(--quantum-green);">${meta.correlation_energy_ev.toFixed(4)} eV</td>
+                    </tr>
+                    <tr>
+                        <td>Bond Geometry R_e</td>
+                        <td class="val-col">${meta.equilibrium_distance_angstrom.toFixed(4)} Å</td>
+                    </tr>
+                    <tr>
+                        <td>Dipole Moment μ</td>
+                        <td class="val-col">${meta.dipole_moment_debye.toFixed(2)} Debye</td>
+                    </tr>
+                    <tr>
+                        <td>Orbital Entanglement S</td>
+                        <td class="val-col" style="color:var(--hardware-gold);">${meta.total_orbital_entropy.toFixed(3)} nats</td>
+                    </tr>
+                </table>
+            </div>
+        `;
+    }
+
     renderZincAnomalyCard(meta) {
         const compEl = document.getElementById('attractor-comparison-container');
         const titleEl = document.getElementById('section-comparison-title');
@@ -552,6 +629,32 @@ class QuantumMolecularDashboard {
 
     loadSMILES(smiles, meta = {}) {
         this.currentMolecule = { smiles, meta };
+
+        if (meta.is_period_molecule) {
+            document.getElementById('input-smiles').value = meta.smiles;
+            document.getElementById('display-smiles').textContent = `${meta.name} (${meta.formula}, ${meta.qubits} Qubits)`;
+            document.getElementById('badge-id').textContent = `${meta.qubits}Q / ${meta.electrons}e⁻`;
+
+            if (meta.atoms && meta.bonds) {
+                this.buildMolecularMesh({ atoms: meta.atoms, bonds: meta.bonds });
+            } else {
+                const parsed = this.parseSMILES(meta.smiles);
+                this.buildMolecularMesh(parsed);
+            }
+
+            document.getElementById('title-m1').textContent = 'Ground State E₀';
+            document.getElementById('val-mw').textContent = `${meta.energy_hartree.toFixed(3)} Ha`;
+            document.getElementById('title-m2').textContent = 'Symmetry / R_e';
+            document.getElementById('val-logp').textContent = `${meta.symmetry_group} (${meta.equilibrium_distance_angstrom.toFixed(2)} Å)`;
+            document.getElementById('title-m3').textContent = 'Correlation ΔE';
+            document.getElementById('val-tpsa').textContent = `${meta.correlation_energy_ev.toFixed(2)} eV`;
+            document.getElementById('title-m4').textContent = 'Orbital Entropy';
+            document.getElementById('val-act').textContent = `${meta.total_orbital_entropy.toFixed(3)} nats`;
+
+            this.renderPeriodMoleculeCard(meta);
+            this.renderQubitBars(meta.z_expectations, true, meta.spin_orbitals);
+            return;
+        }
 
         if (meta.is_atom) {
             document.getElementById('input-smiles').value = smiles;
@@ -1026,7 +1129,7 @@ class QuantumMolecularDashboard {
         });
     }
 
-    renderQubitBars(zExps, isAtomic = false) {
+    renderQubitBars(zExps, isAtomic = false, customLabels = null) {
         const container = document.getElementById('qubit-bars');
         if (!container) return;
         container.innerHTML = '';
@@ -1036,7 +1139,9 @@ class QuantumMolecularDashboard {
             "2px_β", "2py_α", "2py_β", "2pz_α", "2pz_β"
         ];
 
-        zExps.slice(0, 10).forEach((val, q) => {
+        const labels = customLabels || (isAtomic ? atomicLabels : null);
+
+        zExps.forEach((val, q) => {
             const row = document.createElement('div');
             row.className = 'qubit-row';
 
@@ -1044,10 +1149,10 @@ class QuantumMolecularDashboard {
             const widthPct = Math.abs(clamped) * 50.0;
             const leftPct = clamped >= 0 ? 50.0 : (50.0 - widthPct);
             const barColor = clamped >= 0 ? 'var(--quantum-green)' : 'var(--alert-red)';
-            const label = isAtomic ? atomicLabels[q] : `Q${q}`;
+            const label = labels && labels[q] ? labels[q] : `Q${q}`;
 
             row.innerHTML = `
-                <span class="qubit-label" style="${isAtomic ? 'width:38px; font-size:9px;' : ''}">${label}</span>
+                <span class="qubit-label" style="${labels ? 'width:55px; font-size:9px;' : ''}">${label}</span>
                 <div class="qubit-bar-bg">
                     <div class="qubit-bar-center"></div>
                     <div class="qubit-bar-fill" style="left:${leftPct}%; width:${widthPct}%; background:${barColor};"></div>

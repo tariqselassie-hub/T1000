@@ -174,3 +174,27 @@ Interoperability   (Compile-Mitigate) (PT + Coherence)  (Master API)      (FPGA 
   * 18 qubits, depth 8, Adam optimizer, 5 epochs evaluated in $0.0588\text{ s/epoch}$.
   * Monotonic loss descent: $0.4942 \to 0.4344$ ($\Delta = 0.0598$).
 
+---
+
+## 8. Native Second-Quantized Chemistry Engine & Period 1 & 2 Molecular Suite (4–18 Qubits)
+
+### Architectural Innovations (Option B: Native Rust Crate Core)
+1. **Native Electronic Structure (`t1000::chemistry`):**
+   * Second-quantized Jordan-Wigner Hamiltonian generator mapping molecular spin-orbitals directly to Pauli operators.
+   * Minimal STO-3G basis and active-valence representations covering 9 canonical Period 1 & 2 molecules:
+     * $\text{H}_2$ ($4\text{Q}$), $\text{HeH}^+$ ($4\text{Q}$), $\text{LiH}$ ($12\text{Q}$), $\text{HF}$ ($12\text{Q}$), $\text{BeH}_2$ ($14\text{Q}$), $\text{H}_2\text{O}$ ($14\text{Q}$), $\text{BH}_3$ ($16\text{Q}$), $\text{NH}_3$ ($16\text{Q}$), and all-electron Methane $\text{CH}_4$ ($18\text{Q}$).
+   * Quantum orbital entanglement entropy diagnostics: computes single-orbital reduced density matrix entropy $S_k = -n_k \ln n_k - (1 - n_k) \ln(1 - n_k)$ and total mutual entanglement.
+2. **Master Facade Integration (`T1000Engine`):**
+   * Added `engine.simulate_period_molecule(mol)` and `engine.list_period_molecules()` methods.
+   * Manifest capability profile updated: `period_molecules_max_qubits = 18`.
+
+### Web Dashboard & Telemetry Enhancements (Option A Integration)
+1. **Molecular Simulation Driver (`simulate_period_1_2_molecules.py`):**
+   * Computes ground-state energies, correlation energies $\Delta E$, 3D molecular meshes, and 18-spin-orbital Pauli expectation vectors.
+   * Generates `period_1_2_molecules_quantum.json` for persistent visualization.
+2. **Interactive Web Dashboard (`web/index.html` & `web/app.js`):**
+   * Dynamic orbital bar visualizer expanded from 10 to 18 qubits with custom symmetry labels ($\sigma, \pi, a_1, t_2$).
+   * 3D molecular mesh rendering with ball-and-stick representations for all 9 hydrides and diatomics.
+   * REST API endpoint `POST /api/molecules/simulate` added to `web/serve.py`.
+
+
