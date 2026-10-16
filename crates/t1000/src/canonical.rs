@@ -14,8 +14,10 @@
 use serde::{Deserialize, Serialize};
 use std::f64::consts::PI;
 
+use crate::coherence::NoiseChannelParams;
 use crate::compiler::op::CircuitOp;
 use crate::compiler::CircuitBuilder;
+use crate::state::QuantumState;
 
 /// Entangling topology options for variational quantum ansatze.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -297,6 +299,209 @@ pub fn mitigate_readout_errors(
     mitigated
 }
 
+// =========================================================================
+// 3. End-to-End Canonical Algorithmic Execution Lifecycle
+// =========================================================================
+
+/// Formal catalog of foundational quantum algorithms.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum CanonicalAlgorithm {
+    /// Bernstein-Vazirani single-query hidden linear bitstring recovery.
+    BernsteinVazirani {
+        n_inputs: usize,
+        hidden_mask: usize,
+    },
+    /// Grover amplitude diffusion operator on an n-qubit register.
+    GroverDiffusion {
+        n_qubits: usize,
+    },
+    /// Quantum Phase Estimation for an eigenvalue phase theta in [0, 2*pi).
+    QuantumPhaseEstimation {
+        n_counting: usize,
+        phase_phi: f64,
+    },
+    /// Hardware-Efficient Ansatz parameterized layer.
+    HardwareEfficientAnsatz {
+        n_qubits: usize,
+        thetas_y: Vec<f64>,
+        thetas_z: Vec<f64>,
+        topology: EntanglerTopology,
+    },
+    /// Transverse-Field 1D Ising model Trotter step.
+    TrotterIsing {
+        n_qubits: usize,
+        j_coupling: f64,
+        h_transverse: f64,
+        dt: f64,
+    },
+}
+
+/// Telemetry and distribution report from a canonical algorithm execution.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CanonicalExecutionReport {
+    /// Number of physical qubits in the execution register
+    pub num_qubits: usize,
+    /// Raw Born rule measurement probabilities
+    pub probabilities_raw: Vec<f64>,
+    /// Probabilities after measurement assignment error mitigation
+    pub probabilities_mitigated: Vec<f64>,
+    /// Most likely basis state index (argmax over probabilities)
+    pub most_likely_state: usize,
+    /// Shannon entropy in nats of the measurement distribution
+    pub shannon_entropy_nats: f64,
+    /// Algorithmic success metric (e.g. probability of target hidden string)
+    pub success_probability: f64,
+}
+
+/// Fluent orchestrator for constructing, simulating, and evaluating canonical algorithms.
+#[derive(Debug, Clone)]
+pub struct CanonicalRunner {
+    pub algorithm: CanonicalAlgorithm,
+    pub noise_params: Option<NoiseChannelParams>,
+    pub confusion_matrix: Option<ReadoutConfusionMatrix>,
+    pub seed: u64,
+}
+
+impl CanonicalRunner {
+    pub fn new(algorithm: CanonicalAlgorithm) -> Self {
+        Self {
+            algorithm,
+            noise_params: None,
+            confusion_matrix: None,
+            seed: crate::DEFAULT_SEED,
+        }
+    }
+
+    pub fn with_noise(mut self, noise: NoiseChannelParams) -> Self {
+        self.noise_params = Some(noise);
+        self
+    }
+
+    pub fn with_readout_mitigation(mut self, confusion: ReadoutConfusionMatrix) -> Self {
+        self.confusion_matrix = Some(confusion);
+        self
+    }
+
+    pub fn with_seed(mut self, seed: u64) -> Self {
+        self.seed = seed;
+        self
+    }
+
+    /// Builds the circuit DAG for this algorithm.
+    pub fn build_circuit(&self) -> CircuitBuilder {
+        match &self.algorithm {
+            CanonicalAlgorithm::BernsteinVazirani { n_inputs, hidden_mask } => {
+                let total_qubits = n_inputs + 1;
+                let ancilla = *n_inputs;
+                let mut builder = CircuitBuilder::new(total_qubits);
+                let input_qubits: Vec<usize> = (0..*n_inputs).collect();
+                build_bernstein_vazirani(&mut builder, &input_qubits, ancilla, *hidden_mask);
+                builder
+            }
+            CanonicalAlgorithm::GroverDiffusion { n_qubits } => {
+                let mut builder = CircuitBuilder::new(*n_qubits);
+                let qubits: Vec<usize> = (0..*n_qubits).collect();
+                build_grover_diffusion(&mut builder, &qubits);
+                builder
+            }
+            CanonicalAlgorithm::QuantumPhaseEstimation { n_counting, phase_phi } => {
+                let total_qubits = n_counting + 1;
+                let state_qubit = *n_counting;
+                let mut builder = CircuitBuilder::new(total_qubits);
+                let counting_qubits: Vec<usize> = (0..*n_counting).collect();
+                build_quantum_phase_estimation(&mut builder, &counting_qubits, state_qubit, *phase_phi);
+                builder
+            }
+            CanonicalAlgorithm::HardwareEfficientAnsatz { n_qubits, thetas_y, thetas_z, topology } => {
+                let mut builder = CircuitBuilder::new(*n_qubits);
+                let qubits: Vec<usize> = (0..*n_qubits).collect();
+                build_hea_layer(&mut builder, &qubits, thetas_y, thetas_z, *topology);
+                builder
+            }
+            CanonicalAlgorithm::TrotterIsing { n_qubits, j_coupling, h_transverse, dt } => {
+                let mut builder = CircuitBuilder::new(*n_qubits);
+                let qubits: Vec<usize> = (0..*n_qubits).collect();
+                let pairs: Vec<(usize, usize)> = (0..n_qubits.saturating_sub(1)).map(|i| (i, i + 1)).collect();
+                build_trotter_ising_step(&mut builder, &pairs, &qubits, *j_coupling, *h_transverse, *dt);
+                builder
+            }
+        }
+    }
+
+    /// Executes the canonical algorithm through circuit compilation, optional noise, and readout mitigation.
+    pub fn execute(&self) -> CanonicalExecutionReport {
+        let builder = self.build_circuit();
+        let num_qubits = builder.dag.num_qubits;
+        let dim = 1 << num_qubits;
+        let mut state = QuantumState::ground(dim);
+
+        // For QPE, prepare state qubit in |1> eigenstate of phase gate
+        if let CanonicalAlgorithm::QuantumPhaseEstimation { n_counting, .. } = self.algorithm {
+            crate::simd::apply_ry_kernel(&mut state.real, &mut state.imag, n_counting, PI);
+        }
+
+        // Execute compiled circuit with or without open-system noise
+        if let Some(ref noise) = self.noise_params {
+            builder.execute_with_noise(&mut state, noise, 0.05, self.seed);
+        } else {
+            builder.execute(&mut state);
+        }
+
+        let probabilities_raw = state.probabilities();
+
+        let probabilities_mitigated = if let Some(ref confusion) = self.confusion_matrix {
+            mitigate_readout_errors(&probabilities_raw, num_qubits, confusion)
+        } else {
+            probabilities_raw.clone()
+        };
+
+        // Find most likely state
+        let mut most_likely_state = 0;
+        let mut max_prob = -1.0;
+        for (idx, &p) in probabilities_mitigated.iter().enumerate() {
+            if p > max_prob {
+                max_prob = p;
+                most_likely_state = idx;
+            }
+        }
+
+        // Compute Shannon entropy in nats
+        let mut shannon_entropy_nats = 0.0;
+        for &p in &probabilities_mitigated {
+            if p > 1e-15 {
+                shannon_entropy_nats -= p * p.ln();
+            }
+        }
+
+        // Determine success probability
+        let success_probability = match self.algorithm {
+            CanonicalAlgorithm::BernsteinVazirani { n_inputs, hidden_mask } => {
+                let mask = (1 << n_inputs) - 1;
+                let mut sum = 0.0;
+                for (idx, &p) in probabilities_mitigated.iter().enumerate() {
+                    if (idx & mask) == hidden_mask {
+                        sum += p;
+                    }
+                }
+                sum
+            }
+            CanonicalAlgorithm::GroverDiffusion { .. } => max_prob,
+            CanonicalAlgorithm::QuantumPhaseEstimation { .. } => max_prob,
+            CanonicalAlgorithm::HardwareEfficientAnsatz { .. } => max_prob,
+            CanonicalAlgorithm::TrotterIsing { .. } => probabilities_mitigated[0],
+        };
+
+        CanonicalExecutionReport {
+            num_qubits,
+            probabilities_raw,
+            probabilities_mitigated,
+            most_likely_state,
+            shannon_entropy_nats,
+            success_probability,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -355,5 +560,45 @@ mod tests {
         assert!((sum - 1.0).abs() < 1e-6);
         // Mitigation should sharpen dominant ground state probability
         assert!(mitigated[0] >= raw[0]);
+    }
+
+    #[test]
+    fn test_canonical_runner_bernstein_vazirani() {
+        let runner = CanonicalRunner::new(CanonicalAlgorithm::BernsteinVazirani {
+            n_inputs: 3,
+            hidden_mask: 0b101, // 5
+        });
+        let report = runner.execute();
+        assert_eq!(report.num_qubits, 4);
+        assert!(report.success_probability > 0.99);
+    }
+
+    #[test]
+    fn test_canonical_runner_with_noise_and_mitigation() {
+        let noise = NoiseChannelParams {
+            t1_us: 100.0,
+            t2_us: 120.0,
+            depolarizing_prob: 0.005,
+        };
+        let confusion = ReadoutConfusionMatrix::default();
+        let runner = CanonicalRunner::new(CanonicalAlgorithm::BernsteinVazirani {
+            n_inputs: 3,
+            hidden_mask: 0b011, // 3
+        })
+        .with_noise(noise)
+        .with_readout_mitigation(confusion);
+
+        let report = runner.execute();
+        assert_eq!(report.num_qubits, 4);
+        assert!(report.success_probability > 0.85);
+        assert_eq!(report.probabilities_mitigated.len(), 16);
+    }
+
+    #[test]
+    fn test_canonical_runner_grover_diffusion() {
+        let runner = CanonicalRunner::new(CanonicalAlgorithm::GroverDiffusion { n_qubits: 3 });
+        let report = runner.execute();
+        assert_eq!(report.num_qubits, 3);
+        assert_eq!(report.probabilities_mitigated.len(), 8);
     }
 }

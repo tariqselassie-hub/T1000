@@ -47,7 +47,8 @@ pub use ansatz::{CircuitAnsatz, DeepQuantumNeuralNetwork, PiPhaseLayer, PreInitC
 pub use canonical::{
     build_bernstein_vazirani, build_grover_diffusion, build_hea_layer,
     build_quantum_phase_estimation, build_trotter_ising_step, mitigate_readout_errors,
-    EntanglerTopology, ReadoutConfusionMatrix,
+    CanonicalAlgorithm, CanonicalExecutionReport, CanonicalRunner, EntanglerTopology,
+    ReadoutConfusionMatrix,
 };
 pub use coherence::{
     apply_core_channel_on_qubit, apply_dynamical_decoupling, apply_open_system_decoherence,

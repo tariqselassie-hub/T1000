@@ -77,6 +77,41 @@ impl CompiledCircuit {
 
     /// Executes the compiled circuit into a mutable QuantumState in-place.
     /// Reuses cache lines by executing grouped independent operations in cache order.
+    /// Executes an individual operation against a mutable QuantumState.
+    pub fn execute_op(state: &mut QuantumState, op: &CircuitOp) {
+        match op {
+            CircuitOp::Ry { qubit, theta } => {
+                crate::simd::apply_ry_kernel(&mut state.real, &mut state.imag, *qubit, *theta);
+            }
+            CircuitOp::Rz { qubit, theta } => {
+                crate::simd::apply_rz_kernel(&mut state.real, &mut state.imag, *qubit, *theta);
+            }
+            CircuitOp::Unitary1Q { qubit, matrix } => {
+                apply_unitary2x2_op(&mut state.real, &mut state.imag, *qubit, matrix);
+            }
+            CircuitOp::CZ { q1, q2 } => {
+                crate::simd::apply_cz_kernel(&mut state.real, &mut state.imag, *q1, *q2);
+            }
+            CircuitOp::CNOT { control, target } => {
+                apply_cnot_op(&mut state.real, &mut state.imag, *control, *target);
+            }
+            CircuitOp::AntiCNOT { control, target } => {
+                apply_anticnot_op(&mut state.real, &mut state.imag, *control, *target);
+            }
+            CircuitOp::SWAP { q1, q2 } => {
+                apply_swap_op(&mut state.real, &mut state.imag, *q1, *q2);
+            }
+            CircuitOp::ControlledPhase { control, target, theta } => {
+                apply_controlled_phase_op(&mut state.real, &mut state.imag, *control, *target, *theta);
+            }
+            CircuitOp::RademacherPhase { signs } => {
+                crate::simd::apply_rademacher_phase_kernel(&mut state.real, &mut state.imag, signs);
+            }
+        }
+    }
+
+    /// Executes the compiled circuit into a mutable QuantumState in-place.
+    /// Reuses cache lines by executing grouped independent operations in cache order.
     pub fn execute(&self, state: &mut QuantumState) {
         assert_eq!(
             state.dim,
@@ -88,79 +123,42 @@ impl CompiledCircuit {
 
         for stage in &self.stages {
             for op in &stage.ops {
-                match op {
-                    CircuitOp::Ry { qubit, theta } => {
-                        crate::simd::apply_ry_kernel(
-                            &mut state.real,
-                            &mut state.imag,
-                            *qubit,
-                            *theta,
-                        );
-                    }
-                    CircuitOp::Rz { qubit, theta } => {
-                        crate::simd::apply_rz_kernel(
-                            &mut state.real,
-                            &mut state.imag,
-                            *qubit,
-                            *theta,
-                        );
-                    }
-                    CircuitOp::Unitary1Q { qubit, matrix } => {
-                        apply_unitary2x2_op(
-                            &mut state.real,
-                            &mut state.imag,
-                            *qubit,
-                            matrix,
-                        );
-                    }
-                    CircuitOp::CZ { q1, q2 } => {
-                        crate::simd::apply_cz_kernel(
-                            &mut state.real,
-                            &mut state.imag,
-                            *q1,
-                            *q2,
-                        );
-                    }
-                    CircuitOp::CNOT { control, target } => {
-                        apply_cnot_op(
-                            &mut state.real,
-                            &mut state.imag,
-                            *control,
-                            *target,
-                        );
-                    }
-                    CircuitOp::AntiCNOT { control, target } => {
-                        apply_anticnot_op(
-                            &mut state.real,
-                            &mut state.imag,
-                            *control,
-                            *target,
-                        );
-                    }
-                    CircuitOp::SWAP { q1, q2 } => {
-                        apply_swap_op(
-                            &mut state.real,
-                            &mut state.imag,
-                            *q1,
-                            *q2,
-                        );
-                    }
-                    CircuitOp::ControlledPhase { control, target, theta } => {
-                        apply_controlled_phase_op(
-                            &mut state.real,
-                            &mut state.imag,
-                            *control,
-                            *target,
-                            *theta,
-                        );
-                    }
-                    CircuitOp::RademacherPhase { signs } => {
-                        crate::simd::apply_rademacher_phase_kernel(
-                            &mut state.real,
-                            &mut state.imag,
-                            signs,
-                        );
-                    }
+                Self::execute_op(state, op);
+            }
+        }
+    }
+
+    /// Executes the compiled circuit with stochastic open-system decoherence injected between stages.
+    pub fn execute_with_noise(
+        &self,
+        state: &mut QuantumState,
+        noise: &crate::coherence::NoiseChannelParams,
+        stage_dt_us: f64,
+        seed: u64,
+    ) {
+        assert_eq!(
+            state.dim,
+            1 << self.num_qubits,
+            "State dimension {} does not match circuit qubit count {}",
+            state.dim,
+            self.num_qubits
+        );
+        use rand::SeedableRng;
+        let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(seed);
+
+        for stage in &self.stages {
+            for op in &stage.ops {
+                Self::execute_op(state, op);
+            }
+            if stage_dt_us > 0.0 {
+                for q in 0..self.num_qubits {
+                    crate::coherence::apply_open_system_decoherence_qubit(
+                        state,
+                        q,
+                        noise,
+                        stage_dt_us,
+                        &mut rng,
+                    );
                 }
             }
         }

@@ -20,6 +20,7 @@ pub use scheduler::{
     compute_asap_alap, schedule_circuit_dag, schedule_circuit_dag_with_coherence_dd,
     AsapAlapSchedule, CoherenceScheduleTelemetry, ScheduledStage, StageKind,
 };
+use crate::state::QuantumState;
 
 /// Fluent builder for constructing quantum circuits and compiling through the DAG optimizer.
 #[derive(Debug, Clone)]
@@ -236,6 +237,26 @@ impl CircuitBuilder {
     /// and groups independent operations into cache-optimized stages.
     pub fn compile(&self) -> CompiledCircuit {
         CompiledCircuit::compile(&self.dag)
+    }
+
+    /// Compiles and immediately executes the circuit in-place into `state`.
+    pub fn execute(&self, state: &mut QuantumState) -> CompiledCircuit {
+        let compiled = self.compile();
+        compiled.execute(state);
+        compiled
+    }
+
+    /// Compiles and executes the circuit with open-system decoherence injected between stages.
+    pub fn execute_with_noise(
+        &self,
+        state: &mut QuantumState,
+        noise: &crate::coherence::NoiseChannelParams,
+        stage_dt_us: f64,
+        seed: u64,
+    ) -> CompiledCircuit {
+        let compiled = self.compile();
+        compiled.execute_with_noise(state, noise, stage_dt_us, seed);
+        compiled
     }
 }
 
