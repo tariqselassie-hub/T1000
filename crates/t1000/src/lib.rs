@@ -38,7 +38,9 @@ pub mod trainer;
 pub mod zipper;
 pub mod qssm;
 pub mod telemetry;
+pub mod engine;
 
+pub use engine::{FpgaDeviceInfo, SystemManifestReport, T1000Engine};
 pub use telemetry::QuantumTelemetryReport;
 
 // Backwards-compatible module aliases
