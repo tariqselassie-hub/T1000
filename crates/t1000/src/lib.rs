@@ -62,7 +62,10 @@ pub use qec::{
     PauliErrorKind, QecCodeKind, QecRecoveryResult, SyndromeReport,
 };
 pub use feature_map::{DataEncodingLayer, EncodingKind};
-pub use heptal_wave::{evolve_heptal_wave_cycle, HeptalWaveState};
+pub use heptal_wave::{
+    evolve_heptal_wave_cycle, HeptalWaveState, HeptalZipperConfig, HeptalZipperEngine,
+    HeptalZipperReport, HeptalZipperStepTelemetry,
+};
 pub use ingest::{tokenize_text, CorpusIngestor, IngestedDoc, IngestionTelemetry};
 pub use lattice::{
     extract_lattice_frame, render_lattice_ascii, BoundaryCondition, LatticeConfig, LatticeFrame,
