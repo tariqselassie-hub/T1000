@@ -35,6 +35,7 @@ pub mod state;
 pub mod tensor_network;
 pub mod tiled_butterfly;
 pub mod trainer;
+pub mod zipper;
 
 // Backwards-compatible module aliases
 pub use measurements::observable;
@@ -77,6 +78,7 @@ pub use smiles::{
 };
 pub use state::{QuantumFeatureMap, QuantumState};
 pub use tiled_butterfly::{apply_layer_fused, tiled_apply_cz, tiled_apply_ry, tiled_apply_rz};
+pub use zipper::{BlochZipperEngine, ZipperConfig, ZipperExecutionReport, ZipperStepTelemetry};
 
 /// Seed used by the plain `new` constructors so default-initialised models are reproducible.
 /// Use the `new_seeded` variants to choose a different (but still deterministic) initialisation.

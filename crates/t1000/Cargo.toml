@@ -47,6 +47,10 @@ path = "src/bin/measurements/scale_36_qubits_tn.rs"
 name = "xeb_scaling_bench"
 path = "src/bin/measurements/xeb_scaling_bench.rs"
 
+[[bin]]
+name = "bloch_zipper_bench"
+path = "src/bin/measurements/bloch_zipper_bench.rs"
+
 # =========================================================================
 # Executable Binaries: Quantum Neural Network Training
 # =========================================================================
