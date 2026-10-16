@@ -126,5 +126,17 @@ Interoperability   (Compile-Mitigate) (PT + Coherence)  (Master API)      (FPGA 
 
 ---
 
-## 6. Phase 5: Web Dashboard & Remote Telemetry Interface (PENDING)
-* Expose `T1000Engine` endpoints to `web/serve.py` and synchronize telemetry visualization.
+## 6. Phase 5: Web Dashboard & Remote Telemetry Interface (COMPLETED)
+
+### Architectural Achievements
+1. **HTTP / REST Telemetry API (`web/serve.py`):**
+   * Synchronized sovereign server endpoints with the Rust `T1000Engine` capabilities:
+     * `GET /api/manifest`: Returns live capabilities manifest matching `SystemManifestReport`.
+     * `POST /api/canonical/run`: Executes canonical algorithms (Bernstein-Vazirani, Grover, QPE, Trotter-Ising) with simulated readout error mitigation.
+     * `POST /api/smiles/evaluate`: Computes continuous 19D molecular descriptors and VQC target expectations (logP, QED, SAS) on arbitrary SMILES input.
+     * `POST /api/zipper/run`: Drives the 1D MPS linear Bloch-zipper and radix-7 Heptal qudit engines.
+     * `POST /api/qec/run`: Drives syndrome extraction and error correction recovery on planar surface codes.
+
+### Verification Matrix
+* Validated server compilation: `python -m py_compile web/serve.py` exited with code 0.
+* Workspace testing: Complete test suite passed cleanly across both workspace crates.
