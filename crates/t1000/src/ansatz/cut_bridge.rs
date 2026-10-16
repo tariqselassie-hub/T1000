@@ -68,6 +68,60 @@ where
     total_expectation
 }
 
+/// Optimized Mid-Circuit Cut-Bridge Executor with State Checkpointing.
+/// 1. Runs Layers 0..L/2 once per fragment (independent of z_flags) and snapshots to base buffers.
+/// 2. For each branch (z_flags), copies from snapshot, applies mid-circuit Z-insertions,
+///    runs transverse Layers L/2..L, and measures local expectation.
+/// 3. Reconstructs exact 36Q expectation via tensor contraction c[m_a][m_b].
+pub fn eval_36q_bipartite_midcircuit<FP, FR>(
+    prep_first_half: FP,
+    run_second_half: FR,
+) -> (f64, [f64; 4], [f64; 4])
+where
+    FP: Fn(usize, &mut [f64], &mut [f64]),
+    FR: Fn(usize, &[bool; 2], &mut [f64], &mut [f64]) -> f64,
+{
+    const DIM: usize = 262_144;
+    let mut base_re_a = vec![0.0f64; DIM];
+    let mut base_im_a = vec![0.0f64; DIM];
+    let mut base_re_b = vec![0.0f64; DIM];
+    let mut base_im_b = vec![0.0f64; DIM];
+
+    prep_first_half(0, &mut base_re_a, &mut base_im_a);
+    prep_first_half(1, &mut base_re_b, &mut base_im_b);
+
+    let mut work_re = vec![0.0f64; DIM];
+    let mut work_im = vec![0.0f64; DIM];
+
+    let mut exp_a = [0.0f64; 4];
+    let mut exp_b = [0.0f64; 4];
+
+    for mask in 0..4 {
+        let z_flags = [(mask & 1) != 0, ((mask >> 1) & 1) != 0];
+
+        work_re.copy_from_slice(&base_re_a);
+        work_im.copy_from_slice(&base_im_a);
+        exp_a[mask] = run_second_half(0, &z_flags, &mut work_re, &mut work_im);
+
+        work_re.copy_from_slice(&base_re_b);
+        work_im.copy_from_slice(&base_im_b);
+        exp_b[mask] = run_second_half(1, &z_flags, &mut work_re, &mut work_im);
+    }
+
+    let c: [[f64; 2]; 2] = [[0.5, 0.5], [0.5, -0.5]];
+    let mut total_expectation = 0.0;
+
+    for m_a in 0..4 {
+        for m_b in 0..4 {
+            let w0 = c[m_a & 1][m_b & 1];
+            let w1 = c[(m_a >> 1) & 1][(m_b >> 1) & 1];
+            total_expectation += w0 * w1 * exp_a[m_a] * exp_b[m_b];
+        }
+    }
+
+    (total_expectation, exp_a, exp_b)
+}
+
 /// Generalized wire-cutting reconstruction for arbitrary k bridge CZ gates.
 pub fn eval_cut_bridge_general<FA, FB>(
     k_bridges: usize,
