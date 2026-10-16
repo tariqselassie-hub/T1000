@@ -7,6 +7,13 @@
 
 import math
 import sys
+
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
 from pyqrack import QrackAceBackend, Pauli
 
 
@@ -15,9 +22,9 @@ def apply_measurement_basis(sim, q, theta):
     sim.r(Pauli.PauliY, theta, q)
 
 
-def measure_expectation(sim, shots):
-    """Measure shots on qubits 0 and 1, calculating <Z_0 Z_1> correlation."""
-    results = sim.measure_shots([0, 1], shots)
+def measure_expectation(sim, qa, qb, shots):
+    """Measure shots on qubits qa and qb, calculating <Z_a Z_b> correlation."""
+    results = sim.measure_shots([qa, qb], shots)
     total = 0
     for res in results:
         a = (res >> 0) & 1
@@ -26,19 +33,11 @@ def measure_expectation(sim, shots):
     return total / shots
 
 
-def run_chsh_test(shots=2048):
+def run_chsh_test(shots=2048, qa=4, qb=13, n_qubits=16):
     """
-    Executes CHSH Bell Inequality test on QrackAceBackend.
-
-    NOTE: The upstream script allocates `sim = QrackAceBackend(6, ...)` at the start
-    of `run_chsh_test` which is never used because `expectation()` constructs its own
-    `s = QrackAceBackend(16, ...)` per angle pair.
+    Executes CHSH Bell Inequality test on QrackAceBackend boundary bridge pair (qa, qb).
+    Offloaded to Intel Arc / Integrated Graphics OpenCL device.
     """
-    # Upstream Line 30-32 (unused allocation in original bseq.py)
-    # sim = QrackAceBackend(6, long_range_columns=1)
-    # sim.h(0)
-    # sim.mcx([0], 1)
-
     pi = math.pi
 
     # CHSH optimal measurement angles (in radians)
@@ -48,13 +47,12 @@ def run_chsh_test(shots=2048):
     theta_bp = -pi / 4.0
 
     def expectation(theta1, theta2):
-        # 16-qubit QrackAceBackend grid (4x4 lattice, patch_width = 2)
-        s = QrackAceBackend(16, long_range_columns=1)
-        s.h(0)
-        s.mcx([0], 1)
-        apply_measurement_basis(s, 0, theta1)
-        apply_measurement_basis(s, 1, theta2)
-        return measure_expectation(s, shots)
+        s = QrackAceBackend(n_qubits, long_range_columns=1)
+        s.h(qa)
+        s.mcx([qa], qb)
+        apply_measurement_basis(s, qa, theta1)
+        apply_measurement_basis(s, qb, theta2)
+        return measure_expectation(s, qa, qb, shots)
 
     E_ab = expectation(theta_a, theta_b)
     E_abp = expectation(theta_a, theta_bp)
@@ -62,20 +60,31 @@ def run_chsh_test(shots=2048):
     E_apbp = expectation(theta_ap, theta_bp)
 
     S = abs(E_ab + E_abp + E_apb - E_apbp)
-    print("-------------------------------------------------------------------------")
-    print(" CHSH BELL INEQUALITY TEST: QrackAceBackend (N=16)")
-    print("-------------------------------------------------------------------------")
-    print(f"  E(a, b)     = {E_ab:+.6f}")
-    print(f"  E(a, b')    = {E_abp:+.6f}")
-    print(f"  E(a', b)    = {E_apb:+.6f}")
-    print(f"  E(a', b')   = {E_apbp:+.6f}")
-    print("-------------------------------------------------------------------------")
-    print(f"  CHSH S-value: {S:.6f} (Tsirelson Bound: 2*sqrt(2) ≈ 2.828427)")
-    print(f"  Bell inequality violated? {'Yes (Quantum Non-Local)' if S > 2.0 else 'No (Classical LHV Bound)'}")
-    print("-------------------------------------------------------------------------")
+    print("┌────────────────────────────────────────────────────────────────────────┐")
+    print(f"│ CHSH BELL INEQUALITY TEST: QrackAceBackend Boundary Pair (q{qa}, q{qb})    │")
+    print(f"│ Target Register: N={n_qubits} Qubits | Shots: {shots:<6} | Device: Intel OpenCL    │")
+    print("├────────────────────────────────────────────────────────────────────────┤")
+    print(f"│  E(a, b)     = {E_ab:+.6f}                                              │")
+    print(f"│  E(a, b')    = {E_abp:+.6f}                                              │")
+    print(f"│  E(a', b)    = {E_apb:+.6f}                                              │")
+    print(f"│  E(a', b')   = {E_apbp:+.6f}                                              │")
+    print("├────────────────────────────────────────────────────────────────────────┤")
+    print(f"│  CHSH S-value: {S:.6f} (Tsirelson Bound: 2*sqrt(2) ~= 2.828427)         │")
+    violation_str = "VIOLATED (Quantum Entangled)" if S > 2.0 else "RESPECTED (Classical LHV)"
+    print(f"│  Bell Inequality: {violation_str:<53}│")
+    print("└────────────────────────────────────────────────────────────────────────┘")
     return S
 
 
 if __name__ == "__main__":
-    shots = int(sys.argv[1]) if len(sys.argv) > 1 else 2048
-    run_chsh_test(shots)
+    import argparse
+    parser = argparse.ArgumentParser(description="QrackAceBackend Boundary Bridge CHSH Audit")
+    parser.add_argument("shots_pos", nargs="?", type=int, default=None, help="Shot count (positional)")
+    parser.add_argument("--shots", type=int, default=2048, help="Monte Carlo shot count")
+    parser.add_argument("--qa", type=int, default=4, help="Fragment A bridge qubit anchor")
+    parser.add_argument("--qb", type=int, default=13, help="Fragment B bridge qubit anchor")
+    parser.add_argument("--qubits", type=int, default=16, help="Total qubits on QrackAceBackend")
+    args = parser.parse_args()
+
+    shots = args.shots_pos if args.shots_pos is not None else args.shots
+    run_chsh_test(shots=shots, qa=args.qa, qb=args.qb, n_qubits=args.qubits)

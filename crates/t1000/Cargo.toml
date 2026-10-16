@@ -59,6 +59,10 @@ path = "src/bin/measurements/adversarial_stego_bench.rs"
 name = "cut_bridge_36q_bench"
 path = "src/bin/measurements/cut_bridge_36q_bench.rs"
 
+[[bin]]
+name = "cut_bridge_chsh_bench"
+path = "src/bin/measurements/cut_bridge_chsh_bench.rs"
+
 # =========================================================================
 # Executable Binaries: Quantum Neural Network Training
 # =========================================================================
