@@ -127,18 +127,62 @@ Telemetry collected on Intel Core Ultra host with Lion Cove P-Cores and Intel Op
 | **Python OpenCL Script** | [`scripts/qec/bseq.py`](../../scripts/qec/bseq.py) | OpenCL `QrackAceBackend` boundary bridge CHSH sampler. |
 | **Orchestrator** | [`scripts/qec/heterogeneous_bridge_pipeline.py`](../../scripts/qec/heterogeneous_bridge_pipeline.py) | Concurrent multi-threaded co-processor pipeline orchestrator. |
 
-### Execution Commands
+---
 
+## 5. Comprehensive CLI Parameter Manual & Usage Reference
+
+### 5.1 Native Rust Benchmark (`cut_bridge_chsh_bench`)
+
+| Parameter / Flag | Type | Default | Valid Range | Operational Description |
+| :--- | :---: | :---: | :---: | :--- |
+| `--qa` | `usize` | `4` | `0..17` | Anchor qubit index on 18-qubit Fragment A. |
+| `--qb` | `usize` | `13` | `0..17` | Anchor qubit index on 18-qubit Fragment B. |
+| `-h`, `--help` | flag | N/A | N/A | Displays CLI usage manual and hardware parameters. |
+
+**Example Execution:**
 ```bash
-# 1. Native Rust CPU L3 Cache Benchmark
+# Run with default bridge anchors (q4, q13)
 cargo run --release --bin cut_bridge_chsh_bench
 
-# 2. Intel iGPU OpenCL Boundary Bridge Audit (2048 shots)
+# Run with custom boundary bridge anchors (q8, q17)
+cargo run --release --bin cut_bridge_chsh_bench -- --qa 8 --qb 17
+```
+
+### 5.2 OpenCL GPU Sampler (`bseq.py`)
+
+| Parameter / Flag | Type | Default | Valid Range | Operational Description |
+| :--- | :---: | :---: | :---: | :--- |
+| `--qa` | `int` | `4` | `0..N-1` | Anchor qubit index for boundary Bell pair on Fragment A. |
+| `--qb` | `int` | `13` | `0..N-1` | Anchor qubit index for boundary Bell pair on Fragment B. |
+| `--shots` | `int` | `2048` | `[256, 65536]` | Number of Monte Carlo measurement shots per angle pair. |
+| `--qubits` | `int` | `16` | `[10, 24]` | Total qubit register width allocated on `QrackAceBackend`. |
+| `shots_pos` | `int` | None | `> 0` | Optional positional shot count for backward compatibility. |
+
+**Example Execution:**
+```bash
+# Audit 16-qubit lattice boundary pair (q4, q13) with 2048 shots
 python scripts/qec/bseq.py --qa 4 --qb 13 --shots 2048 --qubits 16
 
-# 3. Secondary Boundary Bridge Pair Audit (q8, q17)
-python scripts/qec/bseq.py --qa 8 --qb 17 --shots 2048 --qubits 20
+# Audit 20-qubit lattice boundary pair (q8, q17) with 4096 shots
+python scripts/qec/bseq.py --qa 8 --qb 17 --shots 4096 --qubits 20
+```
 
-# 4. Concurrent Heterogeneous Pipeline Verification
+### 5.3 Heterogeneous Co-Processor Orchestrator (`heterogeneous_bridge_pipeline.py`)
+
+| Parameter / Flag | Type | Default | Operational Description |
+| :--- | :---: | :---: | :--- |
+| `--qa` | `int` | `4` | Target Fragment A bridge anchor qubit index passed to both co-processors. |
+| `--qb` | `int` | `13` | Target Fragment B bridge anchor qubit index passed to both co-processors. |
+| `--shots` | `int` | `2048` | Monte Carlo shot count dispatched to Intel iGPU OpenCL device. |
+| `--qubits` | `int` | `16` | Register width simulated on Intel iGPU OpenCL device. |
+| `--cpu-bin` | `str` | `target\release\cut_bridge_chsh_bench.exe` | Path to compiled native AVX2 binary. |
+| `-h`, `--help` | flag | N/A | Displays orchestrator manual, arguments, and default values. |
+
+**Example Execution:**
+```bash
+# Execute concurrent dual-engine pipeline with defaults
 python scripts/qec/heterogeneous_bridge_pipeline.py
+
+# Execute concurrent pipeline on secondary boundary pair (q8, q17) with 4096 shots
+python scripts/qec/heterogeneous_bridge_pipeline.py --qa 8 --qb 17 --shots 4096 --qubits 20
 ```

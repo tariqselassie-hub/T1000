@@ -66,14 +66,13 @@ def run_gpu_opencl_bseq(shots=2048, qa=4, qb=13, n_qubits=16):
     }
 
 
-def run_cpu_avx2_t1000():
+def run_cpu_avx2_t1000(qa=4, qb=13, exe_path="target\\release\\cut_bridge_chsh_bench.exe"):
     """
     Executes the 36-qubit mid-circuit cut-bridge benchmark on CPU L3 Cache (AVX2+FMA).
     """
     t0 = time.perf_counter()
-    exe_path = "target\\release\\cut_bridge_chsh_bench.exe"
     res = subprocess.run(
-        [exe_path],
+        [exe_path, "--qa", str(qa), "--qb", str(qb)],
         capture_output=True,
         text=True,
         encoding="utf-8",
@@ -96,7 +95,7 @@ def run_cpu_avx2_t1000():
     return {
         "device": "Intel Lion Cove P-Cores (CPU AVX2+FMA)",
         "workload": "t1000 Dual 18Q Cut-Bridge (36Q Virtual, 8 MB L3)",
-        "pair": "(q4, q13)",
+        "pair": f"(q{qa}, q{qb})",
         "s_val": s_val,
         "latency_ms": dt_ms,
         "stdout": res.stdout,
@@ -104,17 +103,37 @@ def run_cpu_avx2_t1000():
 
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(
+        description="Heterogeneous Co-Processor Pipeline: CPU AVX2 + Intel iGPU OpenCL"
+    )
+    parser.add_argument("--qa", type=int, default=4, help="Fragment A bridge qubit anchor (default: 4)")
+    parser.add_argument("--qb", type=int, default=13, help="Fragment B bridge qubit anchor (default: 13)")
+    parser.add_argument("--shots", type=int, default=2048, help="GPU Monte Carlo shots (default: 2048)")
+    parser.add_argument("--qubits", type=int, default=16, help="GPU QrackAceBackend register size (default: 16)")
+    parser.add_argument(
+        "--cpu-bin",
+        type=str,
+        default="target\\release\\cut_bridge_chsh_bench.exe",
+        help="Path to compiled CPU AVX2 binary",
+    )
+    args = parser.parse_args()
+
     print("┌────────────────────────────────────────────────────────────────────────┐")
     print("│     HETEROGENEOUS CO-PROCESSOR PIPELINE: CPU AVX2 + iGPU OpenCL        │")
     print("│     CPU: Lion Cove P-Cores (AVX2+FMA) | GPU: Intel Arc OpenCL (#0)     │")
-    print("│     Task: Concurrent 36Q Cut-Bridge VQC & Boundary CHSH Bell Audit     │")
+    print(f"│     Task: Concurrent 36Q Cut-Bridge VQC & Boundary (q{args.qa}, q{args.qb}) Bell Audit │")
     print("└────────────────────────────────────────────────────────────────────────┘")
 
     t_global = time.perf_counter()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        gpu_future = pool.submit(run_gpu_opencl_bseq, shots=2048, qa=4, qb=13, n_qubits=16)
-        cpu_future = pool.submit(run_cpu_avx2_t1000)
+        gpu_future = pool.submit(
+            run_gpu_opencl_bseq, shots=args.shots, qa=args.qa, qb=args.qb, n_qubits=args.qubits
+        )
+        cpu_future = pool.submit(
+            run_cpu_avx2_t1000, qa=args.qa, qb=args.qb, exe_path=args.cpu_bin
+        )
 
         gpu_res = gpu_future.result()
         cpu_res = cpu_future.result()
@@ -128,8 +147,8 @@ def main():
     print("│ Telemetry Dimension          │ CPU Engine (AVX2)      │ GPU Engine (OpenCL)            │")
     print("├──────────────────────────────┼────────────────────────┼────────────────┤")
     print(f"│ Target Device                │ Lion Cove P-Cores      │ Intel OpenCL iGPU (#0)         │")
-    print(f"│ Active Register Size         │ 36-Qubit Virtual (18Q) │ 16-Qubit Lattice               │")
-    print(f"│ Boundary Bridge Pair         │ (q4, q13)              │ (q4, q13)                      │")
+    print(f"│ Active Register Size         │ 36-Qubit Virtual (18Q) │ {args.qubits}-Qubit Lattice               │")
+    print(f"│ Boundary Bridge Pair         │ (q{args.qa}, q{args.qb})              │ (q{args.qa}, q{args.qb})                      │")
     print(f"│ CHSH S-Witness Value         │ {cpu_res['s_val']:.8f}               │ {gpu_res['s_val']:.8f}                       │")
     print(f"│ Tsirelson Theoretical Bound  │ {tsirelson:.8f}               │ {tsirelson:.8f}                       │")
     print(f"│ Bell Inequality Status       │ VIOLATED (Quantum)     │ VIOLATED (Quantum)             │")

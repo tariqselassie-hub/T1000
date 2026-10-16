@@ -197,11 +197,56 @@ fn contract_cut_bridge(m_a: &[[f64; 2]; 2], m_b: &[[f64; 2]; 2]) -> f64 {
     total
 }
 
+fn print_usage_and_exit() -> ! {
+    println!("Usage: cut_bridge_chsh_bench [OPTIONS]");
+    println!();
+    println!("Options:");
+    println!("  --qa <INDEX>   Bridge anchor qubit index on Fragment A (default: 4, range: 0..17)");
+    println!("  --qb <INDEX>   Bridge anchor qubit index on Fragment B (default: 13, range: 0..17)");
+    println!("  -h, --help     Print this help and manual message");
+    println!();
+    println!("Architecture:");
+    println!("  Dual 18-qubit L3-resident registers (8.00 MB total working set).");
+    println!("  Evaluates exact Tsirelson bound (S = 2*sqrt(2) ≈ 2.828427) via quasiprobability");
+    println!("  decomposition of the mid-circuit cross-fragment CZ bridge.");
+    std::process::exit(0);
+}
+
 fn main() {
+    let args: Vec<String> = std::env::args().collect();
+    let mut qa = 4usize;
+    let mut qb = 13usize;
+
+    let mut i = 1;
+    while i < args.len() {
+        match args[i].as_str() {
+            "-h" | "--help" => print_usage_and_exit(),
+            "--qa" => {
+                if i + 1 < args.len() {
+                    qa = args[i + 1].parse().unwrap_or(4);
+                    i += 1;
+                }
+            }
+            "--qb" => {
+                if i + 1 < args.len() {
+                    qb = args[i + 1].parse().unwrap_or(13);
+                    i += 1;
+                }
+            }
+            _ => {}
+        }
+        i += 1;
+    }
+
+    if qa >= N_QUBITS || qb >= N_QUBITS {
+        eprintln!("Error: Bridge anchor qubits must be in range 0..{}", N_QUBITS - 1);
+        std::process::exit(1);
+    }
+
     println!("┌────────────────────────────────────────────────────────────────────────┐");
     println!("│     T-1000: 36-QUBIT CROSS-BRIDGE BELL CHSH VERIFICATION BENCHMARK     │");
     println!("│     Architecture: Dual 18Q L3-Resident Registers (8 MB) via Cut-CZ     │");
-    println!("│     Boundary Bridge: Fragment A (q4) <───> Fragment B (q13)            │");
+    println!("│     Boundary Bridge: Fragment A (q{:<2}) <───> Fragment B (q{:<2})           │", qa, qb);
     println!("└────────────────────────────────────────────────────────────────────────┘");
 
     let t_start = Instant::now();
@@ -211,9 +256,6 @@ fn main() {
     let mut branch_a_im = [alloc_buffer(), alloc_buffer()];
     let mut branch_b_re = [alloc_buffer(), alloc_buffer()];
     let mut branch_b_im = [alloc_buffer(), alloc_buffer()];
-
-    let qa = 4usize;
-    let qb = 13usize;
 
     // 2. Prepare Base Mid-Circuit Branches
     unsafe {

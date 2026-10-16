@@ -3,12 +3,16 @@
 
 //! # GuddaLM Quantum Neural Network (`t1000`)
 //!
-//! Solidified Dual-Mission Architecture:
+//! Solidified Core Mission Architecture:
 //! 1. **Simulating Advanced RCS & Pathed Circuits**: Arbitrary circuit compilation (`compiler`),
 //!    fused AVX2+FMA state evolution (`simd`, `tiled_butterfly`), and Random Circuit Sampling (`rcs`)
 //!    with exact Porter-Thomas verification.
 //! 2. **Pure SMILES String Exploration**: Zero-overhead chemical featurization, quantum state
 //!    encoding, and VQC molecular property screening & latent space exploration (`smiles`).
+//! 3. **Heterogeneous Co-Processor & Virtual 36Q Cut-Bridge Pipeline (`ansatz::cut_bridge`)**:
+//!    Quasiprobability cut-bridge execution across dual 18-qubit L3-resident registers (8 MB),
+//!    evaluating exact Tsirelson CHSH witnesses ($S \approx 2.828427$) in CPU L3 cache with
+//!    concurrent Intel Arc OpenCL iGPU syndrome offload (`scripts/qec/heterogeneous_bridge_pipeline.py`).
 
 pub mod adjoint;
 pub mod ansatz;
@@ -66,9 +70,9 @@ pub use adjoint::{
     adjoint_gradient, adjoint_gradient_with_purity, inject_bloch_purity_costate, AdjointResult,
 };
 pub use ansatz::{
-    eval_36q_bipartite_bridge, eval_cut_bridge_general, AncillaRole, AnsatzMode, CircuitAnsatz,
-    CutBridgeReport, DeepQuantumNeuralNetwork, DualAxisEncoder, PiPhaseLayer, PreInitCircuit,
-    QnnCircuit, RademacherPhaseLayer, VariationalQuantumLayer,
+    eval_36q_bipartite_bridge, eval_36q_bipartite_midcircuit, eval_cut_bridge_general, AncillaRole,
+    AnsatzMode, CircuitAnsatz, CutBridgeReport, DeepQuantumNeuralNetwork, DualAxisEncoder,
+    PiPhaseLayer, PreInitCircuit, QnnCircuit, RademacherPhaseLayer, VariationalQuantumLayer,
 };
 pub use canonical::{
     build_bernstein_vazirani, build_grover_diffusion, build_hea_layer,
