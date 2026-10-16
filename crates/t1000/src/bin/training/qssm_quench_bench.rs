@@ -148,7 +148,9 @@ fn main() {
             if report.predicted_class == *label {
                 correct += 1;
             }
-            let l_norm: f64 = report.latent_vector.iter().map(|&z| z * z).sum::<f64>().sqrt();
+            let l_norm: f64 = (report.latent_vector.iter().map(|&z| z * z).sum::<f64>().sqrt()
+                / (report.latent_vector.len() as f64).sqrt())
+            .clamp(0.0, 1.0);
             test_latent_coherence += l_norm;
         }
         let test_acc = (correct as f64 / test_set.len() as f64) * 100.0;

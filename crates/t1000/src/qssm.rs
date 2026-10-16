@@ -279,22 +279,30 @@ impl QuantumStateSpaceAutoencoder {
             }
         }
 
-        // --- DECODER UNZIPPER PASS ---
+        // --- DECODER UNZIPPER PASS (AUTOREGRESSIVE BLOCH STEERING) ---
         let mut reconstructed = Vec::with_capacity(seq_len);
         let mut total_se = 0.0;
         let mut element_count = 0;
 
-        for (t, original_token) in sequence.iter().enumerate() {
+        // Initialize recurrent Bloch state [bx, by, bz] from latent vector
+        let mut bloch_state = [
+            if d_lat > 0 { latent_vector[0] } else { 0.0 },
+            if d_lat > 1 { latent_vector[1] } else { 0.0 },
+            if d_lat > 2 { latent_vector[2] } else { 1.0 },
+        ];
+        let b_norm = (bloch_state[0].powi(2) + bloch_state[1].powi(2) + bloch_state[2].powi(2)).sqrt().max(1e-7);
+        bloch_state[0] /= b_norm;
+        bloch_state[1] /= b_norm;
+        bloch_state[2] /= b_norm;
+
+        for (_t, original_token) in sequence.iter().enumerate() {
             let mut recon_token = Vec::with_capacity(d_in);
-            let time_factor = (t as f64 * 0.1).sin();
 
             for d in 0..d_in {
                 let mut val = self.dec_biases[d];
                 for q in 0..d_lat {
-                    val += self.dec_weights[d][q] * latent_vector[q];
+                    val += self.dec_weights[d][q] * bloch_state[q];
                 }
-                // Modulate by dynamic unzipping phase
-                val += 0.05 * time_factor;
                 recon_token.push(val);
 
                 let target = original_token.get(d).copied().unwrap_or(0.0);
@@ -303,6 +311,18 @@ impl QuantumStateSpaceAutoencoder {
                 element_count += 1;
             }
             reconstructed.push(recon_token);
+
+            // Autonomous Bloch-Probability Flip / Lockpick Step:
+            // Use current polar angle / Z-probability to drive continuous rotation for step t + 1
+            let recon_z = bloch_state[2].clamp(-1.0, 1.0);
+            let prob_zero = 0.5 * (1.0 + recon_z);
+            let d_theta = 0.22 + 0.38 * (1.0 - prob_zero);
+            let (sin_t, cos_t) = d_theta.sin_cos();
+
+            let next_by = bloch_state[1] * cos_t - bloch_state[2] * sin_t;
+            let next_bz = bloch_state[1] * sin_t + bloch_state[2] * cos_t;
+            bloch_state[1] = next_by * 0.985;
+            bloch_state[2] = next_bz * 0.985;
         }
 
         let elapsed = t0.elapsed();
@@ -360,15 +380,35 @@ impl QuantumStateSpaceAutoencoder {
             self.cls_biases[c] -= lr * grad;
         }
 
-        // 2. Update decoder weights (MSE gradient)
+        // 2. Update decoder weights (MSE gradient with recurrent Bloch history)
+        let mut bloch_state = [
+            if d_lat > 0 { forward.latent_vector[0] } else { 0.0 },
+            if d_lat > 1 { forward.latent_vector[1] } else { 0.0 },
+            if d_lat > 2 { forward.latent_vector[2] } else { 1.0 },
+        ];
+        let b_norm = (bloch_state[0].powi(2) + bloch_state[1].powi(2) + bloch_state[2].powi(2)).sqrt().max(1e-7);
+        bloch_state[0] /= b_norm;
+        bloch_state[1] /= b_norm;
+        bloch_state[2] /= b_norm;
+
         for (t, token) in sequence.iter().enumerate() {
             for d in 0..d_in {
                 let diff = forward.reconstructed_sequence[t][d] - token[d];
                 for q in 0..d_lat {
-                    self.dec_weights[d][q] -= lr * self.config.lambda_recon * diff * forward.latent_vector[q];
+                    self.dec_weights[d][q] -= lr * self.config.lambda_recon * diff * bloch_state[q];
                 }
                 self.dec_biases[d] -= lr * self.config.lambda_recon * diff;
             }
+
+            // Advance recurrent bloch state
+            let recon_z = bloch_state[2].clamp(-1.0, 1.0);
+            let prob_zero = 0.5 * (1.0 + recon_z);
+            let d_theta = 0.22 + 0.38 * (1.0 - prob_zero);
+            let (sin_t, cos_t) = d_theta.sin_cos();
+            let next_by = bloch_state[1] * cos_t - bloch_state[2] * sin_t;
+            let next_bz = bloch_state[1] * sin_t + bloch_state[2] * cos_t;
+            bloch_state[1] = next_by * 0.985;
+            bloch_state[2] = next_bz * 0.985;
         }
 
         // 3. Update encoder weights (Latent projection alignment)

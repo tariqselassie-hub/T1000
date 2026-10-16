@@ -231,10 +231,15 @@ pub fn extract_lattice_frame(
     let mean_magnetization = sum_mag / (n_qubits as f64);
     let staggered_magnetization = sum_stagg / (n_qubits as f64);
 
-    // 4. Bipartite entanglement entropy S(rho_A) across horizontal cut
-    let cut_height = (h / 2).max(1);
-    let n_a = cut_height * w;
-    let n_b = n_qubits - n_a;
+    // 4. Bipartite entanglement entropy S(rho_A) across horizontal or 1D chain half-cut
+    let (n_a, n_b) = if h == 1 {
+        let na = (w / 2).max(1);
+        (na, n_qubits - na)
+    } else {
+        let cut_height = (h / 2).max(1);
+        let na = cut_height * w;
+        (na, n_qubits - na)
+    };
     let dim_a = 1 << n_a;
     let dim_b = 1 << n_b;
 
