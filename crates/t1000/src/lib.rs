@@ -93,6 +93,9 @@ pub use lattice::{
 pub use measurements::{POVMClassifier, PauliObservable};
 pub use memory::{MemoryEntry, QuantumAssociativeMemory};
 pub use optimizer::{AdamOptimizer, ParameterShiftEngine};
+pub use parallel::{
+    DEFAULT_SYSTEM_QUBITS, PARALLEL_CUTOFF_QUBITS, PARALLEL_MIN_DIM, PARALLEL_MIN_QUBITS,
+};
 pub use qec::{
     detect_and_recover, encode_logical_state, extract_syndrome, inject_pauli_error, PauliErrorKind,
     QecCodeKind, QecRecoveryResult, SyndromeReport,

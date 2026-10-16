@@ -12,13 +12,17 @@
 use rayon::prelude::*;
 use std::sync::OnceLock;
 
-/// Minimum number of qubits required to engage multithreading.
-/// States with <= 16 qubits (dim <= 65,536 amplitudes, <= 1MB) fit in cache
-/// and execute sequentially via AVX2 to eliminate threadpool scheduling overhead.
-pub const PARALLEL_MIN_QUBITS: usize = 17;
+/// Parallel cutoff threshold: states with <= 15 qubits execute on the serial/vectorized path.
+pub const PARALLEL_CUTOFF_QUBITS: usize = 16; // Use serial/vectorized path for N <= 15
 
-/// Smallest statevector (in amplitudes) that is split across threads (2^17 = 131,072).
-pub const PARALLEL_MIN_DIM: usize = 1 << PARALLEL_MIN_QUBITS;
+/// Minimum number of qubits required to engage multithreading.
+pub const PARALLEL_MIN_QUBITS: usize = PARALLEL_CUTOFF_QUBITS;
+
+/// Smallest statevector (in amplitudes) that is split across threads (2^16 = 65,536).
+pub const PARALLEL_MIN_DIM: usize = 1 << PARALLEL_CUTOFF_QUBITS;
+
+/// Optimal LLC-resident VQC default for host simulation.
+pub const DEFAULT_SYSTEM_QUBITS: usize = 18; // Optimal LLC-resident VQC default
 
 /// Target number of work items per thread, for load balancing.
 const TASKS_PER_THREAD: usize = 4;
@@ -120,7 +124,10 @@ where
     let n_chunks = len.div_ceil(REDUCE_CHUNK).max(1);
     let run = |c: usize| {
         let mut acc = vec![0.0; width];
-        f(c * REDUCE_CHUNK..((c + 1) * REDUCE_CHUNK).min(len), &mut acc);
+        f(
+            c * REDUCE_CHUNK..((c + 1) * REDUCE_CHUNK).min(len),
+            &mut acc,
+        );
         acc
     };
     let partials: Vec<Vec<f64>> = if n_chunks > 1 && num_threads() > 1 {
@@ -145,7 +152,11 @@ where
 {
     let dim = real.len();
     if !use_parallel(dim) {
-        for (h, (re, im)) in real.chunks_mut(block).zip(imag.chunks_mut(block)).enumerate() {
+        for (h, (re, im)) in real
+            .chunks_mut(block)
+            .zip(imag.chunks_mut(block))
+            .enumerate()
+        {
             f(h, re, im);
         }
         return;
