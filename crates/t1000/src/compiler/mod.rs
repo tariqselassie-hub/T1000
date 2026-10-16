@@ -213,6 +213,20 @@ impl CircuitBuilder {
         self
     }
 
+    /// Appends a 1D MPS Linear Bloch-Zipper Anti-Correlation entangler chain across `qubits`.
+    ///
+    /// Chains adjacent pairs (q_i, q_{i+1}) with continuous complementary rotation and AntiCNOT
+    /// entangling operations to lock down anti-correlation.
+    pub fn linear_bloch_zipper(&mut self, qubits: &[usize]) -> &mut Self {
+        if qubits.len() < 2 {
+            return self;
+        }
+        for i in 0..(qubits.len() - 1) {
+            self.anticnot(qubits[i], qubits[i + 1]);
+        }
+        self
+    }
+
     /// Consumes the builder and returns the underlying dependency DAG.
     pub fn into_dag(self) -> CircuitDag {
         self.dag
@@ -344,4 +358,21 @@ mod tests {
             fid
         );
     }
+
+    #[test]
+    fn test_linear_bloch_zipper_builder() {
+        let mut builder = CircuitBuilder::new(4);
+        builder.ry(0, std::f64::consts::PI); // Prepare Q0 in |1>
+        builder.linear_bloch_zipper(&[0, 1, 2, 3]);
+
+        let compiled = builder.compile();
+        let mut state = QuantumState::ground(16);
+        compiled.execute(&mut state);
+
+        // AntiCNOT chain: Q0=1 -> Q1=0 -> Q2=1 -> Q3=0 -> |0101> (idx = 1010b in little-endian wire order)
+        // With wire 0 as LSB: bit 0 is 1, bit 1 is 0, bit 2 is 1, bit 3 is 0 => 1 + 4 = 5 (0101b = 5)
+        let prob_5 = state.real[5] * state.real[5] + state.imag[5] * state.imag[5];
+        assert!((prob_5 - 1.0).abs() < 1e-6, "Expected state |0101> prob 1.0, got {}", prob_5);
+    }
 }
+
