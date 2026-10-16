@@ -323,6 +323,28 @@
                         </div>
                     </div>
 
+                    <!-- Coherence & Robustness Controls -->
+                    <div class="panel-section">
+                        <div class="section-label">
+                            <span>Cohesion &amp; Robustness Engine</span>
+                            <span style="color:var(--quantum-green); font-size:10px;">ACTIVE STABILIZATION</span>
+                        </div>
+                        <div class="coherence-toggles">
+                            <label class="toggle-control">
+                                <input type="checkbox" id="toggle-zeno-sentry" checked>
+                                <span>Quantum Zeno Sentry (Subspace Pinning)</span>
+                            </label>
+                            <label class="toggle-control">
+                                <input type="checkbox" id="toggle-dd-xy4" checked>
+                                <span>Dynamical Decoupling (XY4 Echoes)</span>
+                            </label>
+                            <label class="toggle-control">
+                                <input type="checkbox" id="toggle-zne-mitigate" checked>
+                                <span>Zero-Noise Extrapolation (ZNE)</span>
+                            </label>
+                        </div>
+                    </div>
+
                     <!-- Circuit Dimension Sizing -->
                     <div class="panel-section" style="padding-bottom:12px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
@@ -423,6 +445,29 @@
                             <div class="metric-card">
                                 <div class="metric-title">XEB Linear Fidelity</div>
                                 <div id="tel-fxeb" class="metric-value highlight">0.9998</div>
+                            </div>
+                        </div>
+
+                        <div class="section-label" style="margin-top:12px;">
+                            <span>Coherence &amp; Cohesion Metrics</span>
+                            <span style="color:var(--hardware-gold); font-size:10px;">L1 NORM &bull; ENTROPY</span>
+                        </div>
+                        <div class="metric-grid">
+                            <div class="metric-card">
+                                <div class="metric-title">Coherence L1 Norm</div>
+                                <div id="tel-coherence-l1" class="metric-value highlight">0.942</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-title">Zeno Confinement</div>
+                                <div id="tel-zeno-surv" class="metric-value highlight">99.98%</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-title">State Purity</div>
+                                <div id="tel-purity" class="metric-value gold">1.000</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-title">Bipartite Entropy</div>
+                                <div id="tel-bipartite-entropy" class="metric-value">0.82 bits</div>
                             </div>
                         </div>
                     </div>

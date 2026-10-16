@@ -732,6 +732,37 @@ button.btn-secondary.active {
     background: rgba(255, 179, 0, 0.08);
 }
 
+/* Coherence & Robustness Toggles */
+.coherence-toggles {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-top: 4px;
+}
+
+.toggle-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-slate);
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.15s ease;
+}
+
+.toggle-control:hover {
+    color: var(--text-white);
+}
+
+.toggle-control input[type="checkbox"] {
+    accent-color: var(--quantum-green);
+    cursor: pointer;
+    width: 14px;
+    height: 14px;
+}
+
 /* Center Canvas Panel */
 .composer-canvas-panel {
     background: var(--bg-root);

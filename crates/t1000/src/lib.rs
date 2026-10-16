@@ -13,6 +13,7 @@
 pub mod adjoint;
 pub mod ansatz;
 pub mod baselines;
+pub mod coherence;
 pub mod compiler;
 pub mod diagonal;
 pub mod feature_map;
@@ -39,6 +40,10 @@ pub use measurements::povm_readout;
 
 pub use adjoint::{adjoint_gradient, AdjointResult};
 pub use ansatz::{CircuitAnsatz, DeepQuantumNeuralNetwork, PiPhaseLayer, PreInitCircuit, RademacherPhaseLayer, VariationalQuantumLayer};
+pub use coherence::{
+    apply_dynamical_decoupling, compute_coherence_metrics, reproject_coherence_manifold,
+    CoherenceMetrics, DynamicalDecouplingKind, NoiseChannelParams, QuantumZenoSentry, ZenoTelemetry,
+};
 pub use compiler::{CircuitBuilder, CircuitDag, CircuitOp, CompiledCircuit, CompilerTelemetry, ScheduledStage};
 pub use feature_map::{DataEncodingLayer, EncodingKind};
 pub use heptal_wave::{evolve_heptal_wave_cycle, HeptalWaveState};

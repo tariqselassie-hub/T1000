@@ -76,6 +76,19 @@ Gate blocks conform strictly to the Deen OS Sovereign Visual Specification with 
 5. **Quantum Fourier Transform (QFT 4Q):** Complete 4-wire reversible phase transformation with SWAP reversal.
 6. **Zeno Perimeter Sentry:** Rapid projective measurement loops verifying interaction-free quantum confinement.
 
+### Cohesion & Robustness Engine (Active Stabilization)
+To prevent phase decoherence and numerical gauge drift across deep circuits ($D \ge 36$, $N \ge 14$), Deck 2 provides active cohesion protocols:
+
+1. **Quantum Zeno Sentry (Subspace Pinning):**
+   - Applies frequent null-result projective sentries on target reference/boundary subspaces.
+   - Quadratically suppresses phase drift: $P_{\text{surv}}(\tau) = 1 - (\Delta H \cdot \tau)^2 + \mathcal{O}(\tau^4) \to 1.000$.
+2. **Dynamical Decoupling (XY4 Echoes):**
+   - Interleaves symmetrized $\pi$-pulse trains ($X_\pi - Y_\pi - X_\pi - Y_\pi \equiv I$) on idle qubits to cancel low-frequency non-Markovian dephasing noise.
+3. **Zero-Noise Extrapolation (ZNE):**
+   - Computes expectation values across unitary folding scale factors $c \in [1, 2, 3]$ and performs Richardson polynomial extrapolation back to the ideal zero-noise limit ($c \to 0$).
+4. **Symplectic Manifold Re-Projection:**
+   - Enforces strict norm and phase continuity on the $S^{2^{N+1}-1}$ complex projective manifold, eliminating floating-point rounding creep.
+
 ---
 
 ## 4. Execution Engines: CPU AVX2 vs FPGA Silicon

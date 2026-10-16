@@ -233,6 +233,19 @@ impl QuantumState {
         }
         self.normalize();
     }
+
+    /// Returns the exact quantum $\ell_1$-norm coherence metrics (raw and normalized).
+    pub fn coherence_l1(&self) -> (f64, f64) {
+        let n_qubits = (self.dim as f64).log2().round() as usize;
+        let m = crate::coherence::compute_coherence_metrics(self, n_qubits);
+        (m.l1_raw, m.l1_normalized)
+    }
+
+    /// Re-projects the state onto the complex projective unit hypersphere,
+    /// eliminating numerical phase creep and gauge drift over deep gate passes.
+    pub fn stabilize_manifold(&mut self) {
+        crate::coherence::reproject_coherence_manifold(self);
+    }
 }
 
 /// Parameterized Quantum Feature Map mapping tokens/strings into Hilbert space.
