@@ -1,0 +1,99 @@
+{
+  "timestamp": "2026-10-16T13:00:00Z",
+  "total_qubits": 36,
+  "fragment_a_qubits": 18,
+  "fragment_b_qubits": 18,
+  "bridge_gates": 2,
+  "dense_ram_theoretical_gb": 1024.0,
+  "cut_bridge_ram_actual_mb": 8.0,
+  "ram_compression_ratio": 131072.0,
+  "small_register_agreement_error": 1.1102230246251565e-16,
+  "reconstructed_36q_expectation": 0.03172954396932352,
+  "total_execution_time_ms": 77.20779999999999,
+  "mean_bloch_radius_a": 0.6524019130882267,
+  "mean_bloch_radius_b": 0.5572070512111661,
+  "mean_purity_a": 0.7493976081964325,
+  "mean_purity_b": 0.6979503471650367,
+  "branches": [
+    {
+      "fragment": "Fragment_A (Pocket)",
+      "branch_id": 0,
+      "z_insertions": [
+        false,
+        false
+      ],
+      "local_expectation": 0.31532236239524464,
+      "latency_us": 5518.0
+    },
+    {
+      "fragment": "Fragment_B (Ligand)",
+      "branch_id": 0,
+      "z_insertions": [
+        false,
+        false
+      ],
+      "local_expectation": 0.1006257333869386,
+      "latency_us": 6337.0
+    },
+    {
+      "fragment": "Fragment_A (Pocket)",
+      "branch_id": 1,
+      "z_insertions": [
+        true,
+        false
+      ],
+      "local_expectation": 0.31532236239524464,
+      "latency_us": 4545.0
+    },
+    {
+      "fragment": "Fragment_B (Ligand)",
+      "branch_id": 1,
+      "z_insertions": [
+        true,
+        false
+      ],
+      "local_expectation": 0.1006257333869386,
+      "latency_us": 4568.0
+    },
+    {
+      "fragment": "Fragment_A (Pocket)",
+      "branch_id": 2,
+      "z_insertions": [
+        false,
+        true
+      ],
+      "local_expectation": 0.31532236239524464,
+      "latency_us": 4886.0
+    },
+    {
+      "fragment": "Fragment_B (Ligand)",
+      "branch_id": 2,
+      "z_insertions": [
+        false,
+        true
+      ],
+      "local_expectation": 0.1006257333869386,
+      "latency_us": 4379.0
+    },
+    {
+      "fragment": "Fragment_A (Pocket)",
+      "branch_id": 3,
+      "z_insertions": [
+        true,
+        true
+      ],
+      "local_expectation": 0.31532236239524464,
+      "latency_us": 4348.0
+    },
+    {
+      "fragment": "Fragment_B (Ligand)",
+      "branch_id": 3,
+      "z_insertions": [
+        true,
+        true
+      ],
+      "local_expectation": 0.1006257333869386,
+      "latency_us": 4377.0
+    }
+  ]
+}
