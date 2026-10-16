@@ -34,6 +34,7 @@ pub mod qec;
 pub mod qssm;
 pub mod rcs;
 pub mod simd;
+pub mod simd_bloch;
 pub mod smiles;
 pub mod state;
 pub mod telemetry;
@@ -52,15 +53,21 @@ pub use clifford_t::{
     SynthesisSolution, ZOmega,
 };
 pub use engine::{FpgaDeviceInfo, SystemManifestReport, T1000Engine};
+pub use simd_bloch::{
+    compute_all_bloch_vectors, compute_bloch_restoring_weights, compute_qubit_bloch, BlochVector,
+};
 pub use telemetry::QuantumTelemetryReport;
 
 // Backwards-compatible module aliases
 pub use measurements::observable;
 pub use measurements::povm_readout;
 
-pub use adjoint::{adjoint_gradient, AdjointResult};
+pub use adjoint::{
+    adjoint_gradient, adjoint_gradient_with_purity, inject_bloch_purity_costate, AdjointResult,
+};
 pub use ansatz::{
-    AncillaRole, AnsatzMode, CircuitAnsatz, DeepQuantumNeuralNetwork, PiPhaseLayer, PreInitCircuit,
+    eval_36q_bipartite_bridge, eval_cut_bridge_general, AncillaRole, AnsatzMode, CircuitAnsatz,
+    CutBridgeReport, DeepQuantumNeuralNetwork, DualAxisEncoder, PiPhaseLayer, PreInitCircuit,
     QnnCircuit, RademacherPhaseLayer, VariationalQuantumLayer,
 };
 pub use canonical::{

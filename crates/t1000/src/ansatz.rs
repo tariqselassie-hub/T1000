@@ -1,5 +1,10 @@
+pub mod cut_bridge;
 pub mod dispatch;
+pub mod reupload;
+
+pub use cut_bridge::{eval_36q_bipartite_bridge, eval_cut_bridge_general, CutBridgeReport};
 pub use dispatch::*;
+pub use reupload::DualAxisEncoder;
 
 use crate::state::QuantumState;
 use t1000_core::{Hamiltonian, PhaseGate, QubitRegister};

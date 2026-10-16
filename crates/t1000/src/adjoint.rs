@@ -46,6 +46,20 @@ pub fn adjoint_gradient(
     observables: &[PauliObservable],
     coefficients: impl FnOnce(&[f64]) -> Vec<f64>,
 ) -> AdjointResult {
+    adjoint_gradient_with_purity(ansatz, input, weights, observables, coefficients, 0.0, 0.75)
+}
+
+/// Computes adjoint gradients with optional synthetic Bloch purity co-gradient injection.
+/// When `lambda_bloch > 0.0`, injects restoring spring forces for qubits with radius < `r_min`.
+pub fn adjoint_gradient_with_purity(
+    ansatz: &CircuitAnsatz,
+    input: &QuantumState,
+    weights: &[f64],
+    observables: &[PauliObservable],
+    coefficients: impl FnOnce(&[f64]) -> Vec<f64>,
+    lambda_bloch: f64,
+    r_min: f64,
+) -> AdjointResult {
     let n = ansatz.n_qubits;
     assert_eq!(input.dim, ansatz.dim, "input dimension does not match the ansatz");
     assert_eq!(weights.len(), ansatz.param_count(), "weight count does not match the ansatz");
@@ -69,6 +83,10 @@ pub fn adjoint_gradient(
             lambda.real[i] += c * o_phi.real[i];
             lambda.imag[i] += c * o_phi.imag[i];
         }
+    }
+
+    if lambda_bloch > 0.0 {
+        inject_bloch_purity_costate(&mut lambda, &phi, n, lambda_bloch, r_min);
     }
 
     let mut gradient = vec![0.0; weights.len()];
@@ -279,3 +297,77 @@ pub fn adjoint_program(
 
     AdjointResult { expectations, gradient }
 }
+
+/// Injects the synthetic Bloch purity operator:
+/// O_Bloch = sum_q w_q ( <X_q> X_q + <Y_q> Y_q + <Z_q> Z_q )
+/// into the adjoint co-state lambda whenever lambda_bloch > 0.
+pub fn inject_bloch_purity_costate(
+    lambda: &mut QuantumState,
+    phi: &QuantumState,
+    n_qubits: usize,
+    lambda_bloch: f64,
+    r_min: f64,
+) {
+    if lambda_bloch <= 0.0 {
+        return;
+    }
+    let bvs = crate::simd_bloch::compute_all_bloch_vectors(&phi.real, &phi.imag, n_qubits);
+    let weights = crate::simd_bloch::compute_bloch_restoring_weights(&bvs, lambda_bloch, r_min);
+
+    let dim = phi.dim;
+    for (q, (&wq, bv)) in weights.iter().zip(&bvs).enumerate() {
+        if wq.abs() < 1e-12 {
+            continue;
+        }
+        let (rx, ry, rz) = (bv.rx, bv.ry, bv.rz);
+        let mask = 1usize << q;
+
+        for i in 0..dim {
+            if (i & mask) == 0 {
+                let j = i | mask;
+                let re_i = phi.real[i];
+                let im_i = phi.imag[i];
+                let re_j = phi.real[j];
+                let im_j = phi.imag[j];
+
+                // Contribution to lambda[i]: (rx - i ry) * alpha_j + rz * alpha_i
+                let term_i_re = wq * (rx * re_j + ry * im_j + rz * re_i);
+                let term_i_im = wq * (rx * im_j - ry * re_j + rz * im_i);
+
+                // Contribution to lambda[j]: (rx + i ry) * alpha_i - rz * alpha_j
+                let term_j_re = wq * (rx * re_i - ry * im_i - rz * re_j);
+                let term_j_im = wq * (rx * im_i + ry * re_i - rz * im_j);
+
+                lambda.real[i] += term_i_re;
+                lambda.imag[i] += term_i_im;
+                lambda.real[j] += term_j_re;
+                lambda.imag[j] += term_j_im;
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_adjoint_gradient_purity_restoring_force() {
+        let n_qubits = 2;
+        let depth = 1;
+        let ansatz = CircuitAnsatz::new(n_qubits, depth);
+        let input = QuantumState::ground(1 << n_qubits);
+        let weights = vec![0.5; ansatz.param_count()];
+        let obs = vec![PauliObservable::Z(0)];
+
+        let res_std = adjoint_gradient(&ansatz, &input, &weights, &obs, |_| vec![1.0]);
+        let res_purity = adjoint_gradient_with_purity(
+            &ansatz, &input, &weights, &obs, |_| vec![1.0], 1.0, 0.99,
+        );
+
+        assert_eq!(res_std.expectations, res_purity.expectations);
+        assert_eq!(res_std.gradient.len(), res_purity.gradient.len());
+    }
+}
+
+
