@@ -72,7 +72,7 @@ where
 /// 1. Runs Layers 0..L/2 once per fragment (independent of z_flags) and snapshots to base buffers.
 /// 2. For each branch (z_flags), copies from snapshot, applies mid-circuit Z-insertions,
 ///    runs transverse Layers L/2..L, and measures local expectation.
-/// 3. Reconstructs exact 36Q expectation via tensor contraction c[m_a][m_b].
+/// 3. Reconstructs exact 36Q expectation via tensor contraction `c[m_a][m_b]`.
 pub fn eval_36q_bipartite_midcircuit<FP, FR>(
     prep_first_half: FP,
     run_second_half: FR,

@@ -12,7 +12,10 @@ fn alloc_buffer() -> Box<[f64; DIM]> {
     vec![0.0f64; DIM].into_boxed_slice().try_into().unwrap()
 }
 
-/// Applies an in-place Ry(theta) rotation on qubit `q` using AVX2 FMA
+/// Applies an in-place Ry(theta) rotation on qubit `q` using AVX2 FMA.
+///
+/// # Safety
+/// Caller must ensure AVX2 and FMA are supported and `re` and `im` contain `DIM` elements.
 #[inline(always)]
 pub unsafe fn apply_ry_avx2(re: &mut [f64], im: &mut [f64], q: usize, theta: f64) {
     let c = (theta * 0.5).cos();
@@ -71,7 +74,10 @@ pub unsafe fn apply_ry_avx2(re: &mut [f64], im: &mut [f64], q: usize, theta: f64
     }
 }
 
-/// Applies virtual Pauli-Z insertions at mid-circuit for cut-bridge qubits (q_b0, q_b1)
+/// Applies virtual Pauli-Z insertions at mid-circuit for cut-bridge qubits (q_b0, q_b1).
+///
+/// # Safety
+/// Caller must ensure AVX2 is supported and `re` and `im` are valid for vector operations.
 #[inline(always)]
 pub unsafe fn apply_midcircuit_z_bridge_avx2(
     re: &mut [f64; DIM],
@@ -109,7 +115,10 @@ pub unsafe fn apply_midcircuit_z_bridge_avx2(
     }
 }
 
-/// Fused Intra-Fragment All-to-All CZ Sweep
+/// Fused Intra-Fragment All-to-All CZ Sweep.
+///
+/// # Safety
+/// Caller must ensure AVX2 is supported and `re` and `im` contain `DIM` elements.
 #[inline(always)]
 pub unsafe fn apply_intra_all_to_all_cz_18(re: &mut [f64; DIM], im: &mut [f64; DIM]) {
     let re_ptr = re.as_mut_ptr();
@@ -173,8 +182,8 @@ fn main() {
     unsafe {
         for layer in 0..6 {
             for q in 0..N_QUBITS {
-                let angle_a = 0.37 * (q as f64 + 1.0) + 0.19 * (layer as f64);
-                let angle_b = 0.43 * (q as f64 + 1.0) - 0.13 * (layer as f64);
+                let angle_a = 0.37 * (q as f64 + 1.0) + 0.19 * f64::from(layer);
+                let angle_b = 0.43 * (q as f64 + 1.0) - 0.13 * f64::from(layer);
                 apply_ry_avx2(&mut *base_re_a, &mut *base_im_a, q, angle_a);
                 apply_ry_avx2(&mut *base_re_b, &mut *base_im_b, q, angle_b);
             }
@@ -207,7 +216,7 @@ fn main() {
             apply_midcircuit_z_bridge_avx2(&mut work_re, &mut work_im, &z_flags, bridges_a);
             for layer in 6..12 {
                 for q in 0..N_QUBITS {
-                    let angle_a = 0.29 * (q as f64 + 1.0) + 0.23 * (layer as f64);
+                    let angle_a = 0.29 * (q as f64 + 1.0) + 0.23 * f64::from(layer);
                     apply_ry_avx2(&mut *work_re, &mut *work_im, q, angle_a);
                 }
                 apply_intra_all_to_all_cz_18(&mut work_re, &mut work_im);
@@ -225,7 +234,7 @@ fn main() {
             apply_midcircuit_z_bridge_avx2(&mut work_re, &mut work_im, &z_flags, bridges_b);
             for layer in 6..12 {
                 for q in 0..N_QUBITS {
-                    let angle_b = 0.31 * (q as f64 + 1.0) - 0.17 * (layer as f64);
+                    let angle_b = 0.31 * (q as f64 + 1.0) - 0.17 * f64::from(layer);
                     apply_ry_avx2(&mut *work_re, &mut *work_im, q, angle_b);
                 }
                 apply_intra_all_to_all_cz_18(&mut work_re, &mut work_im);

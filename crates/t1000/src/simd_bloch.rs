@@ -74,6 +74,10 @@ pub fn compute_bloch_restoring_weights(
 }
 
 /// AVX2 + FMA hardware-accelerated Bloch vector evaluation.
+///
+/// # Safety
+/// Caller must ensure AVX2 and FMA CPU features are available on the host processor and that
+/// `state_re` and `state_imag` contain at least `1 << n_qubits` elements.
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx2,fma")]
 pub unsafe fn compute_qubit_bloch_avx2(
