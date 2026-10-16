@@ -60,8 +60,8 @@ pub use measurements::povm_readout;
 
 pub use adjoint::{adjoint_gradient, AdjointResult};
 pub use ansatz::{
-    CircuitAnsatz, DeepQuantumNeuralNetwork, PiPhaseLayer, PreInitCircuit, RademacherPhaseLayer,
-    VariationalQuantumLayer,
+    AncillaRole, AnsatzMode, CircuitAnsatz, DeepQuantumNeuralNetwork, PiPhaseLayer, PreInitCircuit,
+    QnnCircuit, RademacherPhaseLayer, VariationalQuantumLayer,
 };
 pub use canonical::{
     build_bernstein_vazirani, build_grover_diffusion, build_hea_layer,

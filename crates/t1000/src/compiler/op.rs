@@ -75,6 +75,23 @@ impl Unitary2x2 {
         Complex64::new(self.u11_re, self.u11_im)
     }
 
+    /// Single-qubit X-rotation: Rx(θ) = [cos(θ/2), -i sin(θ/2); -i sin(θ/2), cos(θ/2)]
+    pub fn rx(theta: f64) -> Self {
+        let half = theta * 0.5;
+        let c = half.cos();
+        let s = half.sin();
+        Self {
+            u00_re: c,
+            u00_im: 0.0,
+            u01_re: 0.0,
+            u01_im: -s,
+            u10_re: 0.0,
+            u10_im: -s,
+            u11_re: c,
+            u11_im: 0.0,
+        }
+    }
+
     /// Single-qubit Y-rotation: Ry(θ) = [cos(θ/2), -sin(θ/2); sin(θ/2), cos(θ/2)]
     pub fn ry(theta: f64) -> Self {
         let half = theta * 0.5;

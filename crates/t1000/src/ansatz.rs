@@ -1,3 +1,6 @@
+pub mod dispatch;
+pub use dispatch::*;
+
 use crate::state::QuantumState;
 use t1000_core::{Hamiltonian, PhaseGate, QubitRegister};
 use rand::{Rng, SeedableRng};
