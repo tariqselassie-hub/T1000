@@ -51,6 +51,10 @@ path = "src/bin/measurements/xeb_scaling_bench.rs"
 name = "bloch_zipper_bench"
 path = "src/bin/measurements/bloch_zipper_bench.rs"
 
+[[bin]]
+name = "adversarial_stego_bench"
+path = "src/bin/measurements/adversarial_stego_bench.rs"
+
 # =========================================================================
 # Executable Binaries: Quantum Neural Network Training
 # =========================================================================
