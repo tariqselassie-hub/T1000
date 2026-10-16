@@ -57,11 +57,11 @@
 * Detailed Documentation: [`docs/zinc_quantum_screening.md`](docs/zinc_quantum_screening.md).
 
 ### 4. Statistical Quantum Verification (`t1000::rcs`)
-* **Frontier RCS Benchmark (`frontier_rcs`):** Deep Random Circuit Sampling (default: 14 qubits, 36 layers, 1,513 gates) benchmarking the optimized 256-bit AVX2 engine against a textbook scalar reference simulator and Qiskit Aer.
-* **Dual-Engine Precision:** Machine precision numerical agreement (fidelity $1.000000000000$, max amplitude error $< 10^{-16}$).
-* **Cross-Entropy Benchmarking (XEB):** Validates linear XEB convergence ($F_{\text{XEB}} \approx 1.0101$) against ideal Haar-random Porter-Thomas distributions.
-* **Kolmogorov-Smirnov & Entropy Tests:** Automated confirmation of Porter-Thomas chaos ($D_{\text{KS}} = 0.0045 < D_{\text{critical}} = 0.0106$, $\Delta S = 0.4243\text{ nats} \to 1 - \gamma$).
-* **Adjoint Differentiation:** Evaluates analytical gradients across 1,008 parameters in $86.5\text{ ms}$ ($231\times$ speedup over parameter shift).
+* **Frontier RCS Benchmark (`frontier_rcs`):** Deep Random Circuit Sampling (default: 18 qubits, 36 layers, 1,945 gates, $262,144$ states) benchmarking the optimized 256-bit AVX2 engine against a textbook scalar reference simulator and Qiskit Aer.
+* **Dual-Engine Precision:** Machine precision numerical agreement (fidelity $1.000000000000$, max amplitude error $< 3.1 \times 10^{-17}$).
+* **Cross-Entropy Benchmarking (XEB):** Validates linear XEB convergence ($F_{\text{XEB}} \approx 1.0045$) against ideal Haar-random Porter-Thomas distributions.
+* **Kolmogorov-Smirnov & Entropy Tests:** Automated confirmation of Porter-Thomas chaos ($D_{\text{KS}} = 0.0021 < D_{\text{critical}} = 0.0027$, $\Delta S = 0.4243\text{ nats} \to 1 - \gamma$).
+* **Adjoint Differentiation:** Evaluates analytical gradients across 1,296 parameters in $0.250\text{ s}$ ($2,592\times$ circuit evaluation avoidance over parameter shift).
 * **Coherence Frontier Push (`coherence_frontier_push`):** Dual-mark physical experiment tracking quantum $\ell_1$-norm coherence capacity ($C_{\text{norm}}$) up to 26 qubits dense ($2^{26}$ amplitudes, 1.02 GB RAM), 64 qubits via 2D tensor network belief propagation ($2^{64}$ states), and sovereign Heptal wave qudits ($7^9$ states, $d=7$).
 
 ### 5. Quantum Vision & BNN Benchmark (`mnist_qnn_train`)

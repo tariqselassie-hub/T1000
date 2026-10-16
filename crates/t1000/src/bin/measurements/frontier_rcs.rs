@@ -1,4 +1,7 @@
-//! 20-qubit Random Circuit Sampling benchmark: optimized AVX2 engine vs. a reference simulator.
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
+//! 18-qubit Random Circuit Sampling benchmark: optimized AVX2 engine vs. a reference simulator.
 //!
 //! Both engines run the *same* circuit (the depth-12 hardware-efficient ansatz with the
 //! Rademacher phase layer, exported gate by gate through `CircuitAnsatz::to_dag`):
@@ -412,7 +415,7 @@ fn main() {
         .position(|a| a == "--qubits" || a == "-q")
         .and_then(|i| args.get(i + 1))
         .and_then(|s| s.parse::<usize>().ok())
-        .unwrap_or(14);
+        .unwrap_or(18);
 
     let depth = args
         .iter()
