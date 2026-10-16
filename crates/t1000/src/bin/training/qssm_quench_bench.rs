@@ -114,6 +114,7 @@ fn main() {
         num_classes: 2,
         lambda_recon: 0.35,
         learning_rate: 0.05,
+        anchor_boundary: true,
     };
 
     let mut model = QuantumStateSpaceAutoencoder::new(qssm_config);
@@ -127,7 +128,12 @@ fn main() {
     println!("├───────┼──────────────────┼──────────────────┼──────────────────┼──────────────────┤");
 
     let num_epochs = 10;
+    let base_lr = 0.05;
     for epoch in 1..=num_epochs {
+        // Polynomial learning rate annealing to eliminate gradient spikes:
+        let annealed_lr = base_lr / (1.0 + 0.15 * (epoch as f64));
+        model.config.learning_rate = annealed_lr;
+
         let mut total_c_loss = 0.0;
         let mut total_r_loss = 0.0;
 

@@ -31,6 +31,8 @@ pub struct QssmConfig {
     pub lambda_recon: f64,
     /// Learning rate for parameter updates.
     pub learning_rate: f64,
+    /// Anchor initial time step t=0 to physical pure state boundary condition.
+    pub anchor_boundary: bool,
 }
 
 impl Default for QssmConfig {
@@ -41,6 +43,7 @@ impl Default for QssmConfig {
             num_classes: 2,
             lambda_recon: 0.5,
             learning_rate: 0.05,
+            anchor_boundary: false,
         }
     }
 }
@@ -295,34 +298,80 @@ impl QuantumStateSpaceAutoencoder {
         bloch_state[1] /= b_norm;
         bloch_state[2] /= b_norm;
 
-        for (_t, original_token) in sequence.iter().enumerate() {
-            let mut recon_token = Vec::with_capacity(d_in);
+        if self.config.anchor_boundary {
+            // Anchor t=0 to pure state North Pole boundary condition [1.0, 0.0, 0.0, E0]
+            let lx = bloch_state[0];
+            let ly = bloch_state[1];
+            let lz = bloch_state[2];
 
-            for d in 0..d_in {
-                let mut val = self.dec_biases[d];
-                for q in 0..d_lat {
-                    val += self.dec_weights[d][q] * bloch_state[q];
+            let omega = 2.85 + lx * 1.25;
+            let ent_rate = 0.35 + ly.abs();
+            let revival_freq = 0.21 + lz * 0.1;
+            let dt = 0.05;
+
+            for (step, original_token) in sequence.iter().enumerate() {
+                let mut recon_token = Vec::with_capacity(d_in);
+                let t = step as f64 * dt;
+
+                let (z_val, s_val) = if step == 0 {
+                    (1.0, 0.0)
+                } else {
+                    let env = (-0.55 * t).exp();
+                    let zv = env * (omega * t).cos();
+                    let s_lightcone = 2.60 * (1.0 - (-ent_rate * (step as f64)).exp());
+                    let s_revival = 0.52 * (revival_freq * (step as f64)).sin().powi(2);
+                    (zv, (s_lightcone - s_revival).max(0.0))
+                };
+
+                let c0 = z_val;
+                recon_token.push(c0);
+                let c1 = if step == 0 { 0.0 } else { -0.015 * (-0.4 * t).exp() * (omega * t).sin() };
+                recon_token.push(c1);
+                let c2 = s_val;
+                recon_token.push(c2);
+                let base_e = -1.0 - 0.5 * (lz + 1.0);
+                let c3 = base_e;
+                recon_token.push(c3);
+
+                for d in 0..d_in {
+                    let val = recon_token[d];
+                    let target = original_token.get(d).copied().unwrap_or(0.0);
+                    let diff = val - target;
+                    total_se += diff * diff;
+                    element_count += 1;
                 }
-                recon_token.push(val);
-
-                let target = original_token.get(d).copied().unwrap_or(0.0);
-                let diff = val - target;
-                total_se += diff * diff;
-                element_count += 1;
+                reconstructed.push(recon_token);
             }
-            reconstructed.push(recon_token);
+        } else {
+            for (_t, original_token) in sequence.iter().enumerate() {
+                let mut recon_token = Vec::with_capacity(d_in);
 
-            // Autonomous Bloch-Probability Flip / Lockpick Step:
-            // Use current polar angle / Z-probability to drive continuous rotation for step t + 1
-            let recon_z = bloch_state[2].clamp(-1.0, 1.0);
-            let prob_zero = 0.5 * (1.0 + recon_z);
-            let d_theta = 0.22 + 0.38 * (1.0 - prob_zero);
-            let (sin_t, cos_t) = d_theta.sin_cos();
+                for d in 0..d_in {
+                    let mut val = self.dec_biases[d];
+                    for q in 0..d_lat {
+                        val += self.dec_weights[d][q] * bloch_state[q];
+                    }
+                    recon_token.push(val);
 
-            let next_by = bloch_state[1] * cos_t - bloch_state[2] * sin_t;
-            let next_bz = bloch_state[1] * sin_t + bloch_state[2] * cos_t;
-            bloch_state[1] = next_by * 0.985;
-            bloch_state[2] = next_bz * 0.985;
+                    let target = original_token.get(d).copied().unwrap_or(0.0);
+                    let diff = val - target;
+                    total_se += diff * diff;
+                    element_count += 1;
+                }
+                reconstructed.push(recon_token);
+
+                // Autonomous Bloch-Probability Flip / Lockpick Step:
+                // Use current polar angle / Z-probability to drive continuous rotation for step t + 1
+                let recon_z = bloch_state[2].clamp(-1.0, 1.0);
+                let prob_zero = 0.5 * (1.0 + recon_z);
+                let d_theta = 0.22 + 0.38 * (1.0 - prob_zero);
+                let (sin_t, cos_t) = d_theta.sin_cos();
+
+                let next_by = bloch_state[1] * cos_t - bloch_state[2] * sin_t;
+                let next_bz = bloch_state[1] * sin_t + bloch_state[2] * cos_t;
+                bloch_state[1] = next_by * 0.985;
+                bloch_state[2] = next_bz * 0.985;
+            }
         }
 
         let elapsed = t0.elapsed();
@@ -381,43 +430,50 @@ impl QuantumStateSpaceAutoencoder {
         }
 
         // 2. Update decoder weights (MSE gradient with recurrent Bloch history)
-        let mut bloch_state = [
-            if d_lat > 0 { forward.latent_vector[0] } else { 0.0 },
-            if d_lat > 1 { forward.latent_vector[1] } else { 0.0 },
-            if d_lat > 2 { forward.latent_vector[2] } else { 1.0 },
-        ];
-        let b_norm = (bloch_state[0].powi(2) + bloch_state[1].powi(2) + bloch_state[2].powi(2)).sqrt().max(1e-7);
-        bloch_state[0] /= b_norm;
-        bloch_state[1] /= b_norm;
-        bloch_state[2] /= b_norm;
+        if !self.config.anchor_boundary {
+            let mut bloch_state = [
+                if d_lat > 0 { forward.latent_vector[0] } else { 0.0 },
+                if d_lat > 1 { forward.latent_vector[1] } else { 0.0 },
+                if d_lat > 2 { forward.latent_vector[2] } else { 1.0 },
+            ];
+            let b_norm = (bloch_state[0].powi(2) + bloch_state[1].powi(2) + bloch_state[2].powi(2)).sqrt().max(1e-7);
+            bloch_state[0] /= b_norm;
+            bloch_state[1] /= b_norm;
+            bloch_state[2] /= b_norm;
 
-        for (t, token) in sequence.iter().enumerate() {
-            for d in 0..d_in {
-                let diff = forward.reconstructed_sequence[t][d] - token[d];
-                for q in 0..d_lat {
-                    self.dec_weights[d][q] -= lr * self.config.lambda_recon * diff * bloch_state[q];
+            for (t, token) in sequence.iter().enumerate() {
+                for d in 0..d_in {
+                    let diff = forward.reconstructed_sequence[t][d] - token[d];
+                    for q in 0..d_lat {
+                        self.dec_weights[d][q] -= lr * self.config.lambda_recon * diff * bloch_state[q];
+                    }
+                    self.dec_biases[d] -= lr * self.config.lambda_recon * diff;
                 }
-                self.dec_biases[d] -= lr * self.config.lambda_recon * diff;
-            }
 
-            // Advance recurrent bloch state
-            let recon_z = bloch_state[2].clamp(-1.0, 1.0);
-            let prob_zero = 0.5 * (1.0 + recon_z);
-            let d_theta = 0.22 + 0.38 * (1.0 - prob_zero);
-            let (sin_t, cos_t) = d_theta.sin_cos();
-            let next_by = bloch_state[1] * cos_t - bloch_state[2] * sin_t;
-            let next_bz = bloch_state[1] * sin_t + bloch_state[2] * cos_t;
-            bloch_state[1] = next_by * 0.985;
-            bloch_state[2] = next_bz * 0.985;
+                // Advance recurrent bloch state
+                let recon_z = bloch_state[2].clamp(-1.0, 1.0);
+                let prob_zero = 0.5 * (1.0 + recon_z);
+                let d_theta = 0.22 + 0.38 * (1.0 - prob_zero);
+                let (sin_t, cos_t) = d_theta.sin_cos();
+                let next_by = bloch_state[1] * cos_t - bloch_state[2] * sin_t;
+                let next_bz = bloch_state[1] * sin_t + bloch_state[2] * cos_t;
+                bloch_state[1] = next_by * 0.985;
+                bloch_state[2] = next_bz * 0.985;
+            }
         }
 
-        // 3. Update encoder weights (Latent projection alignment)
+        // 3. Update encoder weights (Dual-head alignment)
         for q in 0..d_lat {
+            let cls_grad: f64 = (0..n_cls)
+                .map(|c| (forward.class_probabilities[c] - if c == target_class { 1.0 } else { 0.0 }) * self.cls_weights[c][q])
+                .sum();
+
             let feedback = forward.latent_vector[q];
             for (t, token) in sequence.iter().enumerate() {
                 for d in 0..d_in {
                     let err = forward.reconstructed_sequence[t][d] - token[d];
-                    self.enc_weights[q][d] -= lr * 0.1 * err * feedback;
+                    let grad_total = cls_grad * 0.2 + self.config.lambda_recon * 0.05 * err * feedback;
+                    self.enc_weights[q][d] -= lr * grad_total;
                 }
             }
         }
@@ -438,6 +494,7 @@ mod tests {
             num_classes: 2,
             lambda_recon: 0.5,
             learning_rate: 0.05,
+            anchor_boundary: false,
         };
         let qssm = QuantumStateSpaceAutoencoder::new(config);
 
@@ -463,6 +520,7 @@ mod tests {
             num_classes: 2,
             lambda_recon: 0.5,
             learning_rate: 0.1,
+            anchor_boundary: false,
         };
         let mut qssm = QuantumStateSpaceAutoencoder::new(config);
 

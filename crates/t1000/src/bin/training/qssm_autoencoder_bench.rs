@@ -71,6 +71,7 @@ fn main() {
         num_classes: 2,
         lambda_recon: 0.4,
         learning_rate: 0.04,
+        anchor_boundary: false,
     };
 
     let mut model = QuantumStateSpaceAutoencoder::new(config);
