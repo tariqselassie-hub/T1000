@@ -107,6 +107,10 @@ path = "src/bin/training/zinc_qnn_12qubit_zz_correlators.rs"
 name = "qssm_autoencoder_bench"
 path = "src/bin/training/qssm_autoencoder_bench.rs"
 
+[[bin]]
+name = "qssm_quench_bench"
+path = "src/bin/training/qssm_quench_bench.rs"
+
 # =========================================================================
 # Executable Binaries: Benchmarks & Controls
 # =========================================================================

@@ -142,6 +142,9 @@ cargo test --workspace
 # Run Quantum State-Space Autoencoder (Q-SSM) Training & Streaming Benchmark
 cargo run --release -p t1000 --bin qssm_autoencoder_bench
 
+# Run Zero-Data Real-Time Quantum Quench Autoencoder & Dynamical Phase Classifier
+cargo run --release -p t1000 --bin qssm_quench_bench
+
 # Run 1D MPS Bloch-Zipper and Heptal SU(7) Complementarity Benchmarks (14 to 200 qubits/qudits)
 cargo run --release -p t1000 --bin bloch_zipper_bench
 
