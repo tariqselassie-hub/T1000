@@ -4,163 +4,163 @@
   "total_states": 262144,
   "reference": {
     "name": "Scalar reference statevector (frontier_rcs.rs)",
-    "total_time_seconds": 0.2465529,
+    "total_time_seconds": 0.238131,
     "gate_count": 1945,
     "layers": []
   },
   "optimized": {
     "name": "t1000 AVX2 + tiled kernels",
-    "total_time_seconds": 0.0553854,
+    "total_time_seconds": 0.0771446,
     "gate_count": 1945,
     "layers": [
       {
         "layer": 1,
-        "latency_seconds": 0.0014793
+        "latency_seconds": 0.001928
       },
       {
         "layer": 2,
-        "latency_seconds": 0.0014155
+        "latency_seconds": 0.0021589
       },
       {
         "layer": 3,
-        "latency_seconds": 0.001404
+        "latency_seconds": 0.0017728
       },
       {
         "layer": 4,
-        "latency_seconds": 0.0016626
+        "latency_seconds": 0.0020091
       },
       {
         "layer": 5,
-        "latency_seconds": 0.0014395
+        "latency_seconds": 0.0018522
       },
       {
         "layer": 6,
-        "latency_seconds": 0.0015455
+        "latency_seconds": 0.0018256
       },
       {
         "layer": 7,
-        "latency_seconds": 0.0013568
+        "latency_seconds": 0.0019712
       },
       {
         "layer": 8,
-        "latency_seconds": 0.001358
+        "latency_seconds": 0.0018599
       },
       {
         "layer": 9,
-        "latency_seconds": 0.0015131
+        "latency_seconds": 0.0020506
       },
       {
         "layer": 10,
-        "latency_seconds": 0.0014639
+        "latency_seconds": 0.0020068
       },
       {
         "layer": 11,
-        "latency_seconds": 0.0014646
+        "latency_seconds": 0.0019099
       },
       {
         "layer": 12,
-        "latency_seconds": 0.0013182
+        "latency_seconds": 0.0018729
       },
       {
         "layer": 13,
-        "latency_seconds": 0.0015189
+        "latency_seconds": 0.002337
       },
       {
         "layer": 14,
-        "latency_seconds": 0.0014522
+        "latency_seconds": 0.0021201
       },
       {
         "layer": 15,
-        "latency_seconds": 0.0014025
+        "latency_seconds": 0.0020781
       },
       {
         "layer": 16,
-        "latency_seconds": 0.0013367
+        "latency_seconds": 0.0020501
       },
       {
         "layer": 17,
-        "latency_seconds": 0.0014744
+        "latency_seconds": 0.0021011
       },
       {
         "layer": 18,
-        "latency_seconds": 0.0013534
+        "latency_seconds": 0.0019458
       },
       {
         "layer": 19,
-        "latency_seconds": 0.0014503
+        "latency_seconds": 0.0020504
       },
       {
         "layer": 20,
-        "latency_seconds": 0.0013431
+        "latency_seconds": 0.0017552
       },
       {
         "layer": 21,
-        "latency_seconds": 0.0015463
+        "latency_seconds": 0.0021555
       },
       {
         "layer": 22,
-        "latency_seconds": 0.001302
+        "latency_seconds": 0.0019912
       },
       {
         "layer": 23,
-        "latency_seconds": 0.0016688
+        "latency_seconds": 0.0021721
       },
       {
         "layer": 24,
-        "latency_seconds": 0.0015852
+        "latency_seconds": 0.0019593
       },
       {
         "layer": 25,
-        "latency_seconds": 0.0018053
+        "latency_seconds": 0.0022381
       },
       {
         "layer": 26,
-        "latency_seconds": 0.0014912
+        "latency_seconds": 0.0020594
       },
       {
         "layer": 27,
-        "latency_seconds": 0.0015421
+        "latency_seconds": 0.0016131
       },
       {
         "layer": 28,
-        "latency_seconds": 0.0015467
+        "latency_seconds": 0.0019721
       },
       {
         "layer": 29,
-        "latency_seconds": 0.0015065
+        "latency_seconds": 0.0019633
       },
       {
         "layer": 30,
-        "latency_seconds": 0.0014881
+        "latency_seconds": 0.0020248
       },
       {
         "layer": 31,
-        "latency_seconds": 0.0015221
+        "latency_seconds": 0.0016482
       },
       {
         "layer": 32,
-        "latency_seconds": 0.0014336
+        "latency_seconds": 0.0019451
       },
       {
         "layer": 33,
-        "latency_seconds": 0.0017463
+        "latency_seconds": 0.0019872
       },
       {
         "layer": 34,
-        "latency_seconds": 0.0013133
+        "latency_seconds": 0.0021178
       },
       {
         "layer": 35,
-        "latency_seconds": 0.0016052
+        "latency_seconds": 0.0017443
       },
       {
         "layer": 36,
-        "latency_seconds": 0.0015367
+        "latency_seconds": 0.0018116
       }
     ]
   },
   "optimized_threads": 20,
-  "speedup_vs_reference": 4.451586519190978,
+  "speedup_vs_reference": 3.0868135942113906,
   "agreement": {
     "max_amplitude_error": 3.0199263850994176e-17,
     "state_fidelity": 0.9999999999999585,
@@ -208,25 +208,25 @@
     "compare_qubits": 12,
     "compare_depth": 4,
     "compare_params": 96,
-    "adjoint_seconds": 0.0007227,
-    "parameter_shift_seconds": 0.0244844,
+    "adjoint_seconds": 0.0006661,
+    "parameter_shift_seconds": 0.0224618,
     "max_abs_difference": 3.2959746043559335e-16,
     "full_circuit_params": 1296,
-    "full_circuit_adjoint_seconds": 0.2499558
+    "full_circuit_adjoint_seconds": 0.2362296
   },
   "variational_training": {
     "epochs": 5,
     "initial_loss": 0.4942189504152614,
     "final_loss": 0.43444800186699795,
-    "total_training_seconds": 0.2938625,
-    "mean_epoch_seconds": 0.058772500000000005,
+    "total_training_seconds": 0.3156884,
+    "mean_epoch_seconds": 0.06313768,
     "scheduler_mode": "Parallel Work-Stealing Pool (20 Threads)",
     "history": [
       {
         "epoch": 1,
         "loss": 0.4942189504152614,
         "gradient_norm": 0.03812760026266884,
-        "epoch_seconds": 0.0600982,
+        "epoch_seconds": 0.0624632,
         "active_threads": 20,
         "scheduler_mode": "Parallel Work-Stealing Pool (20 Threads)"
       },
@@ -234,7 +234,7 @@
         "epoch": 2,
         "loss": 0.47878180322676306,
         "gradient_norm": 0.041041934605084644,
-        "epoch_seconds": 0.0570118,
+        "epoch_seconds": 0.0650485,
         "active_threads": 20,
         "scheduler_mode": "Parallel Work-Stealing Pool (20 Threads)"
       },
@@ -242,7 +242,7 @@
         "epoch": 3,
         "loss": 0.46444123943761445,
         "gradient_norm": 0.04604368163256683,
-        "epoch_seconds": 0.0589342,
+        "epoch_seconds": 0.0661566,
         "active_threads": 20,
         "scheduler_mode": "Parallel Work-Stealing Pool (20 Threads)"
       },
@@ -250,7 +250,7 @@
         "epoch": 4,
         "loss": 0.45009355576744525,
         "gradient_norm": 0.051439959855679694,
-        "epoch_seconds": 0.057448,
+        "epoch_seconds": 0.060746,
         "active_threads": 20,
         "scheduler_mode": "Parallel Work-Stealing Pool (20 Threads)"
       },
@@ -258,7 +258,7 @@
         "epoch": 5,
         "loss": 0.43444800186699795,
         "gradient_norm": 0.056594451755384356,
-        "epoch_seconds": 0.0601715,
+        "epoch_seconds": 0.0610641,
         "active_threads": 20,
         "scheduler_mode": "Parallel Work-Stealing Pool (20 Threads)"
       }

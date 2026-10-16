@@ -127,6 +127,12 @@
   * **Unzipping Decoder Head:** Reverses continuous Bloch steering to autoregressively reconstruct the input feature sequence $\hat{X}$ from the latent bottleneck.
 * **Extreme Streaming Throughput:** Evaluates sequence lengths $T \in [10, 500]$ at **$66.6\text{–}95.8\text{ ns per token}$** (**$> 13\text{–}15\text{ million tokens/second}$**), with 100% test classification accuracy on complex physical signal dynamics.
 
+### 13. Automated Clifford+T Single-Qubit Synthesis (`t1000::clifford_t`)
+* **Cyclotomic Ring $\mathbb{Z}[\omega]$ Arithmetic:** Exact integer coordinate representation modulo $\omega^4 + 1 = 0$ ($\omega = e^{i\pi/4} = \frac{1+i}{\sqrt{2}}$) with algebraic norm, conjugation, and exact division by $\lambda = 1+\omega$.
+* **Hierarchical Grid Solver:** Synthesizes arbitrary continuous single-qubit rotations ($R_z(\theta), R_x(\theta), R_y(\theta)$) into minimal-length discrete gate sequences over $\{H, S, S^\dagger, T, T^\dagger, X, Y, Z\}$.
+* **Matsumoto-Amano Normal Form & Peephole Optimization:** Deterministic parity state-machine reduction with multi-pass peephole cancellations ($H^2 \to I$, $T T^\dagger \to I$, $T^2 \to S$, $S^2 \to Z$, $Z^2 \to I$), guaranteeing $\|U_{\text{exact}} - U_{\text{discrete}}\|_\infty \le \varepsilon$.
+* **Ansatz Lowering Pipeline:** `lower_circuit_ops` directly transpiles variational continuous ansatz layers into discrete, fault-tolerant gate token streams for stabilizer or magic-state execution.
+
 ---
 
 ## Quick Start for Developers
@@ -190,7 +196,7 @@ We are actively welcoming quantum computing researchers, Rust performance engine
 
 - [ ] **AVX-512 & ARM NEON Kernels:** Expanding SIMD kernels beyond AVX2 for Apple Silicon (M-series) and modern server CPUs.
 - [ ] **GPU Backend:** WGPU / CUDA kernels for scaling beyond 26 qubits.
-- [ ] **Clifford+T Decomposition:** Automated synthesis of continuous rotation angles into discrete fault-tolerant gate sets.
+- [x] **Clifford+T Decomposition:** Automated synthesis of continuous rotation angles into discrete fault-tolerant gate sets (`t1000::clifford_t`).
 - [ ] **Graph Neural Network (GNN) Hybridization:** Fusing T-1000 latent molecular embeddings with classical GNN message passing.
 
 Feel free to open issues, submit pull requests, or share benchmark results on different architectures!
