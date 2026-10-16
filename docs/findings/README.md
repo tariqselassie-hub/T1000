@@ -12,6 +12,7 @@ This directory serves as the official repository for empirical benchmarks, physi
 | **[`bloch_zipper_scaling_benchmarks.md`](bloch_zipper_scaling_benchmarks.md)** | 1D MPS Linear Entanglement & Radix-7 Qudits | `t1000::zipper`, `t1000::heptal_wave` | Qubit chain ($N=200$): $14.1\,\mu\text{s}$ ($70.5\text{ ns/qubit}$); Heptal chain ($N=200$): $6.78\text{ ms}$; Active footprint: 128 B / 784 B L1 resident. |
 | **[`../mimac_quantum_cliff_analysis.md`](../mimac_quantum_cliff_analysis.md)** | Molecular Activity Cliffs & Latent Space Dispersion | `t1000::molfeatures`, `t1000::smiles` | Screening throughput: $213,351\text{ mol/sec}$; 19-dim Hilbert mapping; Zwitterion topological anomaly mining. |
 | **[`../fpga_architecture.md`](../fpga_architecture.md)** | Cycle-Accurate Silicon Co-Processor Telemetry | `fpga/1000_qpu` | Artix-7 XC7A35T; 8-lane DSP48E1 butterfly; $10.24\,\mu\text{s}$ 14Q evolution; 3.0 MBaud UART (`COM6`). |
+| **[`../cohesion_architecture.md`](../cohesion_architecture.md)** | Sovereign True Cohesion & Substrate Interoperability | `t1000_core`, `t1000` | Phase 1: Zero-loss $F=1.0$ SOA/Register bridge; Lindblad/Kraus per-qubit targeted noise; partial-trace on SOA. |
 | **[`../bloch_zipper_mps_specification.md`](../bloch_zipper_mps_specification.md)** | 1D MPS Linear Bloch-Zipper Theory & Area Law | `t1000::zipper` | Entanglement entropy area law $S(L) \le \text{const}$; partial-trace epoxy freezing; sliding cache window $W \le 4$. |
 
 ---

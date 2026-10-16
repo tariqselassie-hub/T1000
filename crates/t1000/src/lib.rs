@@ -50,7 +50,8 @@ pub use canonical::{
     EntanglerTopology, ReadoutConfusionMatrix,
 };
 pub use coherence::{
-    apply_dynamical_decoupling, compute_coherence_metrics, reproject_coherence_manifold,
+    apply_core_channel_on_qubit, apply_dynamical_decoupling, apply_open_system_decoherence,
+    apply_open_system_decoherence_qubit, compute_coherence_metrics, reproject_coherence_manifold,
     CoherenceMetrics, DynamicalDecouplingKind, NoiseChannelParams, QuantumZenoSentry, ZenoTelemetry,
 };
 pub use compiler::{

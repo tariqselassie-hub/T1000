@@ -113,6 +113,7 @@ impl QuantumState {
     }
 
     pub fn from_register(reg: &QubitRegister) -> Self {
+        assert_valid_dim(reg.basis);
         let mut real = Vec::with_capacity(reg.basis);
         let mut imag = Vec::with_capacity(reg.basis);
         for a in &reg.amplitudes {
@@ -124,6 +125,44 @@ impl QuantumState {
             real,
             imag,
         }
+    }
+
+    /// Converts the SOA amplitudes into an interleaved `Vec<Complex64>`.
+    pub fn to_complex_vec(&self) -> Vec<Complex64> {
+        self.real
+            .iter()
+            .zip(self.imag.iter())
+            .map(|(&r, &i)| Complex64::new(r, i))
+            .collect()
+    }
+
+    /// Constructs a `QuantumState` directly from a slice of `Complex64` amplitudes.
+    pub fn from_complex_slice(slice: &[Complex64]) -> Self {
+        let dim = slice.len();
+        assert_valid_dim(dim);
+        let mut real = Vec::with_capacity(dim);
+        let mut imag = Vec::with_capacity(dim);
+        for c in slice {
+            real.push(c.re);
+            imag.push(c.im);
+        }
+        Self { dim, real, imag }
+    }
+
+    /// Traces out subsystem B using `t1000_core::PartialTrace`, returning the reduced density matrix of subsystem A.
+    pub fn partial_trace_b(&self, dim_a: usize, dim_b: usize) -> Vec<Complex64> {
+        assert_eq!(self.dim, dim_a * dim_b, "State dimension must equal dim_a * dim_b");
+        let complex_state = self.to_complex_vec();
+        t1000_core::PartialTrace::trace_out_b(&complex_state, dim_a, dim_b)
+    }
+
+    /// Applies a `t1000_core::DecoherenceChannel` to this state in-place.
+    pub fn apply_channel(&mut self, channel: &t1000_core::DecoherenceChannel) -> f64 {
+        let mut reg = self.to_register(channel.seed);
+        let lost = t1000_core::channel::apply(&mut reg, channel);
+        let new_state = Self::from_register(&reg);
+        self.copy_from(&new_state);
+        lost
     }
 
     /// Hardware-vectorized L2 norm normalization (AVX2 + FMA).
@@ -319,5 +358,83 @@ impl QuantumFeatureMap {
 
         let frac = (h as f64) / (u64::MAX as f64);
         frac * 2.0 * PI
+    }
+}
+
+// =========================================================================
+// Bidirectional Substrate Conversions (t1000_core <-> t1000)
+// =========================================================================
+
+impl From<QubitRegister> for QuantumState {
+    fn from(reg: QubitRegister) -> Self {
+        Self::from_register(&reg)
+    }
+}
+
+impl From<&QubitRegister> for QuantumState {
+    fn from(reg: &QubitRegister) -> Self {
+        Self::from_register(reg)
+    }
+}
+
+impl From<QuantumState> for QubitRegister {
+    fn from(state: QuantumState) -> Self {
+        state.to_register(crate::DEFAULT_SEED)
+    }
+}
+
+impl From<&QuantumState> for QubitRegister {
+    fn from(state: &QuantumState) -> Self {
+        state.to_register(crate::DEFAULT_SEED)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_quantum_state_register_roundtrip() {
+        let original = QuantumState::new(16);
+        let reg: QubitRegister = (&original).into();
+        assert_eq!(reg.basis, 16);
+
+        let restored: QuantumState = (&reg).into();
+        assert_eq!(restored.dim, 16);
+        assert!((original.fidelity(&restored) - 1.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_from_complex_slice_and_partial_trace() {
+        // Prepare maximally entangled 2-qubit Bell state: (|00> + |11>) / sqrt(2)
+        let inv_sqrt2 = 1.0 / 2.0f64.sqrt();
+        let bell_amps = vec![
+            Complex64::new(inv_sqrt2, 0.0), // |00>
+            Complex64::default(),           // |01>
+            Complex64::default(),           // |10>
+            Complex64::new(inv_sqrt2, 0.0), // |11>
+        ];
+        let state = QuantumState::from_complex_slice(&bell_amps);
+        assert_eq!(state.dim, 4);
+
+        // Tracing out qubit B (dim_b = 2) leaves maximally mixed qubit A: rho_A = 0.5 * I
+        let rho_a = state.partial_trace_b(2, 2);
+        assert_eq!(rho_a.len(), 4);
+        assert!((rho_a[0].re - 0.5).abs() < 1e-10); // <0|rho|0> = 0.5
+        assert!((rho_a[3].re - 0.5).abs() < 1e-10); // <1|rho|1> = 0.5
+        assert!(rho_a[1].norm() < 1e-10);          // off-diagonal = 0
+        assert!(rho_a[2].norm() < 1e-10);
+    }
+
+    #[test]
+    fn test_apply_channel_on_quantum_state() {
+        let mut state = QuantumState::ground(8);
+        let channel = t1000_core::DecoherenceChannel::new(
+            t1000_core::ChannelKind::AmplitudeDamping { gamma: 0.1 },
+            42,
+        );
+        let lost = state.apply_channel(&channel);
+        assert!(lost >= 0.0);
+        state.assert_normalized(1e-6);
     }
 }

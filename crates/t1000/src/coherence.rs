@@ -64,6 +64,28 @@ impl Default for NoiseChannelParams {
     }
 }
 
+impl NoiseChannelParams {
+    /// Constructs discrete `t1000_core` channel descriptors for a specific gate delay `dt_us`.
+    pub fn to_core_channels(&self, dt_us: f64, seed: u64) -> Vec<t1000_core::DecoherenceChannel> {
+        let gamma_t1 = (1.0 - (-dt_us / self.t1_us).exp()).clamp(0.0, 1.0);
+        let lambda_t2 = (1.0 - (-dt_us / self.t2_us).exp()).clamp(0.0, 1.0);
+        vec![
+            t1000_core::DecoherenceChannel::new(
+                t1000_core::ChannelKind::AmplitudeDamping { gamma: gamma_t1 },
+                seed,
+            ),
+            t1000_core::DecoherenceChannel::new(
+                t1000_core::ChannelKind::PhaseDamping { lambda: lambda_t2 },
+                seed.wrapping_add(1),
+            ),
+            t1000_core::DecoherenceChannel::new(
+                t1000_core::ChannelKind::Depolarizing { p: self.depolarizing_prob },
+                seed.wrapping_add(2),
+            ),
+        ]
+    }
+}
+
 /// Telemetry emitted from a Quantum Zeno stabilization step.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ZenoTelemetry {
@@ -211,6 +233,19 @@ fn apply_pauli_y(state: &mut QuantumState, target: usize) {
     }
 }
 
+/// Fast single-qubit Pauli-Z butterfly pass: Z |0> = |0>, Z |1> = -|1>.
+fn apply_pauli_z(state: &mut QuantumState, target: usize) {
+    let stride = 1 << target;
+    let step = stride << 1;
+    for i in (0..state.dim).step_by(step) {
+        for j in 0..stride {
+            let idx1 = i + j + stride;
+            state.real[idx1] = -state.real[idx1];
+            state.imag[idx1] = -state.imag[idx1];
+        }
+    }
+}
+
 // =========================================================================
 // 3. Quantum Zeno Sentry & Boundary Subspace Stabilization
 // =========================================================================
@@ -268,9 +303,10 @@ impl QuantumZenoSentry {
 // 4. Open-System Decoherence Channels
 // =========================================================================
 
-/// Simulates open-system decoherence over duration `dt_us` using stochastic quantum trajectories.
-pub fn apply_open_system_decoherence<R: Rng>(
+/// Simulates open-system decoherence on a specific target qubit over duration `dt_us`.
+pub fn apply_open_system_decoherence_qubit<R: Rng>(
     state: &mut QuantumState,
+    target: usize,
     params: &NoiseChannelParams,
     dt_us: f64,
     rng: &mut R,
@@ -278,22 +314,87 @@ pub fn apply_open_system_decoherence<R: Rng>(
     // 1. T1 Energy Relaxation (Amplitude Damping): |1> -> |0>
     let gamma_t1 = (1.0 - (-dt_us / params.t1_us).exp()).clamp(0.0, 1.0);
     if gamma_t1 > 0.0 && rng.gen_bool(gamma_t1.min(1.0)) {
-        // Stochastic decay pass on lower bit
-        apply_amplitude_damping_step(state, 0, gamma_t1);
+        apply_amplitude_damping_step(state, target, gamma_t1);
     }
 
     // 2. T2* Pure Dephasing: Phase damping
     let lambda_t2 = (1.0 - (-dt_us / params.t2_us).exp()).clamp(0.0, 1.0);
     if lambda_t2 > 0.0 && rng.gen_bool(lambda_t2.min(1.0)) {
-        // Random phase kick on target wire
-        apply_random_dephasing_kick(state, 0, rng);
+        apply_random_dephasing_kick(state, target, rng);
     }
 
     // 3. Depolarizing channel pass
     if params.depolarizing_prob > 0.0 && rng.gen_bool(params.depolarizing_prob.min(1.0)) {
-        apply_pauli_x(state, 0);
+        let choice: u8 = rng.gen_range(0..3);
+        match choice {
+            0 => apply_pauli_x(state, target),
+            1 => apply_pauli_y(state, target),
+            _ => apply_pauli_z(state, target),
+        }
     }
 
+    state.normalize();
+}
+
+/// Simulates open-system decoherence over duration `dt_us` using stochastic quantum trajectories on qubit 0.
+pub fn apply_open_system_decoherence<R: Rng>(
+    state: &mut QuantumState,
+    params: &NoiseChannelParams,
+    dt_us: f64,
+    rng: &mut R,
+) {
+    apply_open_system_decoherence_qubit(state, 0, params, dt_us, rng);
+}
+
+/// Applies a `t1000_core::ChannelKind` decoherence channel on a target qubit using fast AVX2/SOA passes.
+pub fn apply_core_channel_on_qubit<R: Rng>(
+    state: &mut QuantumState,
+    target: usize,
+    channel: &t1000_core::ChannelKind,
+    rng: &mut R,
+) {
+    match *channel {
+        t1000_core::ChannelKind::AmplitudeDamping { gamma } => {
+            if gamma > 0.0 && rng.gen_bool(gamma.clamp(0.0, 1.0)) {
+                apply_amplitude_damping_step(state, target, gamma);
+            }
+        }
+        t1000_core::ChannelKind::PhaseDamping { lambda } => {
+            if lambda > 0.0 && rng.gen_bool(lambda.clamp(0.0, 1.0)) {
+                apply_random_dephasing_kick(state, target, rng);
+            }
+        }
+        t1000_core::ChannelKind::Depolarizing { p } => {
+            if p > 0.0 && rng.gen_bool(p.clamp(0.0, 1.0)) {
+                let choice: u8 = rng.gen_range(0..3);
+                match choice {
+                    0 => apply_pauli_x(state, target),
+                    1 => apply_pauli_y(state, target),
+                    _ => apply_pauli_z(state, target),
+                }
+            }
+        }
+        t1000_core::ChannelKind::BitFlip { p } => {
+            if p > 0.0 && rng.gen_bool(p.clamp(0.0, 1.0)) {
+                apply_pauli_x(state, target);
+            }
+        }
+        t1000_core::ChannelKind::PhaseFlip { p } => {
+            if p > 0.0 && rng.gen_bool(p.clamp(0.0, 1.0)) {
+                apply_pauli_z(state, target);
+            }
+        }
+        t1000_core::ChannelKind::PauliNoise { px, py, pz } => {
+            let r: f64 = rng.gen();
+            if r < px {
+                apply_pauli_x(state, target);
+            } else if r < px + py {
+                apply_pauli_y(state, target);
+            } else if r < px + py + pz {
+                apply_pauli_z(state, target);
+            }
+        }
+    }
     state.normalize();
 }
 
@@ -433,5 +534,27 @@ mod tests {
         let e3 = f(3.0);
         let e0_extrap = zero_noise_richardson_extrapolate(e1, e2, e3);
         assert!((e0_extrap - 1.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn test_open_system_noise_per_qubit_and_core_channels() {
+        use rand::SeedableRng;
+        let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(42);
+        let params = NoiseChannelParams {
+            t1_us: 10.0,
+            t2_us: 15.0,
+            depolarizing_prob: 0.05,
+        };
+        let mut state = QuantumState::new(8);
+        apply_open_system_decoherence_qubit(&mut state, 1, &params, 1.0, &mut rng);
+        state.assert_normalized(1e-6);
+
+        // Core channel application
+        let channel = t1000_core::ChannelKind::PhaseDamping { lambda: 0.1 };
+        apply_core_channel_on_qubit(&mut state, 2, &channel, &mut rng);
+        state.assert_normalized(1e-6);
+
+        let core_channels = params.to_core_channels(0.5, 999);
+        assert_eq!(core_channels.len(), 3);
     }
 }
