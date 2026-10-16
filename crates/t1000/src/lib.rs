@@ -37,6 +37,9 @@ pub mod tiled_butterfly;
 pub mod trainer;
 pub mod zipper;
 pub mod qssm;
+pub mod telemetry;
+
+pub use telemetry::QuantumTelemetryReport;
 
 // Backwards-compatible module aliases
 pub use measurements::observable;
