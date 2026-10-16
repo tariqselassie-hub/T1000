@@ -13,12 +13,17 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::canonical::{CanonicalAlgorithm, CanonicalExecutionReport, CanonicalRunner, ReadoutConfusionMatrix};
+use crate::canonical::{
+    CanonicalAlgorithm, CanonicalExecutionReport, CanonicalRunner, ReadoutConfusionMatrix,
+};
+use crate::chemistry::{MolecularQuantumReport, Period12Molecule, Period12MoleculeMetadata};
+use crate::clifford_t::{synthesize_and_profile, CliffordTSynthesisReport};
 use crate::coherence::NoiseChannelParams;
 use crate::compiler::CircuitBuilder;
 use crate::heptal_wave::{HeptalZipperConfig, HeptalZipperEngine, HeptalZipperReport};
-use crate::chemistry::{MolecularQuantumReport, Period12Molecule, Period12MoleculeMetadata};
-use crate::smiles::{SmilesError, SmilesExplorer, SmilesFeatures, SmilesFeaturizer, SmilesPropertyProfile};
+use crate::smiles::{
+    SmilesError, SmilesExplorer, SmilesFeatures, SmilesFeaturizer, SmilesPropertyProfile,
+};
 use crate::state::QuantumState;
 use crate::telemetry::QuantumTelemetryReport;
 use crate::zipper::{BlochZipperEngine, ZipperConfig, ZipperExecutionReport};
@@ -46,6 +51,7 @@ pub struct SystemManifestReport {
     pub zipper_max_qubits: usize,
     pub heptal_qudit_radix: usize,
     pub period_molecules_max_qubits: usize,
+    pub clifford_t_synthesis: bool,
 }
 
 /// Master engine facade coordinating all T-1000 quantum simulation and screening pipelines.
@@ -113,7 +119,10 @@ impl T1000Engine {
     // =========================================================================
 
     /// Simulates a compiled circuit DAG and synthesizes an immutable `QuantumTelemetryReport`.
-    pub fn simulate_circuit(&self, builder: &CircuitBuilder) -> (QuantumState, QuantumTelemetryReport) {
+    pub fn simulate_circuit(
+        &self,
+        builder: &CircuitBuilder,
+    ) -> (QuantumState, QuantumTelemetryReport) {
         let num_qubits = builder.dag.num_qubits;
         let dim = 1 << num_qubits;
         let mut state = QuantumState::ground(dim);
@@ -198,7 +207,21 @@ impl T1000Engine {
     }
 
     // =========================================================================
-    // 7. Hardware Silicon Coprocessor Status
+    // 7. Fault-Tolerant Clifford+T Synthesis
+    // =========================================================================
+
+    /// Synthesizes an arbitrary single-qubit rotation (Rz, Rx, Ry) into an optimal Clifford+T sequence.
+    pub fn synthesize_clifford_t(
+        &self,
+        axis: &str,
+        theta: f64,
+        eps: f64,
+    ) -> CliffordTSynthesisReport {
+        synthesize_and_profile(axis, theta, eps)
+    }
+
+    // =========================================================================
+    // 8. Hardware Silicon Coprocessor Status
     // =========================================================================
 
     /// Queries the operational status of the physical AMD/Xilinx Artix-7 FPGA coprocessor.
@@ -225,6 +248,7 @@ impl T1000Engine {
             zipper_max_qubits: 200,
             heptal_qudit_radix: 7,
             period_molecules_max_qubits: 18,
+            clifford_t_synthesis: true,
         }
     }
 }
@@ -252,10 +276,14 @@ mod tests {
     fn test_master_engine_smiles_and_zipper() {
         let engine = T1000Engine::new();
         let aspirin = "CC(=O)Oc1ccccc1C(=O)O";
-        let features = engine.featurize_smiles(aspirin).expect("Aspirin featurize failed");
+        let features = engine
+            .featurize_smiles(aspirin)
+            .expect("Aspirin featurize failed");
         assert_eq!(features.heavy_atoms, 13);
 
-        let profile = engine.evaluate_molecule(aspirin).expect("Aspirin evaluation failed");
+        let profile = engine
+            .evaluate_molecule(aspirin)
+            .expect("Aspirin evaluation failed");
         assert!(profile.qed > 0.0 && profile.qed <= 1.0);
 
         let zipper_report = engine.run_bloch_zipper(14);

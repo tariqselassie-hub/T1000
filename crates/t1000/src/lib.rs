@@ -14,9 +14,12 @@ pub mod adjoint;
 pub mod ansatz;
 pub mod baselines;
 pub mod canonical;
+pub mod chemistry;
+pub mod clifford_t;
 pub mod coherence;
 pub mod compiler;
 pub mod diagonal;
+pub mod engine;
 pub mod feature_map;
 pub mod heptal_wave;
 pub mod ingest;
@@ -28,32 +31,38 @@ pub mod optimizer;
 pub mod parallel;
 pub mod protocol;
 pub mod qec;
+pub mod qssm;
 pub mod rcs;
 pub mod simd;
 pub mod smiles;
 pub mod state;
+pub mod telemetry;
 pub mod tensor_network;
 pub mod tiled_butterfly;
 pub mod trainer;
 pub mod zipper;
-pub mod qssm;
-pub mod telemetry;
-pub mod engine;
-pub mod chemistry;
 
+pub use chemistry::{
+    list_period_molecules, simulate_period_molecule, JordanWignerHamiltonian,
+    MolecularQuantumReport, PauliOp, PauliTerm, Period12Molecule, Period12MoleculeMetadata,
+};
+pub use clifford_t::{
+    factor_to_clifford_t, lower_circuit_ops, optimize_clifford_t_sequence, synthesize_and_profile,
+    synthesize_rx, synthesize_ry, synthesize_rz, CliffordTSynthesisReport, DiscreteGate,
+    SynthesisSolution, ZOmega,
+};
 pub use engine::{FpgaDeviceInfo, SystemManifestReport, T1000Engine};
 pub use telemetry::QuantumTelemetryReport;
-pub use chemistry::{
-    list_period_molecules, simulate_period_molecule, JordanWignerHamiltonian, MolecularQuantumReport,
-    PauliOp, PauliTerm, Period12Molecule, Period12MoleculeMetadata,
-};
 
 // Backwards-compatible module aliases
 pub use measurements::observable;
 pub use measurements::povm_readout;
 
 pub use adjoint::{adjoint_gradient, AdjointResult};
-pub use ansatz::{CircuitAnsatz, DeepQuantumNeuralNetwork, PiPhaseLayer, PreInitCircuit, RademacherPhaseLayer, VariationalQuantumLayer};
+pub use ansatz::{
+    CircuitAnsatz, DeepQuantumNeuralNetwork, PiPhaseLayer, PreInitCircuit, RademacherPhaseLayer,
+    VariationalQuantumLayer,
+};
 pub use canonical::{
     build_bernstein_vazirani, build_grover_diffusion, build_hea_layer,
     build_quantum_phase_estimation, build_trotter_ising_step, mitigate_readout_errors,
@@ -63,16 +72,13 @@ pub use canonical::{
 pub use coherence::{
     apply_core_channel_on_qubit, apply_dynamical_decoupling, apply_open_system_decoherence,
     apply_open_system_decoherence_qubit, compute_coherence_metrics, reproject_coherence_manifold,
-    CoherenceMetrics, DynamicalDecouplingKind, NoiseChannelParams, QuantumZenoSentry, ZenoTelemetry,
+    CoherenceMetrics, DynamicalDecouplingKind, NoiseChannelParams, QuantumZenoSentry,
+    ZenoTelemetry,
 };
 pub use compiler::{
     compute_asap_alap, schedule_circuit_dag, schedule_circuit_dag_with_coherence_dd,
     AsapAlapSchedule, CircuitBuilder, CircuitDag, CircuitOp, CoherenceScheduleTelemetry,
     CompiledCircuit, CompilerTelemetry, ScheduledStage,
-};
-pub use qec::{
-    detect_and_recover, encode_logical_state, extract_syndrome, inject_pauli_error,
-    PauliErrorKind, QecCodeKind, QecRecoveryResult, SyndromeReport,
 };
 pub use feature_map::{DataEncodingLayer, EncodingKind};
 pub use heptal_wave::{
@@ -84,18 +90,22 @@ pub use lattice::{
     extract_lattice_frame, render_lattice_ascii, BoundaryCondition, LatticeConfig, LatticeFrame,
     LatticeTrotterEvolver, LatticeVqeEngine,
 };
-pub use measurements::{PauliObservable, POVMClassifier};
+pub use measurements::{POVMClassifier, PauliObservable};
 pub use memory::{MemoryEntry, QuantumAssociativeMemory};
 pub use optimizer::{AdamOptimizer, ParameterShiftEngine};
+pub use qec::{
+    detect_and_recover, encode_logical_state, extract_syndrome, inject_pauli_error, PauliErrorKind,
+    QecCodeKind, QecRecoveryResult, SyndromeReport,
+};
+pub use qssm::{QssmConfig, QssmForwardReport, QuantumStateSpaceAutoencoder};
 pub use rcs::{DistributionMetrics, RcsConfig, RcsRunReport, RcsSimulator};
 pub use smiles::{
-    BondKind, ParsedSmiles, SmilesAtom, SmilesError, SmilesExplorer, SmilesFeatures, SmilesFeaturizer,
-    SmilesPropertyProfile, SmilesQuantumEncoder, SmilesToken,
+    BondKind, ParsedSmiles, SmilesAtom, SmilesError, SmilesExplorer, SmilesFeatures,
+    SmilesFeaturizer, SmilesPropertyProfile, SmilesQuantumEncoder, SmilesToken,
 };
 pub use state::{QuantumFeatureMap, QuantumState};
 pub use tiled_butterfly::{apply_layer_fused, tiled_apply_cz, tiled_apply_ry, tiled_apply_rz};
 pub use zipper::{BlochZipperEngine, ZipperConfig, ZipperExecutionReport, ZipperStepTelemetry};
-pub use qssm::{QssmConfig, QssmForwardReport, QuantumStateSpaceAutoencoder};
 
 /// Seed used by the plain `new` constructors so default-initialised models are reproducible.
 /// Use the `new_seeded` variants to choose a different (but still deterministic) initialisation.
@@ -113,7 +123,12 @@ mod tests {
 
         s1.real[0] = 2.0;
         s1.normalize();
-        let norm_sq: f64 = s1.real.iter().zip(&s1.imag).map(|(r, i)| r * r + i * i).sum();
+        let norm_sq: f64 = s1
+            .real
+            .iter()
+            .zip(&s1.imag)
+            .map(|(r, i)| r * r + i * i)
+            .sum();
         assert!((norm_sq - 1.0).abs() < 1e-6);
     }
 
@@ -142,7 +157,13 @@ mod tests {
     fn test_quantum_associative_memory() {
         let mut qam = QuantumAssociativeMemory::new(1024);
         let s1 = QuantumState::new(1024);
-        qam.insert("doc1".into(), "Title 1".into(), "cat".into(), 100, s1.clone());
+        qam.insert(
+            "doc1".into(),
+            "Title 1".into(),
+            "cat".into(),
+            100,
+            s1.clone(),
+        );
 
         let top = qam.recall_fidelity(&s1, 1);
         assert_eq!(top.len(), 1);
@@ -155,7 +176,12 @@ mod tests {
         let features = vec![0.5, 1.2, -0.8];
         let state = encoding.encode(&features);
         assert_eq!(state.dim, 1024);
-        let norm_sq: f64 = state.real.iter().zip(&state.imag).map(|(r, i)| r * r + i * i).sum();
+        let norm_sq: f64 = state
+            .real
+            .iter()
+            .zip(&state.imag)
+            .map(|(r, i)| r * r + i * i)
+            .sum();
         assert!((norm_sq - 1.0).abs() < 1e-6);
     }
 
@@ -238,7 +264,12 @@ mod tests {
         assert_eq!(modulated.dim, 1024);
 
         // Unitary phase modulation preserves total norm
-        let norm_sq: f64 = modulated.real.iter().zip(&modulated.imag).map(|(r, i)| r * r + i * i).sum();
+        let norm_sq: f64 = modulated
+            .real
+            .iter()
+            .zip(&modulated.imag)
+            .map(|(r, i)| r * r + i * i)
+            .sum();
         assert!((norm_sq - 1.0).abs() < 1e-6);
 
         // Fidelity between original and modulated is bounded
@@ -254,8 +285,16 @@ mod tests {
         let evolved = ansatz.forward(&s_vec, &weights);
         assert_eq!(evolved.dim, 1024);
 
-        let norm_sq: f64 = evolved.real.iter().zip(&evolved.imag).map(|(r, i)| r * r + i * i).sum();
-        assert!((norm_sq - 1.0).abs() < 1e-6, "AVX2 evolved state violated unitary normalization");
+        let norm_sq: f64 = evolved
+            .real
+            .iter()
+            .zip(&evolved.imag)
+            .map(|(r, i)| r * r + i * i)
+            .sum();
+        assert!(
+            (norm_sq - 1.0).abs() < 1e-6,
+            "AVX2 evolved state violated unitary normalization"
+        );
     }
 
     #[test]
@@ -296,7 +335,11 @@ mod tests {
 
         // Fidelity must be identically 1.0
         let fid = sequential.fidelity(&fused);
-        assert!((fid - 1.0).abs() < 1e-12, "Fidelity between sequential and fused Rademacher was {}", fid);
+        assert!(
+            (fid - 1.0).abs() < 1e-12,
+            "Fidelity between sequential and fused Rademacher was {}",
+            fid
+        );
     }
 
     #[test]

@@ -197,4 +197,37 @@ Interoperability   (Compile-Mitigate) (PT + Coherence)  (Master API)      (FPGA 
    * 3D molecular mesh rendering with ball-and-stick representations for all 9 hydrides and diatomics.
    * REST API endpoint `POST /api/molecules/simulate` added to `web/serve.py`.
 
+---
+
+## 9. Automated Clifford+T Single-Qubit Synthesis over Cyclotomic Ring Z[omega] (COMPLETED)
+
+### Architectural Achievements
+1. **Cyclotomic Ring Arithmetic Core (`t1000::clifford_t::ring`):**
+   * Exact algebraic representation of ring elements $\mathbb{Z}[\omega]$ where $\omega = e^{i\pi/4} = \frac{1+i}{\sqrt{2}}$ using 64-bit integer basis coordinates $(a + b\omega + c\omega^2 + d\omega^3)$ mod $(\omega^4 + 1 = 0)$.
+   * Implemented exact algebraic ring operations: `add`, `sub`, `mul`, `conj`, `norm_sq`, exact division by $\lambda = 1+\omega$ (`div_lambda`), exact division by $\sqrt{2}$ (`div_sqrt2`), and coordinate parity testing.
+   * Full standard trait bindings for `Add`, `Sub`, `Mul`.
+
+2. **Grid-Problem Decomposition (`t1000::clifford_t::grid`):**
+   * Hierarchical grid solver finding ring approximations $u, v \in \mathbb{Z}[\omega]$ satisfying $\| u / \sqrt{2}^k - \cos(\theta/2) \|^2 + \| v / \sqrt{2}^k - i\sin(\theta/2) \|^2 \le \varepsilon^2$.
+   * Zero-error shortcut for exact 8th roots of unity ($\theta \in \{0, \pi/4, \pi/2, 3\pi/4, \pi, \dots\}$) producing exact representations with $k=0$ or $k=1$.
+   * Conjugated grid solving for $R_x(\theta)$ and $R_y(\theta)$ via exact Clifford framing ($H R_z H$ and $S H R_z H S^\dagger$).
+
+3. **Matsumoto-Amano Normal Form Factorization (`t1000::clifford_t::factor`):**
+   * Deterministic state-machine reduction peeling powers of $k \to 0$ by testing parity invariants over algebraic coordinates.
+   * Emits discrete tokens $\{H, S, S^\dagger, T, T^\dagger, X, Y, Z\}$.
+   * Peephole optimization passes reducing $H^2 \to I$, $T T^\dagger \to I$, $T^2 \to S$, $S^2 \to Z$, and $Z^2 \to I$.
+
+4. **Engine Facade & Lowering Pipeline (`t1000::clifford_t::mod` & `T1000Engine`):**
+   * Added `engine.synthesize_clifford_t(axis, theta, eps)` returning comprehensive `CliffordTSynthesisReport`.
+   * Added `lower_circuit_ops(&[CircuitOp], target_eps)` to transpile continuous ansatz rotations ($R_z, R_y$) directly into discrete fault-tolerant token sequences.
+   * Manifest flag: `clifford_t_synthesis: true`.
+
+### Verification Matrix (`tests/clifford_t_synthesis.rs`)
+* `test_cyclotomic_ring_identities`: Ring multiplication, algebraic conjugate, and $\omega^4 = -1$ verified exact.
+* `test_exact_clifford_angles`: Angles $\theta \in \{0, \pi/2, \pi, -\pi/2\}$ synthesize to 0 $T$-gates with zero operator distance.
+* `test_peephole_optimization_rules`: Cancellation and replacement cascades verified on synthetic test sequences.
+* `test_precision_scaling_t_count`: Verified theoretical $T$-count scaling $T \approx 3\log_2(1/\varepsilon) + O(1)$ across $\varepsilon \in [10^{-2}, 10^{-4}]$.
+* `test_unitary_reconstruction_invariant_rz_sweep`: Sweep across 16 angles satisfies $\| U_{\text{exact}} - U_{\text{discrete}} \|_\infty \le \varepsilon$.
+* `test_rx_and_ry_synthesis`: Verified $R_x$ and $R_y$ operator distance bounds.
+* `test_circuit_lowering_to_clifford_t`: End-to-end lowering from VQC `CircuitOp` stream into discrete tokens.
 
