@@ -31,6 +31,17 @@ impl Unitary2x2 {
         u11_im: 0.0,
     };
 
+    pub const PAULI_X: Self = Self {
+        u00_re: 0.0,
+        u00_im: 0.0,
+        u01_re: 1.0,
+        u01_im: 0.0,
+        u10_re: 1.0,
+        u10_im: 0.0,
+        u11_re: 0.0,
+        u11_im: 0.0,
+    };
+
     pub fn new(u00: Complex64, u01: Complex64, u10: Complex64, u11: Complex64) -> Self {
         Self {
             u00_re: u00.re,

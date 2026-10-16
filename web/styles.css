@@ -1262,3 +1262,96 @@ button.btn-secondary.active {
 ::-webkit-scrollbar-thumb:hover {
     background: var(--quantum-green);
 }
+
+/* QEC Stabilizer Sentry & Scheduler Styles */
+.qec-control-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.qec-led-strip {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 4px;
+    margin: 8px 0;
+}
+
+.qec-led-cell {
+    background: var(--bg-root);
+    border: 1px solid var(--border-color);
+    padding: 4px 2px;
+    text-align: center;
+    border-radius: 2px;
+}
+
+.qec-led-name {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    color: var(--text-slate);
+    margin-bottom: 3px;
+}
+
+.qec-led-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin: 0 auto;
+    background: var(--border-bright);
+    transition: all 0.2s ease;
+}
+
+.qec-led-indicator.pass {
+    background: var(--quantum-green);
+    box-shadow: 0 0 6px var(--quantum-green);
+}
+
+.qec-led-indicator.error {
+    background: var(--alert-red);
+    box-shadow: 0 0 6px var(--alert-red);
+}
+
+.qec-action-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 4px;
+    margin-top: 6px;
+}
+
+.btn-qec-noise {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    padding: 5px 2px;
+    background: #111827;
+    border: 1px solid var(--border-color);
+    color: var(--text-slate);
+    cursor: pointer;
+    border-radius: 2px;
+}
+
+.btn-qec-noise:hover {
+    border-color: var(--alert-red);
+    color: var(--alert-red);
+}
+
+.btn-qec-recover {
+    width: 100%;
+    margin-top: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 7px;
+    background: var(--card-bg);
+    border: 1px solid var(--quantum-green);
+    color: var(--quantum-green);
+    cursor: pointer;
+    border-radius: 2px;
+    text-align: center;
+}
+
+.btn-qec-recover:hover {
+    background: var(--quantum-green);
+    color: var(--bg-root);
+}

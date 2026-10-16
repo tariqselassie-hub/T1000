@@ -345,6 +345,80 @@
                         </div>
                     </div>
 
+                    <!-- Coherence-Aware Auto-DD Circuit Scheduler -->
+                    <div class="panel-section">
+                        <div class="section-label">
+                            <span>Coherence &amp; Auto-DD Scheduler</span>
+                            <span style="color:var(--hardware-gold); font-size:10px;">IDLE GAUGE FIX</span>
+                        </div>
+                        <div class="coherence-toggles">
+                            <label class="toggle-control">
+                                <input type="checkbox" id="toggle-auto-dd" checked>
+                                <span>Auto-DD Idle Refocusing (X-X Echoes)</span>
+                            </label>
+                        </div>
+                        <button id="btn-compile-schedule" class="btn-secondary" style="width:100%; margin-top:8px; font-weight:700;">
+                            &gt;&gt; COMPILE &amp; SCHEDULE GATES
+                        </button>
+                    </div>
+
+                    <!-- Fault-Tolerant QEC Stabilizer Sentry -->
+                    <div class="panel-section">
+                        <div class="section-label">
+                            <span>QEC Stabilizer Sentry</span>
+                            <span style="color:var(--quantum-green); font-size:10px;">FAULT TOLERANT</span>
+                        </div>
+                        <div class="qec-control-panel">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-size:10px; font-family:var(--font-mono); color:var(--text-slate);">CODE SPACE:</span>
+                                <select id="qec-code-select" style="font-size:10px; padding:2px 4px; background:#080c14; border:1px solid var(--border-color); color:var(--text-white);">
+                                    <option value="steane_7q">Steane 7-Qubit CSS [[7,1,3]]</option>
+                                    <option value="bit_flip_3q">3-Qubit Bit-Flip [[3,1,1]]</option>
+                                    <option value="phase_flip_3q">3-Qubit Phase-Flip [[3,1,1]]</option>
+                                </select>
+                            </div>
+
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+                                <span style="font-size:10px; font-family:var(--font-mono); color:var(--text-slate);">TARGET WIRE:</span>
+                                <select id="qec-wire-select" style="font-size:10px; padding:2px 6px; background:#080c14; border:1px solid var(--border-color); color:var(--hardware-gold);">
+                                    <option value="0">q₀</option>
+                                    <option value="1">q₁</option>
+                                    <option value="2" selected>q₂</option>
+                                    <option value="3">q₃</option>
+                                    <option value="4">q₄</option>
+                                    <option value="5">q₅</option>
+                                    <option value="6">q₆</option>
+                                </select>
+                            </div>
+
+                            <!-- Channel Noise Injection -->
+                            <div class="qec-action-grid">
+                                <button class="btn-qec-noise" data-err="x">INJECT X (BIT)</button>
+                                <button class="btn-qec-noise" data-err="z">INJECT Z (PHASE)</button>
+                                <button class="btn-qec-noise" data-err="y">INJECT Y (DUAL)</button>
+                            </div>
+
+                            <!-- Live Syndrome Indicators S1..S6 -->
+                            <div id="qec-syndrome-strip" class="qec-led-strip">
+                                <div class="qec-led-cell"><div class="qec-led-name">Sz₁</div><div id="led-s1" class="qec-led-indicator pass"></div></div>
+                                <div class="qec-led-cell"><div class="qec-led-name">Sz₂</div><div id="led-s2" class="qec-led-indicator pass"></div></div>
+                                <div class="qec-led-cell"><div class="qec-led-name">Sz₃</div><div id="led-s3" class="qec-led-indicator pass"></div></div>
+                                <div class="qec-led-cell"><div class="qec-led-name">Sx₁</div><div id="led-s4" class="qec-led-indicator pass"></div></div>
+                                <div class="qec-led-cell"><div class="qec-led-name">Sx₂</div><div id="led-s5" class="qec-led-indicator pass"></div></div>
+                                <div class="qec-led-cell"><div class="qec-led-name">Sx₃</div><div id="led-s6" class="qec-led-indicator pass"></div></div>
+                            </div>
+
+                            <div style="font-family:var(--font-mono); font-size:10px; display:flex; justify-content:space-between; color:var(--text-slate); margin-top:2px;">
+                                <span>DIAGNOSIS:</span>
+                                <span id="qec-diag-text" style="color:var(--quantum-green); font-weight:700;">CLEAN (NO ERROR)</span>
+                            </div>
+
+                            <button id="btn-qec-recover" class="btn-qec-recover">
+                                &gt;&gt; AUTONOMOUS RECOVERY
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- Circuit Dimension Sizing -->
                     <div class="panel-section" style="padding-bottom:12px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
@@ -449,8 +523,8 @@
                         </div>
 
                         <div class="section-label" style="margin-top:12px;">
-                            <span>Coherence &amp; Cohesion Metrics</span>
-                            <span style="color:var(--hardware-gold); font-size:10px;">L1 NORM &bull; ENTROPY</span>
+                            <span>Coherence, Auto-DD &amp; QEC Metrics</span>
+                            <span style="color:var(--hardware-gold); font-size:10px;">L1 NORM &bull; ENTROPY &bull; QEC</span>
                         </div>
                         <div class="metric-grid">
                             <div class="metric-card">
@@ -468,6 +542,22 @@
                             <div class="metric-card">
                                 <div class="metric-title">Bipartite Entropy</div>
                                 <div id="tel-bipartite-entropy" class="metric-value">0.82 bits</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-title">Idle Qubit Cycles</div>
+                                <div id="tel-idle-cycles" class="metric-value gold">0 cycles</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-title">DD Pulses Injected</div>
+                                <div id="tel-dd-injected" class="metric-value highlight">0 pulses</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-title">QEC Recovered Fid</div>
+                                <div id="tel-qec-fidelity" class="metric-value highlight">1.0000</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-title">QEC Stabilizer Status</div>
+                                <div id="tel-qec-status" class="metric-value gold" style="font-size:10px;">SUBSPACE LOCKED</div>
                             </div>
                         </div>
                     </div>

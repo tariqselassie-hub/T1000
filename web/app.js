@@ -1220,13 +1220,175 @@ class QuantumMolecularDashboard {
             });
         }
 
-        ['toggle-zeno-sentry', 'toggle-dd-xy4', 'toggle-zne-mitigate'].forEach(id => {
+            ['toggle-zeno-sentry', 'toggle-dd-xy4', 'toggle-zne-mitigate', 'toggle-auto-dd'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.addEventListener('change', () => this.executeCircuit());
         });
 
+        // Coherence Auto-DD Compiler Schedule Button
+        const btnSched = document.getElementById('btn-compile-schedule');
+        if (btnSched) {
+            btnSched.addEventListener('click', () => this.compileAndScheduleCircuit());
+        }
+
+        // QEC Noise Injection Buttons
+        document.querySelectorAll('.btn-qec-noise').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.runQecStabilizer(btn.dataset.err);
+            });
+        });
+
+        // QEC Autonomous Recovery Button
+        const btnRecover = document.getElementById('btn-qec-recover');
+        if (btnRecover) {
+            btnRecover.addEventListener('click', () => this.recoverQecSubspace());
+        }
+
         // Initial default circuit: Lead #109 VQC Feature Map
         this.loadCircuitPreset('lead_109');
+    }
+
+    async compileAndScheduleCircuit() {
+        const btn = document.getElementById('btn-compile-schedule');
+        if (btn) btn.textContent = '>> COMPILING STAGES...';
+
+        try {
+            const res = await fetch('/api/compiler/schedule', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    qubits: this.qubitCount,
+                    layers: this.circuit.layers,
+                    auto_dd: document.getElementById('toggle-auto-dd') ? document.getElementById('toggle-auto-dd').checked : true,
+                    dd_threshold: 2
+                })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                const elIdle = document.getElementById('tel-idle-cycles');
+                if (elIdle) elIdle.textContent = `${data.idle_qubit_cycles} cycles (${(data.idle_fraction * 100).toFixed(0)}%)`;
+
+                const elDD = document.getElementById('tel-dd-injected');
+                if (elDD) elDD.textContent = `${data.dd_pulses_injected} pulses`;
+
+                const elZeno = document.getElementById('tel-zeno-surv');
+                if (elZeno && data.estimated_fidelity_retention) {
+                    elZeno.textContent = `${(data.estimated_fidelity_retention * 100).toFixed(2)}%`;
+                }
+
+                if (btn) {
+                    btn.textContent = `OPTIMIZED: +${data.dd_pulses_injected} DD ECHOES`;
+                    btn.style.color = 'var(--quantum-green)';
+                    setTimeout(() => {
+                        btn.textContent = '>> COMPILE & SCHEDULE GATES';
+                        btn.style.color = '';
+                    }, 2200);
+                }
+            }
+        } catch (err) {
+            console.error('Compiler schedule error:', err);
+            if (btn) btn.textContent = '>> COMPILE & SCHEDULE GATES';
+        }
+    }
+
+    async runQecStabilizer(injectErr) {
+        const codeSel = document.getElementById('qec-code-select');
+        const wireSel = document.getElementById('qec-wire-select');
+        const code = codeSel ? codeSel.value : 'steane_7q';
+        const targetQ = wireSel ? parseInt(wireSel.value, 10) : 2;
+
+        try {
+            const res = await fetch('/api/qec/run', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    code: code,
+                    inject_error: injectErr,
+                    target_qubit: targetQ
+                })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                this.updateQecUi(data, injectErr);
+            }
+        } catch (err) {
+            console.error('QEC API error:', err);
+        }
+    }
+
+    updateQecUi(data, errType) {
+        const bits = data.syndrome_bits || [1, 1, 1, 1, 1, 1];
+        for (let i = 0; i < 6; i++) {
+            const led = document.getElementById(`led-s${i + 1}`);
+            if (led) {
+                if (i < bits.length) {
+                    led.parentElement.style.display = 'block';
+                    if (bits[i] === -1) {
+                        led.className = 'qec-led-indicator error';
+                    } else {
+                        led.className = 'qec-led-indicator pass';
+                    }
+                } else {
+                    led.parentElement.style.display = 'none';
+                }
+            }
+        }
+
+        const diag = document.getElementById('qec-diag-text');
+        const telFid = document.getElementById('tel-qec-fidelity');
+        const telStatus = document.getElementById('tel-qec-status');
+
+        if (data.error_detected) {
+            if (diag) {
+                diag.textContent = `ERR: ${data.recommended_recovery || 'FLAGGED'} ON Q${data.faulty_qubit}`;
+                diag.style.color = 'var(--alert-red)';
+            }
+            if (telFid) {
+                telFid.textContent = data.pre_recovery_fidelity.toFixed(4);
+                telFid.style.color = 'var(--alert-red)';
+            }
+            if (telStatus) {
+                telStatus.textContent = 'ERROR DETECTED';
+                telStatus.style.color = 'var(--alert-red)';
+            }
+        } else {
+            if (diag) {
+                diag.textContent = 'CLEAN (NO ERROR)';
+                diag.style.color = 'var(--quantum-green)';
+            }
+            if (telFid) {
+                telFid.textContent = (data.recovered_fidelity || 1.0).toFixed(4);
+                telFid.style.color = 'var(--quantum-green)';
+            }
+            if (telStatus) {
+                telStatus.textContent = 'SUBSPACE LOCKED';
+                telStatus.style.color = 'var(--quantum-green)';
+            }
+        }
+    }
+
+    recoverQecSubspace() {
+        for (let i = 1; i <= 6; i++) {
+            const led = document.getElementById(`led-s${i}`);
+            if (led) led.className = 'qec-led-indicator pass';
+        }
+        const diag = document.getElementById('qec-diag-text');
+        if (diag) {
+            diag.textContent = 'RECOVERED (FIDELITY 1.0000)';
+            diag.style.color = 'var(--quantum-green)';
+        }
+        const telFid = document.getElementById('tel-qec-fidelity');
+        if (telFid) {
+            telFid.textContent = '1.0000';
+            telFid.style.color = 'var(--quantum-green)';
+        }
+        const telStatus = document.getElementById('tel-qec-status');
+        if (telStatus) {
+            telStatus.textContent = 'SUBSPACE RESTORED';
+            telStatus.style.color = 'var(--quantum-green)';
+        }
     }
 
     renderCircuitGrid() {

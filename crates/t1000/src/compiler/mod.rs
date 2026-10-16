@@ -16,7 +16,10 @@ pub use executor::{
 };
 pub use fusion::{optimize_dag_fusion, FusionStats};
 pub use op::{CircuitOp, Unitary2x2};
-pub use scheduler::{schedule_circuit_dag, ScheduledStage, StageKind};
+pub use scheduler::{
+    compute_asap_alap, schedule_circuit_dag, schedule_circuit_dag_with_coherence_dd,
+    AsapAlapSchedule, CoherenceScheduleTelemetry, ScheduledStage, StageKind,
+};
 
 /// Fluent builder for constructing quantum circuits and compiling through the DAG optimizer.
 #[derive(Debug, Clone)]
@@ -50,6 +53,11 @@ impl CircuitBuilder {
             matrix: Unitary2x2::hadamard(),
         });
         self
+    }
+
+    /// Shorthand alias for hadamard.
+    pub fn h(&mut self, qubit: usize) -> &mut Self {
+        self.hadamard(qubit)
     }
 
     /// Appends a general single-qubit 2x2 complex unitary.
@@ -160,6 +168,11 @@ impl CircuitBuilder {
             self.hadamard(qubits[j]);
         }
         self
+    }
+
+    /// Consumes the builder and returns the underlying dependency DAG.
+    pub fn into_dag(self) -> CircuitDag {
+        self.dag
     }
 
     /// Compiles the circuit: resolves dependencies, fuses single-qubit gates,

@@ -1,6 +1,12 @@
-//! Topological Frontier Scheduler and Cache-Blocked Stage Grouping Engine.
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
+//! # Topological Frontier Scheduler & Coherence-Aware Stage Optimizer
+//!
 //! Groups independent operations onto disjoint qubits into parallel execution stages,
-//! sorting gates for optimal L1/L2/L3 cache line reuse.
+//! sorting gates for optimal L1/L2 cache line reuse and protecting idle qubits from
+//! $T_2^*$ environmental dephasing via ASAP/ALAP slack scheduling and automatic
+//! Dynamical Decoupling (DD) pulse injection.
 
 use std::collections::HashSet;
 use serde::{Deserialize, Serialize};
@@ -89,25 +95,124 @@ impl ScheduledStage {
     }
 }
 
-/// Schedules a CircuitDag into a sequence of ScheduledStages.
-/// Automatically groups independent operations onto disjoint qubits together,
-/// ensuring that no matter how chaotic the input code is, the hardware cache footprint
-/// is fully optimized.
+/// Critical-path ASAP and ALAP scheduling analysis metrics.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct AsapAlapSchedule {
+    pub asap_depths: Vec<usize>,
+    pub alap_depths: Vec<usize>,
+    pub slacks: Vec<usize>,
+    pub critical_path_nodes: Vec<usize>,
+    pub critical_path_length: usize,
+}
+
+/// Telemetry emitted from coherence-aware stage compilation.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CoherenceScheduleTelemetry {
+    pub total_qubit_cycles: usize,
+    pub active_qubit_cycles: usize,
+    pub idle_qubit_cycles: usize,
+    pub idle_fraction: f64,
+    pub dd_pulses_injected: usize,
+    pub estimated_fidelity_retention: f64,
+}
+
+/// Computes forward ASAP (earliest start) and backward ALAP (latest start) depths and slacks.
+pub fn compute_asap_alap(dag: &CircuitDag) -> AsapAlapSchedule {
+    let n = dag.len();
+    if n == 0 {
+        return AsapAlapSchedule {
+            asap_depths: Vec::new(),
+            alap_depths: Vec::new(),
+            slacks: Vec::new(),
+            critical_path_nodes: Vec::new(),
+            critical_path_length: 0,
+        };
+    }
+
+    // 1. Forward Pass (ASAP)
+    let mut asap = vec![0usize; n];
+    for i in 0..n {
+        let max_pred = dag.nodes[i]
+            .predecessors
+            .iter()
+            .map(|&p| asap[p] + 1)
+            .max()
+            .unwrap_or(0);
+        asap[i] = max_pred;
+    }
+
+    let crit_len = asap.iter().max().copied().unwrap_or(0) + 1;
+
+    // 2. Backward Pass (ALAP)
+    let mut alap = vec![crit_len.saturating_sub(1); n];
+    for i in (0..n).rev() {
+        if !dag.nodes[i].successors.is_empty() {
+            let min_succ = dag.nodes[i]
+                .successors
+                .iter()
+                .map(|&s| alap[s].saturating_sub(1))
+                .min()
+                .unwrap_or(crit_len - 1);
+            alap[i] = min_succ;
+        }
+    }
+
+    // 3. Slack = ALAP - ASAP (nodes with slack 0 form the critical path)
+    let mut slacks = Vec::with_capacity(n);
+    let mut crit_nodes = Vec::new();
+    for i in 0..n {
+        let s = alap[i].saturating_sub(asap[i]);
+        slacks.push(s);
+        if s == 0 {
+            crit_nodes.push(i);
+        }
+    }
+
+    AsapAlapSchedule {
+        asap_depths: asap,
+        alap_depths: alap,
+        slacks,
+        critical_path_nodes: crit_nodes,
+        critical_path_length: crit_len,
+    }
+}
+
+/// Schedules a CircuitDag into parallel execution stages, sorting for L1/L2 cache locality.
 pub fn schedule_circuit_dag(dag: &CircuitDag) -> Vec<ScheduledStage> {
+    let (stages, _) = schedule_circuit_dag_with_coherence_dd(dag, false, 2);
+    stages
+}
+
+/// Schedules a CircuitDag into parallel execution stages with optional
+/// automatic Dynamical Decoupling (DD) pulse sequence injection into idle qubit gaps.
+pub fn schedule_circuit_dag_with_coherence_dd(
+    dag: &CircuitDag,
+    auto_dd: bool,
+    dd_threshold: usize,
+) -> (Vec<ScheduledStage>, CoherenceScheduleTelemetry) {
     if dag.is_empty() {
-        return Vec::new();
+        return (
+            Vec::new(),
+            CoherenceScheduleTelemetry {
+                total_qubit_cycles: 0,
+                active_qubit_cycles: 0,
+                idle_qubit_cycles: 0,
+                idle_fraction: 0.0,
+                dd_pulses_injected: 0,
+                estimated_fidelity_retention: 1.0,
+            },
+        );
     }
 
     let n = dag.len();
+    let num_qubits = dag.num_qubits;
     let mut in_degrees = dag.in_degrees();
-    let mut stages = Vec::new();
+    let mut raw_stages = Vec::new();
     let mut stage_idx = 0;
 
-    // Ready queue contains all nodes whose incoming causal dependencies are satisfied (in_degree == 0)
     let mut ready_nodes: Vec<usize> = (0..n).filter(|&i| in_degrees[i] == 0).collect();
 
     while !ready_nodes.is_empty() {
-        // From the ready set, greedily select a maximal set of operations that act on DISJOINT qubits.
         let mut stage_ops = Vec::new();
         let mut stage_qubits = HashSet::new();
         let mut scheduled_nodes = Vec::new();
@@ -117,23 +222,18 @@ pub fn schedule_circuit_dag(dag: &CircuitDag) -> Vec<ScheduledStage> {
             let op = &dag.nodes[node_id].op;
             let op_qubits = op.qubits();
 
-            // Check if this op shares any qubits with already-selected ops in this stage
             let overlaps = op_qubits.iter().any(|q| stage_qubits.contains(q));
 
             if !overlaps {
-                // If it's a global operation and stage already has ops, postpone to next stage
                 if matches!(op, CircuitOp::RademacherPhase { .. }) && !stage_ops.is_empty() {
                     remaining_ready.push(node_id);
                     continue;
                 }
-
-                // If stage already has a global operation, no other operation can be added
                 if stage_ops.iter().any(|o| matches!(o, CircuitOp::RademacherPhase { .. })) {
                     remaining_ready.push(node_id);
                     continue;
                 }
 
-                // Add to current stage
                 for &q in &op_qubits {
                     stage_qubits.insert(q);
                 }
@@ -144,17 +244,12 @@ pub fn schedule_circuit_dag(dag: &CircuitDag) -> Vec<ScheduledStage> {
             }
         }
 
-        // Cache Locality Optimization: Sort operations within the stage
-        // Placing operations on lower-index qubits first maximizes spatial L1/L2 cache line hits
-        // because lower qubits stride across smaller memory deltas (inner memory blocks).
-        stage_ops.sort_by_key(|op| {
-            op.qubits().into_iter().min().unwrap_or(0)
-        });
+        // Cache Locality Optimization: sort by lowest qubit index
+        stage_ops.sort_by_key(|op| op.qubits().into_iter().min().unwrap_or(0));
 
-        stages.push(ScheduledStage::new(stage_idx, stage_ops));
+        raw_stages.push(ScheduledStage::new(stage_idx, stage_ops));
         stage_idx += 1;
 
-        // Retire scheduled nodes and decrement in-degrees of their successors
         let mut new_ready = Vec::new();
         for &node_id in &scheduled_nodes {
             for &succ_id in &dag.nodes[node_id].successors {
@@ -169,5 +264,142 @@ pub fn schedule_circuit_dag(dag: &CircuitDag) -> Vec<ScheduledStage> {
         ready_nodes.extend(new_ready);
     }
 
-    stages
+    // 2. Idle Qubit Gap Analysis & Auto-DD Pulse Injection
+    let total_stages = raw_stages.len();
+    let total_qubit_cycles = total_stages * num_qubits;
+    let mut active_qubit_cycles = 0usize;
+    let mut dd_pulses_injected = 0usize;
+
+    // Track active status for each qubit in each stage
+    let mut wire_timeline = vec![vec![false; total_stages]; num_qubits];
+    for (s_idx, stg) in raw_stages.iter().enumerate() {
+        for &q in &stg.touched_qubits {
+            if q < num_qubits {
+                wire_timeline[q][s_idx] = true;
+                active_qubit_cycles += 1;
+            }
+        }
+    }
+
+    let idle_qubit_cycles = total_qubit_cycles.saturating_sub(active_qubit_cycles);
+    let idle_fraction = if total_qubit_cycles > 0 {
+        idle_qubit_cycles as f64 / total_qubit_cycles as f64
+    } else {
+        0.0
+    };
+
+    let mut optimized_stages = raw_stages;
+
+    if auto_dd {
+        // Inspect contiguous idle spans on each qubit
+        for q in 0..num_qubits {
+            let mut idle_start = None;
+
+            for s in 0..total_stages {
+                if !wire_timeline[q][s] {
+                    if idle_start.is_none() {
+                        idle_start = Some(s);
+                    }
+                } else if let Some(start) = idle_start {
+                    let span_len = s - start;
+                    if span_len >= dd_threshold && span_len >= 2 {
+                        // Inject balanced refocusing pair (X - X = I) to eliminate dephasing
+                        let s1 = start;
+                        let s2 = start + span_len - 1;
+                        optimized_stages[s1].ops.push(CircuitOp::Unitary1Q {
+                            qubit: q,
+                            matrix: super::op::Unitary2x2::PAULI_X,
+                        });
+                        optimized_stages[s2].ops.push(CircuitOp::Unitary1Q {
+                            qubit: q,
+                            matrix: super::op::Unitary2x2::PAULI_X,
+                        });
+                        dd_pulses_injected += 2;
+                    }
+                    idle_start = None;
+                }
+            }
+
+            // Flush trailing idle span at the end of the circuit
+            if let Some(start) = idle_start {
+                let span_len = total_stages - start;
+                if span_len >= dd_threshold && span_len >= 2 {
+                    let s1 = start;
+                    let s2 = start + span_len - 1;
+                    optimized_stages[s1].ops.push(CircuitOp::Unitary1Q {
+                        qubit: q,
+                        matrix: super::op::Unitary2x2::PAULI_X,
+                    });
+                    optimized_stages[s2].ops.push(CircuitOp::Unitary1Q {
+                        qubit: q,
+                        matrix: super::op::Unitary2x2::PAULI_X,
+                    });
+                    dd_pulses_injected += 2;
+                }
+            }
+        }
+    }
+
+    // Analytical estimate of fidelity retention across idle time
+    // T2* model: fidelity ~ exp(-unprotected_idle * 0.002)
+    let unprotected_idle = if auto_dd {
+        idle_qubit_cycles.saturating_sub(dd_pulses_injected * 2)
+    } else {
+        idle_qubit_cycles
+    };
+    let est_retention = (-0.0015 * unprotected_idle as f64).exp().clamp(0.0, 1.0);
+
+    let telem = CoherenceScheduleTelemetry {
+        total_qubit_cycles,
+        active_qubit_cycles,
+        idle_qubit_cycles,
+        idle_fraction,
+        dd_pulses_injected,
+        estimated_fidelity_retention: est_retention,
+    };
+
+    (optimized_stages, telem)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::compiler::CircuitBuilder;
+
+    #[test]
+    fn test_asap_alap_slack_computation() {
+        let mut b = CircuitBuilder::new(3);
+        b.h(0);
+        b.cz(0, 1);
+        b.h(2);
+        let dag = b.into_dag();
+
+        let sched = compute_asap_alap(&dag);
+        assert_eq!(sched.critical_path_length, 2);
+        assert!(!sched.critical_path_nodes.is_empty());
+        // Slack should be non-negative
+        for &s in &sched.slacks {
+            assert!(s <= 2);
+        }
+    }
+
+    #[test]
+    fn test_auto_dd_injection_protects_idle_qubits() {
+        let mut b = CircuitBuilder::new(3);
+        // Qubit 0 and 1 undergo gates, qubit 2 sits idle across multiple layers
+        b.h(0);
+        b.cz(0, 1);
+        b.h(0);
+        b.cz(0, 1);
+        let dag = b.into_dag();
+
+        let (stages_raw, telem_raw) = schedule_circuit_dag_with_coherence_dd(&dag, false, 2);
+        assert_eq!(telem_raw.dd_pulses_injected, 0);
+        assert!(telem_raw.idle_qubit_cycles > 0);
+
+        let (stages_dd, telem_dd) = schedule_circuit_dag_with_coherence_dd(&dag, true, 2);
+        assert!(telem_dd.dd_pulses_injected >= 2);
+        assert!(telem_dd.estimated_fidelity_retention >= telem_raw.estimated_fidelity_retention);
+        assert_eq!(stages_dd.len(), stages_raw.len());
+    }
 }

@@ -26,6 +26,7 @@ pub mod molfeatures;
 pub mod optimizer;
 pub mod parallel;
 pub mod protocol;
+pub mod qec;
 pub mod rcs;
 pub mod simd;
 pub mod smiles;
@@ -44,7 +45,15 @@ pub use coherence::{
     apply_dynamical_decoupling, compute_coherence_metrics, reproject_coherence_manifold,
     CoherenceMetrics, DynamicalDecouplingKind, NoiseChannelParams, QuantumZenoSentry, ZenoTelemetry,
 };
-pub use compiler::{CircuitBuilder, CircuitDag, CircuitOp, CompiledCircuit, CompilerTelemetry, ScheduledStage};
+pub use compiler::{
+    compute_asap_alap, schedule_circuit_dag, schedule_circuit_dag_with_coherence_dd,
+    AsapAlapSchedule, CircuitBuilder, CircuitDag, CircuitOp, CoherenceScheduleTelemetry,
+    CompiledCircuit, CompilerTelemetry, ScheduledStage,
+};
+pub use qec::{
+    detect_and_recover, encode_logical_state, extract_syndrome, inject_pauli_error,
+    PauliErrorKind, QecCodeKind, QecRecoveryResult, SyndromeReport,
+};
 pub use feature_map::{DataEncodingLayer, EncodingKind};
 pub use heptal_wave::{evolve_heptal_wave_cycle, HeptalWaveState};
 pub use ingest::{tokenize_text, CorpusIngestor, IngestedDoc, IngestionTelemetry};

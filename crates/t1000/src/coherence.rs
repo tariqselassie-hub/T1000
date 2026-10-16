@@ -123,7 +123,7 @@ fn compute_bipartite_entropy(state: &QuantumState, n_qubits: usize) -> f64 {
     }
     let n_a = n_qubits / 2;
     let dim_a = 1 << n_a;
-    let dim_b = state.dim / dim_a;
+    let _dim_b = state.dim / dim_a;
 
     // Reduced density matrix rho_A of size dim_a x dim_a
     let mut rho_a_diag = vec![0.0f64; dim_a];
