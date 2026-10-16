@@ -1696,6 +1696,66 @@ class QuantumMolecularDashboard {
                 this.circuit.layers[l].gates.push({ type: 'RX', target: 0, theta: 0.25 });
                 this.circuit.layers[l].gates.push({ type: 'MZ', target: 0 });
             }
+        } else if (presetName === 'grover_3q') {
+            this.qubitCount = 3;
+            this.layerCount = 7;
+            this.circuit = this.createEmptyCircuit(3, 7);
+            // Superposition
+            for (let q = 0; q < 3; q++) this.circuit.layers[0].gates.push({ type: 'H', target: q });
+            // Oracle for target state |110>
+            this.circuit.layers[1].gates.push({ type: 'X', target: 0 });
+            this.circuit.layers[2].gates.push({ type: 'CZ', target: 1, control: 2 });
+            this.circuit.layers[3].gates.push({ type: 'X', target: 0 });
+            // Grover diffusion operator
+            for (let q = 0; q < 3; q++) {
+                this.circuit.layers[4].gates.push({ type: 'H', target: q });
+                this.circuit.layers[5].gates.push({ type: 'X', target: q });
+            }
+            this.circuit.layers[6].gates.push({ type: 'CZ', target: 1, control: 0 });
+        } else if (presetName === 'bv_parity') {
+            this.qubitCount = 4;
+            this.layerCount = 6;
+            this.circuit = this.createEmptyCircuit(4, 6);
+            // Ancilla in |-> and inputs in |+++>
+            this.circuit.layers[0].gates.push({ type: 'X', target: 3 });
+            for (let q = 0; q < 4; q++) this.circuit.layers[1].gates.push({ type: 'H', target: q });
+            // Oracle for hidden mask s = 101 (qubits 0 and 2)
+            this.circuit.layers[2].gates.push({ type: 'CX', target: 3, control: 0 });
+            this.circuit.layers[3].gates.push({ type: 'CX', target: 3, control: 2 });
+            // Input measurement basis transformation
+            for (let q = 0; q < 3; q++) this.circuit.layers[4].gates.push({ type: 'H', target: q });
+            for (let q = 0; q < 3; q++) this.circuit.layers[5].gates.push({ type: 'MZ', target: q });
+        } else if (presetName === 'trotter_ising') {
+            this.qubitCount = 4;
+            this.layerCount = 6;
+            this.circuit = this.createEmptyCircuit(4, 6);
+            for (let q = 0; q < 4; q++) this.circuit.layers[0].gates.push({ type: 'H', target: q });
+            // Entangling ZZ step
+            this.circuit.layers[1].gates.push({ type: 'CX', target: 1, control: 0 });
+            this.circuit.layers[1].gates.push({ type: 'CX', target: 3, control: 2 });
+            this.circuit.layers[2].gates.push({ type: 'RZ', target: 1, theta: 0.5 });
+            this.circuit.layers[2].gates.push({ type: 'RZ', target: 3, theta: 0.5 });
+            this.circuit.layers[3].gates.push({ type: 'CX', target: 1, control: 0 });
+            this.circuit.layers[3].gates.push({ type: 'CX', target: 3, control: 2 });
+            // Transverse field X step
+            for (let q = 0; q < 4; q++) this.circuit.layers[4].gates.push({ type: 'RX', target: q, theta: 0.35 });
+            for (let q = 0; q < 4; q++) this.circuit.layers[5].gates.push({ type: 'MZ', target: q });
+        } else if (presetName === 'qpe_phase') {
+            this.qubitCount = 4;
+            this.layerCount = 7;
+            this.circuit = this.createEmptyCircuit(4, 7);
+            // Target qubit 3 in |1>
+            this.circuit.layers[0].gates.push({ type: 'X', target: 3 });
+            // Precision qubits in equal superposition
+            for (let q = 0; q < 3; q++) this.circuit.layers[1].gates.push({ type: 'H', target: q });
+            // Controlled rotations
+            this.circuit.layers[2].gates.push({ type: 'RZ', target: 3, theta: 0.3927 });
+            this.circuit.layers[3].gates.push({ type: 'RZ', target: 3, theta: 0.7854 });
+            this.circuit.layers[4].gates.push({ type: 'RZ', target: 3, theta: 1.5708 });
+            // IQFT
+            this.circuit.layers[5].gates.push({ type: 'H', target: 0 });
+            this.circuit.layers[5].gates.push({ type: 'H', target: 1 });
+            this.circuit.layers[6].gates.push({ type: 'H', target: 2 });
         }
 
         const qCnt = document.getElementById('val-qubit-count');

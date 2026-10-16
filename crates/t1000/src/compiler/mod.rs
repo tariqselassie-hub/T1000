@@ -170,6 +170,49 @@ impl CircuitBuilder {
         self
     }
 
+    /// Appends Grover's Diffusion Operator (inversion about the mean).
+    pub fn grover_diffusion(&mut self, qubits: &[usize]) -> &mut Self {
+        crate::canonical::build_grover_diffusion(self, qubits);
+        self
+    }
+
+    /// Appends a Bernstein-Vazirani parity oracle and measurement preparation.
+    pub fn bernstein_vazirani(&mut self, qubits: &[usize], ancilla: usize, hidden_mask: usize) -> &mut Self {
+        crate::canonical::build_bernstein_vazirani(self, qubits, ancilla, hidden_mask);
+        self
+    }
+
+    /// Appends Quantum Phase Estimation (QPE) kernel.
+    pub fn qpe(&mut self, precision_qubits: &[usize], target_qubit: usize, phase_phi: f64) -> &mut Self {
+        crate::canonical::build_quantum_phase_estimation(self, precision_qubits, target_qubit, phase_phi);
+        self
+    }
+
+    /// Appends a Hardware-Efficient Ansatz (HEA) variational layer.
+    pub fn hea_layer(
+        &mut self,
+        qubits: &[usize],
+        thetas_y: &[f64],
+        thetas_z: &[f64],
+        topology: crate::canonical::EntanglerTopology,
+    ) -> &mut Self {
+        crate::canonical::build_hea_layer(self, qubits, thetas_y, thetas_z, topology);
+        self
+    }
+
+    /// Appends a Trotter-Suzuki time step for Transverse-Field Ising model.
+    pub fn trotter_ising_step(
+        &mut self,
+        qubit_pairs: &[(usize, usize)],
+        qubits: &[usize],
+        j_coupling: f64,
+        h_transverse: f64,
+        dt: f64,
+    ) -> &mut Self {
+        crate::canonical::build_trotter_ising_step(self, qubit_pairs, qubits, j_coupling, h_transverse, dt);
+        self
+    }
+
     /// Consumes the builder and returns the underlying dependency DAG.
     pub fn into_dag(self) -> CircuitDag {
         self.dag

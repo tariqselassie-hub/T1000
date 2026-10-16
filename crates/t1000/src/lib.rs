@@ -13,6 +13,7 @@
 pub mod adjoint;
 pub mod ansatz;
 pub mod baselines;
+pub mod canonical;
 pub mod coherence;
 pub mod compiler;
 pub mod diagonal;
@@ -41,6 +42,11 @@ pub use measurements::povm_readout;
 
 pub use adjoint::{adjoint_gradient, AdjointResult};
 pub use ansatz::{CircuitAnsatz, DeepQuantumNeuralNetwork, PiPhaseLayer, PreInitCircuit, RademacherPhaseLayer, VariationalQuantumLayer};
+pub use canonical::{
+    build_bernstein_vazirani, build_grover_diffusion, build_hea_layer,
+    build_quantum_phase_estimation, build_trotter_ising_step, mitigate_readout_errors,
+    EntanglerTopology, ReadoutConfusionMatrix,
+};
 pub use coherence::{
     apply_dynamical_decoupling, compute_coherence_metrics, reproject_coherence_manifold,
     CoherenceMetrics, DynamicalDecouplingKind, NoiseChannelParams, QuantumZenoSentry, ZenoTelemetry,
