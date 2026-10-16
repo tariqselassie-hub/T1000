@@ -196,7 +196,6 @@ We are actively welcoming quantum computing researchers, Rust performance engine
 
 - [ ] **AVX-512 & ARM NEON Kernels:** Expanding SIMD kernels beyond AVX2 for Apple Silicon (M-series) and modern server CPUs.
 - [ ] **GPU Backend:** WGPU / CUDA kernels for scaling beyond 26 qubits.
-- [x] **Clifford+T Decomposition:** Automated synthesis of continuous rotation angles into discrete fault-tolerant gate sets (`t1000::clifford_t`).
 - [ ] **Graph Neural Network (GNN) Hybridization:** Fusing T-1000 latent molecular embeddings with classical GNN message passing.
 
 Feel free to open issues, submit pull requests, or share benchmark results on different architectures!
