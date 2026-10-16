@@ -172,6 +172,7 @@ python web/serve.py
 
 * **Dashboard & Circuit Composer Documentation:** [`docs/dashboard_and_circuit_composer.md`](docs/dashboard_and_circuit_composer.md).
 * **Bloch-Zipper & MPS Derivation:** [`docs/bloch_zipper_mps_specification.md`](docs/bloch_zipper_mps_specification.md).
+* **Empirical Research & Findings Registry:** [`docs/findings/README.md`](docs/findings/README.md).
 
 
 ---
