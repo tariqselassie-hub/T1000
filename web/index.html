@@ -376,6 +376,7 @@
                             <div style="display:flex; justify-content:space-between; align-items:center;">
                                 <span style="font-size:10px; font-family:var(--font-mono); color:var(--text-slate);">CODE SPACE:</span>
                                 <select id="qec-code-select" style="font-size:10px; padding:2px 4px; background:#080c14; border:1px solid var(--border-color); color:var(--text-white);">
+                                    <option value="surface_code_9q" selected>Planar Surface Code [[9,1,3]] (3x3 Lattice)</option>
                                     <option value="steane_7q">Steane 7-Qubit CSS [[7,1,3]]</option>
                                     <option value="bit_flip_3q">3-Qubit Bit-Flip [[3,1,1]]</option>
                                     <option value="phase_flip_3q">3-Qubit Phase-Flip [[3,1,1]]</option>
@@ -387,11 +388,13 @@
                                 <select id="qec-wire-select" style="font-size:10px; padding:2px 6px; background:#080c14; border:1px solid var(--border-color); color:var(--hardware-gold);">
                                     <option value="0">q₀</option>
                                     <option value="1">q₁</option>
-                                    <option value="2" selected>q₂</option>
+                                    <option value="2">q₂</option>
                                     <option value="3">q₃</option>
-                                    <option value="4">q₄</option>
+                                    <option value="4" selected>q₄</option>
                                     <option value="5">q₅</option>
                                     <option value="6">q₆</option>
+                                    <option value="7">q₇</option>
+                                    <option value="8">q₈</option>
                                 </select>
                             </div>
 
@@ -402,14 +405,16 @@
                                 <button class="btn-qec-noise" data-err="y">INJECT Y (DUAL)</button>
                             </div>
 
-                            <!-- Live Syndrome Indicators S1..S6 -->
+                            <!-- Live Syndrome Indicators S1..S8 -->
                             <div id="qec-syndrome-strip" class="qec-led-strip">
-                                <div class="qec-led-cell"><div class="qec-led-name">Sz₁</div><div id="led-s1" class="qec-led-indicator pass"></div></div>
-                                <div class="qec-led-cell"><div class="qec-led-name">Sz₂</div><div id="led-s2" class="qec-led-indicator pass"></div></div>
-                                <div class="qec-led-cell"><div class="qec-led-name">Sz₃</div><div id="led-s3" class="qec-led-indicator pass"></div></div>
-                                <div class="qec-led-cell"><div class="qec-led-name">Sx₁</div><div id="led-s4" class="qec-led-indicator pass"></div></div>
-                                <div class="qec-led-cell"><div class="qec-led-name">Sx₂</div><div id="led-s5" class="qec-led-indicator pass"></div></div>
-                                <div class="qec-led-cell"><div class="qec-led-name">Sx₃</div><div id="led-s6" class="qec-led-indicator pass"></div></div>
+                                <div class="qec-led-cell"><div id="name-s1" class="qec-led-name">Sz₁</div><div id="led-s1" class="qec-led-indicator pass"></div></div>
+                                <div class="qec-led-cell"><div id="name-s2" class="qec-led-name">Sz₂</div><div id="led-s2" class="qec-led-indicator pass"></div></div>
+                                <div class="qec-led-cell"><div id="name-s3" class="qec-led-name">Sz₃</div><div id="led-s3" class="qec-led-indicator pass"></div></div>
+                                <div class="qec-led-cell"><div id="name-s4" class="qec-led-name">Sz₄</div><div id="led-s4" class="qec-led-indicator pass"></div></div>
+                                <div class="qec-led-cell"><div id="name-s5" class="qec-led-name">Sx₁</div><div id="led-s5" class="qec-led-indicator pass"></div></div>
+                                <div class="qec-led-cell"><div id="name-s6" class="qec-led-name">Sx₂</div><div id="led-s6" class="qec-led-indicator pass"></div></div>
+                                <div class="qec-led-cell"><div id="name-s7" class="qec-led-name">Sx₃</div><div id="led-s7" class="qec-led-indicator pass"></div></div>
+                                <div class="qec-led-cell"><div id="name-s8" class="qec-led-name">Sx₄</div><div id="led-s8" class="qec-led-indicator pass"></div></div>
                             </div>
 
                             <div style="font-family:var(--font-mono); font-size:10px; display:flex; justify-content:space-between; color:var(--text-slate); margin-top:2px;">

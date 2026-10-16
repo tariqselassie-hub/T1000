@@ -16,7 +16,6 @@ use std::f64::consts::PI;
 
 use crate::compiler::op::CircuitOp;
 use crate::compiler::CircuitBuilder;
-use crate::state::QuantumState;
 
 /// Entangling topology options for variational quantum ansatze.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -301,6 +300,7 @@ pub fn mitigate_readout_errors(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::state::QuantumState;
 
     #[test]
     fn test_bernstein_vazirani_exact_solution() {

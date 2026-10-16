@@ -23,6 +23,8 @@ pub enum QecCodeKind {
     PhaseFlip3Q,
     /// Steane 7-Qubit CSS code protecting against arbitrary single-qubit X, Y, Z errors
     Steane7Q,
+    /// Planar Surface Code [[9, 1, 3]] on a 3x3 qubit lattice with 8 plaquette stabilizers
+    SurfaceCode9Q,
 }
 
 /// Elementary Pauli error kinds for noise emulation.
@@ -137,21 +139,51 @@ pub fn encode_logical_state(
                 state.imag[idx1] += norm * b.1;
             }
         }
+        QecCodeKind::SurfaceCode9Q => {
+            assert!(offset + 9 <= total_qubits, "SurfaceCode9Q requires 9 physical qubits");
+            state.real[0] = 0.0;
+            let norm = 0.25f64; // 1 / sqrt(16)
+            for &w in &SURFACE_9Q_WORDS {
+                let idx0 = w << offset;
+                let idx1 = (w ^ SURFACE_9Q_XL) << offset;
+                state.real[idx0] += norm * a.0;
+                state.imag[idx0] += norm * a.1;
+                state.real[idx1] += norm * b.0;
+                state.imag[idx1] += norm * b.1;
+            }
+        }
     }
     state.normalize();
     state
 }
 
+/// 16 basis words spanning the [[9,1,3]] planar surface code |0_L> stabilizer subspace.
+pub const SURFACE_9Q_WORDS: [usize; 16] = {
+    let mut words = [0usize; 16];
+    let gens = [27, 432, 6, 192];
+    let mut i = 0;
+    while i < 16 {
+        let mut w = 0;
+        let mut b = 0;
+        while b < 4 {
+            if (i & (1 << b)) != 0 {
+                w ^= gens[b];
+            }
+            b += 1;
+        }
+        words[i] = w;
+        i += 1;
+    }
+    words
+};
+
+/// Bitmask for transversal logical X operator X_L = X_0 X_3 X_6.
+pub const SURFACE_9Q_XL: usize = 73;
+
 /// Helper to shift a bit pattern to a qubit offset.
 #[inline(always)]
 fn shift_pattern(pattern: usize, offset: usize) -> usize {
-    let mut out = 0usize;
-    for bit in 0..7 {
-        if (pattern & (1 << bit)) != 0 {
-            out |= 1 << (offset + bit);
-        }
-    }
-    out
+    pattern << offset
 }
 
 // =========================================================================
@@ -236,6 +268,86 @@ pub fn extract_syndrome(state: &QuantumState, code: QecCodeKind, offset: usize) 
                 // Combined Y error (both syndromes fire on same qubit)
                 let q = if z_idx == x_idx { z_idx - 1 } else { z_idx - 1 };
                 (true, Some(offset + q), Some(PauliErrorKind::BitPhaseFlip))
+            };
+
+            SyndromeReport {
+                code,
+                syndrome_bits: bits,
+                error_detected,
+                faulty_qubit,
+                recommended_recovery: recovery,
+            }
+        }
+        QecCodeKind::SurfaceCode9Q => {
+            // Planar Surface Code [[9,1,3]] on 3x3 lattice:
+            // 4 Z-stabilizers (detect X bit-flips):
+            // S_z1 = Z1 Z2 Z4 Z5 (bulk top-right)
+            // S_z2 = Z3 Z4 Z6 Z7 (bulk bottom-left)
+            // S_z3 = Z0 Z3       (left boundary)
+            // S_z4 = Z5 Z8       (right boundary)
+            let sz1 = measure_pauli_multi_z(state, &[offset + 1, offset + 2, offset + 4, offset + 5]);
+            let sz2 = measure_pauli_multi_z(state, &[offset + 3, offset + 4, offset + 6, offset + 7]);
+            let sz3 = measure_pauli_multi_z(state, &[offset + 0, offset + 3]);
+            let sz4 = measure_pauli_multi_z(state, &[offset + 5, offset + 8]);
+
+            // 4 X-stabilizers (detect Z phase-flips):
+            // S_x1 = X0 X1 X3 X4 (bulk top-left)
+            // S_x2 = X4 X5 X7 X8 (bulk bottom-right)
+            // S_x3 = X1 X2       (top boundary)
+            // S_x4 = X6 X7       (bottom boundary)
+            let sx1 = measure_pauli_multi_x(state, &[offset + 0, offset + 1, offset + 3, offset + 4]);
+            let sx2 = measure_pauli_multi_x(state, &[offset + 4, offset + 5, offset + 7, offset + 8]);
+            let sx3 = measure_pauli_multi_x(state, &[offset + 1, offset + 2]);
+            let sx4 = measure_pauli_multi_x(state, &[offset + 6, offset + 7]);
+
+            let bits = vec![sz1, sz2, sz3, sz4, sx1, sx2, sx3, sx4];
+
+            // Decode Z-stabilizers for bit-flip (X) errors
+            let faulty_x = match (sz1, sz2, sz3, sz4) {
+                (1, 1, 1, 1) => None,
+                (1, 1, -1, 1) => Some(0),
+                (-1, 1, 1, 1) => Some(1), // Homologous to 2 modulo S_x3 (X1 X2)
+                (1, -1, -1, 1) => Some(3),
+                (-1, -1, 1, 1) => Some(4),
+                (-1, 1, 1, -1) => Some(5),
+                (1, -1, 1, 1) => Some(6), // Homologous to 7 modulo S_x4 (X6 X7)
+                (1, 1, 1, -1) => Some(8),
+                _ => None,
+            };
+
+            // Decode X-stabilizers for phase-flip (Z) errors
+            let faulty_z = match (sx1, sx2, sx3, sx4) {
+                (1, 1, 1, 1) => None,
+                (-1, 1, 1, 1) => Some(0), // Homologous to 3 modulo S_z3 (Z0 Z3)
+                (-1, 1, -1, 1) => Some(1),
+                (1, 1, -1, 1) => Some(2),
+                (-1, -1, 1, 1) => Some(4),
+                (1, -1, 1, 1) => Some(5), // Homologous to 8 modulo S_z4 (Z5 Z8)
+                (1, 1, 1, -1) => Some(6),
+                (1, -1, 1, -1) => Some(7),
+                _ => None,
+            };
+
+            let (error_detected, faulty_qubit, recovery) = match (faulty_x, faulty_z) {
+                (None, None) => (false, None, None),
+                (Some(qx), None) => (true, Some(offset + qx), Some(PauliErrorKind::BitFlip)),
+                (None, Some(qz)) => (true, Some(offset + qz), Some(PauliErrorKind::PhaseFlip)),
+                (Some(qx), Some(qz)) => {
+                    // Y error: Resolve gauge ambiguity using intersection
+                    let q = match (qx, qz) {
+                        (0, 0) => 0,
+                        (1, 1) => 1,
+                        (1, 2) => 2,
+                        (3, 0) => 3,
+                        (4, 4) => 4,
+                        (5, 5) => 5,
+                        (6, 6) => 6,
+                        (6, 7) => 7,
+                        (8, 5) => 8,
+                        _ => qx,
+                    };
+                    (true, Some(offset + q), Some(PauliErrorKind::BitPhaseFlip))
+                }
             };
 
             SyndromeReport {
@@ -492,4 +604,85 @@ mod tests {
         assert_eq!(res_y.syndrome.faulty_qubit, Some(4));
         assert_eq!(res_y.syndrome.recommended_recovery, Some(PauliErrorKind::BitPhaseFlip));
     }
+
+    #[test]
+    fn test_surface_code_9q_recovers_all_single_qubit_errors() {
+        let n_qubits = 9;
+        // Test non-trivial superposition (0.6 |0_L> + 0.8 |1_L>)
+        let clean = encode_logical_state((0.6, 0.0), (0.8, 0.0), QecCodeKind::SurfaceCode9Q, n_qubits, 0);
+
+        // Verify clean state satisfies all 8 stabilizers
+        let clean_syndrome = extract_syndrome(&clean, QecCodeKind::SurfaceCode9Q, 0);
+        assert!(!clean_syndrome.error_detected);
+        assert_eq!(clean_syndrome.syndrome_bits, vec![1, 1, 1, 1, 1, 1, 1, 1]);
+
+        // Verify all 9 data qubits under X, Z, and Y errors
+        for q in 0..9 {
+            // 1. Bit-flip error (X)
+            let mut x_err = clean.clone();
+            inject_pauli_error(&mut x_err, q, PauliErrorKind::BitFlip);
+            let res_x = detect_and_recover(&mut x_err, &clean, QecCodeKind::SurfaceCode9Q, 0);
+            assert!(
+                res_x.success,
+                "SurfaceCode9Q failed to recover X error on qubit {}. Fid: {}",
+                q, res_x.fidelity_restored
+            );
+            assert!((res_x.fidelity_restored - 1.0).abs() < 1e-4);
+
+            // 2. Phase-flip error (Z)
+            let mut z_err = clean.clone();
+            inject_pauli_error(&mut z_err, q, PauliErrorKind::PhaseFlip);
+            let res_z = detect_and_recover(&mut z_err, &clean, QecCodeKind::SurfaceCode9Q, 0);
+            assert!(
+                res_z.success,
+                "SurfaceCode9Q failed to recover Z error on qubit {}. Fid: {}",
+                q, res_z.fidelity_restored
+            );
+            assert!((res_z.fidelity_restored - 1.0).abs() < 1e-4);
+
+            // 3. Combined bit-phase flip error (Y)
+            let mut y_err = clean.clone();
+            inject_pauli_error(&mut y_err, q, PauliErrorKind::BitPhaseFlip);
+            let res_y = detect_and_recover(&mut y_err, &clean, QecCodeKind::SurfaceCode9Q, 0);
+            assert!(
+                res_y.success,
+                "SurfaceCode9Q failed to recover Y error on qubit {}. Fid: {}",
+                q, res_y.fidelity_restored
+            );
+            assert_eq!(res_y.syndrome.faulty_qubit, Some(q));
+            assert!((res_y.fidelity_restored - 1.0).abs() < 1e-4);
+        }
+
+        // Verify ASCII planar lattice renderer
+        let ascii = render_surface_code_ascii(&clean_syndrome);
+        assert!(ascii.contains("d0"));
+        assert!(ascii.contains("d8"));
+        assert!(ascii.contains("OK"));
+    }
+}
+
+/// Formats a 2D planar ASCII representation of the 3x3 surface code lattice with plaquette status.
+pub fn render_surface_code_ascii(report: &SyndromeReport) -> String {
+    let s = &report.syndrome_bits;
+    // Expected 8 bits: [sz1, sz2, sz3, sz4, sx1, sx2, sx3, sx4]
+    let (sz1, sz2, sz3, sz4, sx1, sx2, sx3, sx4) = if s.len() == 8 {
+        (s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7])
+    } else {
+        (1, 1, 1, 1, 1, 1, 1, 1)
+    };
+
+    let f = |val: i8| if val == -1 { "ERR" } else { " OK" };
+
+    format!(
+        "┌── d0 ──── [Sx3:{}] ──── d1 ──── [Sx3:{}] ──── d2 ──┐\n\
+         │   │                     │                     │   │\n\
+         │ [Sz3:{}]    [Sx1:{}]    │         [Sz1:{}]    │   │\n\
+         │   │                     │                     │   │\n\
+         ├── d3 ────────────────── d4 ────────────────── d5 ──┤\n\
+         │   │                     │                     │   │\n\
+         │   │         [Sz2:{}]    │         [Sx2:{}]  [Sz4:{}]│\n\
+         │   │                     │                     │   │\n\
+         └── d6 ──── [Sx4:{}] ──── d7 ──── [Sx4:{}] ──── d8 ──┘",
+        f(sx3), f(sx3), f(sz3), f(sx1), f(sz1), f(sz2), f(sx2), f(sz4), f(sx4), f(sx4)
+    )
 }

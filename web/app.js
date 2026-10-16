@@ -1319,9 +1319,10 @@ class QuantumMolecularDashboard {
     }
 
     updateQecUi(data, errType) {
-        const bits = data.syndrome_bits || [1, 1, 1, 1, 1, 1];
-        for (let i = 0; i < 6; i++) {
+        const bits = data.syndrome_bits || [1, 1, 1, 1, 1, 1, 1, 1];
+        for (let i = 0; i < 8; i++) {
             const led = document.getElementById(`led-s${i + 1}`);
+            const name = document.getElementById(`name-s${i + 1}`);
             if (led) {
                 if (i < bits.length) {
                     led.parentElement.style.display = 'block';
@@ -1329,6 +1330,10 @@ class QuantumMolecularDashboard {
                         led.className = 'qec-led-indicator error';
                     } else {
                         led.className = 'qec-led-indicator pass';
+                    }
+                    if (name && data.stabilizers && data.stabilizers[i]) {
+                        const raw = data.stabilizers[i].split('=')[0].trim().replace(/\s+/g, '');
+                        name.textContent = raw;
                     }
                 } else {
                     led.parentElement.style.display = 'none';
@@ -1370,7 +1375,7 @@ class QuantumMolecularDashboard {
     }
 
     recoverQecSubspace() {
-        for (let i = 1; i <= 6; i++) {
+        for (let i = 1; i <= 8; i++) {
             const led = document.getElementById(`led-s${i}`);
             if (led) led.className = 'qec-led-indicator pass';
         }

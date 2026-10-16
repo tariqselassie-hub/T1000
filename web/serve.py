@@ -507,6 +507,166 @@ def simulate_qec_stabilizer(code_kind: str, error_type: str, target_qubit: int) 
             "purity": round(purity, 5),
             "success": abs(post_fid - 1.0) < 1e-4
         }
+    elif code_kind == "surface_code_9q":
+        dim = 512
+        gens = [27, 432, 6, 192]
+        words = []
+        for i in range(16):
+            w = 0
+            for b in range(4):
+                if i & (1 << b):
+                    w ^= gens[b]
+            words.append(w)
+
+        psi_clean = np.zeros(dim, dtype=np.complex128)
+        norm = 0.25
+        for w in words:
+            psi_clean[w] = norm
+
+        psi_corrupt = psi_clean.copy()
+        t = min(max(target_qubit, 0), 8)
+
+        if error_type == "x":
+            mask = 1 << t
+            for i in range(dim):
+                if not (i & mask):
+                    pair = i | mask
+                    psi_corrupt[i], psi_corrupt[pair] = psi_corrupt[pair], psi_corrupt[i]
+        elif error_type == "z":
+            mask = 1 << t
+            for i in range(dim):
+                if i & mask:
+                    psi_corrupt[i] = -psi_corrupt[i]
+        elif error_type == "y":
+            mask = 1 << t
+            for i in range(dim):
+                if not (i & mask):
+                    pair = i | mask
+                    c0, c1 = psi_corrupt[i], psi_corrupt[pair]
+                    psi_corrupt[i] = -1j * c1
+                    psi_corrupt[pair] = 1j * c0
+
+        # Stabilizer parity measurements
+        def measure_multi_z(state, qubits):
+            exp_val = 0.0
+            for idx in range(dim):
+                parity = 0
+                for q in qubits:
+                    parity ^= (idx >> q) & 1
+                sign = 1.0 if parity == 0 else -1.0
+                exp_val += sign * abs(state[idx]) ** 2
+            return 1 if exp_val >= 0.0 else -1
+
+        def measure_multi_x(state, qubits):
+            rotated = state.copy()
+            inv_s2 = 1.0 / math.sqrt(2.0)
+            for q in qubits:
+                stride = 1 << q
+                step = stride << 1
+                for i in range(0, dim, step):
+                    for j in range(stride):
+                        i0 = i + j
+                        i1 = i0 + stride
+                        a0, a1 = rotated[i0], rotated[i1]
+                        rotated[i0] = inv_s2 * (a0 + a1)
+                        rotated[i1] = inv_s2 * (a0 - a1)
+            return measure_multi_z(rotated, qubits)
+
+        sz1 = measure_multi_z(psi_corrupt, [1, 2, 4, 5])
+        sz2 = measure_multi_z(psi_corrupt, [3, 4, 6, 7])
+        sz3 = measure_multi_z(psi_corrupt, [0, 3])
+        sz4 = measure_multi_z(psi_corrupt, [5, 8])
+
+        sx1 = measure_multi_x(psi_corrupt, [0, 1, 3, 4])
+        sx2 = measure_multi_x(psi_corrupt, [4, 5, 7, 8])
+        sx3 = measure_multi_x(psi_corrupt, [1, 2])
+        sx4 = measure_multi_x(psi_corrupt, [6, 7])
+
+        syndrome_bits = [sz1, sz2, sz3, sz4, sx1, sx2, sx3, sx4]
+
+        # Decode Z-stabilizers
+        z_map = {
+            (1, 1, 1, 1): None,
+            (1, 1, -1, 1): 0,
+            (-1, 1, 1, 1): 1,
+            (1, -1, -1, 1): 3,
+            (-1, -1, 1, 1): 4,
+            (-1, 1, 1, -1): 5,
+            (1, -1, 1, 1): 6,
+            (1, 1, 1, -1): 8,
+        }
+        faulty_x = z_map.get((sz1, sz2, sz3, sz4), None)
+
+        # Decode X-stabilizers
+        x_map = {
+            (1, 1, 1, 1): None,
+            (-1, 1, 1, 1): 0,
+            (-1, 1, -1, 1): 1,
+            (1, 1, -1, 1): 2,
+            (-1, -1, 1, 1): 4,
+            (1, -1, 1, 1): 5,
+            (1, 1, 1, -1): 6,
+            (1, -1, 1, -1): 7,
+        }
+        faulty_z = x_map.get((sx1, sx2, sx3, sx4), None)
+
+        detected = False
+        faulty = None
+        rec_op = None
+        psi_recovered = psi_corrupt.copy()
+
+        if faulty_x is not None and faulty_z is None:
+            detected = True
+            faulty = faulty_x
+            rec_op = f"X_{faulty}"
+            mask = 1 << faulty
+            for i in range(dim):
+                if not (i & mask):
+                    pair = i | mask
+                    psi_recovered[i], psi_recovered[pair] = psi_recovered[pair], psi_recovered[i]
+        elif faulty_x is None and faulty_z is not None:
+            detected = True
+            faulty = faulty_z
+            rec_op = f"Z_{faulty}"
+            mask = 1 << faulty
+            for i in range(dim):
+                if i & mask:
+                    psi_recovered[i] = -psi_recovered[i]
+        elif faulty_x is not None and faulty_z is not None:
+            detected = True
+            y_map = {
+                (0, 0): 0, (1, 1): 1, (1, 2): 2, (3, 0): 3,
+                (4, 4): 4, (5, 5): 5, (6, 6): 6, (6, 7): 7, (8, 5): 8
+            }
+            faulty = y_map.get((faulty_x, faulty_z), faulty_x)
+            rec_op = f"Y_{faulty}"
+            mask = 1 << faulty
+            for i in range(dim):
+                if not (i & mask):
+                    pair = i | mask
+                    c0, c1 = psi_recovered[i], psi_recovered[pair]
+                    psi_recovered[i] = 1j * c1
+                    psi_recovered[pair] = -1j * c0
+
+        pre_fid = float(abs(np.vdot(psi_clean, psi_corrupt)) ** 2)
+        post_fid = float(abs(np.vdot(psi_clean, psi_recovered)) ** 2)
+        purity = float(np.sum(np.abs(psi_recovered) ** 4))
+
+        return {
+            "code": "Planar Surface Code [[9,1,3]] (3x3 Lattice)",
+            "stabilizers": [
+                "Sz₁ = Z₁Z₂Z₄Z₅ (bulk)", "Sz₂ = Z₃Z₄Z₆Z₇ (bulk)", "Sz₃ = Z₀Z₃ (bnd)", "Sz₄ = Z₅Z₈ (bnd)",
+                "Sx₁ = X₀X₁X₃X₄ (bulk)", "Sx₂ = X₄X₅X₇X₈ (bulk)", "Sx₃ = X₁X₂ (bnd)", "Sx₄ = X₆X₇ (bnd)"
+            ],
+            "syndrome_bits": syndrome_bits,
+            "error_detected": detected,
+            "faulty_qubit": faulty,
+            "recommended_recovery": rec_op,
+            "pre_recovery_fidelity": round(pre_fid, 5),
+            "recovered_fidelity": round(post_fid, 5),
+            "purity": round(purity, 5),
+            "success": abs(post_fid - 1.0) < 1e-4
+        }
     else:
         # Phase flip 3Q
         n_q = 3
