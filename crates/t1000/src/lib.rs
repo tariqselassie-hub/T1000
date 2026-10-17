@@ -35,6 +35,7 @@ pub mod memory;
 pub mod molfeatures;
 pub mod optimizer;
 pub mod parallel;
+pub mod plaquette;
 pub mod protocol;
 pub mod qec;
 pub mod qssm;

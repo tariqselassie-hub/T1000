@@ -71,6 +71,10 @@ path = "src/bin/measurements/vnni_syndrome_bench.rs"
 name = "igpu_bridge_bench"
 path = "src/bin/measurements/igpu_bridge_bench.rs"
 
+[[bin]]
+name = "plaquette_stokes_bench"
+path = "src/bin/measurements/plaquette_stokes_bench.rs"
+
 # =========================================================================
 # Executable Binaries: Quantum Neural Network Training
 # =========================================================================
