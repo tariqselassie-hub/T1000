@@ -22,11 +22,7 @@ const STATE_DIM: usize = 1 << N_QUBITS; // 1024
 const N_CLASSES: usize = 2; // 0 = Landbird, 1 = Waterbird
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GroupMetrics {
-    pub total: usize,
-    pub correct: usize,
-    pub accuracy_pct: f64,
-}
+pub struct GroupMetrics { pub total: usize, pub correct: usize, pub accuracy_pct: f64 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EvaluationSummary {
@@ -219,28 +215,17 @@ fn evaluate_split(
     }
 
     let n = samples.len() as f64;
-    let mk_grp = |idx: usize| GroupMetrics {
-        total: g_tot[idx],
-        correct: g_cor[idx],
-        accuracy_pct: if g_tot[idx] > 0 { (g_cor[idx] as f64 / g_tot[idx] as f64) * 100.0 } else { 0.0 },
+    let mk_grp = |i: usize| GroupMetrics {
+        total: g_tot[i], correct: g_cor[i],
+        accuracy_pct: if g_tot[i] > 0 { (g_cor[i] as f64 / g_tot[i] as f64) * 100.0 } else { 0.0 },
     };
-
-    let g0 = mk_grp(0);
-    let g1 = mk_grp(1);
-    let g2 = mk_grp(2);
-    let g3 = mk_grp(3);
+    let (g0, g1, g2, g3) = (mk_grp(0), mk_grp(1), mk_grp(2), mk_grp(3));
     let wga = g0.accuracy_pct.min(g1.accuracy_pct).min(g2.accuracy_pct).min(g3.accuracy_pct);
 
     EvaluationSummary {
-        total_samples: samples.len(),
-        overall_accuracy_pct: (total_correct as f64 / n) * 100.0,
-        average_loss: total_loss / n,
-        worst_group_accuracy_pct: wga,
-        mean_coherence_l1: total_coh / n,
-        g0_land_land: g0,
-        g1_land_water: g1,
-        g2_water_land: g2,
-        g3_water_water: g3,
+        total_samples: samples.len(), overall_accuracy_pct: (total_correct as f64 / n) * 100.0,
+        average_loss: total_loss / n, worst_group_accuracy_pct: wga, mean_coherence_l1: total_coh / n,
+        g0_land_land: g0, g1_land_water: g1, g2_water_land: g2, g3_water_water: g3,
     }
 }
 
@@ -332,6 +317,13 @@ fn main() {
     let mut opt_ansatz = AdamOptimizer::new(n_ansatz_params, 0.035);
     let mut opt_head = AdamOptimizer::new_unwrapped(n_head_params, 0.030);
 
+    let mut g_idx: [Vec<usize>; 4] = Default::default();
+    for (i, (_, l, p)) in train_samples.iter().enumerate() {
+        g_idx[match (*l, *p) { (0, 0) => 0, (0, 1) => 1, (1, 0) => 2, _ => 3 }].push(i);
+    }
+    println!("Group-Balanced Sampler (16 per group = 64/batch): G0:{} G1:{} G2:{} G3:{}",
+        g_idx[0].len(), g_idx[1].len(), g_idx[2].len(), g_idx[3].len());
+
     let mut history = Vec::with_capacity(epochs);
     let mut best_test_acc = zero_shot.overall_accuracy_pct;
     let mut best_epoch = 0;
@@ -348,14 +340,19 @@ fn main() {
         let mut train_correct = 0;
 
         for b in 0..num_batches {
-            let start = b * batch_size;
-            let end = (start + batch_size).min(n_train);
-            let batch = &train_samples[start..end];
-            let batch_len = batch.len() as f64;
+            let mut batch_indices = Vec::with_capacity(64);
+            let offset = (epoch - 1) * num_batches * 16 + b * 16;
+            for i in 0..16 {
+                for g in &g_idx {
+                    batch_indices.push(g[(offset + i) % g.len()]);
+                }
+            }
+            let batch_len = batch_indices.len() as f64;
 
-            let (b_loss, b_cor, b_ans_grad, b_hd_grad) = batch
+            let (b_loss, b_cor, b_ans_grad, b_hd_grad) = batch_indices
                 .par_iter()
-                .map(|(input_state, label, _)| {
+                .map(|&s_idx| {
+                    let (input_state, label, _) = &train_samples[s_idx];
                     let mut s_loss = 0.0;
                     let mut s_cor = 0;
                     let mut d_head = vec![0.0; n_head_params];
@@ -410,8 +407,9 @@ fn main() {
         }
 
         let ep_elapsed_ms = t_ep_start.elapsed().as_secs_f64() * 1000.0;
-        let trn_acc = (f64::from(train_correct) / n_train as f64) * 100.0;
-        let trn_loss = total_train_loss / n_train as f64;
+        let total_b_samples = (num_batches * batch_size) as f64;
+        let trn_acc = (f64::from(train_correct) / total_b_samples) * 100.0;
+        let trn_loss = total_train_loss / total_b_samples;
 
         let test_eval = evaluate_split(&ansatz, &ansatz_weights, &head, &test_samples, &observables);
         if test_eval.overall_accuracy_pct > best_test_acc {
