@@ -26,6 +26,7 @@ from chart_frontier_rcs import chart_frontier_rcs
 from chart_pc_vs_fpga import chart_pc_vs_fpga
 from chart_fpga_26q import chart_fpga_26q
 from chart_frontier_rcs_fpga import chart_frontier_rcs_fpga
+from chart_exascale_showdown import chart_exascale_showdown
 
 def run_all_charts() -> None:
     ws_root = current_dir.parents[1]
@@ -160,6 +161,12 @@ def run_all_charts() -> None:
         size_kb = png.stat().st_size / 1024.0
         generated.append(("Lead #109 Attractor Convergence", png.name, f"{size_kb:.1f} KB"))
         print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
+
+    # 13. T-1000 Desktop vs Exascale Supercomputer Showdown
+    png = chart_exascale_showdown(chart_dir)
+    size_kb = png.stat().st_size / 1024.0
+    generated.append(("Exascale Desktop Showdown", png.name, f"{size_kb:.1f} KB"))
+    print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
 
     print("\n╔═══════════════════════════════════════════════════════════════════════════════╗")
     print("║                        RENDERED ARTIFACT MANIFEST                             ║")

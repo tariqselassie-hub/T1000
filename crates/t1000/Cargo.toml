@@ -75,6 +75,10 @@ path = "src/bin/measurements/igpu_bridge_bench.rs"
 name = "plaquette_stokes_bench"
 path = "src/bin/measurements/plaquette_stokes_bench.rs"
 
+[[bin]]
+name = "exascale_showdown"
+path = "src/bin/measurements/exascale_showdown.rs"
+
 # =========================================================================
 # Executable Binaries: Quantum Neural Network Training
 # =========================================================================
