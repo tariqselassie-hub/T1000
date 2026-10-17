@@ -132,6 +132,10 @@ pub use smiles::{
 };
 pub use state::{QuantumFeatureMap, QuantumState};
 pub use tiled_butterfly::{apply_layer_fused, tiled_apply_cz, tiled_apply_ry, tiled_apply_rz};
+pub use plaquette::{
+    DiscreteStokesEngine, GaugeLink, Plaquette, PlaquetteLattice, PlaquetteZipper2D,
+    PlaquetteZipperReport, StokesPressureReport, WilsonFluxTableau,
+};
 pub use zipper::{BlochZipperEngine, ZipperConfig, ZipperExecutionReport, ZipperStepTelemetry};
 
 /// Seed used by the plain `new` constructors so default-initialised models are reproducible.

@@ -49,6 +49,7 @@ pub struct SystemManifestReport {
     pub fpga_target: String,
     pub max_dense_qubits: usize,
     pub zipper_max_qubits: usize,
+    pub plaquette_2d_max_qubits: usize,
     pub heptal_qudit_radix: usize,
     pub period_molecules_max_qubits: usize,
     pub clifford_t_synthesis: bool,
@@ -249,6 +250,25 @@ impl T1000Engine {
         crate::gpu::IGpuBridge::default()
     }
 
+    /// Executes the 2D Plaquette-Zipper tree contraction across a 2D gauge lattice.
+    pub fn run_plaquette_zipper_2d(
+        &self,
+        lattice: crate::plaquette::PlaquetteLattice,
+    ) -> crate::plaquette::PlaquetteZipperReport {
+        let zipper = crate::plaquette::PlaquetteZipper2D::new(lattice);
+        zipper.run_tree_contraction(self.seed as usize)
+    }
+
+    /// Evaluates discrete 2D Stokes theorem invariance over measurement shots.
+    pub fn test_stokes_pressure(
+        &self,
+        lattice: crate::plaquette::PlaquetteLattice,
+        shots: &[usize],
+    ) -> crate::plaquette::StokesPressureReport {
+        let engine = crate::plaquette::DiscreteStokesEngine::new(lattice);
+        engine.stress_test_shots(shots)
+    }
+
     /// Returns the system manifest and active capability profile.
     pub fn system_manifest(&self) -> SystemManifestReport {
         let igpu = crate::gpu::IGpuBridge::default();
@@ -264,6 +284,7 @@ impl T1000Engine {
             fpga_target: "Artix-7 1000_QPU (14 Qubits / 128 KB BRAM)".to_string(),
             max_dense_qubits: 26,
             zipper_max_qubits: 200,
+            plaquette_2d_max_qubits: 2000,
             heptal_qudit_radix: 7,
             period_molecules_max_qubits: 18,
             clifford_t_synthesis: true,

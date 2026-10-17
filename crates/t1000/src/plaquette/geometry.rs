@@ -247,4 +247,55 @@ impl PlaquetteLattice {
 
         Self::new("3-Triad Frustrated Central Hub (Delta_3)", links, plaquettes)
     }
+
+    // =========================================================================
+    // 5. Arbitrary Scaled Kagome Chain (Up to 1,000+ Qubits)
+    // =========================================================================
+    /// Generates an arbitrary Kagome lattice chain of `num_plaquettes` ($M \ge 3$).
+    /// Total qubits = $2M + 1$ ($M-1$ internal spokes, $M+2$ boundary links).
+    pub fn build_kagome_chain(num_plaquettes: usize) -> Self {
+        assert!(num_plaquettes >= 3, "Kagome chain requires >= 3 plaquettes");
+        let m = num_plaquettes;
+        let num_internal = m - 1;
+        let num_boundary = m + 2;
+        let total_qubits = num_internal + num_boundary;
+
+        let mut links = Vec::with_capacity(total_qubits);
+        // Internal spokes: IDs 0..num_internal - 1
+        for i in 0..num_internal {
+            links.push(GaugeLink::new(i, 2 * i, 2 * i + 1));
+        }
+        // Boundary links: IDs num_internal..total_qubits - 1
+        for i in num_internal..total_qubits {
+            links.push(GaugeLink::new(i, i + 1, i + 2));
+        }
+
+        let mut plaquettes = Vec::with_capacity(m);
+        // First end cell
+        plaquettes.push(Plaquette {
+            id: 0,
+            name: "P_0".to_string(),
+            link_ids: vec![0, num_internal, num_internal + 1],
+        });
+        // Middle cells
+        for i in 1..m - 1 {
+            plaquettes.push(Plaquette {
+                id: i,
+                name: format!("P_{}", i),
+                link_ids: vec![i - 1, i, num_internal + 1 + i],
+            });
+        }
+        // Last end cell
+        plaquettes.push(Plaquette {
+            id: m - 1,
+            name: format!("P_{}", m - 1),
+            link_ids: vec![num_internal - 1, total_qubits - 2, total_qubits - 1],
+        });
+
+        Self::new(
+            format!("Scaled Kagome Chain ({} Qubits / {} Plaquettes)", total_qubits, m),
+            links,
+            plaquettes,
+        )
+    }
 }
