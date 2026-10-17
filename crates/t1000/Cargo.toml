@@ -79,6 +79,10 @@ path = "src/bin/measurements/plaquette_stokes_bench.rs"
 name = "exascale_showdown"
 path = "src/bin/measurements/exascale_showdown.rs"
 
+[[bin]]
+name = "nighthawk_r2_bench"
+path = "src/bin/measurements/nighthawk_r2_bench.rs"
+
 # =========================================================================
 # Executable Binaries: Quantum Neural Network Training
 # =========================================================================

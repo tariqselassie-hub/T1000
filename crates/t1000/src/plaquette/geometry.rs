@@ -298,4 +298,104 @@ impl PlaquetteLattice {
             plaquettes,
         )
     }
+
+    // =========================================================================
+    // 6. IBM Quantum Nighthawk R2 Native Topology
+    // =========================================================================
+    /// Maps the exact planar architecture of IBM Quantum Nighthawk R2:
+    /// - 120 vertex qubits (12 columns x 10 rows).
+    /// - 218 tunable couplers (110 horizontal + 108 vertical).
+    /// - 99 elementary square plaquettes (11 x 9).
+    /// - 40 perimeter boundary links, 178 internal spokes (each shared by 2 plaquettes).
+    pub fn build_ibm_nighthawk_r2() -> Self {
+        let cols = 12;
+        let rows = 10;
+        let mut links = Vec::with_capacity(218);
+        let mut h_link_map = HashMap::new();
+        let mut v_link_map = HashMap::new();
+
+        let mut link_id = 0;
+
+        // Horizontal links: 10 rows x 11 columns = 110 links
+        for r in 0..rows {
+            for c in 0..cols - 1 {
+                let u = r * cols + c;
+                let v = r * cols + (c + 1);
+                links.push(GaugeLink::new(link_id, u, v));
+                h_link_map.insert((r, c), link_id);
+                link_id += 1;
+            }
+        }
+
+        // Vertical links: 9 rows x 12 columns = 108 links
+        for r in 0..rows - 1 {
+            for c in 0..cols {
+                let u = r * cols + c;
+                let v = (r + 1) * cols + c;
+                links.push(GaugeLink::new(link_id, u, v));
+                v_link_map.insert((r, c), link_id);
+                link_id += 1;
+            }
+        }
+
+        assert_eq!(links.len(), 218, "Nighthawk R2 must have 218 couplers");
+
+        // 99 Square Plaquettes: (11 columns x 9 rows)
+        let mut plaquettes = Vec::with_capacity(99);
+        let mut p_id = 0;
+        for r in 0..rows - 1 {
+            for c in 0..cols - 1 {
+                let top = h_link_map[&(r, c)];
+                let bottom = h_link_map[&(r + 1, c)];
+                let left = v_link_map[&(r, c)];
+                let right = v_link_map[&(r, c + 1)];
+
+                plaquettes.push(Plaquette {
+                    id: p_id,
+                    name: format!("Square_{}_{}", c, r),
+                    link_ids: vec![top, right, bottom, left],
+                });
+                p_id += 1;
+            }
+        }
+
+        assert_eq!(plaquettes.len(), 99, "Nighthawk R2 must have 99 plaquettes");
+
+        Self::new("IBM Quantum Nighthawk R2 (120Q / 218 Couplers)", links, plaquettes)
+    }
+
+    // =========================================================================
+    // 7. Optimal Nighthawk-Embedded Frustrated Kagome Strip (119 Qubits)
+    // =========================================================================
+    /// Embeds a 119-qubit frustrated Kagome strip (59 triangular plaquettes)
+    /// across the IBM Nighthawk R2 processor footprint.
+    /// Internal spokes = 58, Boundary links = 61.
+    pub fn build_nighthawk_kagome_strip() -> Self {
+        Self::build_kagome_chain(59)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_ibm_nighthawk_r2_invariants() {
+        let lattice = PlaquetteLattice::build_ibm_nighthawk_r2();
+        assert_eq!(lattice.total_qubits, 218);
+        assert_eq!(lattice.plaquettes.len(), 99);
+        assert_eq!(lattice.boundary_link_ids.len(), 40);
+        assert_eq!(lattice.internal_spoke_ids.len(), 178);
+        assert_eq!(lattice.boundary_link_ids.len() + lattice.internal_spoke_ids.len(), 218);
+    }
+
+    #[test]
+    fn test_nighthawk_kagome_strip_invariants() {
+        let lattice = PlaquetteLattice::build_nighthawk_kagome_strip();
+        assert_eq!(lattice.total_qubits, 119);
+        assert_eq!(lattice.plaquettes.len(), 59);
+        assert_eq!(lattice.internal_spoke_ids.len(), 58);
+        assert_eq!(lattice.boundary_link_ids.len(), 61);
+        assert_eq!(lattice.internal_spoke_ids.len() + lattice.boundary_link_ids.len(), 119);
+    }
 }

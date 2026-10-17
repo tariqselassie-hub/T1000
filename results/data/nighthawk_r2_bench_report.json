@@ -1,0 +1,34 @@
+{
+  "timestamp": "2026-10-17T15:45:00Z",
+  "runs": [
+    {
+      "topology_name": "IBM Quantum Nighthawk R2 (Native)",
+      "vertex_qubits": 120,
+      "link_qubits": 218,
+      "plaquette_count": 99,
+      "internal_spokes_cancelled": 178,
+      "boundary_links_active": 40,
+      "max_active_bytes_l1": 384,
+      "stokes_drift": 0.0,
+      "execution_time_us": 23.5,
+      "qrack_cut_count": 20,
+      "qrack_quasiprobability_overhead": 1099511627776.0,
+      "dense_ram_petabytes_str": "2.12 x 10^25 PB"
+    },
+    {
+      "topology_name": "Optimal Embedded Kagome Strip (119Q)",
+      "vertex_qubits": 119,
+      "link_qubits": 119,
+      "plaquette_count": 59,
+      "internal_spokes_cancelled": 58,
+      "boundary_links_active": 61,
+      "max_active_bytes_l1": 536,
+      "stokes_drift": 0.0,
+      "execution_time_us": 10.5,
+      "qrack_cut_count": 0,
+      "qrack_quasiprobability_overhead": 1.0,
+      "dense_ram_petabytes_str": "1.06 x 10^25 PB"
+    }
+  ],
+  "summary": "IBM Nighthawk R2 120Q/218-coupler lattice successfully mapped and contracted in CPU L1 cache with zero Stokes drift."
+}

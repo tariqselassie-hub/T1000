@@ -168,6 +168,14 @@ def run_all_charts() -> None:
     generated.append(("Exascale Desktop Showdown", png.name, f"{size_kb:.1f} KB"))
     print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
 
+    # 14. IBM Quantum Nighthawk R2 & Kagome Embedding
+    import chart_nighthawk_layout
+    chart_nighthawk_layout.create_nighthawk_visualization()
+    png = chart_dir / "nighthawk_r2_kagome_layout.png"
+    size_kb = png.stat().st_size / 1024.0
+    generated.append(("Nighthawk R2 & Kagome Layout", png.name, f"{size_kb:.1f} KB"))
+    print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
+
     print("\n╔═══════════════════════════════════════════════════════════════════════════════╗")
     print("║                        RENDERED ARTIFACT MANIFEST                             ║")
     print("╠═════════════════════════════════════╦══════════════════════════════════╦══════════╣")
