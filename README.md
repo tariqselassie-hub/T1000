@@ -141,6 +141,12 @@
 * **Intel iGPU OpenCL Offload & Native Rust Bridge (`t1000::gpu`):** Dynamically wires `QuantumState` SOA buffers directly into the Intel Xe Graphics OpenCL runtime using `CL_MEM_USE_HOST_PTR` unified memory mappings. Automatically routes dense registers $N \ge 22$ ($64\text{ MB}\text{–}1\text{ GB}$) to the iGPU, completing in **$7.796\text{ ms}$** (**$2.13\times$ faster than host CPU AVX2**) with exact $1.0000000$ cross-backend fidelity (`igpu_bridge_bench`).
 * Detailed Documentation: [`docs/findings/heterogeneous_co_processor_pipeline.md`](docs/findings/heterogeneous_co_processor_pipeline.md) and [`docs/findings/cut_bridge_36q_checkpointing.md`](docs/findings/cut_bridge_36q_checkpointing.md).
 
+### 15. Quantum Vision & Subpopulation Sorter Engine (`birds_hybrid_qnn_train`, `path_a_vs_c_sorter_bench`)
+* **Unitarity Rigidity Theorem ($W^{\dagger} W = \mathbb{I}$):** Rigorous mathematical proof and empirical confirmation that a parameterized unitary circuit cannot alter relative Hilbert state distances globally ($F = 2.5105$ invariant).
+* **Active Measurement Orientation Sorter:** Demonstrates that the VQC acts as a coordinate frame rotator, aligning rigid state clusters with the eigenspaces of physical Pauli correlators ($+2.70\%$ separation gain in observable space $\mathbb{R}^{55}$).
+* **Headless Pure Quantum Sorter (Path A):** Eliminating the 112 classical head parameters entirely and sorting samples directly via global magnetization $\text{sign}(\frac{1}{10}\sum \langle Z_i \rangle)$ boosts Worst-Group Accuracy (WGA) to **$61.91\%$** ($+5.10\%$), surging to **$71.81\%$** on the hardest minority confounder ($G_2$, Waterbirds on Land) while halving training latency to **$1.09\text{ s}$** (**$16.19\,\mu\text{s}$ per sample**).
+* Detailed Documentation: [`docs/findings/quantum_sorter_vs_classifier_waterbirds.md`](docs/findings/quantum_sorter_vs_classifier_waterbirds.md).
+
 ---
 
 ## Quick Start for Developers
@@ -153,6 +159,15 @@ cd T1000
 
 # Run all unit, integration, and oracle verification tests
 cargo test --workspace
+
+# Run Headless Pure Quantum Sorter vs Data Re-Uploading Showdown (Waterbirds 11k)
+cargo run --release -p t1000 --bin path_a_vs_c_sorter_bench
+
+# Run Hilbert Space Fidelity & Observable Orientation Sorter Benchmark
+cargo run --release -p t1000 --bin fidelity_orthogonality_bench
+
+# Run 10-Qubit Waterbirds Hybrid Transfer Quantum Neural Network Training
+cargo run --release -p t1000 --bin birds_hybrid_qnn_train -- 15
 
 # Run AVX-VNNI hardware-accelerated QEC syndrome and stabilizer benchmark (CPU INT8 VNNI)
 cargo run --release -p t1000 --bin vnni_syndrome_bench
@@ -200,6 +215,7 @@ python scripts/fpga/test_chaos_streaming.py
 python web/serve.py
 ```
 
+* **Quantum Sorter vs. Classifier Theory & Findings:** [`docs/findings/quantum_sorter_vs_classifier_waterbirds.md`](docs/findings/quantum_sorter_vs_classifier_waterbirds.md).
 * **Heterogeneous Co-Processor Pipeline Specification:** [`docs/findings/heterogeneous_co_processor_pipeline.md`](docs/findings/heterogeneous_co_processor_pipeline.md).
 * **Zero-Allocation Dense VQC & Heptal Qudit MPS QNN Findings:** [`docs/findings/avx2_zero_allocation_and_heptal_qnn.md`](docs/findings/avx2_zero_allocation_and_heptal_qnn.md).
 * **Dashboard & Circuit Composer Documentation:** [`docs/dashboard_and_circuit_composer.md`](docs/dashboard_and_circuit_composer.md).

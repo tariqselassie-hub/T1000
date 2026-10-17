@@ -176,6 +176,16 @@ def run_all_charts() -> None:
     generated.append(("Nighthawk R2 & Kagome Layout", png.name, f"{size_kb:.1f} KB"))
     print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
 
+    # 15. Waterbirds 11k Robustness & Quantum Sorter Telemetry
+    hybrid_report = ws_root / "data" / "birds" / "birds_hybrid_qnn_report.json"
+    if hybrid_report.exists():
+        import chart_birds_hybrid
+        chart_birds_hybrid.generate_telemetry_chart()
+        png = chart_dir / "waterbirds_hybrid_qnn_telemetry.png"
+        size_kb = png.stat().st_size / 1024.0
+        generated.append(("Waterbirds Quantum Sorter Telemetry", png.name, f"{size_kb:.1f} KB"))
+        print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
+
     print("\n╔═══════════════════════════════════════════════════════════════════════════════╗")
     print("║                        RENDERED ARTIFACT MANIFEST                             ║")
     print("╠═════════════════════════════════════╦══════════════════════════════════╦══════════╣")
