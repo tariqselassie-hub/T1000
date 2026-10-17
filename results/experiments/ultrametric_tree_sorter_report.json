@@ -1,0 +1,46 @@
+{
+  "timestamp_rfc3339": "2026-10-17T19:50:00Z",
+  "dataset": "Waterbirds 10D (MobileNetV3 PCA)",
+  "registers": "H_C(1Q) (x) H_F(1Q) (x) H_E(8Q)",
+  "n_qubits": 10,
+  "num_parameters": 45,
+  "geometry": {
+    "identical_coarse_overlap": 0.985100736341493,
+    "identical_fine_overlap": 0.9214136836238935,
+    "sibling_coarse_overlap": 0.8307464698781731,
+    "sibling_fine_overlap": 0.7841398799343999,
+    "disjoint_coarse_overlap": 0.9759510996084122,
+    "disjoint_fine_overlap": 0.25566853907159964,
+    "strong_triangle_inequality_holds": true,
+    "gamma1_sibling_dist": 0.5,
+    "gamma2_disjoint_dist": 1.0
+  },
+  "test_overall_coarse_accuracy": 70.69382119433897,
+  "test_worst_group_accuracy": 15.57632398753894,
+  "test_fine_accuracy": 47.083189506385914,
+  "test_joint_accuracy": 35.968243010010355,
+  "g0_land_land": {
+    "total": 2255,
+    "correct": 2108,
+    "accuracy_pct": 93.48115299334812
+  },
+  "g1_land_water": {
+    "total": 2255,
+    "correct": 1432,
+    "accuracy_pct": 63.50332594235033
+  },
+  "g2_water_land": {
+    "total": 642,
+    "correct": 100,
+    "accuracy_pct": 15.57632398753894
+  },
+  "g3_water_water": {
+    "total": 642,
+    "correct": 456,
+    "accuracy_pct": 71.02803738317756
+  },
+  "cross_register_decorrelation": 0.042,
+  "training_time_sec": 0.139916,
+  "inference_per_sample_us": 4.141180531584397,
+  "unitarity_rigidity_verified": true
+}

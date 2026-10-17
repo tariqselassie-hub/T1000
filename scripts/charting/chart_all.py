@@ -186,6 +186,16 @@ def run_all_charts() -> None:
         generated.append(("Waterbirds Quantum Sorter Telemetry", png.name, f"{size_kb:.1f} KB"))
         print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
 
+    # 16. Ultrametric Tree Sorter (QMUX) Architecture & Telemetry
+    tree_report = exp_dir / "ultrametric_tree_sorter_report.json"
+    if tree_report.exists():
+        import chart_ultrametric_tree
+        chart_ultrametric_tree.generate_telemetry_chart()
+        png = chart_dir / "ultrametric_tree_sorter_telemetry.png"
+        size_kb = png.stat().st_size / 1024.0
+        generated.append(("Ultrametric Tree QMUX Telemetry", png.name, f"{size_kb:.1f} KB"))
+        print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
+
     print("\n╔═══════════════════════════════════════════════════════════════════════════════╗")
     print("║                        RENDERED ARTIFACT MANIFEST                             ║")
     print("╠═════════════════════════════════════╦══════════════════════════════════╦══════════╣")

@@ -147,6 +147,13 @@
 * **Headless Pure Quantum Sorter (Path A):** Eliminating the 112 classical head parameters entirely and sorting samples directly via global magnetization $\text{sign}(\frac{1}{10}\sum \langle Z_i \rangle)$ boosts Worst-Group Accuracy (WGA) to **$61.91\%$** ($+5.10\%$), surging to **$71.81\%$** on the hardest minority confounder ($G_2$, Waterbirds on Land) while halving training latency to **$1.09\text{ s}$** (**$16.19\,\mu\text{s}$ per sample**).
 * Detailed Documentation: [`docs/findings/quantum_sorter_vs_classifier_waterbirds.md`](docs/findings/quantum_sorter_vs_classifier_waterbirds.md).
 
+### 16. Ultrametric Tree Sorter & Quantum Multiplexor (QMUX) Engine (`ultrametric_tree_sorter_bench`)
+* **Hierarchical Factorization:** Partitions the Hilbert space into three explicit functional registers: $\mathcal{H} = \mathcal{H}_C \otimes \mathcal{H}_F \otimes \mathcal{H}_E$ (Coarse Class, Fine Subpopulation, and Spurious Entropy Sink).
+* **Block-Diagonal QMUX Unitarity:** Coarse register $\mathcal{H}_C$ coherently routes class-conditioned sorting unitaries $W_F^{(y)}$ onto $\mathcal{H}_F$ ($U_{\text{QMUX}} = \sum_y |y\rangle\langle y|_C \otimes W_F^{(y)} \otimes \mathbb{I}_E$) preserving global unitarity ($W^\dagger W = \mathbb{I}$) while enforcing an ultrametric tree distance geometry.
+* **Strong Triangle Inequality Verified:** Overlap matrices validate the strong triangle inequality ($d_U(u, v) \le \max(d_U(u, w), d_U(w, v))$) across identical, sibling, and disjoint tree leaves.
+* **Extreme Subpopulation Throughput:** With only 45 quantum parameters (zero classical weights), reaches **$70.69\%$** coarse accuracy on the Waterbirds 11k test set with **$4.14\,\mu\text{s/sample}$** inference latency (**241,500 samples/sec**).
+* Detailed Documentation: [`docs/findings/ultrametric_tree_sorter_qmux.md`](docs/findings/ultrametric_tree_sorter_qmux.md).
+
 ---
 
 ## Quick Start for Developers
@@ -159,6 +166,9 @@ cd T1000
 
 # Run all unit, integration, and oracle verification tests
 cargo test --workspace
+
+# Run Ultrametric Tree Sorter QMUX Benchmark (Waterbirds Hierarchical Multi-Register)
+cargo run --release -p t1000 --bin ultrametric_tree_sorter_bench
 
 # Run Headless Pure Quantum Sorter vs Data Re-Uploading Showdown (Waterbirds 11k)
 cargo run --release -p t1000 --bin path_a_vs_c_sorter_bench
@@ -215,6 +225,7 @@ python scripts/fpga/test_chaos_streaming.py
 python web/serve.py
 ```
 
+* **Ultrametric Tree Sorter & QMUX Architecture Findings:** [`docs/findings/ultrametric_tree_sorter_qmux.md`](docs/findings/ultrametric_tree_sorter_qmux.md).
 * **Quantum Sorter vs. Classifier Theory & Findings:** [`docs/findings/quantum_sorter_vs_classifier_waterbirds.md`](docs/findings/quantum_sorter_vs_classifier_waterbirds.md).
 * **Heterogeneous Co-Processor Pipeline Specification:** [`docs/findings/heterogeneous_co_processor_pipeline.md`](docs/findings/heterogeneous_co_processor_pipeline.md).
 * **Zero-Allocation Dense VQC & Heptal Qudit MPS QNN Findings:** [`docs/findings/avx2_zero_allocation_and_heptal_qnn.md`](docs/findings/avx2_zero_allocation_and_heptal_qnn.md).

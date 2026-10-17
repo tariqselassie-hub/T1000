@@ -164,6 +164,10 @@ name = "path_a_vs_c_sorter_bench"
 path = "src/bin/benchmarks/path_a_vs_c_sorter_bench.rs"
 
 [[bin]]
+name = "ultrametric_tree_sorter_bench"
+path = "src/bin/benchmarks/ultrametric_tree_sorter_bench.rs"
+
+[[bin]]
 name = "dag_compiler_bench"
 path = "src/bin/benchmarks/dag_compiler_bench.rs"
 
