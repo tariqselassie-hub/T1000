@@ -35,6 +35,7 @@ data/mimac/*.gif
 data/mimac/*.png
 data/mimac/*.png.png
 data/mimac/*.pdf
+data/birds/*.bin
 *.zip
 *.tar.gz
 

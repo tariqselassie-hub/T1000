@@ -1,0 +1,45 @@
+{
+  "dataset": "waterbirds_11k",
+  "resolution": [
+    32,
+    32
+  ],
+  "state_dim": 1024,
+  "n_qubits": 10,
+  "splits": {
+    "train": {
+      "count": 4795,
+      "y_0_count": 3682,
+      "y_1_count": 1113,
+      "place_0_count": 3554,
+      "place_1_count": 1241,
+      "g0_land_land": 3498,
+      "g1_land_water": 184,
+      "g2_water_land": 56,
+      "g3_water_water": 1057
+    },
+    "val": {
+      "count": 1199,
+      "y_0_count": 933,
+      "y_1_count": 266,
+      "place_0_count": 600,
+      "place_1_count": 599,
+      "g0_land_land": 467,
+      "g1_land_water": 466,
+      "g2_water_land": 133,
+      "g3_water_water": 133
+    },
+    "test": {
+      "count": 5794,
+      "y_0_count": 4510,
+      "y_1_count": 1284,
+      "place_0_count": 2897,
+      "place_1_count": 2897,
+      "g0_land_land": 2255,
+      "g1_land_water": 2255,
+      "g2_water_land": 642,
+      "g3_water_water": 642
+    }
+  },
+  "groups": {}
+}
