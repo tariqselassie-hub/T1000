@@ -10,7 +10,7 @@
       "boundary_links_active": 40,
       "max_active_bytes_l1": 384,
       "stokes_drift": 0.0,
-      "execution_time_us": 24.6,
+      "execution_time_us": 21.5,
       "qrack_cut_count": 20,
       "qrack_quasiprobability_overhead": 1099511627776.0,
       "dense_ram_petabytes_str": "2.12 x 10^25 PB"
@@ -24,7 +24,7 @@
       "boundary_links_active": 61,
       "max_active_bytes_l1": 536,
       "stokes_drift": 0.0,
-      "execution_time_us": 9.2,
+      "execution_time_us": 11.3,
       "qrack_cut_count": 0,
       "qrack_quasiprobability_overhead": 1.0,
       "dense_ram_petabytes_str": "1.06 x 10^25 PB"

@@ -100,6 +100,10 @@ name = "birds_qnn_train"
 path = "src/bin/training/birds_qnn_train.rs"
 
 [[bin]]
+name = "birds_hybrid_qnn_train"
+path = "src/bin/training/birds_hybrid_qnn_train.rs"
+
+[[bin]]
 name = "qnn_protocol_train"
 path = "src/bin/training/qnn_protocol_train.rs"
 
@@ -150,6 +154,14 @@ path = "src/bin/training/qssm_quench_bench.rs"
 # =========================================================================
 # Executable Binaries: Benchmarks & Controls
 # =========================================================================
+
+[[bin]]
+name = "fidelity_orthogonality_bench"
+path = "src/bin/benchmarks/fidelity_orthogonality_bench.rs"
+
+[[bin]]
+name = "path_a_vs_c_sorter_bench"
+path = "src/bin/benchmarks/path_a_vs_c_sorter_bench.rs"
 
 [[bin]]
 name = "dag_compiler_bench"

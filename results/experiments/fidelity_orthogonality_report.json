@@ -1,0 +1,50 @@
+{
+  "timestamp_rfc3339": "1792279287.000Z",
+  "dataset": "waterbirds_11k",
+  "n_qubits": 10,
+  "num_pairs_evaluated": 57600,
+  "stage_input_angles": {
+    "stage_name": "Stage 0: Input Angle States",
+    "mean_intra_land_land": 0.010828263815324217,
+    "mean_intra_water_water": 0.018515535107510857,
+    "mean_intra_class_overall": 0.014671899461417538,
+    "mean_inter_class_land_water": 0.005844144295961108,
+    "separation_ratio": 2.5105299798222465,
+    "confounder_same_species_diff_bg": 0.006909684911642449,
+    "confounder_diff_species_same_bg": 0.017555502600781914,
+    "species_vs_background_selectivity": 0.3935908340974923,
+    "obs_intra_dist": 9.945486457531523,
+    "obs_inter_dist": 10.296998120937433,
+    "obs_separation_ratio": 1.0353438381226407
+  },
+  "stage_untrained_vqc": {
+    "stage_name": "Stage 1: Untrained VQC",
+    "mean_intra_land_land": 0.01082826381532422,
+    "mean_intra_water_water": 0.018515535107510857,
+    "mean_intra_class_overall": 0.014671899461417538,
+    "mean_inter_class_land_water": 0.00584414429596111,
+    "separation_ratio": 2.510529979822246,
+    "confounder_same_species_diff_bg": 0.006909684911642451,
+    "confounder_diff_species_same_bg": 0.01755550260078192,
+    "species_vs_background_selectivity": 0.39359083409749224,
+    "obs_intra_dist": 9.317253922360644,
+    "obs_inter_dist": 9.659825647450129,
+    "obs_separation_ratio": 1.0367674561565121
+  },
+  "stage_trained_vqc": {
+    "stage_name": "Stage 2: Trained VQC Checkpoint",
+    "mean_intra_land_land": 0.010828263815324226,
+    "mean_intra_water_water": 0.01851553510751086,
+    "mean_intra_class_overall": 0.014671899461417543,
+    "mean_inter_class_land_water": 0.00584414429596111,
+    "separation_ratio": 2.510529979822247,
+    "confounder_same_species_diff_bg": 0.006909684911642452,
+    "confounder_diff_species_same_bg": 0.017555502600781925,
+    "species_vs_background_selectivity": 0.39359083409749224,
+    "obs_intra_dist": 9.465406124208702,
+    "obs_inter_dist": 10.078220333593688,
+    "obs_separation_ratio": 1.0647425162051583
+  },
+  "delta_separation_ratio_pct": 2.698296506369407,
+  "conclusion": "Unitary State Repulsion Analysis"
+}

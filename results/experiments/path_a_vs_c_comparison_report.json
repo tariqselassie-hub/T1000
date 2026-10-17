@@ -1,0 +1,99 @@
+{
+  "timestamp_rfc3339": "1792279630.000Z",
+  "dataset": "waterbirds_11k",
+  "n_qubits": 10,
+  "baseline_hybrid": {
+    "model_name": "Baseline: Hybrid VQC + Two-Speed AdamW",
+    "num_quantum_params": 60,
+    "num_classical_params": 112,
+    "total_params": 172,
+    "overall_accuracy_pct": 64.41146013117017,
+    "worst_group_accuracy_pct": 56.807095343680714,
+    "g0_land_land": {
+      "total": 2255,
+      "correct": 1551,
+      "accuracy_pct": 68.78048780487805
+    },
+    "g1_land_water": {
+      "total": 2255,
+      "correct": 1281,
+      "accuracy_pct": 56.807095343680714
+    },
+    "g2_water_land": {
+      "total": 642,
+      "correct": 391,
+      "accuracy_pct": 60.90342679127726
+    },
+    "g3_water_water": {
+      "total": 642,
+      "correct": 509,
+      "accuracy_pct": 79.2834890965732
+    },
+    "training_time_sec": 2.0369795,
+    "per_sample_us": 28.320882864094543,
+    "breaks_rigidity": false
+  },
+  "path_a_headless_sorter": {
+    "model_name": "Path A: Headless Pure Quantum Eigenvalue Sorter",
+    "num_quantum_params": 60,
+    "num_classical_params": 0,
+    "total_params": 60,
+    "overall_accuracy_pct": 66.84501208146358,
+    "worst_group_accuracy_pct": 61.90687361419068,
+    "g0_land_land": {
+      "total": 2255,
+      "correct": 1516,
+      "accuracy_pct": 67.22838137472283
+    },
+    "g1_land_water": {
+      "total": 2255,
+      "correct": 1396,
+      "accuracy_pct": 61.90687361419068
+    },
+    "g2_water_land": {
+      "total": 642,
+      "correct": 461,
+      "accuracy_pct": 71.80685358255452
+    },
+    "g3_water_water": {
+      "total": 642,
+      "correct": 500,
+      "accuracy_pct": 77.88161993769471
+    },
+    "training_time_sec": 1.0868225,
+    "per_sample_us": 16.189818263071654,
+    "breaks_rigidity": false
+  },
+  "path_c_data_reuploading": {
+    "model_name": "Path C: Trainable Data Re-Uploading (Rigidity-Broken)",
+    "num_quantum_params": 80,
+    "num_classical_params": 112,
+    "total_params": 192,
+    "overall_accuracy_pct": 57.95650673110114,
+    "worst_group_accuracy_pct": 50.93457943925234,
+    "g0_land_land": {
+      "total": 2255,
+      "correct": 1339,
+      "accuracy_pct": 59.37915742793791
+    },
+    "g1_land_water": {
+      "total": 2255,
+      "correct": 1307,
+      "accuracy_pct": 57.96008869179601
+    },
+    "g2_water_land": {
+      "total": 642,
+      "correct": 327,
+      "accuracy_pct": 50.93457943925234
+    },
+    "g3_water_water": {
+      "total": 642,
+      "correct": 385,
+      "accuracy_pct": 59.96884735202492
+    },
+    "training_time_sec": 3.7302437,
+    "per_sample_us": 55.56746164159094,
+    "breaks_rigidity": true
+  },
+  "synthesis": "Comprehensive Architecture Tradeoff Study"
+}

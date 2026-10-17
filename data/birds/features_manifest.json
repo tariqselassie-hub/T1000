@@ -1,0 +1,34 @@
+{
+  "backbone": "mobilenet_v3_small_imagenet",
+  "feature_dim": 10,
+  "variance_explained_ratio": [
+    0.07035089284181595,
+    0.05952710285782814,
+    0.052130721509456635,
+    0.03482217341661453,
+    0.03330413997173309,
+    0.03010009415447712,
+    0.027323953807353973,
+    0.024533048272132874,
+    0.022261571139097214,
+    0.020413575693964958
+  ],
+  "total_variance_explained": 0.3747672736644745,
+  "splits": {
+    "train": {
+      "count": 4795,
+      "features_file": "train_features_10d.bin",
+      "mean_norm": 3.865295886993408
+    },
+    "val": {
+      "count": 1199,
+      "features_file": "val_features_10d.bin",
+      "mean_norm": 3.73905873298645
+    },
+    "test": {
+      "count": 5794,
+      "features_file": "test_features_10d.bin",
+      "mean_norm": 3.759946346282959
+    }
+  }
+}
