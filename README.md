@@ -45,6 +45,8 @@
 
 ### 2. AVX2 + FMA SIMD Statevector Engine (`t1000::simd`, `t1000::tiled_butterfly`)
 * **Structure-of-Arrays (SOA):** Separated contiguous arrays of double-precision real and imaginary amplitudes.
+* **Modular Architectural Decomposition:** Subsystem partitioned into focused domain modules (`guards`, `rotations`, `algebra`, `measurements`, `model`), all conforming strictly to $\le 800$ LoC per file and $\le 80$ LoC per function.
+* **Strongly-Typed SIMD Domain Models (`SimdStateView`, `SimdStateViewMut`, `SimdBackend`):** Zero-copy, chainable unitary evolution (`.ry()`, `.rz()`, `.cz()`, `.rademacher_phase()`, `.normalize()`) and direct expectation reductions directly on statevector buffers.
 * **L2-Resident Tiled Butterfly Kernels:** Cache-conscious stride access for high qubit indices ($q \ge 16$).
 * **Beats Industry Baselines:** Up to **1.9x faster than Qiskit Aer** at 8 threads on deep Random Circuit Sampling benchmarks.
 
@@ -131,12 +133,13 @@
 * **Cyclotomic Ring $\mathbb{Z}[\omega]$ Arithmetic:** Exact integer coordinate representation modulo $\omega^4 + 1 = 0$ ($\omega = e^{i\pi/4} = \frac{1+i}{\sqrt{2}}$) with algebraic norm, conjugation, and exact division by $\lambda = 1+\omega$.
 * **Hierarchical Grid Solver:** Synthesizes arbitrary continuous single-qubit rotations ($R_z(\theta), R_x(\theta), R_y(\theta)$) into minimal-length discrete gate sequences over $\{H, S, S^\dagger, T, T^\dagger, X, Y, Z\}$.
 * **Matsumoto-Amano Normal Form & Peephole Optimization:** Deterministic parity state-machine reduction with multi-pass peephole cancellations ($H^2 \to I$, $T T^\dagger \to I$, $T^2 \to S$, $S^2 \to Z$, $Z^2 \to I$), guaranteeing $\|U_{\text{exact}} - U_{\text{discrete}}\|_\infty \le \varepsilon$.
-### 14. Heterogeneous Co-Processor Pipeline & 36-Qubit Cut-Bridge Bell Verification (`cut_bridge_chsh_bench`)
-* **L3-Cache Resident Virtual 36-Qubit VQC:** Partitions 36-qubit lattice into dual 18-qubit sub-registers resident in 8.00 MB working set inside CPU L3 cache (avoiding 1.00 Terabyte dense statevector RAM).
+### 14. Heterogeneous Co-Processor Pipeline & 36-Qubit Cut-Bridge Verification (`cut_bridge_chsh_bench`, `cut_bridge_36q_bench`)
+* **L3-Cache Resident Virtual 36-Qubit VQC:** Partitions 36-qubit lattice into dual 18-qubit sub-registers resident in 8.38 MB working set inside CPU L3 cache (avoiding 1.00 Terabyte dense statevector RAM).
 * **Quasiprobability Contraction:** Decomposes cross-fragment $CZ$ bridge into local Pauli-$Z$ insertions, reconstructing exact non-local expectation values.
 * **Exact Tsirelson Bell Witness Violation:** Evaluates $\langle \mathcal{B}_{\text{CHSH}} \rangle_{\text{bridge}} = \langle A_0 \otimes B_0 \rangle + \langle A_0 \otimes B_1 \rangle + \langle A_1 \otimes B_0 \rangle - \langle A_1 \otimes B_1 \rangle = 2.82842712$ across boundary bridge pair $(q_4, q_{13})$ ($|S - 2\sqrt{2}| = 2.22 \times 10^{-15}$) in **$35.86\text{ ms}$** inner AVX2 latency.
+* **Mid-Circuit Checkpointing (`cut_bridge_36q_bench`):** Evaluates a 12-layer sandwich topology (`[Layers 1..6] -> [Cut CZ] -> [Layers 7..12]`) pre-computing prefix evolution once in **$316.50\text{ ms}$** and cloning cache-resident 18Q statevectors across 4 branches, confirming non-separable 36Q entanglement ($\Delta = +0.0001056229$) in **$1.608\text{ s}$**.
 * **Intel iGPU OpenCL Offload:** Concurrently executes 2048-shot Monte Carlo syndrome sampling and boundary CHSH audits on Intel Arc/Integrated Graphics OpenCL (`QrackAceBackend`, Device #0) with zero L3 cache contention on Lion Cove CPU P-cores.
-* Detailed Documentation: [`docs/findings/heterogeneous_co_processor_pipeline.md`](docs/findings/heterogeneous_co_processor_pipeline.md).
+* Detailed Documentation: [`docs/findings/heterogeneous_co_processor_pipeline.md`](docs/findings/heterogeneous_co_processor_pipeline.md) and [`docs/findings/cut_bridge_36q_checkpointing.md`](docs/findings/cut_bridge_36q_checkpointing.md).
 
 ---
 
@@ -153,6 +156,9 @@ cargo test --workspace
 
 # Run 36-qubit cross-bridge CHSH Bell inequality verification benchmark (CPU AVX2+FMA)
 cargo run --release -p t1000 --bin cut_bridge_chsh_bench
+
+# Run 36-qubit mid-circuit checkpointed cut-bridge benchmark (CPU AVX2+FMA)
+cargo run --release -p t1000 --bin cut_bridge_36q_bench
 
 # Run concurrent Heterogeneous Co-Processor Pipeline (CPU AVX2 + Intel iGPU OpenCL)
 python scripts/qec/heterogeneous_bridge_pipeline.py

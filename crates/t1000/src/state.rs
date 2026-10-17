@@ -215,6 +215,18 @@ impl QuantumState {
         re * re + im * im
     }
 
+    /// Returns a zero-allocation read-only SIMD view over this statevector.
+    #[inline(always)]
+    pub fn as_simd(&self) -> crate::simd::SimdStateView<'_> {
+        crate::simd::SimdStateView::new(&self.real, &self.imag)
+    }
+
+    /// Returns a zero-allocation mutable SIMD view over this statevector.
+    #[inline(always)]
+    pub fn as_simd_mut(&mut self) -> crate::simd::SimdStateViewMut<'_> {
+        crate::simd::SimdStateViewMut::new(&mut self.real, &mut self.imag)
+    }
+
     /// Born rule measurement probabilities $p_i = |\psi_i|^2 = \text{Re}_i^2 + \text{Im}_i^2$.
     #[inline]
     pub fn probabilities(&self) -> Vec<f64> {

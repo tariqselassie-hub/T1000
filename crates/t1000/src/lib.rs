@@ -57,6 +57,7 @@ pub use clifford_t::{
     SynthesisSolution, ZOmega,
 };
 pub use engine::{FpgaDeviceInfo, SystemManifestReport, T1000Engine};
+pub use simd::{SimdBackend, SimdStateView, SimdStateViewMut};
 pub use simd_bloch::{
     compute_all_bloch_vectors, compute_bloch_restoring_weights, compute_qubit_bloch, BlochVector,
 };
