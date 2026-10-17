@@ -133,8 +133,9 @@ pub use smiles::{
 pub use state::{QuantumFeatureMap, QuantumState};
 pub use tiled_butterfly::{apply_layer_fused, tiled_apply_cz, tiled_apply_ry, tiled_apply_rz};
 pub use plaquette::{
-    DiscreteStokesEngine, GaugeLink, Plaquette, PlaquetteLattice, PlaquetteZipper2D,
-    PlaquetteZipperReport, StokesPressureReport, WilsonFluxTableau,
+    CouplerMask, DiscreteStokesEngine, GaugeLink, NighthawkDualGraph, Plaquette, PlaquetteLattice,
+    PlaquetteNode, PlaquetteZipper2D, PlaquetteZipperReport, PlaquetteZipperWindow,
+    StokesPressureReport, WilsonFluxTableau, NUM_COUPLERS, NUM_PLAQUETTES, NUM_VERTICES,
 };
 pub use zipper::{BlochZipperEngine, ZipperConfig, ZipperExecutionReport, ZipperStepTelemetry};
 

@@ -109,6 +109,35 @@ fn main() {
     println!();
 
     // -------------------------------------------------------------------------
+    // Run 3: Static Euler Dual-Graph 256-Bit XOR Bitmask Contraction
+    // -------------------------------------------------------------------------
+    println!("--- [RUN 3/3] STATIC EULER DUAL-GRAPH 256-BIT XOR CONTRACTION (NIGHTHAWK DUAL) ---");
+    let dual_graph = t1000::plaquette::NighthawkDualGraph::new();
+    let all_plaq: Vec<usize> = (0..99).collect();
+
+    // Warmup
+    let _ = dual_graph.contract_sublattice(&all_plaq);
+
+    let passes = 100_000;
+    let t2 = Instant::now();
+    let mut last_b = 0;
+    let mut last_s = 0;
+    for _ in 0..passes {
+        let (_, _, b_cnt, s_cnt) = dual_graph.contract_sublattice(&all_plaq);
+        last_b = b_cnt;
+        last_s = s_cnt;
+    }
+    let dur_dual_ns = t2.elapsed().as_nanos() as f64 / passes as f64;
+
+    println!("  Dual Graph Storage:    Compile-Time .rodata (Zero Heap Allocations)");
+    println!("  Coupler Mask Width:    256 Bits ([u64; 4] = 32 Bytes)");
+    println!("  Active Zipper Window:  {} Bytes (Exact 6x 64-Byte L1 Lines)", std::mem::size_of::<t1000::plaquette::PlaquetteZipperWindow>());
+    println!("  Contraction Invariant: {} Boundary Links | {} Canceled Spokes", last_b, last_s);
+    println!("  XOR Involution Speed:  {:.2} ns / full 99-plaquette pass", dur_dual_ns);
+    println!("  Contraction Rate:      {:.2} Million Plaquettes/sec", (99.0 / (dur_dual_ns * 1e-9)) / 1_000_000.0);
+    println!();
+
+    // -------------------------------------------------------------------------
     // Architectural Comparison Table
     // -------------------------------------------------------------------------
     println!("================================================================================");
