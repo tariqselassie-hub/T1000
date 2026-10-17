@@ -26,6 +26,7 @@ pub mod diagonal;
 pub mod engine;
 pub mod feature_map;
 pub mod gpu;
+pub mod heptal_qnn;
 pub mod heptal_wave;
 pub mod ingest;
 pub mod lattice;
@@ -70,7 +71,9 @@ pub use measurements::observable;
 pub use measurements::povm_readout;
 
 pub use adjoint::{
-    adjoint_gradient, adjoint_gradient_with_purity, inject_bloch_purity_costate, AdjointResult,
+    adjoint_gradient, adjoint_gradient_buffered, adjoint_gradient_with_purity,
+    adjoint_gradient_with_purity_buffered, inject_bloch_purity_costate, AdjointResult,
+    AdjointWorkspace,
 };
 pub use ansatz::{
     eval_36q_bipartite_bridge, eval_36q_bipartite_midcircuit, eval_cut_bridge_general, AncillaRole,
@@ -95,6 +98,9 @@ pub use compiler::{
     CompiledCircuit, CompilerTelemetry, ScheduledStage,
 };
 pub use feature_map::{DataEncodingLayer, EncodingKind};
+pub use heptal_qnn::{
+    HeptalMolecularZipperQnn, HeptalPrediction, HeptalQnnConfig, HeptalSiteObservables,
+};
 pub use heptal_wave::{
     evolve_heptal_wave_cycle, HeptalWaveState, HeptalZipperConfig, HeptalZipperEngine,
     HeptalZipperReport, HeptalZipperStepTelemetry,

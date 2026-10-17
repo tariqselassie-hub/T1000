@@ -68,6 +68,78 @@ impl PauliObservable {
         out
     }
 
+    /// Directly accumulates `coeff * (O |state>)` into `out_real` and `out_imag` with zero heap allocations.
+    pub fn accumulate_scaled(
+        &self,
+        state: &QuantumState,
+        coeff: f64,
+        out_real: &mut [f64],
+        out_imag: &mut [f64],
+    ) {
+        if coeff == 0.0 {
+            return;
+        }
+        let n_qubits = crate::simd::assert_statevector(&state.real, &state.imag);
+        match self {
+            PauliObservable::Z(q) => {
+                crate::simd::assert_qubit(*q, n_qubits);
+                let mask = 1usize << q;
+                for idx in 0..state.dim {
+                    let s = if (idx & mask) == 0 { coeff } else { -coeff };
+                    out_real[idx] += s * state.real[idx];
+                    out_imag[idx] += s * state.imag[idx];
+                }
+            }
+            PauliObservable::ZZ(a, b) => {
+                crate::simd::assert_qubit(*a, n_qubits);
+                crate::simd::assert_qubit(*b, n_qubits);
+                let mask_a = 1usize << a;
+                let mask_b = 1usize << b;
+                for idx in 0..state.dim {
+                    let sign_a = (idx & mask_a) != 0;
+                    let sign_b = (idx & mask_b) != 0;
+                    let s = if sign_a == sign_b { coeff } else { -coeff };
+                    out_real[idx] += s * state.real[idx];
+                    out_imag[idx] += s * state.imag[idx];
+                }
+            }
+            PauliObservable::X(q) => {
+                crate::simd::assert_qubit(*q, n_qubits);
+                let mask = 1usize << q;
+                for idx in 0..state.dim {
+                    let partner = idx ^ mask;
+                    out_real[idx] += coeff * state.real[partner];
+                    out_imag[idx] += coeff * state.imag[partner];
+                }
+            }
+            PauliObservable::LinearZ(weights) => {
+                for &(q, _) in weights {
+                    crate::simd::assert_qubit(q, n_qubits);
+                }
+                for idx in 0..state.dim {
+                    let mut sum_w = 0.0;
+                    for &(q, w) in weights {
+                        let sign = if (idx & (1usize << q)) == 0 { 1.0 } else { -1.0 };
+                        sum_w += w * sign;
+                    }
+                    let s = coeff * sum_w;
+                    out_real[idx] += s * state.real[idx];
+                    out_imag[idx] += s * state.imag[idx];
+                }
+            }
+            PauliObservable::GlobalMeanZ => {
+                let n = n_qubits as f64;
+                for idx in 0..state.dim {
+                    let ones = idx.count_ones() as f64;
+                    let net = (n - 2.0 * ones) / n;
+                    let s = coeff * net;
+                    out_real[idx] += s * state.real[idx];
+                    out_imag[idx] += s * state.imag[idx];
+                }
+            }
+        }
+    }
+
     /// Compute exact quantum expectation value:
     /// <O> = <psi | O | psi>
     pub fn expectation_value(&self, state: &QuantumState) -> f64 {

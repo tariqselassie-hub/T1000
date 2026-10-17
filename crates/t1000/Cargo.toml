@@ -163,6 +163,14 @@ path = "src/bin/benchmarks/zinc_classical_baselines.rs"
 name = "zinc_qnn_bench"
 path = "src/bin/benchmarks/zinc_qnn_bench.rs"
 
+[[bin]]
+name = "zinc_scaled_14q_16q_bench"
+path = "src/bin/benchmarks/zinc_scaled_14q_16q_bench.rs"
+
+[[bin]]
+name = "zinc_heptal_qnn_bench"
+path = "src/bin/benchmarks/zinc_heptal_qnn_bench.rs"
+
 # =========================================================================
 # Executable Binaries: Chemical SMILES Ingest & Screening
 # =========================================================================
