@@ -52,6 +52,9 @@ pub struct SystemManifestReport {
     pub heptal_qudit_radix: usize,
     pub period_molecules_max_qubits: usize,
     pub clifford_t_synthesis: bool,
+    pub avx_vnni_accelerated: bool,
+    pub igpu_bridge_available: bool,
+    pub igpu_device_name: Option<String>,
 }
 
 /// Master engine facade coordinating all T-1000 quantum simulation and screening pipelines.
@@ -236,8 +239,23 @@ impl T1000Engine {
         }
     }
 
+    /// Hardware-accelerated 8-stabilizer syndrome extraction for [[9, 1, 3]] surface code.
+    pub fn extract_surface_syndromes(&self, error_x: u16, error_z: u16) -> [i8; 8] {
+        crate::qec::vnni::SurfaceCode9QVnniMatrix::new().extract_syndromes_vnni(error_x, error_z)
+    }
+
+    /// Returns an instantiated Zero-Copy Intel Graphics Co-Processor Bridge.
+    pub fn igpu_bridge(&self) -> crate::gpu::IGpuBridge {
+        crate::gpu::IGpuBridge::default()
+    }
+
     /// Returns the system manifest and active capability profile.
     pub fn system_manifest(&self) -> SystemManifestReport {
+        let igpu = crate::gpu::IGpuBridge::default();
+        let igpu_avail = igpu.is_available();
+        let igpu_device = igpu.device_name().map(|s| s.to_string());
+        let vnni_active = crate::qec::vnni::VnniBackend::detect().is_accelerated();
+
         SystemManifestReport {
             version: env!("CARGO_PKG_VERSION").to_string(),
             author: "Terrence A. Jones SR".to_string(),
@@ -249,6 +267,9 @@ impl T1000Engine {
             heptal_qudit_radix: 7,
             period_molecules_max_qubits: 18,
             clifford_t_synthesis: true,
+            avx_vnni_accelerated: vnni_active,
+            igpu_bridge_available: igpu_avail,
+            igpu_device_name: igpu_device,
         }
     }
 }
@@ -315,5 +336,28 @@ mod tests {
         assert_eq!(ch4_rep.orbital_occupations.len(), 18);
         assert!(ch4_rep.ground_state_energy < -40.0);
         assert!(ch4_rep.total_orbital_entropy > 0.0);
+    }
+
+    #[test]
+    fn test_master_engine_vnni_and_igpu() {
+        let engine = T1000Engine::new();
+        let manifest = engine.system_manifest();
+        // Hardware capability flags must be resolved
+        assert_eq!(manifest.author, "Terrence A. Jones SR");
+
+        // Verify surface code syndrome extraction through engine facade
+        let syndromes_no_error = engine.extract_surface_syndromes(0, 0);
+        assert_eq!(syndromes_no_error, [1; 8]); // All stabilizers in +1 eigenspace
+
+        let syndromes_x0 = engine.extract_surface_syndromes(1 << 0, 0);
+        // Error X on qubit 0 anticommutes with Sz3 = Z0 Z3 (index 2)
+        assert_eq!(syndromes_x0[2], -1);
+
+        // Verify iGPU bridge access through facade
+        let bridge = engine.igpu_bridge();
+        if bridge.is_available() {
+            assert!(manifest.igpu_bridge_available);
+            assert!(manifest.igpu_device_name.is_some());
+        }
     }
 }
