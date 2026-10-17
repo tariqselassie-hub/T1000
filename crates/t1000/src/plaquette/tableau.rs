@@ -6,8 +6,8 @@
 //! Evaluates link involutions ($Z_e^2 = I$), plaquette flux observables ($W_p$),
 //! boundary perimeter operators ($W_{\partial \Sigma}$), and covariance matrices.
 
-use serde::{Deserialize, Serialize};
 use super::geometry::PlaquetteLattice;
+use serde::{Deserialize, Serialize};
 
 /// Wilson Loop / Flux state representation tracking gauge observables.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -171,7 +171,8 @@ impl DiscreteStokesEngine {
             avg_ab /= n_shots as f64;
             avg_bc /= n_shots as f64;
             avg_ac /= n_shots as f64;
-            let cumulant = avg_abc - (m_a * avg_bc + m_b * avg_ac + m_c * avg_ab) + 2.0 * m_a * m_b * m_c;
+            let cumulant =
+                avg_abc - (m_a * avg_bc + m_b * avg_ac + m_c * avg_ab) + 2.0 * m_a * m_b * m_c;
             Some(cumulant)
         } else {
             None

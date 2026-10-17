@@ -132,9 +132,15 @@ impl HybridModel {
             let (u1, u2): (f64, f64) = (rng.gen_range(1e-12..1.0), rng.gen_range(0.0..1.0));
             (-2.0 * u1.ln()).sqrt() * (2.0 * std::f64::consts::PI * u2).cos()
         };
-        let projection: Vec<Vec<f64>> =
-            (0..config.n_qubits).map(|_| (0..n_inputs).map(|_| gauss() * norm).collect()).collect();
-        let mut model = Self { config, n_inputs, projection, params: Vec::new() };
+        let projection: Vec<Vec<f64>> = (0..config.n_qubits)
+            .map(|_| (0..n_inputs).map(|_| gauss() * norm).collect())
+            .collect();
+        let mut model = Self {
+            config,
+            n_inputs,
+            projection,
+            params: Vec::new(),
+        };
         let n_params = model.readout_bias_offset() + 3;
         let mut rng = ChaCha8Rng::seed_from_u64(seed.wrapping_add(1));
         let mut params = vec![0.0; n_params];
@@ -156,7 +162,11 @@ impl HybridModel {
     }
 
     fn n_scales(&self) -> usize {
-        if self.config.reupload { self.config.n_qubits } else { 0 }
+        if self.config.reupload {
+            self.config.n_qubits
+        } else {
+            0
+        }
     }
 
     pub fn n_observables(&self) -> usize {
@@ -189,7 +199,10 @@ impl HybridModel {
     }
 
     fn project(&self, x: &[f64]) -> Vec<f64> {
-        self.projection.iter().map(|row| row.iter().zip(x).map(|(a, b)| a * b).sum()).collect()
+        self.projection
+            .iter()
+            .map(|row| row.iter().zip(x).map(|(a, b)| a * b).sum())
+            .collect()
     }
 
     /// Initial state and gate program for one standardized input.
@@ -197,7 +210,11 @@ impl HybridModel {
         let n = self.config.n_qubits;
         let dim = 1usize << n;
         let needs_projection = self.config.encoding == Encoding::Angle || self.config.reupload;
-        let u = if needs_projection { self.project(x) } else { Vec::new() };
+        let u = if needs_projection {
+            self.project(x)
+        } else {
+            Vec::new()
+        };
         let mut ops = Vec::new();
 
         let mut state = QuantumState::zero(dim);
@@ -212,28 +229,43 @@ impl HybridModel {
             Encoding::Angle => {
                 state.real[0] = 1.0;
                 for (q, &uq) in u.iter().enumerate() {
-                    ops.push(GateOp::Ry { qubit: q, angle: Angle::fixed(uq) });
+                    ops.push(GateOp::Ry {
+                        qubit: q,
+                        angle: Angle::fixed(uq),
+                    });
                 }
             }
         }
         if self.config.pi_layer {
             for q in 0..n {
                 let sign = if q % 2 == 0 { 1.0 } else { -1.0 };
-                ops.push(GateOp::Rz { qubit: q, angle: Angle::fixed(sign * std::f64::consts::PI) });
+                ops.push(GateOp::Rz {
+                    qubit: q,
+                    angle: Angle::fixed(sign * std::f64::consts::PI),
+                });
             }
         }
         for layer in 0..self.config.depth {
             let base = layer * 2 * n;
             for q in 0..n {
-                ops.push(GateOp::Ry { qubit: q, angle: Angle::param(base + 2 * q) });
-                ops.push(GateOp::Rz { qubit: q, angle: Angle::param(base + 2 * q + 1) });
+                ops.push(GateOp::Ry {
+                    qubit: q,
+                    angle: Angle::param(base + 2 * q),
+                });
+                ops.push(GateOp::Rz {
+                    qubit: q,
+                    angle: Angle::param(base + 2 * q + 1),
+                });
             }
             for (a, b) in entangling_pairs(n, layer) {
                 ops.push(GateOp::Cz(a, b));
             }
             if self.config.reupload && layer + 1 < self.config.depth {
                 for (q, &uq) in u.iter().enumerate() {
-                    ops.push(GateOp::Ry { qubit: q, angle: Angle::scaled(self.n_circuit() + q, uq) });
+                    ops.push(GateOp::Ry {
+                        qubit: q,
+                        angle: Angle::scaled(self.n_circuit() + q, uq),
+                    });
                 }
             }
         }
@@ -245,7 +277,10 @@ impl HybridModel {
         let n_obs = self.n_observables();
         let mut out = [0.0; 3];
         for (t, o) in out.iter_mut().enumerate() {
-            *o = self.params[b + t] + (0..n_obs).map(|k| self.params[w + t * n_obs + k] * z[k]).sum::<f64>();
+            *o = self.params[b + t]
+                + (0..n_obs)
+                    .map(|k| self.params[w + t * n_obs + k] * z[k])
+                    .sum::<f64>();
         }
         out
     }
@@ -255,7 +290,10 @@ impl HybridModel {
     pub fn observable_features(&self, x: &[f64]) -> Vec<f64> {
         let (state, ops) = self.circuit(x);
         let out = run_program(&state, &ops, &self.params);
-        self.observables().iter().map(|o| o.expectation_value(&out)).collect()
+        self.observables()
+            .iter()
+            .map(|o| o.expectation_value(&out))
+            .collect()
     }
 
     /// Number of trainable parameters (circuit + re-upload scales + readout).
@@ -269,7 +307,12 @@ impl HybridModel {
     }
 
     /// Weighted squared error `sum_t w_t (pred_t - y_t)^2 / sum_t w_t` and its gradient.
-    pub fn loss_and_gradient(&self, x: &[f64], y: &[f64; 3], task_weights: &[f64; 3]) -> (f64, Vec<f64>) {
+    pub fn loss_and_gradient(
+        &self,
+        x: &[f64],
+        y: &[f64; 3],
+        task_weights: &[f64; 3],
+    ) -> (f64, Vec<f64>) {
         let (state, ops) = self.circuit(x);
         let obs = self.observables();
         let n_obs = obs.len();
@@ -285,11 +328,20 @@ impl HybridModel {
         let w_off = self.readout_offset();
         let res = adjoint_program(&state, &ops, &self.params, &obs, |z| {
             let d = d_pred(z);
-            (0..n_obs).map(|k| (0..3).map(|t| d[t] * self.params[w_off + t * n_obs + k]).sum()).collect()
+            (0..n_obs)
+                .map(|k| {
+                    (0..3)
+                        .map(|t| d[t] * self.params[w_off + t * n_obs + k])
+                        .sum()
+                })
+                .collect()
         });
         let z = &res.expectations;
         let p = self.readout(z);
-        let loss = (0..3).map(|t| task_weights[t] * (p[t] - y[t]).powi(2)).sum::<f64>() / wsum;
+        let loss = (0..3)
+            .map(|t| task_weights[t] * (p[t] - y[t]).powi(2))
+            .sum::<f64>()
+            / wsum;
         let d = d_pred(z);
         let mut grad = res.gradient;
         let b_off = self.readout_bias_offset();
@@ -340,7 +392,13 @@ fn score(preds: &[[f64; 3]], ys: &[[f64; 3]]) -> f64 {
             let n = ys.len() as f64;
             let mean = ys.iter().map(|y| y[t]).sum::<f64>() / n;
             let var = (ys.iter().map(|y| (y[t] - mean).powi(2)).sum::<f64>() / n).max(1e-300);
-            preds.iter().zip(ys).map(|(p, y)| (p[t] - y[t]).powi(2)).sum::<f64>() / n / var
+            preds
+                .iter()
+                .zip(ys)
+                .map(|(p, y)| (p[t] - y[t]).powi(2))
+                .sum::<f64>()
+                / n
+                / var
         })
         .sum::<f64>()
         / 3.0
@@ -357,7 +415,11 @@ pub fn train_on_split(
     log: impl Fn(&str),
 ) -> Result<TrainRun, String> {
     if features.len() != pool.len() {
-        return Err(format!("{} feature rows for a pool of {}", features.len(), pool.len()));
+        return Err(format!(
+            "{} feature rows for a pool of {}",
+            features.len(),
+            pool.len()
+        ));
     }
     let idx = split.indices(pool)?;
     let mut train_ids = idx.train.clone();
@@ -366,7 +428,11 @@ pub fn train_on_split(
     }
     let x_scaler = Standardizer::fit(train_ids.iter().map(|&i| features[i].as_slice()));
     let y_scaler = Standardizer::fit(train_ids.iter().map(|&i| pool[i].targets.as_slice()));
-    let xs = |ids: &[usize]| -> Vec<Vec<f64>> { ids.iter().map(|&i| x_scaler.transform(&features[i])).collect() };
+    let xs = |ids: &[usize]| -> Vec<Vec<f64>> {
+        ids.iter()
+            .map(|&i| x_scaler.transform(&features[i]))
+            .collect()
+    };
     let ys = |ids: &[usize]| -> Vec<[f64; 3]> {
         ids.iter()
             .map(|&i| {
@@ -430,10 +496,22 @@ pub fn train_on_split(
     }
 
     model.params = best.2;
-    let to_units = |preds: Vec<[f64; 3]>| -> Vec<Vec<f64>> { preds.iter().map(|p| y_scaler.inverse(p)).collect() };
-    let truth = |ids: &[usize]| -> Vec<Vec<f64>> { ids.iter().map(|&i| pool[i].targets.to_vec()).collect() };
-    let valid = regression_metrics(&to_units(predict_rows(&model, &x_va)), &truth(&idx.valid), &ZINC_TARGETS);
-    let test_metrics = regression_metrics(&to_units(predict_rows(&model, &x_te)), &truth(&idx.test), &ZINC_TARGETS);
+    let to_units = |preds: Vec<[f64; 3]>| -> Vec<Vec<f64>> {
+        preds.iter().map(|p| y_scaler.inverse(p)).collect()
+    };
+    let truth = |ids: &[usize]| -> Vec<Vec<f64>> {
+        ids.iter().map(|&i| pool[i].targets.to_vec()).collect()
+    };
+    let valid = regression_metrics(
+        &to_units(predict_rows(&model, &x_va)),
+        &truth(&idx.valid),
+        &ZINC_TARGETS,
+    );
+    let test_metrics = regression_metrics(
+        &to_units(predict_rows(&model, &x_te)),
+        &truth(&idx.test),
+        &ZINC_TARGETS,
+    );
     Ok(TrainRun {
         split: split.name.clone(),
         seed: split.seed,
@@ -466,13 +544,25 @@ pub struct PreparedSplit {
 }
 
 /// Same input standardization as [`train_on_split`], for building controls on identical data.
-pub fn prepare_split(features: &[Vec<f64>], pool: &[MoleculeRecord], split: &DataSplit) -> Result<PreparedSplit, String> {
+pub fn prepare_split(
+    features: &[Vec<f64>],
+    pool: &[MoleculeRecord],
+    split: &DataSplit,
+) -> Result<PreparedSplit, String> {
     if features.len() != pool.len() {
-        return Err(format!("{} feature rows for a pool of {}", features.len(), pool.len()));
+        return Err(format!(
+            "{} feature rows for a pool of {}",
+            features.len(),
+            pool.len()
+        ));
     }
     let idx = split.indices(pool)?;
     let scaler = Standardizer::fit(idx.train.iter().map(|&i| features[i].as_slice()));
-    let xs = |ids: &[usize]| ids.iter().map(|&i| scaler.transform(&features[i])).collect();
+    let xs = |ids: &[usize]| {
+        ids.iter()
+            .map(|&i| scaler.transform(&features[i]))
+            .collect()
+    };
     let ys = |ids: &[usize]| ids.iter().map(|&i| pool[i].targets.to_vec()).collect();
     Ok(PreparedSplit {
         x_train: xs(&idx.train),
@@ -486,7 +576,11 @@ pub fn prepare_split(features: &[Vec<f64>], pool: &[MoleculeRecord], split: &Dat
 
 /// Observable features of `model` for each row, computed in parallel.
 pub fn observable_feature_rows(model: &HybridModel, xs: &[Vec<f64>]) -> Vec<Vec<f64>> {
-    crate::parallel::install(|| xs.par_iter().map(|x| model.observable_features(x)).collect())
+    crate::parallel::install(|| {
+        xs.par_iter()
+            .map(|x| model.observable_features(x))
+            .collect()
+    })
 }
 
 #[cfg(test)]
@@ -494,7 +588,14 @@ mod tests {
     use super::*;
 
     fn tiny_config(encoding: Encoding, readout: Readout, reupload: bool) -> ModelConfig {
-        ModelConfig { n_qubits: 3, depth: 2, pi_layer: true, encoding, readout, reupload }
+        ModelConfig {
+            n_qubits: 3,
+            depth: 2,
+            pi_layer: true,
+            encoding,
+            readout,
+            reupload,
+        }
     }
 
     #[test]
@@ -538,7 +639,14 @@ mod tests {
     #[test]
     fn parameter_layout_and_observables() {
         let m = HybridModel::new(
-            ModelConfig { n_qubits: 4, depth: 3, pi_layer: false, encoding: Encoding::Amplitude, readout: Readout::ZZ, reupload: true },
+            ModelConfig {
+                n_qubits: 4,
+                depth: 3,
+                pi_layer: false,
+                encoding: Encoding::Amplitude,
+                readout: Readout::ZZ,
+                reupload: true,
+            },
             10,
             0,
         );
@@ -554,7 +662,14 @@ mod tests {
         // depth 0, no pi layer: the features are exactly the Z / ZZ expectations of the
         // amplitude-encoded input (features + bias, normalised).
         let m = HybridModel::new(
-            ModelConfig { n_qubits: 3, depth: 0, pi_layer: false, encoding: Encoding::Amplitude, readout: Readout::ZZ, reupload: false },
+            ModelConfig {
+                n_qubits: 3,
+                depth: 0,
+                pi_layer: false,
+                encoding: Encoding::Amplitude,
+                readout: Readout::ZZ,
+                reupload: false,
+            },
             4,
             0,
         );
@@ -563,9 +678,27 @@ mod tests {
         let mut amps: Vec<f64> = x.iter().copied().chain([1.0]).chain([0.0; 3]).collect();
         let norm = amps.iter().map(|a| a * a).sum::<f64>().sqrt();
         amps.iter_mut().for_each(|a| *a /= norm);
-        let z = |q: usize| (0..8).map(|i| if (i >> q) & 1 == 0 { amps[i] * amps[i] } else { -amps[i] * amps[i] }).sum::<f64>();
+        let z = |q: usize| {
+            (0..8)
+                .map(|i| {
+                    if (i >> q) & 1 == 0 {
+                        amps[i] * amps[i]
+                    } else {
+                        -amps[i] * amps[i]
+                    }
+                })
+                .sum::<f64>()
+        };
         let zz = |a: usize, b: usize| {
-            (0..8).map(|i| if ((i >> a) ^ (i >> b)) & 1 == 0 { amps[i] * amps[i] } else { -amps[i] * amps[i] }).sum::<f64>()
+            (0..8)
+                .map(|i| {
+                    if ((i >> a) ^ (i >> b)) & 1 == 0 {
+                        amps[i] * amps[i]
+                    } else {
+                        -amps[i] * amps[i]
+                    }
+                })
+                .sum::<f64>()
         };
         let want = [z(0), z(1), z(2), zz(1, 0), zz(2, 0), zz(2, 1)];
         let got = m.observable_features(&x);
@@ -583,7 +716,11 @@ mod tests {
             .map(|i| {
                 let f: Vec<f64> = (0..4).map(|_| rng.gen_range(-1.0..1.0)).collect();
                 let t = [f[0] + 0.5 * f[1], (f[2] * 2.0).tanh(), f[3] - f[0]];
-                MoleculeRecord { smiles: format!("C{i}"), features: f, targets: t }
+                MoleculeRecord {
+                    smiles: format!("C{i}"),
+                    features: f,
+                    targets: t,
+                }
             })
             .collect();
         let smiles: Vec<String> = pool.iter().map(|r| r.smiles.clone()).collect();
@@ -598,7 +735,14 @@ mod tests {
         let features: Vec<Vec<f64>> = pool.iter().map(|r| r.features.clone()).collect();
         let cfg = TrainConfig {
             features: "toy".to_string(),
-            model: ModelConfig { n_qubits: 3, depth: 2, pi_layer: false, encoding: Encoding::Amplitude, readout: Readout::ZZ, reupload: false },
+            model: ModelConfig {
+                n_qubits: 3,
+                depth: 2,
+                pi_layer: false,
+                encoding: Encoding::Amplitude,
+                readout: Readout::ZZ,
+                reupload: false,
+            },
             epochs: 15,
             batch_size: 16,
             lr: 0.05,
@@ -607,11 +751,26 @@ mod tests {
         };
         let run = train_on_split(&cfg, &features, &pool, &split, None, |_| {}).unwrap();
         let first = run.history[0].valid_score;
-        let best = run.history.iter().map(|r| r.valid_score).fold(f64::INFINITY, f64::min);
-        assert!(best < first, "validation score did not improve: {first} -> {best}");
-        assert!(best < 0.9, "model should beat the mean predictor (score 1.0), got {best}");
+        let best = run
+            .history
+            .iter()
+            .map(|r| r.valid_score)
+            .fold(f64::INFINITY, f64::min);
+        assert!(
+            best < first,
+            "validation score did not improve: {first} -> {best}"
+        );
+        assert!(
+            best < 0.9,
+            "model should beat the mean predictor (score 1.0), got {best}"
+        );
         let again = train_on_split(&cfg, &features, &pool, &split, None, |_| {}).unwrap();
-        let curve = |r: &TrainRun| r.history.iter().map(|e| (e.epoch, e.train_loss, e.valid_score)).collect::<Vec<_>>();
+        let curve = |r: &TrainRun| {
+            r.history
+                .iter()
+                .map(|e| (e.epoch, e.train_loss, e.valid_score))
+                .collect::<Vec<_>>()
+        };
         assert_eq!(curve(&run), curve(&again), "training must be deterministic");
         assert_eq!(run.test.test, again.test.test);
     }

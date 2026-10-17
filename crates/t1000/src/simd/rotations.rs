@@ -15,11 +15,19 @@ use super::guards::{assert_qubit, assert_qubit_pair, assert_statevector};
 pub fn apply_ry_kernel(real: &mut [f64], imag: &mut [f64], qubit: usize, theta: f64) {
     let n_qubits = assert_statevector(real, imag);
     assert_qubit(qubit, n_qubits);
-    #[cfg(all(target_arch = "x86_64", target_feature = "avx2", target_feature = "fma"))]
+    #[cfg(all(
+        target_arch = "x86_64",
+        target_feature = "avx2",
+        target_feature = "fma"
+    ))]
     unsafe {
         apply_ry_avx2(real, imag, qubit, theta);
     }
-    #[cfg(not(all(target_arch = "x86_64", target_feature = "avx2", target_feature = "fma")))]
+    #[cfg(not(all(
+        target_arch = "x86_64",
+        target_feature = "avx2",
+        target_feature = "fma"
+    )))]
     {
         #[cfg(target_arch = "x86_64")]
         if is_x86_feature_detected!("avx2") && is_x86_feature_detected!("fma") {
@@ -38,11 +46,19 @@ pub fn apply_ry_kernel(real: &mut [f64], imag: &mut [f64], qubit: usize, theta: 
 pub fn apply_rz_kernel(real: &mut [f64], imag: &mut [f64], qubit: usize, theta: f64) {
     let n_qubits = assert_statevector(real, imag);
     assert_qubit(qubit, n_qubits);
-    #[cfg(all(target_arch = "x86_64", target_feature = "avx2", target_feature = "fma"))]
+    #[cfg(all(
+        target_arch = "x86_64",
+        target_feature = "avx2",
+        target_feature = "fma"
+    ))]
     unsafe {
         apply_rz_avx2(real, imag, qubit, theta);
     }
-    #[cfg(not(all(target_arch = "x86_64", target_feature = "avx2", target_feature = "fma")))]
+    #[cfg(not(all(
+        target_arch = "x86_64",
+        target_feature = "avx2",
+        target_feature = "fma"
+    )))]
     {
         #[cfg(target_arch = "x86_64")]
         if is_x86_feature_detected!("avx2") && is_x86_feature_detected!("fma") {

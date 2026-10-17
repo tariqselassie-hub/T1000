@@ -245,6 +245,7 @@ impl<'a> SimdStateViewMut<'a> {
         z_final: &mut [f64],
         zz_final: &mut [f64],
     ) {
-        self.as_view().measure_fused_ry_full(theta_y, z_final, zz_final);
+        self.as_view()
+            .measure_fused_ry_full(theta_y, z_final, zz_final);
     }
 }

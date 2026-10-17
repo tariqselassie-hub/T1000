@@ -16,7 +16,9 @@ use t1000::plaquette::{
 fn generate_gauge_shots(lattice: &PlaquetteLattice, num_shots: usize, p_noise: f64) -> Vec<usize> {
     let mut rng_state = 0x5EED_0042u64;
     let mut next_f64 = || {
-        rng_state = rng_state.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+        rng_state = rng_state
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
         (rng_state >> 11) as f64 / (1u64 << 53) as f64
     };
 
@@ -88,7 +90,11 @@ fn print_matrix_7x7(mat: &[Vec<f64>]) {
     println!("└───────┴────────┴────────┴────────┴────────┴────────┴────────┴──────────┘");
 }
 
-fn run_lattice_pressure_test(lattice: PlaquetteLattice, shots: usize, p_noise: f64) -> StokesPressureReport {
+fn run_lattice_pressure_test(
+    lattice: PlaquetteLattice,
+    shots: usize,
+    p_noise: f64,
+) -> StokesPressureReport {
     let raw_shots = generate_gauge_shots(&lattice, shots, p_noise);
     let engine = DiscreteStokesEngine::new(lattice);
     engine.stress_test_shots(&raw_shots)
@@ -208,7 +214,10 @@ fn main() {
         let dense_str = if rep.theoretical_dense_ram_bytes < 1024 * 1024 {
             format!("{:.1} KB", rep.theoretical_dense_ram_bytes as f64 / 1024.0)
         } else {
-            format!("{:.2} MB", rep.theoretical_dense_ram_bytes as f64 / (1024.0 * 1024.0))
+            format!(
+                "{:.2} MB",
+                rep.theoretical_dense_ram_bytes as f64 / (1024.0 * 1024.0)
+            )
         };
 
         println!(
@@ -253,7 +262,9 @@ fn main() {
 
     println!();
     println!("[THEORY VERIFIED UNDER EXTREME PRESSURE]");
-    println!("- Stokes drift Δ = 0.000000 across 100% of measurement shots regardless of noise rate.");
+    println!(
+        "- Stokes drift Δ = 0.000000 across 100% of measurement shots regardless of noise rate."
+    );
     println!("- Internal shared spokes cancel identically shot-by-shot because Ze² = I.");
     println!("- Covariance matrix confirms Topological Diagonal Dominance: C(Wi, Wj) = 0 for |i-j| >= 2.");
     println!("- Tripartite cumulant C3 confirms genuine tripartite frustration uncaptured by Bloch vectors.");

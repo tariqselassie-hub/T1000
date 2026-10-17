@@ -1,13 +1,12 @@
-use t1000::{
-    adjoint_gradient, PauliObservable,
-    AdamOptimizer, CircuitAnsatz, DataEncodingLayer, EncodingKind,
-    QuantumState,
-};
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
+use t1000::{
+    adjoint_gradient, AdamOptimizer, CircuitAnsatz, DataEncodingLayer, EncodingKind,
+    PauliObservable, QuantumState,
+};
 
 // Empirical ZINC 10k Target Distributions (Exact Mean & Std)
 const MU_LOGP: f64 = 2.4713;
@@ -327,27 +326,53 @@ fn main() {
     }
 
     let n_quantum_params = 2 * N_QUBITS * depth; // e.g. 2 * 12 * 3 = 72
-    let n_readout_weights = N_PROPS * N_QUBITS;   // 3 * 12 = 36
-    let n_readout_biases = N_PROPS;              // 3
+    let n_readout_weights = N_PROPS * N_QUBITS; // 3 * 12 = 36
+    let n_readout_biases = N_PROPS; // 3
     let n_total_params = n_quantum_params + n_readout_weights + n_readout_biases; // 111
 
     println!("=========================================================================");
     println!("     GUDDANETWORKS QNN: 12-QUBIT HYBRID VARIATIONAL QUANTUM SUITE        ");
     println!("=========================================================================");
     println!(" Hilbert Space   : 12 Qubits | Dim = 4,096 Complex Floats (64 KB L2 Cache)");
-    println!(" Layers          : {} Quantum Variational Layers + 1 Trainable Readout Head", depth);
-    println!(" Trainable Params: {} Total ({} Quantum Rotations + {} Classical Readout)", n_total_params, n_quantum_params, n_readout_weights + n_readout_biases);
-    println!(" Training Set    : {} Featurized Drug Molecules (ZINC 250k)", max_train);
+    println!(
+        " Layers          : {} Quantum Variational Layers + 1 Trainable Readout Head",
+        depth
+    );
+    println!(
+        " Trainable Params: {} Total ({} Quantum Rotations + {} Classical Readout)",
+        n_total_params,
+        n_quantum_params,
+        n_readout_weights + n_readout_biases
+    );
+    println!(
+        " Training Set    : {} Featurized Drug Molecules (ZINC 250k)",
+        max_train
+    );
     println!(" Evaluation Set  : {} Holdout Drug Molecules", max_eval);
-    let max_norm_str = if max_norm > 0.0 { format!("{:.2}", max_norm) } else { "None (Unclipped)".to_string() };
-    println!(" Hyperparameters : Epochs = {}, Batch Size = {}, LR = {:.3}, Threads = {}, Max Norm = {}", num_epochs, batch_size, lr, num_threads, max_norm_str);
-    println!(" Objectives      : Multi-Task Joint Optimization on logP, QED, SAS (QED Weight = {:.2}x)", qed_weight);
+    let max_norm_str = if max_norm > 0.0 {
+        format!("{:.2}", max_norm)
+    } else {
+        "None (Unclipped)".to_string()
+    };
+    println!(
+        " Hyperparameters : Epochs = {}, Batch Size = {}, LR = {:.3}, Threads = {}, Max Norm = {}",
+        num_epochs, batch_size, lr, num_threads, max_norm_str
+    );
+    println!(
+        " Objectives      : Multi-Task Joint Optimization on logP, QED, SAS (QED Weight = {:.2}x)",
+        qed_weight
+    );
     println!("=========================================================================");
 
-    let train_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_train_10k.csv");
-    let test_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_test_2k.csv");
+    let train_path =
+        resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_train_10k.csv");
+    let test_path =
+        resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_test_2k.csv");
 
-    println!("[INIT] Loading ZINC 10k train set from: {}", train_path.display());
+    println!(
+        "[INIT] Loading ZINC 10k train set from: {}",
+        train_path.display()
+    );
     let train_samples = match parse_zinc_csv(&train_path, max_train) {
         Ok(r) => r,
         Err(e) => {
@@ -355,9 +380,15 @@ fn main() {
             return;
         }
     };
-    println!("  -> Successfully loaded {} train molecules.", train_samples.len());
+    println!(
+        "  -> Successfully loaded {} train molecules.",
+        train_samples.len()
+    );
 
-    println!("[INIT] Loading ZINC 2k evaluation set: {}", test_path.display());
+    println!(
+        "[INIT] Loading ZINC 2k evaluation set: {}",
+        test_path.display()
+    );
     let test_samples = match parse_zinc_csv(&test_path, max_eval) {
         Ok(r) => r,
         Err(e) => {
@@ -365,7 +396,10 @@ fn main() {
             return;
         }
     };
-    println!("  -> Successfully loaded {} test molecules.\n", test_samples.len());
+    println!(
+        "  -> Successfully loaded {} test molecules.\n",
+        test_samples.len()
+    );
 
     let encoding = DataEncodingLayer::new(N_QUBITS, EncodingKind::Amplitude);
     let ansatz = CircuitAnsatz::new(N_QUBITS, depth).with_pi_layer(true);
@@ -396,14 +430,23 @@ fn main() {
                                 checkpoint_opt_v = ckpt.opt_v;
                                 prior_epochs_completed = ckpt.epochs_completed;
                                 resumed_from_checkpoint = true;
-                                println!("[RESUME] Successfully restored {} hybrid weights from: {}", n_total_params, p.display());
-                                println!("  -> Prior Epochs Completed: {}, Optimizer Step: {}\n", ckpt.epochs_completed, ckpt.opt_step);
+                                println!(
+                                    "[RESUME] Successfully restored {} hybrid weights from: {}",
+                                    n_total_params,
+                                    p.display()
+                                );
+                                println!(
+                                    "  -> Prior Epochs Completed: {}, Optimizer Step: {}\n",
+                                    ckpt.epochs_completed, ckpt.opt_step
+                                );
 
                                 // Attempt to load prior epoch history from 15ep results if available
                                 let prior_rep_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_12qubit_15ep_results.json");
                                 if prior_rep_path.exists() {
                                     if let Ok(prior_json) = fs::read_to_string(&prior_rep_path) {
-                                        if let Ok(prior_rep) = serde_json::from_str::<Zinc12QubitReport>(&prior_json) {
+                                        if let Ok(prior_rep) =
+                                            serde_json::from_str::<Zinc12QubitReport>(&prior_json)
+                                        {
                                             prior_epoch_history = prior_rep.epoch_history;
                                             println!("  -> Loaded {} prior epoch records for continuous telemetry history.", prior_epoch_history.len());
                                         }
@@ -413,13 +456,22 @@ fn main() {
                                 eprintln!("[-] Checkpoint param count mismatch: expected {}, got {}. Initializing fresh.", n_total_params, ckpt.hybrid_params.len());
                             }
                         }
-                        Err(e) => eprintln!("[-] Failed to parse checkpoint JSON: {}. Initializing fresh.", e),
+                        Err(e) => eprintln!(
+                            "[-] Failed to parse checkpoint JSON: {}. Initializing fresh.",
+                            e
+                        ),
                     }
                 }
-                Err(e) => eprintln!("[-] Failed to read checkpoint file: {}. Initializing fresh.", e),
+                Err(e) => eprintln!(
+                    "[-] Failed to read checkpoint file: {}. Initializing fresh.",
+                    e
+                ),
             }
         } else {
-            eprintln!("[-] Resume checkpoint {} not found. Initializing fresh.", p.display());
+            eprintln!(
+                "[-] Resume checkpoint {} not found. Initializing fresh.",
+                p.display()
+            );
         }
     }
 
@@ -457,7 +509,11 @@ fn main() {
 
     for s in &test_samples {
         let state_in = encoding.encode(&s.features);
-        ansatz.forward_into(&state_in, &hybrid_params[..n_quantum_params], &mut out_state);
+        ansatz.forward_into(
+            &state_in,
+            &hybrid_params[..n_quantum_params],
+            &mut out_state,
+        );
         eval_all_z12(&out_state, &mut z_eval);
 
         let mut p_logp = hybrid_params[b_offset + 0];
@@ -465,8 +521,8 @@ fn main() {
         let mut p_sas = hybrid_params[b_offset + 2];
         for q in 0..12 {
             p_logp += hybrid_params[w_offset + q] * z_eval[q];
-            p_qed  += hybrid_params[w_offset + 1 * 12 + q] * z_eval[q];
-            p_sas  += hybrid_params[w_offset + 2 * 12 + q] * z_eval[q];
+            p_qed += hybrid_params[w_offset + 1 * 12 + q] * z_eval[q];
+            p_sas += hybrid_params[w_offset + 2 * 12 + q] * z_eval[q];
         }
 
         init_preds_logp.push(p_logp);
@@ -479,16 +535,58 @@ fn main() {
     }
 
     let n_test = test_samples.len() as f64;
-    let init_mse_logp = init_preds_logp.iter().zip(&targets_logp).map(|(p, t)| (p - t).powi(2)).sum::<f64>() / n_test;
-    let init_mse_qed = init_preds_qed.iter().zip(&targets_qed).map(|(p, t)| (p - t).powi(2)).sum::<f64>() / n_test;
-    let init_mse_sas = init_preds_sas.iter().zip(&targets_sas).map(|(p, t)| (p - t).powi(2)).sum::<f64>() / n_test;
+    let init_mse_logp = init_preds_logp
+        .iter()
+        .zip(&targets_logp)
+        .map(|(p, t)| (p - t).powi(2))
+        .sum::<f64>()
+        / n_test;
+    let init_mse_qed = init_preds_qed
+        .iter()
+        .zip(&targets_qed)
+        .map(|(p, t)| (p - t).powi(2))
+        .sum::<f64>()
+        / n_test;
+    let init_mse_sas = init_preds_sas
+        .iter()
+        .zip(&targets_sas)
+        .map(|(p, t)| (p - t).powi(2))
+        .sum::<f64>()
+        / n_test;
 
     println!("-------------------------------------------------------------------------");
     println!(" [ZERO-SHOT BASELINE] 2,000 HOLDOUT TEST METRICS (Pre-Training)");
     println!("-------------------------------------------------------------------------");
-    println!("  Initial Test MSE - logP : {:.4} (MAE: {:.4})", init_mse_logp, init_preds_logp.iter().zip(&targets_logp).map(|(p, t)| (p - t).abs()).sum::<f64>() / n_test);
-    println!("  Initial Test MSE - qed  : {:.4} (MAE: {:.4})", init_mse_qed, init_preds_qed.iter().zip(&targets_qed).map(|(p, t)| (p - t).abs()).sum::<f64>() / n_test);
-    println!("  Initial Test MSE - SAS  : {:.4} (MAE: {:.4})", init_mse_sas, init_preds_sas.iter().zip(&targets_sas).map(|(p, t)| (p - t).abs()).sum::<f64>() / n_test);
+    println!(
+        "  Initial Test MSE - logP : {:.4} (MAE: {:.4})",
+        init_mse_logp,
+        init_preds_logp
+            .iter()
+            .zip(&targets_logp)
+            .map(|(p, t)| (p - t).abs())
+            .sum::<f64>()
+            / n_test
+    );
+    println!(
+        "  Initial Test MSE - qed  : {:.4} (MAE: {:.4})",
+        init_mse_qed,
+        init_preds_qed
+            .iter()
+            .zip(&targets_qed)
+            .map(|(p, t)| (p - t).abs())
+            .sum::<f64>()
+            / n_test
+    );
+    println!(
+        "  Initial Test MSE - SAS  : {:.4} (MAE: {:.4})",
+        init_mse_sas,
+        init_preds_sas
+            .iter()
+            .zip(&targets_sas)
+            .map(|(p, t)| (p - t).abs())
+            .sum::<f64>()
+            / n_test
+    );
     println!("-------------------------------------------------------------------------\n");
 
     // -------------------------------------------------------------------------
@@ -498,7 +596,12 @@ fn main() {
     if prior_epochs_completed > 0 {
         println!("Starting {} resumed epochs (Cumulative: Epochs {} -> {}) across {} molecules in batches of {}...", num_epochs, prior_epochs_completed + 1, total_epochs_target, train_samples.len(), batch_size);
     } else {
-        println!("Starting {} training epochs across {} molecules in batches of {}...", num_epochs, train_samples.len(), batch_size);
+        println!(
+            "Starting {} training epochs across {} molecules in batches of {}...",
+            num_epochs,
+            train_samples.len(),
+            batch_size
+        );
     }
 
     let mut opt = AdamOptimizer::new(n_total_params, lr);
@@ -506,7 +609,10 @@ fn main() {
         opt.step = checkpoint_opt_step;
         opt.m = checkpoint_opt_m;
         opt.v = checkpoint_opt_v;
-        println!("[RESUME] Restored Adam momentum estimators (step = {}).\n", opt.step);
+        println!(
+            "[RESUME] Restored Adam momentum estimators (step = {}).\n",
+            opt.step
+        );
     }
     let mut epoch_telemetry = Vec::new();
     let total_train_start = Instant::now();
@@ -519,11 +625,17 @@ fn main() {
             if epoch == s1 {
                 let new_lr = lr * 0.6;
                 opt.set_lr(new_lr);
-                println!("  [*] Scheduled learning rate decay: LR = {:.4} at epoch {} (cumulative {})", new_lr, epoch, cumulative_epoch);
+                println!(
+                    "  [*] Scheduled learning rate decay: LR = {:.4} at epoch {} (cumulative {})",
+                    new_lr, epoch, cumulative_epoch
+                );
             } else if epoch == s2 {
                 let new_lr = lr * 0.3;
                 opt.set_lr(new_lr);
-                println!("  [*] Scheduled learning rate decay: LR = {:.4} at epoch {} (cumulative {})", new_lr, epoch, cumulative_epoch);
+                println!(
+                    "  [*] Scheduled learning rate decay: LR = {:.4} at epoch {} (cumulative {})",
+                    new_lr, epoch, cumulative_epoch
+                );
             }
         }
         let t_epoch = Instant::now();
@@ -549,7 +661,8 @@ fn main() {
                     let qed_w = qed_weight;
 
                     handles.push(s.spawn(move || {
-                        let z_obs: Vec<PauliObservable> = (0..N_QUBITS).map(PauliObservable::Z).collect();
+                        let z_obs: Vec<PauliObservable> =
+                            (0..N_QUBITS).map(PauliObservable::Z).collect();
                         let mut thread_grads = vec![0.0; n_total_params];
                         let mut thread_loss = 0.0;
 
@@ -579,12 +692,24 @@ fn main() {
                             };
                             // Chain rule into the circuit: dL/dθ = sum_q g_q d<Z_q>/dθ with
                             // g_q = sum_k dL/dpred_k * W_kq, computed by one adjoint sweep.
-                            let res = adjoint_gradient(ansatz_ref, &state_in, &params_ref[..n_quantum_params], &z_obs, |z| {
-                                let (_, d_pred) = head(z);
-                                (0..N_QUBITS)
-                                    .map(|q| (0..N_PROPS).map(|k| d_pred[k] * params_ref[w_off + k * N_QUBITS + q]).sum())
-                                    .collect()
-                            });
+                            let res = adjoint_gradient(
+                                ansatz_ref,
+                                &state_in,
+                                &params_ref[..n_quantum_params],
+                                &z_obs,
+                                |z| {
+                                    let (_, d_pred) = head(z);
+                                    (0..N_QUBITS)
+                                        .map(|q| {
+                                            (0..N_PROPS)
+                                                .map(|k| {
+                                                    d_pred[k] * params_ref[w_off + k * N_QUBITS + q]
+                                                })
+                                                .sum()
+                                        })
+                                        .collect()
+                                },
+                            );
                             let z_base = &res.expectations;
                             let (loss, d_pred) = head(z_base);
                             thread_loss += loss;
@@ -594,7 +719,10 @@ fn main() {
                                     thread_grads[w_off + k * N_QUBITS + q] += d_pred[k] * z_base[q];
                                 }
                             }
-                            for (tg, g) in thread_grads[..n_quantum_params].iter_mut().zip(&res.gradient) {
+                            for (tg, g) in thread_grads[..n_quantum_params]
+                                .iter_mut()
+                                .zip(&res.gradient)
+                            {
                                 *tg += g;
                             }
                         }
@@ -645,7 +773,10 @@ fn main() {
         };
 
         let clip_str = if max_norm > 0.0 {
-            format!(" | Clip: {:>2}/{} ({:>4.1}%)", clipped_batches, batches_run, clip_rate_pct)
+            format!(
+                " | Clip: {:>2}/{} ({:>4.1}%)",
+                clipped_batches, batches_run, clip_rate_pct
+            )
         } else {
             "".to_string()
         };
@@ -667,7 +798,10 @@ fn main() {
     }
 
     let total_train_time = total_train_start.elapsed();
-    println!("\nTraining completed in {:.2} seconds.", total_train_time.as_secs_f64());
+    println!(
+        "\nTraining completed in {:.2} seconds.",
+        total_train_time.as_secs_f64()
+    );
 
     // -------------------------------------------------------------------------
     // HOLDOUT EVALUATION ON 2,000 MOLECULES
@@ -683,7 +817,11 @@ fn main() {
 
     for s in &test_samples {
         let state_in = encoding.encode(&s.features);
-        ansatz.forward_into(&state_in, &hybrid_params[..n_quantum_params], &mut out_state);
+        ansatz.forward_into(
+            &state_in,
+            &hybrid_params[..n_quantum_params],
+            &mut out_state,
+        );
         eval_all_z12(&out_state, &mut z_eval);
 
         let mut p_logp = hybrid_params[b_offset + 0];
@@ -691,8 +829,8 @@ fn main() {
         let mut p_sas = hybrid_params[b_offset + 2];
         for q in 0..12 {
             p_logp += hybrid_params[w_offset + q] * z_eval[q];
-            p_qed  += hybrid_params[w_offset + 1 * 12 + q] * z_eval[q];
-            p_sas  += hybrid_params[w_offset + 2 * 12 + q] * z_eval[q];
+            p_qed += hybrid_params[w_offset + 1 * 12 + q] * z_eval[q];
+            p_sas += hybrid_params[w_offset + 2 * 12 + q] * z_eval[q];
         }
 
         tuned_preds_logp.push(p_logp);
@@ -706,22 +844,64 @@ fn main() {
     let throughput_mol_sec = n_eval / eval_duration.as_secs_f64();
     let norm = compute_state_norm(&out_state);
 
-    let tuned_mse_logp = tuned_preds_logp.iter().zip(&targets_logp).map(|(p, t)| (p - t).powi(2)).sum::<f64>() / n_eval;
-    let tuned_mae_logp = tuned_preds_logp.iter().zip(&targets_logp).map(|(p, t)| (p - t).abs()).sum::<f64>() / n_eval;
+    let tuned_mse_logp = tuned_preds_logp
+        .iter()
+        .zip(&targets_logp)
+        .map(|(p, t)| (p - t).powi(2))
+        .sum::<f64>()
+        / n_eval;
+    let tuned_mae_logp = tuned_preds_logp
+        .iter()
+        .zip(&targets_logp)
+        .map(|(p, t)| (p - t).abs())
+        .sum::<f64>()
+        / n_eval;
     let r_logp = compute_pearson_r(&tuned_preds_logp, &targets_logp);
 
-    let tuned_mse_qed = tuned_preds_qed.iter().zip(&targets_qed).map(|(p, t)| (p - t).powi(2)).sum::<f64>() / n_eval;
-    let tuned_mae_qed = tuned_preds_qed.iter().zip(&targets_qed).map(|(p, t)| (p - t).abs()).sum::<f64>() / n_eval;
+    let tuned_mse_qed = tuned_preds_qed
+        .iter()
+        .zip(&targets_qed)
+        .map(|(p, t)| (p - t).powi(2))
+        .sum::<f64>()
+        / n_eval;
+    let tuned_mae_qed = tuned_preds_qed
+        .iter()
+        .zip(&targets_qed)
+        .map(|(p, t)| (p - t).abs())
+        .sum::<f64>()
+        / n_eval;
     let r_qed = compute_pearson_r(&tuned_preds_qed, &targets_qed);
 
-    let tuned_mse_sas = tuned_preds_sas.iter().zip(&targets_sas).map(|(p, t)| (p - t).powi(2)).sum::<f64>() / n_eval;
-    let tuned_mae_sas = tuned_preds_sas.iter().zip(&targets_sas).map(|(p, t)| (p - t).abs()).sum::<f64>() / n_eval;
+    let tuned_mse_sas = tuned_preds_sas
+        .iter()
+        .zip(&targets_sas)
+        .map(|(p, t)| (p - t).powi(2))
+        .sum::<f64>()
+        / n_eval;
+    let tuned_mae_sas = tuned_preds_sas
+        .iter()
+        .zip(&targets_sas)
+        .map(|(p, t)| (p - t).abs())
+        .sum::<f64>()
+        / n_eval;
     let r_sas = compute_pearson_r(&tuned_preds_sas, &targets_sas);
 
-    println!("  Evaluation Time      : {:>8.2} ms (2,000 molecules)", eval_ms);
-    println!("  Per-Molecule Latency : {:>8.2} μs/molecule", per_mol_latency_us);
-    println!("  Screening Throughput : {:>8.1} molecules/second", throughput_mol_sec);
-    println!("  Unitary Norm Fidelity: {:>8.6} (Strict Unitary Preservation)", norm);
+    println!(
+        "  Evaluation Time      : {:>8.2} ms (2,000 molecules)",
+        eval_ms
+    );
+    println!(
+        "  Per-Molecule Latency : {:>8.2} μs/molecule",
+        per_mol_latency_us
+    );
+    println!(
+        "  Screening Throughput : {:>8.1} molecules/second",
+        throughput_mol_sec
+    );
+    println!(
+        "  Unitary Norm Fidelity: {:>8.6} (Strict Unitary Preservation)",
+        norm
+    );
 
     println!("\n╔═══════════════════════════════════════════════════════════════════════════════════════════════════════╗");
     println!("║                 12-QUBIT HYBRID QNN HOLDOUT INFERENCE PERFORMANCE LEDGER                              ║");
@@ -730,15 +910,27 @@ fn main() {
     println!("╟─────────────────────────┼─────────────┼─────────────┼─────────────┼───────────┼───────────────────╢");
     println!(
         "║ logP (Lipophilicity)    │ {:>11.4} │ {:>11.4} │ {:>11.4} │ {:>9.4} │ {:>15.2}% ║",
-        init_mse_logp, tuned_mse_logp, tuned_mae_logp, r_logp, ((init_mse_logp - tuned_mse_logp) / init_mse_logp).max(0.0) * 100.0
+        init_mse_logp,
+        tuned_mse_logp,
+        tuned_mae_logp,
+        r_logp,
+        ((init_mse_logp - tuned_mse_logp) / init_mse_logp).max(0.0) * 100.0
     );
     println!(
         "║ qed  (Drug-Likeness)    │ {:>11.4} │ {:>11.4} │ {:>11.4} │ {:>9.4} │ {:>15.2}% ║",
-        init_mse_qed, tuned_mse_qed, tuned_mae_qed, r_qed, ((init_mse_qed - tuned_mse_qed) / init_mse_qed).max(0.0) * 100.0
+        init_mse_qed,
+        tuned_mse_qed,
+        tuned_mae_qed,
+        r_qed,
+        ((init_mse_qed - tuned_mse_qed) / init_mse_qed).max(0.0) * 100.0
     );
     println!(
         "║ SAS  (Synthetic Access) │ {:>11.4} │ {:>11.4} │ {:>11.4} │ {:>9.4} │ {:>15.2}% ║",
-        init_mse_sas, tuned_mse_sas, tuned_mae_sas, r_sas, ((init_mse_sas - tuned_mse_sas) / init_mse_sas).max(0.0) * 100.0
+        init_mse_sas,
+        tuned_mse_sas,
+        tuned_mae_sas,
+        r_sas,
+        ((init_mse_sas - tuned_mse_sas) / init_mse_sas).max(0.0) * 100.0
     );
     println!("╚═══════════════════════════════════════════════════════════════════════════════════════════════════════╝");
 
@@ -803,18 +995,29 @@ fn main() {
         }
 
         let best_mol = &test_samples[best_idx];
-        let euclid_err = (
-            (best_pred_logp - obj.target_logp).powi(2) +
-            (best_pred_qed - obj.target_qed).powi(2) +
-            (best_pred_sas - obj.target_sas).powi(2)
-        ).sqrt();
+        let euclid_err = ((best_pred_logp - obj.target_logp).powi(2)
+            + (best_pred_qed - obj.target_qed).powi(2)
+            + (best_pred_sas - obj.target_sas).powi(2))
+        .sqrt();
 
         println!("  Objective: {}", obj.name);
-        println!("    Target     : logP = {:.2}, QED = {:.2}, SAS = {:.2}", obj.target_logp, obj.target_qed, obj.target_sas);
+        println!(
+            "    Target     : logP = {:.2}, QED = {:.2}, SAS = {:.2}",
+            obj.target_logp, obj.target_qed, obj.target_sas
+        );
         println!("    Discovered : SMILES = {}", best_mol.smiles);
-        println!("    Predicted  : logP = {:.2}, QED = {:.2}, SAS = {:.2}", best_pred_logp, best_pred_qed, best_pred_sas);
-        println!("    Actual ZINC: logP = {:.2}, QED = {:.2}, SAS = {:.2}", best_mol.log_p, best_mol.qed, best_mol.sas);
-        println!("    Deviation  : Euclidean Δ = {:.4} | Valid Chemical: true\n", euclid_err);
+        println!(
+            "    Predicted  : logP = {:.2}, QED = {:.2}, SAS = {:.2}",
+            best_pred_logp, best_pred_qed, best_pred_sas
+        );
+        println!(
+            "    Actual ZINC: logP = {:.2}, QED = {:.2}, SAS = {:.2}",
+            best_mol.log_p, best_mol.qed, best_mol.sas
+        );
+        println!(
+            "    Deviation  : Euclidean Δ = {:.4} | Valid Chemical: true\n",
+            euclid_err
+        );
 
         inverse_leads.push(InverseDesignLead {
             target_name: obj.name.to_string(),
@@ -835,8 +1038,12 @@ fn main() {
 
     // Classical reference: ridge regression on the same raw features and train/test split.
     let classical_baselines = t1000::baselines::zinc_baselines(
-        train_samples.iter().map(|s| (s.features.as_slice(), [s.log_p, s.qed, s.sas])),
-        test_samples.iter().map(|s| (s.features.as_slice(), [s.log_p, s.qed, s.sas])),
+        train_samples
+            .iter()
+            .map(|s| (s.features.as_slice(), [s.log_p, s.qed, s.sas])),
+        test_samples
+            .iter()
+            .map(|s| (s.features.as_slice(), [s.log_p, s.qed, s.sas])),
     );
     let report = Zinc12QubitReport {
         classical_baselines: classical_baselines.clone(),
@@ -867,7 +1074,8 @@ fn main() {
             tuned_mse: tuned_mse_logp,
             tuned_mae: tuned_mae_logp,
             pearson_r: r_logp,
-            error_reduction_pct: ((init_mse_logp - tuned_mse_logp) / init_mse_logp).max(0.0) * 100.0,
+            error_reduction_pct: ((init_mse_logp - tuned_mse_logp) / init_mse_logp).max(0.0)
+                * 100.0,
         },
         qed_metrics: PropertyMetric {
             initial_mse: init_mse_qed,
@@ -891,32 +1099,53 @@ fn main() {
         Some(p) => PathBuf::from(p),
         None => {
             if prior_epochs_completed + num_epochs >= 30 {
-                resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_12qubit_30ep_results.json")
+                resolve_workspace_path(
+                    "tests/benchmarks/zinc_molecular/outputs/zinc_12qubit_30ep_results.json",
+                )
             } else if num_epochs == 15 {
-                resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_12qubit_15ep_results.json")
+                resolve_workspace_path(
+                    "tests/benchmarks/zinc_molecular/outputs/zinc_12qubit_15ep_results.json",
+                )
             } else {
-                resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_12qubit_results.json")
+                resolve_workspace_path(
+                    "tests/benchmarks/zinc_molecular/outputs/zinc_12qubit_results.json",
+                )
             }
         }
     };
     {
         use t1000::baselines::{print_comparison, QnnScore};
-        let qnn_rows = [
-        QnnScore::new("trained circuit")
-            .mae([report.logp_metrics.tuned_mae, report.qed_metrics.tuned_mae, report.sas_metrics.tuned_mae])
-            .mse([report.logp_metrics.tuned_mse, report.qed_metrics.tuned_mse, report.sas_metrics.tuned_mse])
-            .pearson_r([report.logp_metrics.pearson_r, report.qed_metrics.pearson_r, report.sas_metrics.pearson_r]),
-        ];
+        let qnn_rows = [QnnScore::new("trained circuit")
+            .mae([
+                report.logp_metrics.tuned_mae,
+                report.qed_metrics.tuned_mae,
+                report.sas_metrics.tuned_mae,
+            ])
+            .mse([
+                report.logp_metrics.tuned_mse,
+                report.qed_metrics.tuned_mse,
+                report.sas_metrics.tuned_mse,
+            ])
+            .pearson_r([
+                report.logp_metrics.pearson_r,
+                report.qed_metrics.pearson_r,
+                report.sas_metrics.pearson_r,
+            ])];
         print_comparison(&qnn_rows, &classical_baselines);
     }
 
     if let Ok(json_str) = serde_json::to_string_pretty(&report) {
         let _ = fs::write(&out_json_path, json_str);
-        println!("[SAVED] 12-Qubit Hybrid Report exported to: {}", out_json_path.display());
+        println!(
+            "[SAVED] 12-Qubit Hybrid Report exported to: {}",
+            out_json_path.display()
+        );
     }
 
     // Save QnnCheckpoint with all 111 hybrid weights and optimizer state
-    let default_ckpt_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_12qubit_checkpoint.json");
+    let default_ckpt_path = resolve_workspace_path(
+        "tests/benchmarks/zinc_molecular/outputs/zinc_12qubit_checkpoint.json",
+    );
     let target_ckpt_path = match &save_weights_path {
         Some(p) => PathBuf::from(p),
         None => default_ckpt_path,
@@ -939,6 +1168,9 @@ fn main() {
             let _ = fs::create_dir_all(parent);
         }
         let _ = fs::write(&target_ckpt_path, ckpt_str);
-        println!("[CHECKPOINT] 111 Hybrid Parameters saved to: {}", target_ckpt_path.display());
+        println!(
+            "[CHECKPOINT] 111 Hybrid Parameters saved to: {}",
+            target_ckpt_path.display()
+        );
     }
 }

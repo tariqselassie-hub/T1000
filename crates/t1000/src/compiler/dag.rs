@@ -2,9 +2,9 @@
 //! Models read/write qubit hazards, causal dependency edges,
 //! and topological critical path analysis.
 
-use std::collections::{HashMap, HashSet, VecDeque};
-use serde::{Deserialize, Serialize};
 use super::op::CircuitOp;
+use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, HashSet, VecDeque};
 
 /// A node within the circuit dependency DAG.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -71,7 +71,11 @@ impl CircuitDag {
             );
         }
         if let [a, b] = touched_qubits.as_slice() {
-            assert_ne!(a, b, "Two-qubit op must act on distinct qubits (got {} twice)", a);
+            assert_ne!(
+                a, b,
+                "Two-qubit op must act on distinct qubits (got {} twice)",
+                a
+            );
         }
 
         let mut node = DagNode::new(node_id, op.clone());
@@ -118,7 +122,6 @@ impl CircuitDag {
         node_id
     }
 
-
     /// Checks if node `ancestor` is an ancestor of node `descendant`.
     pub fn is_ancestor_of(&self, ancestor: usize, descendant: usize) -> bool {
         if ancestor == descendant {
@@ -162,7 +165,11 @@ impl CircuitDag {
 
     /// Critical path depth of the entire circuit.
     pub fn critical_path_depth(&self) -> usize {
-        self.nodes.iter().map(|n| n.depth).max().map_or(0, |d| d + 1)
+        self.nodes
+            .iter()
+            .map(|n| n.depth)
+            .max()
+            .map_or(0, |d| d + 1)
     }
 
     /// Returns the array of current in-degrees for all nodes in the DAG.

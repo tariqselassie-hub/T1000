@@ -6,9 +6,9 @@
 
 use crate::ansatz::CircuitAnsatz;
 use crate::state::QuantumState;
-use t1000_core::porter_thomas::{verify_porter_thomas, PorterThomasReport};
 use serde::{Deserialize, Serialize};
 use std::time::Instant;
+use t1000_core::porter_thomas::{verify_porter_thomas, PorterThomasReport};
 
 /// Configuration for an Advanced Random Circuit Sampling simulation.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -84,7 +84,9 @@ impl RcsSimulator {
         // Pseudo-random deterministic parameter population from seed
         let mut rng_state = self.config.seed;
         let mut next_f64 = || {
-            rng_state = rng_state.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+            rng_state = rng_state
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
             let val = (rng_state >> 11) as f64 / (1u64 << 53) as f64;
             val * std::f64::consts::TAU - std::f64::consts::PI
         };
@@ -109,7 +111,11 @@ impl RcsSimulator {
 
         state.normalize();
         let total_time = start_time.elapsed().as_secs_f64();
-        let avg_layer = if depth > 0 { total_time / depth as f64 } else { 0.0 };
+        let avg_layer = if depth > 0 {
+            total_time / depth as f64
+        } else {
+            0.0
+        };
 
         // Compute probabilities
         let probs = state.probabilities();
@@ -142,7 +148,11 @@ impl RcsSimulator {
 
     /// Compute statistical divergence metrics between two probability distributions over the same Hilbert space.
     pub fn compare_distributions(p: &[f64], q: &[f64]) -> DistributionMetrics {
-        assert_eq!(p.len(), q.len(), "Distributions must have identical Hilbert dimensions");
+        assert_eq!(
+            p.len(),
+            q.len(),
+            "Distributions must have identical Hilbert dimensions"
+        );
         let dim = p.len();
 
         let mut bc = 0.0;

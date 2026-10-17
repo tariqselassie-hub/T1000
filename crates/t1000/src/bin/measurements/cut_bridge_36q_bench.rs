@@ -102,10 +102,26 @@ pub unsafe fn apply_midcircuit_z_bridge_avx2(
 
     for vec_idx in 0..(DIM / 4) {
         let base = vec_idx * 4;
-        let s0 = if ((base & mask).count_ones() & 1) != 0 { -1.0 } else { 1.0 };
-        let s1 = if (((base + 1) & mask).count_ones() & 1) != 0 { -1.0 } else { 1.0 };
-        let s2 = if (((base + 2) & mask).count_ones() & 1) != 0 { -1.0 } else { 1.0 };
-        let s3 = if (((base + 3) & mask).count_ones() & 1) != 0 { -1.0 } else { 1.0 };
+        let s0 = if ((base & mask).count_ones() & 1) != 0 {
+            -1.0
+        } else {
+            1.0
+        };
+        let s1 = if (((base + 1) & mask).count_ones() & 1) != 0 {
+            -1.0
+        } else {
+            1.0
+        };
+        let s2 = if (((base + 2) & mask).count_ones() & 1) != 0 {
+            -1.0
+        } else {
+            1.0
+        };
+        let s3 = if (((base + 3) & mask).count_ones() & 1) != 0 {
+            -1.0
+        } else {
+            1.0
+        };
 
         let v_sign = _mm256_set_pd(s3, s2, s1, s0);
         let r = _mm256_loadu_pd(re_ptr.add(base));
@@ -144,7 +160,11 @@ fn eval_intra_phase(idx: usize) -> f64 {
     let k1 = (idx & 0x1FF).count_ones() as usize;
     let k2 = ((idx >> 9) & 0x1FF).count_ones() as usize;
     let pairs = ((k1 * k1.saturating_sub(1)) >> 1) + ((k2 * k2.saturating_sub(1)) >> 1);
-    if (pairs & 1) != 0 { -1.0 } else { 1.0 }
+    if (pairs & 1) != 0 {
+        -1.0
+    } else {
+        1.0
+    }
 }
 
 /// Evaluates ⟨Z_target⟩ on an 18-qubit fragment
@@ -192,7 +212,10 @@ fn main() {
         }
     }
     let prep_ms = t_prep.elapsed().as_secs_f64() * 1000.0;
-    println!("[CHECKPOINT] Layers 1..6 Pre-Computed Once in {:.2} ms", prep_ms);
+    println!(
+        "[CHECKPOINT] Layers 1..6 Pre-Computed Once in {:.2} ms",
+        prep_ms
+    );
 
     // 2. Branch from Mid-Circuit Checkpoint for Cut-Bridge Z-Insertions + Layers 7..12
     let mut work_re = alloc_buffer();
@@ -268,10 +291,22 @@ fn main() {
     println!("\n────────────────────────────────────────────────────────────────────────");
     println!(" 36-QUBIT NON-SEPARABLE ENTANGLEMENT VERIFICATION");
     println!("────────────────────────────────────────────────────────────────────────");
-    println!("  Uncoupled Product ⟨Z_A⟩⟨Z_B⟩ (Branch 00) : {:+.10}", unentangled_product);
-    println!("  Reconstructed 36Q Entangled ⟨Z_A ⊗ Z_B⟩  : {:+.10}", entangled_zz);
-    println!("  Cross-Fragment Entanglement Witness (Δ)  : {:+.10}", entanglement_delta);
-    println!("  Total Checkpointed 36Q Execution Latency : {:.2} ms", total_ms);
+    println!(
+        "  Uncoupled Product ⟨Z_A⟩⟨Z_B⟩ (Branch 00) : {:+.10}",
+        unentangled_product
+    );
+    println!(
+        "  Reconstructed 36Q Entangled ⟨Z_A ⊗ Z_B⟩  : {:+.10}",
+        entangled_zz
+    );
+    println!(
+        "  Cross-Fragment Entanglement Witness (Δ)  : {:+.10}",
+        entanglement_delta
+    );
+    println!(
+        "  Total Checkpointed 36Q Execution Latency : {:.2} ms",
+        total_ms
+    );
     println!("────────────────────────────────────────────────────────────────────────");
 
     assert!(

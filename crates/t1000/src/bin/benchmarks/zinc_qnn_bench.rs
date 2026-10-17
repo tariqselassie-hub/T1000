@@ -1,12 +1,12 @@
-use t1000::{
-    AdamOptimizer, CircuitAnsatz, DataEncodingLayer, EncodingKind, ParameterShiftEngine,
-    PauliObservable, QuantumState,
-};
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
+use t1000::{
+    AdamOptimizer, CircuitAnsatz, DataEncodingLayer, EncodingKind, ParameterShiftEngine,
+    PauliObservable, QuantumState,
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MoleculeRecord {
@@ -124,10 +124,15 @@ fn main() {
     println!(" Targets         : Multi-Task logP (Lipophilicity), qed, SAS             ");
     println!("=========================================================================");
 
-    let train_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_train_5k.csv");
-    let test_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_test_1k.csv");
+    let train_path =
+        resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_train_5k.csv");
+    let test_path =
+        resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_test_1k.csv");
 
-    println!("[INIT] Loading ZINC train split from: {}", train_path.display());
+    println!(
+        "[INIT] Loading ZINC train split from: {}",
+        train_path.display()
+    );
     let train_records = match parse_zinc_csv(&train_path, 2000) {
         Ok(r) => r,
         Err(e) => {
@@ -135,9 +140,15 @@ fn main() {
             return;
         }
     };
-    println!("  -> Successfully loaded {} train molecules.", train_records.len());
+    println!(
+        "  -> Successfully loaded {} train molecules.",
+        train_records.len()
+    );
 
-    println!("[INIT] Loading ZINC test split from : {}", test_path.display());
+    println!(
+        "[INIT] Loading ZINC test split from : {}",
+        test_path.display()
+    );
     let test_records = match parse_zinc_csv(&test_path, 1000) {
         Ok(r) => r,
         Err(e) => {
@@ -145,7 +156,10 @@ fn main() {
             return;
         }
     };
-    println!("  -> Successfully loaded {} test molecules.\n", test_records.len());
+    println!(
+        "  -> Successfully loaded {} test molecules.\n",
+        test_records.len()
+    );
 
     let n_qubits = 10;
     let depth = 4;
@@ -155,7 +169,10 @@ fn main() {
     println!("-------------------------------------------------------------------------");
     println!(" [PHASE 1] HIGH-THROUGHPUT QUANTUM SCREENING & INFERENCE BENCHMARK");
     println!("-------------------------------------------------------------------------");
-    println!(" Evaluating {} drug molecules through 10-Qubit ansatz...", test_records.len());
+    println!(
+        " Evaluating {} drug molecules through 10-Qubit ansatz...",
+        test_records.len()
+    );
 
     let mut out_state = QuantumState::new(encoding.dim);
     // Warmup
@@ -175,10 +192,19 @@ fn main() {
     let throughput = (test_records.len() as f64) / total_inf_time.as_secs_f64();
     let norm = compute_state_norm(&out_state);
 
-    println!("  Total Batch Time     : {:>8.2} ms (1,000 molecules)", total_inf_ms);
+    println!(
+        "  Total Batch Time     : {:>8.2} ms (1,000 molecules)",
+        total_inf_ms
+    );
     println!("  Per-Molecule Latency : {:>8.2} μs/molecule", per_mol_us);
-    println!("  Screening Throughput : {:>8.1} molecules/second", throughput);
-    println!("  Statevector Norm     : {:>8.6} (Strict Unitary Preservation)", norm);
+    println!(
+        "  Screening Throughput : {:>8.1} molecules/second",
+        throughput
+    );
+    println!(
+        "  Statevector Norm     : {:>8.6} (Strict Unitary Preservation)",
+        norm
+    );
 
     println!("\n-------------------------------------------------------------------------");
     println!(" [PHASE 2] MULTI-TASK DRUG PROPERTY CALIBRATION (logP, qed, SAS)");
@@ -218,7 +244,11 @@ fn main() {
     println!("\n  Calibrating variational weights via Parameter-Shift Engine (5 steps)...");
     let pilot_size = 50;
     let pilot_records = &train_records[..pilot_size];
-    let engine = ParameterShiftEngine::new(encoding.clone(), ansatz.clone(), PauliObservable::GlobalMeanZ);
+    let engine = ParameterShiftEngine::new(
+        encoding.clone(),
+        ansatz.clone(),
+        PauliObservable::GlobalMeanZ,
+    );
     let mut opt_weights = ansatz.weights.clone();
     let mut opt = AdamOptimizer::new(ansatz.param_count(), 0.04);
 
@@ -237,7 +267,12 @@ fn main() {
         }
         opt.step(&mut opt_weights, &accum_grads);
         let step_ms = t_step.elapsed().as_secs_f64() * 1000.0;
-        println!("    Step {:>2}/5 Completed in {:>7.2} ms (Grad Norm: {:.4})", step + 1, step_ms, accum_grads.iter().map(|v| v*v).sum::<f64>().sqrt());
+        println!(
+            "    Step {:>2}/5 Completed in {:>7.2} ms (Grad Norm: {:.4})",
+            step + 1,
+            step_ms,
+            accum_grads.iter().map(|v| v * v).sum::<f64>().sqrt()
+        );
     }
     let total_train_ms = t_train_start.elapsed().as_secs_f64() * 1000.0;
     let avg_step_ms = total_train_ms / 5.0;
@@ -263,14 +298,30 @@ fn main() {
     let tuned_qed_mse = tuned_qed_se / n_test;
     let tuned_sas_mse = tuned_sas_se / n_test;
 
-    println!("\n  Tuned Test MSE   - logP : {:.4} (Reduced: {:.1}%)", tuned_logp_mse, ((init_logp_mse - tuned_logp_mse) / init_logp_mse).max(0.0) * 100.0);
-    println!("  Tuned Test MSE   - qed  : {:.4} (Reduced: {:.1}%)", tuned_qed_mse, ((init_qed_mse - tuned_qed_mse) / init_qed_mse).max(0.0) * 100.0);
-    println!("  Tuned Test MSE   - SAS  : {:.4} (Reduced: {:.1}%)", tuned_sas_mse, ((init_sas_mse - tuned_sas_mse) / init_sas_mse).max(0.0) * 100.0);
+    println!(
+        "\n  Tuned Test MSE   - logP : {:.4} (Reduced: {:.1}%)",
+        tuned_logp_mse,
+        ((init_logp_mse - tuned_logp_mse) / init_logp_mse).max(0.0) * 100.0
+    );
+    println!(
+        "  Tuned Test MSE   - qed  : {:.4} (Reduced: {:.1}%)",
+        tuned_qed_mse,
+        ((init_qed_mse - tuned_qed_mse) / init_qed_mse).max(0.0) * 100.0
+    );
+    println!(
+        "  Tuned Test MSE   - SAS  : {:.4} (Reduced: {:.1}%)",
+        tuned_sas_mse,
+        ((init_sas_mse - tuned_sas_mse) / init_sas_mse).max(0.0) * 100.0
+    );
 
     // Classical reference: ridge regression on the same raw features and train/test split.
     let classical_baselines = t1000::baselines::zinc_baselines(
-        train_records.iter().map(|s| (s.features.as_slice(), [s.log_p, s.qed, s.sas])),
-        test_records.iter().map(|s| (s.features.as_slice(), [s.log_p, s.qed, s.sas])),
+        train_records
+            .iter()
+            .map(|s| (s.features.as_slice(), [s.log_p, s.qed, s.sas])),
+        test_records
+            .iter()
+            .map(|s| (s.features.as_slice(), [s.log_p, s.qed, s.sas])),
     );
     let telemetry = ZincBenchTelemetry {
         classical_baselines: classical_baselines.clone(),
@@ -294,19 +345,24 @@ fn main() {
         grad_step_time_ms: avg_step_ms,
     };
 
-    let out_json_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_qnn_results.json");
+    let out_json_path =
+        resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_qnn_results.json");
     {
         use t1000::baselines::{print_comparison, QnnScore};
-        let qnn_rows = [
-        QnnScore::new("tuned circuit")
-            .mse([telemetry.tuned_logp_mse, telemetry.tuned_qed_mse, telemetry.tuned_sas_mse]),
-        ];
+        let qnn_rows = [QnnScore::new("tuned circuit").mse([
+            telemetry.tuned_logp_mse,
+            telemetry.tuned_qed_mse,
+            telemetry.tuned_sas_mse,
+        ])];
         print_comparison(&qnn_rows, &classical_baselines);
     }
 
     if let Ok(json_str) = serde_json::to_string_pretty(&telemetry) {
         let _ = fs::write(&out_json_path, json_str);
-        println!("\n[SAVED] ZINC QNN telemetry exported to: {}", out_json_path.display());
+        println!(
+            "\n[SAVED] ZINC QNN telemetry exported to: {}",
+            out_json_path.display()
+        );
     }
 
     println!("\n╔═══════════════════════════════════════════════════════════════════════════════════════════════╗");

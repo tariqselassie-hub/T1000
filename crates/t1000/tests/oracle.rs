@@ -8,11 +8,11 @@
 use std::collections::BTreeSet;
 use std::f64::consts::PI;
 
-use t1000::compiler::Unitary2x2;
-use t1000::*;
 use num_complex::Complex64 as C;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
+use t1000::compiler::Unitary2x2;
+use t1000::*;
 
 const TOL: f64 = 1e-10;
 
@@ -75,7 +75,11 @@ fn ref_cnot(psi: &mut [C], control: usize, target: usize) {
     assert_ne!(control, target);
     let old = psi.to_vec();
     for i in 0..psi.len() {
-        let src = if bit(i, control) == 1 { i ^ (1 << target) } else { i };
+        let src = if bit(i, control) == 1 {
+            i ^ (1 << target)
+        } else {
+            i
+        };
         psi[i] = old[src];
     }
 }
@@ -92,7 +96,11 @@ fn ref_expect(psi: &[C], ops: &[(usize, Mat2)]) -> f64 {
         ref_1q(&mut phi, *q, m);
     }
     let e = ref_inner(psi, &phi);
-    assert!(e.im.abs() < 1e-9, "Hermitian expectation has imaginary part {}", e.im);
+    assert!(
+        e.im.abs() < 1e-9,
+        "Hermitian expectation has imaginary part {}",
+        e.im
+    );
     e.re
 }
 
@@ -144,7 +152,13 @@ fn full_matrix_1q(n: usize, q: usize, m: &Mat2) -> Vec<Vec<C>> {
             let mut v = c(1.0);
             for k in 0..n {
                 let (rb, cb) = (bit(r, k), bit(col, k));
-                v *= if k == q { m[rb][cb] } else if rb == cb { c(1.0) } else { c(0.0) };
+                v *= if k == q {
+                    m[rb][cb]
+                } else if rb == cb {
+                    c(1.0)
+                } else {
+                    c(0.0)
+                };
             }
             *entry = v;
         }
@@ -153,7 +167,9 @@ fn full_matrix_1q(n: usize, q: usize, m: &Mat2) -> Vec<Vec<C>> {
 }
 
 fn matvec(u: &[Vec<C>], psi: &[C]) -> Vec<C> {
-    u.iter().map(|row| row.iter().zip(psi).map(|(a, b)| a * b).sum()).collect()
+    u.iter()
+        .map(|row| row.iter().zip(psi).map(|(a, b)| a * b).sum())
+        .collect()
 }
 
 // ----- helpers -----
@@ -184,7 +200,11 @@ fn to_qs(psi: &[C]) -> QuantumState {
 }
 
 fn from_qs(s: &QuantumState) -> Vec<C> {
-    s.real.iter().zip(&s.imag).map(|(&r, &i)| C::new(r, i)).collect()
+    s.real
+        .iter()
+        .zip(&s.imag)
+        .map(|(&r, &i)| C::new(r, i))
+        .collect()
 }
 
 fn assert_states_close(got: &[C], want: &[C], ctx: &str) {
@@ -218,7 +238,11 @@ fn oracle_single_qubit_gate_matches_full_matrix() {
     let mut r = rng(1);
     for n in 1..=4 {
         for q in 0..n {
-            for m in [ry_mat(r.gen_range(-PI..PI)), rz_mat(r.gen_range(-PI..PI)), x_mat()] {
+            for m in [
+                ry_mat(r.gen_range(-PI..PI)),
+                rz_mat(r.gen_range(-PI..PI)),
+                x_mat(),
+            ] {
                 let psi = random_state(n, &mut r);
                 let mut got = psi.clone();
                 ref_1q(&mut got, q, &m);
@@ -309,7 +333,9 @@ fn rademacher_phase_kernel_matches_oracle_for_all_phase_cases() {
     let mut r = rng(12);
     for n in 1..=9 {
         for _ in 0..3 {
-            let signs: Vec<f64> = (0..n).map(|_| if r.gen_bool(0.5) { 1.0 } else { -1.0 }).collect();
+            let signs: Vec<f64> = (0..n)
+                .map(|_| if r.gen_bool(0.5) { 1.0 } else { -1.0 })
+                .collect();
             let psi = random_state(n, &mut r);
             let mut s = to_qs(&psi);
             simd::apply_rademacher_phase_kernel(&mut s.real, &mut s.imag, &signs);
@@ -317,7 +343,11 @@ fn rademacher_phase_kernel_matches_oracle_for_all_phase_cases() {
             for (q, sign) in signs.iter().enumerate() {
                 ref_1q(&mut want, q, &rz_mat(sign * PI));
             }
-            assert_states_close(&from_qs(&s), &want, &format!("Rademacher n={n} signs={signs:?}"));
+            assert_states_close(
+                &from_qs(&s),
+                &want,
+                &format!("Rademacher n={n} signs={signs:?}"),
+            );
         }
     }
 }
@@ -331,7 +361,10 @@ fn normalize_inner_product_fidelity_match_oracle() {
         let (sa, sb) = (to_qs(&a), to_qs(&b));
         let ip = ref_inner(&a, &b);
         let got = sa.inner_product(&sb);
-        assert!((got - ip).norm() < TOL, "inner product n={n}: {got} vs {ip}");
+        assert!(
+            (got - ip).norm() < TOL,
+            "inner product n={n}: {got} vs {ip}"
+        );
         assert_close(sa.fidelity(&sb), ip.norm_sqr(), &format!("fidelity n={n}"));
 
         let scaled: Vec<C> = a.iter().map(|x| x * 3.7).collect();
@@ -399,7 +432,11 @@ fn fused_diagonal_layer_matches_oracle() {
     for n in (1..=11).chain([17]) {
         for trial in 0..4 {
             // Fewer angles than qubits on some trials; untouched qubits must be left alone.
-            let n_angles = if trial % 2 == 0 { n } else { r.gen_range(0..=n) };
+            let n_angles = if trial % 2 == 0 {
+                n
+            } else {
+                r.gen_range(0..=n)
+            };
             let rz = random_angles(n_angles, &mut r);
             // Random pairs, possibly repeated (a repeated CZ pair must cancel).
             let n_pairs = if n < 2 { 0 } else { r.gen_range(0..=2 * n) };
@@ -420,7 +457,11 @@ fn fused_diagonal_layer_matches_oracle() {
             for &(a, b) in &pairs {
                 ref_cz(&mut want, a, b);
             }
-            assert_states_close(&from_qs(&s), &want, &format!("diagonal layer n={n} trial={trial}"));
+            assert_states_close(
+                &from_qs(&s),
+                &want,
+                &format!("diagonal layer n={n} trial={trial}"),
+            );
         }
     }
 }
@@ -459,7 +500,11 @@ fn measurement_kernels_match_oracle() {
         simd::measure_dual_zx_expectations(&s.real, &s.imag, &mut z, &mut x);
         for q in 0..n {
             assert_close(z[q], ref_z(&psi, q), &format!("dual Z n={n} q={q}"));
-            assert_close(x[q], ref_expect(&psi, &[(q, x_mat())]), &format!("dual X n={n} q={q}"));
+            assert_close(
+                x[q],
+                ref_expect(&psi, &[(q, x_mat())]),
+                &format!("dual X n={n} q={q}"),
+            );
             assert_close(
                 simd::measure_single_qubit_z(&s.real, &s.imag, q),
                 ref_z(&psi, q),
@@ -474,11 +519,24 @@ fn measurement_kernels_match_oracle() {
         for i in 1..n {
             for j in 0..i {
                 assert_close(zz[idx], ref_zz(&psi, i, j), &format!("ZZ n={n} ({i},{j})"));
-                let (pzz, pzx, pxz, pxx) = simd::measure_2qubit_pauli_correlators(&s.real, &s.imag, i, j);
+                let (pzz, pzx, pxz, pxx) =
+                    simd::measure_2qubit_pauli_correlators(&s.real, &s.imag, i, j);
                 assert_close(pzz, ref_zz(&psi, i, j), "pair ZZ");
-                assert_close(pzx, ref_expect(&psi, &[(i, z_mat()), (j, x_mat())]), "pair ZX");
-                assert_close(pxz, ref_expect(&psi, &[(i, x_mat()), (j, z_mat())]), "pair XZ");
-                assert_close(pxx, ref_expect(&psi, &[(i, x_mat()), (j, x_mat())]), "pair XX");
+                assert_close(
+                    pzx,
+                    ref_expect(&psi, &[(i, z_mat()), (j, x_mat())]),
+                    "pair ZX",
+                );
+                assert_close(
+                    pxz,
+                    ref_expect(&psi, &[(i, x_mat()), (j, z_mat())]),
+                    "pair XZ",
+                );
+                assert_close(
+                    pxx,
+                    ref_expect(&psi, &[(i, x_mat()), (j, x_mat())]),
+                    "pair XX",
+                );
                 idx += 1;
             }
         }
@@ -506,9 +564,17 @@ fn fused_terminal_ry_readout_matches_oracle() {
         let mut idx = 0;
         for i in 0..n {
             assert_close(z[i], ref_z(&rotated, i), &format!("fused Z n={n} q={i}"));
-            assert_close(z_only[i], ref_z(&rotated, i), &format!("fused Z-only n={n} q={i}"));
+            assert_close(
+                z_only[i],
+                ref_z(&rotated, i),
+                &format!("fused Z-only n={n} q={i}"),
+            );
             for j in 0..i {
-                assert_close(zz[idx], ref_zz(&rotated, i, j), &format!("fused ZZ n={n} ({i},{j})"));
+                assert_close(
+                    zz[idx],
+                    ref_zz(&rotated, i, j),
+                    &format!("fused ZZ n={n} ({i},{j})"),
+                );
                 idx += 1;
             }
         }
@@ -522,7 +588,11 @@ fn pauli_observables_match_oracle() {
         let psi = random_state(n, &mut r);
         let s = to_qs(&psi);
         for q in 0..n {
-            assert_close(PauliObservable::Z(q).expectation_value(&s), ref_z(&psi, q), "obs Z");
+            assert_close(
+                PauliObservable::Z(q).expectation_value(&s),
+                ref_z(&psi, q),
+                "obs Z",
+            );
             assert_close(
                 PauliObservable::X(q).expectation_value(&s),
                 ref_expect(&psi, &[(q, x_mat())]),
@@ -530,15 +600,27 @@ fn pauli_observables_match_oracle() {
             );
             for j in 0..n {
                 if j != q {
-                    assert_close(PauliObservable::ZZ(q, j).expectation_value(&s), ref_zz(&psi, q, j), "obs ZZ");
+                    assert_close(
+                        PauliObservable::ZZ(q, j).expectation_value(&s),
+                        ref_zz(&psi, q, j),
+                        "obs ZZ",
+                    );
                 }
             }
         }
         let weights: Vec<(usize, f64)> = (0..n).map(|q| (q, r.gen_range(-2.0..2.0))).collect();
         let want_lin: f64 = weights.iter().map(|&(q, w)| w * ref_z(&psi, q)).sum();
-        assert_close(PauliObservable::LinearZ(weights).expectation_value(&s), want_lin, "obs LinearZ");
+        assert_close(
+            PauliObservable::LinearZ(weights).expectation_value(&s),
+            want_lin,
+            "obs LinearZ",
+        );
         let want_mean = (0..n).map(|q| ref_z(&psi, q)).sum::<f64>() / n as f64;
-        assert_close(PauliObservable::GlobalMeanZ.expectation_value(&s), want_mean, "obs GlobalMeanZ");
+        assert_close(
+            PauliObservable::GlobalMeanZ.expectation_value(&s),
+            want_mean,
+            "obs GlobalMeanZ",
+        );
     }
 }
 
@@ -560,7 +642,11 @@ fn angle_and_amplitude_encoding_match_oracle() {
             for q in 0..n {
                 ref_1q(&mut want, q, &ry_mat(x.get(q).copied().unwrap_or(0.0)));
             }
-            assert_states_close(&from_qs(&got), &want, &format!("angle n={n} feats={n_feat}"));
+            assert_states_close(
+                &from_qs(&got),
+                &want,
+                &format!("angle n={n} feats={n_feat}"),
+            );
 
             if n_feat == 0 {
                 continue;
@@ -572,10 +658,18 @@ fn angle_and_amplitude_encoding_match_oracle() {
             for (k, v) in kept.iter().enumerate() {
                 want[k] = c(v / norm);
             }
-            assert_states_close(&from_qs(&enc.encode(&x)), &want, &format!("amplitude n={n} feats={n_feat}"));
+            assert_states_close(
+                &from_qs(&enc.encode(&x)),
+                &want,
+                &format!("amplitude n={n} feats={n_feat}"),
+            );
             let mut into = QuantumState::zero(1 << n);
             enc.encode_amplitude_into(&x, &mut into);
-            assert_states_close(&from_qs(&into), &want, &format!("amplitude_into n={n} feats={n_feat}"));
+            assert_states_close(
+                &from_qs(&into),
+                &want,
+                &format!("amplitude_into n={n} feats={n_feat}"),
+            );
         }
     }
 }
@@ -585,7 +679,13 @@ fn angle_and_amplitude_encoding_match_oracle() {
 // =========================================================================
 
 /// pi layer (optional) followed by full layers `0..layers`.
-fn ref_forward_layers(psi: &[C], n: usize, layers: std::ops::Range<usize>, w: &[f64], pi: bool) -> Vec<C> {
+fn ref_forward_layers(
+    psi: &[C],
+    n: usize,
+    layers: std::ops::Range<usize>,
+    w: &[f64],
+    pi: bool,
+) -> Vec<C> {
     let mut s = psi.to_vec();
     if pi && layers.start == 0 {
         ref_pi_layer(&mut s, n);
@@ -611,13 +711,20 @@ fn ansatz_entangling_pattern_applies_each_pair_once() {
                 CircuitOp::CZ { q1, q2 } => {
                     let layer = (rotations - 1) / (2 * n);
                     let p = (q1.min(q2), q1.max(q2));
-                    assert!(pairs[layer].insert(p), "n={n} layer={layer}: CZ pair {p:?} applied twice (cancels)");
+                    assert!(
+                        pairs[layer].insert(p),
+                        "n={n} layer={layer}: CZ pair {p:?} applied twice (cancels)"
+                    );
                 }
                 _ => {}
             }
         }
         for (layer, got) in pairs.iter().enumerate() {
-            assert_eq!(*got, ref_cz_pairs(n, layer), "n={n} layer={layer}: wrong CZ pattern");
+            assert_eq!(
+                *got,
+                ref_cz_pairs(n, layer),
+                "n={n} layer={layer}: wrong CZ pattern"
+            );
         }
     }
 }
@@ -655,7 +762,11 @@ fn ansatz_tiled_layer_path_matches_oracle() {
     let w = random_angles(a.param_count(), &mut r);
     let psi = random_state(n, &mut r);
     let want = ref_forward_layers(&psi, n, 0..2, &w, true);
-    assert_states_close(&from_qs(&a.forward(&to_qs(&psi), &w)), &want, "tiled ansatz n=17");
+    assert_states_close(
+        &from_qs(&a.forward(&to_qs(&psi), &w)),
+        &want,
+        "tiled ansatz n=17",
+    );
 }
 
 #[test]
@@ -698,9 +809,17 @@ fn ansatz_pruned_and_fused_readouts_match_oracle() {
                 let mut idx = 0;
                 for i in 0..n {
                     assert_close(z[i], ref_z(&post, i), &format!("{ctx} fused Z q={i}"));
-                    assert_close(z_only[i], ref_z(&post, i), &format!("{ctx} fused Z-only q={i}"));
+                    assert_close(
+                        z_only[i],
+                        ref_z(&post, i),
+                        &format!("{ctx} fused Z-only q={i}"),
+                    );
                     for j in 0..i {
-                        assert_close(zz[idx], ref_zz(&post, i, j), &format!("{ctx} fused ZZ ({i},{j})"));
+                        assert_close(
+                            zz[idx],
+                            ref_zz(&post, i, j),
+                            &format!("{ctx} fused ZZ ({i},{j})"),
+                        );
                         idx += 1;
                     }
                 }
@@ -758,11 +877,26 @@ fn ansatz_midcircuit_feedforward_matches_oracle() {
 
                 let mut out = QuantumState::zero(1 << n);
                 let (mut z, mut zz) = (vec![0.0; n], vec![0.0; n * (n - 1) / 2]);
-                let got_m = a.forward_midcircuit_feedforward_into(&to_qs(&psi), &w, src, &alphas, &mut out, &mut z);
+                let got_m = a.forward_midcircuit_feedforward_into(
+                    &to_qs(&psi),
+                    &w,
+                    src,
+                    &alphas,
+                    &mut out,
+                    &mut z,
+                );
                 assert_close(got_m, m, &format!("{ctx} m_src"));
                 assert_readout(&z, None, &want, &format!("{ctx} ff_into"));
 
-                a.forward_midcircuit_full_readout_into(&to_qs(&psi), &w, src, &alphas, &mut out, &mut z, &mut zz);
+                a.forward_midcircuit_full_readout_into(
+                    &to_qs(&psi),
+                    &w,
+                    src,
+                    &alphas,
+                    &mut out,
+                    &mut z,
+                    &mut zz,
+                );
                 assert_readout(&z, Some(&zz), &want, &format!("{ctx} ff_full_into"));
 
                 let mut s = to_qs(&psi);
@@ -770,7 +904,9 @@ fn ansatz_midcircuit_feedforward_matches_oracle() {
                 assert_readout(&z, None, &want, &format!("{ctx} ff_in_place"));
 
                 let mut s = to_qs(&psi);
-                a.forward_midcircuit_full_readout_in_place(&mut s, &w, src, &alphas, &mut z, &mut zz);
+                a.forward_midcircuit_full_readout_in_place(
+                    &mut s, &w, src, &alphas, &mut z, &mut zz,
+                );
                 assert_readout(&z, Some(&zz), &want, &format!("{ctx} ff_full_in_place"));
 
                 // L0 variant: steer with Ry(alpha * m) right after layer 0, then the remaining layers.
@@ -783,7 +919,14 @@ fn ansatz_midcircuit_feedforward_matches_oracle() {
                     ref_layer(&mut s0, n, l, &w);
                 }
                 let want0 = ref_terminal_readout(&s0, n, &w[t0..t0 + n]);
-                let got_m0 = a.forward_midcircuit_l0_feedforward_into(&to_qs(&psi), &w, src, &alphas, &mut out, &mut z);
+                let got_m0 = a.forward_midcircuit_l0_feedforward_into(
+                    &to_qs(&psi),
+                    &w,
+                    src,
+                    &alphas,
+                    &mut out,
+                    &mut z,
+                );
                 assert_close(got_m0, m0, &format!("{ctx} l0 m_src"));
                 assert_readout(&z, None, &want0, &format!("{ctx} l0_ff"));
             }
@@ -821,12 +964,16 @@ fn ansatz_data_reuploading_matches_oracle() {
 
                 let (mut z, mut zz) = (vec![0.0; n], vec![0.0; n * (n - 1) / 2]);
                 let mut st = to_qs(&psi);
-                let got_m = a.forward_reuploading_in_place(&mut st, &w, &feats, &scales, src, &alphas, &mut z);
+                let got_m = a.forward_reuploading_in_place(
+                    &mut st, &w, &feats, &scales, src, &alphas, &mut z,
+                );
                 assert_close(got_m, m, &format!("{ctx} m_src"));
                 assert_readout(&z, None, &want, &ctx);
 
                 let mut st = to_qs(&psi);
-                a.forward_reuploading_full_readout_in_place(&mut st, &w, &feats, &scales, src, &alphas, &mut z, &mut zz);
+                a.forward_reuploading_full_readout_in_place(
+                    &mut st, &w, &feats, &scales, src, &alphas, &mut z, &mut zz,
+                );
                 assert_readout(&z, Some(&zz), &want, &format!("{ctx} full"));
             }
         }
@@ -844,7 +991,11 @@ fn compiled_ansatz_matches_direct_forward() {
             let want = from_qs(&a.forward(&to_qs(&psi), &w));
             let mut s = to_qs(&psi);
             a.compile(&w).execute(&mut s);
-            assert_states_close(&from_qs(&s), &want, &format!("compiled ansatz n={n} depth={depth}"));
+            assert_states_close(
+                &from_qs(&s),
+                &want,
+                &format!("compiled ansatz n={n} depth={depth}"),
+            );
         }
     }
 }
@@ -854,8 +1005,14 @@ fn compiled_ansatz_matches_direct_forward() {
 // =========================================================================
 
 fn random_unitary(r: &mut ChaCha8Rng) -> (Unitary2x2, Mat2) {
-    let (a, b, g) = (r.gen_range(-PI..PI), r.gen_range(-PI..PI), r.gen_range(-PI..PI));
-    let u = Unitary2x2::rz(g).matmul(&Unitary2x2::ry(b)).matmul(&Unitary2x2::rz(a));
+    let (a, b, g) = (
+        r.gen_range(-PI..PI),
+        r.gen_range(-PI..PI),
+        r.gen_range(-PI..PI),
+    );
+    let u = Unitary2x2::rz(g)
+        .matmul(&Unitary2x2::ry(b))
+        .matmul(&Unitary2x2::rz(a));
     let m = [[u.u00(), u.u01()], [u.u10(), u.u11()]];
     (u, m)
 }
@@ -870,7 +1027,11 @@ fn compiler_random_circuits_match_oracle() {
         let mut want = psi.clone();
         for _ in 0..40 {
             let q = r.gen_range(0..n);
-            let kind = if n == 1 { r.gen_range(0..3) } else { r.gen_range(0..6) };
+            let kind = if n == 1 {
+                r.gen_range(0..3)
+            } else {
+                r.gen_range(0..6)
+            };
             match kind {
                 0 => {
                     let t = r.gen_range(-PI..PI);
@@ -898,7 +1059,9 @@ fn compiler_random_circuits_match_oracle() {
                     }
                 }
                 _ => {
-                    let signs: Vec<f64> = (0..n).map(|_| if r.gen_bool(0.5) { 1.0 } else { -1.0 }).collect();
+                    let signs: Vec<f64> = (0..n)
+                        .map(|_| if r.gen_bool(0.5) { 1.0 } else { -1.0 })
+                        .collect();
                     for (k, sgn) in signs.iter().enumerate() {
                         ref_1q(&mut want, k, &rz_mat(sgn * PI));
                     }
@@ -908,7 +1071,11 @@ fn compiler_random_circuits_match_oracle() {
         }
         let mut s = to_qs(&psi);
         builder.compile().execute(&mut s);
-        assert_states_close(&from_qs(&s), &want, &format!("compiler trial {trial} n={n}"));
+        assert_states_close(
+            &from_qs(&s),
+            &want,
+            &format!("compiler trial {trial} n={n}"),
+        );
     }
 }
 
@@ -933,7 +1100,12 @@ fn parameter_shift_gradient_matches_finite_difference() {
             let mut wm = w.clone();
             wm[j] -= h;
             let fd = (engine.predict(&x, &wp) - engine.predict(&x, &wm)) / (2.0 * h);
-            assert!((grads[j] - fd).abs() < 1e-6, "n={n} param {j}: shift {} vs FD {}", grads[j], fd);
+            assert!(
+                (grads[j] - fd).abs() < 1e-6,
+                "n={n} param {j}: shift {} vs FD {}",
+                grads[j],
+                fd
+            );
         }
     }
 }
@@ -962,12 +1134,19 @@ fn adjoint_gradient_matches_parameter_shift_and_finite_differences() {
                 let x = random_angles(n, &mut r);
                 let w = random_angles(a.param_count(), &mut r);
                 for obs in observable_zoo(n) {
-                    let engine = ParameterShiftEngine::new(DataEncodingLayer::new(n, EncodingKind::Angle), a.clone(), obs.clone());
+                    let engine = ParameterShiftEngine::new(
+                        DataEncodingLayer::new(n, EncodingKind::Angle),
+                        a.clone(),
+                        obs.clone(),
+                    );
                     let ctx = format!("n={n} depth={depth} pi={pi} obs={obs:?}");
                     let adj = engine.compute_circuit_gradients(&x, &w);
                     let ps = engine.compute_circuit_gradients_parameter_shift(&x, &w);
                     for (j, (ga, gp)) in adj.iter().zip(&ps).enumerate() {
-                        assert!((ga - gp).abs() < 1e-10, "{ctx} param {j}: adjoint {ga} vs shift {gp}");
+                        assert!(
+                            (ga - gp).abs() < 1e-10,
+                            "{ctx} param {j}: adjoint {ga} vs shift {gp}"
+                        );
                     }
                     // Spot-check against central finite differences.
                     for j in [0, w.len() / 2, w.len() - 1] {
@@ -977,7 +1156,11 @@ fn adjoint_gradient_matches_parameter_shift_and_finite_differences() {
                         let mut wm = w.clone();
                         wm[j] -= h;
                         let fd = (engine.predict(&x, &wp) - engine.predict(&x, &wm)) / (2.0 * h);
-                        assert!((adj[j] - fd).abs() < 1e-6, "{ctx} param {j}: adjoint {} vs FD {fd}", adj[j]);
+                        assert!(
+                            (adj[j] - fd).abs() < 1e-6,
+                            "{ctx} param {j}: adjoint {} vs FD {fd}",
+                            adj[j]
+                        );
                     }
                 }
             }
@@ -994,16 +1177,25 @@ fn adjoint_loss_gradients_match_parameter_shift() {
         let psi = to_qs(&random_state(n, &mut r));
         let obs = observable_zoo(n);
         let targets: Vec<f64> = obs.iter().map(|_| r.gen_range(-1.0..1.0)).collect();
-        let engine = ParameterShiftEngine::new(DataEncodingLayer::new(n, EncodingKind::Angle), a.clone(), PauliObservable::Z(0));
+        let engine = ParameterShiftEngine::new(
+            DataEncodingLayer::new(n, EncodingKind::Angle),
+            a.clone(),
+            PauliObservable::Z(0),
+        );
 
-        let (p_adj, l_adj, g_adj) = engine.compute_multi_observable_loss_gradients(&psi, &obs, &targets, &w);
-        let (p_ps, l_ps, g_ps) = engine.compute_multi_observable_loss_gradients_parameter_shift(&psi, &obs, &targets, &w);
+        let (p_adj, l_adj, g_adj) =
+            engine.compute_multi_observable_loss_gradients(&psi, &obs, &targets, &w);
+        let (p_ps, l_ps, g_ps) = engine
+            .compute_multi_observable_loss_gradients_parameter_shift(&psi, &obs, &targets, &w);
         for (a1, b1) in p_adj.iter().zip(&p_ps) {
             assert_close(*a1, *b1, "multi-observable prediction");
         }
         assert_close(l_adj, l_ps, "multi-observable loss");
         for (j, (ga, gp)) in g_adj.iter().zip(&g_ps).enumerate() {
-            assert!((ga - gp).abs() < 1e-10, "n={n} multi-observable param {j}: {ga} vs {gp}");
+            assert!(
+                (ga - gp).abs() < 1e-10,
+                "n={n} multi-observable param {j}: {ga} vs {gp}"
+            );
         }
 
         let y = 0.25;
@@ -1037,11 +1229,19 @@ fn adjoint_matches_parameter_shift_for_zinc_readout_setup() {
     });
 
     // Parameter-shift reference for d/dθ of sum_q c_q <Z_q> with c fixed at the base point.
-    let pred: f64 = readout.iter().zip(&res.expectations).map(|(rw, zq)| rw * zq).sum();
+    let pred: f64 = readout
+        .iter()
+        .zip(&res.expectations)
+        .map(|(rw, zq)| rw * zq)
+        .sum();
     let coeffs: Vec<f64> = readout.iter().map(|rw| rw * (pred - 0.3)).collect();
     let objective = |weights: &[f64]| {
         let s = a.forward(&input, weights);
-        z_obs.iter().zip(&coeffs).map(|(o, c)| c * o.expectation_value(&s)).sum::<f64>()
+        z_obs
+            .iter()
+            .zip(&coeffs)
+            .map(|(o, c)| c * o.expectation_value(&s))
+            .sum::<f64>()
     };
     for j in 0..w.len() {
         let mut wp = w.clone();
@@ -1049,7 +1249,11 @@ fn adjoint_matches_parameter_shift_for_zinc_readout_setup() {
         let mut wm = w.clone();
         wm[j] -= PI / 2.0;
         let ps = 0.5 * (objective(&wp) - objective(&wm));
-        assert!((res.gradient[j] - ps).abs() < 1e-10, "param {j}: adjoint {} vs shift {ps}", res.gradient[j]);
+        assert!(
+            (res.gradient[j] - ps).abs() < 1e-10,
+            "param {j}: adjoint {} vs shift {ps}",
+            res.gradient[j]
+        );
     }
 }
 
@@ -1060,13 +1264,22 @@ fn ansatz_program(n: usize, depth: usize, pi: bool) -> Vec<t1000::adjoint::GateO
     if pi {
         for q in 0..n {
             let sign = if q % 2 == 0 { 1.0 } else { -1.0 };
-            ops.push(GateOp::Rz { qubit: q, angle: Angle::fixed(sign * PI) });
+            ops.push(GateOp::Rz {
+                qubit: q,
+                angle: Angle::fixed(sign * PI),
+            });
         }
     }
     for layer in 0..depth {
         for q in 0..n {
-            ops.push(GateOp::Ry { qubit: q, angle: Angle::param(layer * 2 * n + 2 * q) });
-            ops.push(GateOp::Rz { qubit: q, angle: Angle::param(layer * 2 * n + 2 * q + 1) });
+            ops.push(GateOp::Ry {
+                qubit: q,
+                angle: Angle::param(layer * 2 * n + 2 * q),
+            });
+            ops.push(GateOp::Rz {
+                qubit: q,
+                angle: Angle::param(layer * 2 * n + 2 * q + 1),
+            });
         }
         for (a, b) in ref_cz_pairs(n, layer) {
             ops.push(GateOp::Cz(a, b));
@@ -1082,18 +1295,33 @@ fn program_adjoint_matches_ansatz_adjoint() {
         let a = ansatz(n, depth, true);
         let w = random_angles(a.param_count(), &mut r);
         let input = to_qs(&random_state(n, &mut r));
-        let obs: Vec<PauliObservable> = (0..n).map(PauliObservable::Z).chain([PauliObservable::ZZ(0, n - 1)]).collect();
+        let obs: Vec<PauliObservable> = (0..n)
+            .map(PauliObservable::Z)
+            .chain([PauliObservable::ZZ(0, n - 1)])
+            .collect();
         let coeffs: Vec<f64> = obs.iter().map(|_| r.gen_range(-1.0..1.0)).collect();
         let reference = t1000::adjoint_gradient(&a, &input, &w, &obs, |_| coeffs.clone());
         let ops = ansatz_program(n, depth, true);
         let got = t1000::adjoint::adjoint_program(&input, &ops, &w, &obs, |_| coeffs.clone());
         let state = t1000::adjoint::run_program(&input, &ops, &w);
-        assert_states_close(&from_qs(&state), &from_qs(&a.forward(&input, &w)), "program forward");
-        for (k, (x, y)) in got.expectations.iter().zip(&reference.expectations).enumerate() {
+        assert_states_close(
+            &from_qs(&state),
+            &from_qs(&a.forward(&input, &w)),
+            "program forward",
+        );
+        for (k, (x, y)) in got
+            .expectations
+            .iter()
+            .zip(&reference.expectations)
+            .enumerate()
+        {
             assert_close(*x, *y, &format!("expectation {k}"));
         }
         for (j, (x, y)) in got.gradient.iter().zip(&reference.gradient).enumerate() {
-            assert!((x - y).abs() < 1e-10, "n={n} depth={depth} param {j}: program {x} vs ansatz {y}");
+            assert!(
+                (x - y).abs() < 1e-10,
+                "n={n} depth={depth} param {j}: program {x} vs ansatz {y}"
+            );
         }
     }
 }
@@ -1110,9 +1338,17 @@ fn program_adjoint_handles_scaled_shared_and_fixed_angles() {
             let angle = match r.gen_range(0..3) {
                 0 => Angle::fixed(r.gen_range(-PI..PI)),
                 1 => Angle::param(r.gen_range(0..n_params)),
-                _ => Angle { param: Some(r.gen_range(0..n_params)), scale: r.gen_range(-2.0..2.0), offset: r.gen_range(-1.0..1.0) },
+                _ => Angle {
+                    param: Some(r.gen_range(0..n_params)),
+                    scale: r.gen_range(-2.0..2.0),
+                    offset: r.gen_range(-1.0..1.0),
+                },
             };
-            ops.push(if r.gen_bool(0.5) { GateOp::Ry { qubit: q, angle } } else { GateOp::Rz { qubit: q, angle } });
+            ops.push(if r.gen_bool(0.5) {
+                GateOp::Ry { qubit: q, angle }
+            } else {
+                GateOp::Rz { qubit: q, angle }
+            });
             if n >= 2 && r.gen_bool(0.3) {
                 let a = r.gen_range(0..n);
                 ops.push(GateOp::Cz(a, (a + 1) % n));
@@ -1120,12 +1356,19 @@ fn program_adjoint_handles_scaled_shared_and_fixed_angles() {
         }
         let params = random_angles(n_params, &mut r);
         let input = to_qs(&random_state(n, &mut r));
-        let obs: Vec<PauliObservable> = vec![PauliObservable::Z(0), PauliObservable::X(n - 1), PauliObservable::GlobalMeanZ];
+        let obs: Vec<PauliObservable> = vec![
+            PauliObservable::Z(0),
+            PauliObservable::X(n - 1),
+            PauliObservable::GlobalMeanZ,
+        ];
         let coeffs = vec![0.7, -1.3, 0.4];
         let res = adjoint_program(&input, &ops, &params, &obs, |_| coeffs.clone());
         let objective = |p: &[f64]| {
             let s = run_program(&input, &ops, p);
-            obs.iter().zip(&coeffs).map(|(o, c)| c * o.expectation_value(&s)).sum::<f64>()
+            obs.iter()
+                .zip(&coeffs)
+                .map(|(o, c)| c * o.expectation_value(&s))
+                .sum::<f64>()
         };
         for j in 0..n_params {
             let h = 1e-6;
@@ -1134,7 +1377,11 @@ fn program_adjoint_handles_scaled_shared_and_fixed_angles() {
             let mut pm = params.clone();
             pm[j] -= h;
             let fd = (objective(&pp) - objective(&pm)) / (2.0 * h);
-            assert!((res.gradient[j] - fd).abs() < 1e-6, "n={n} param {j}: adjoint {} vs FD {fd}", res.gradient[j]);
+            assert!(
+                (res.gradient[j] - fd).abs() < 1e-6,
+                "n={n} param {j}: adjoint {} vs FD {fd}",
+                res.gradient[j]
+            );
         }
     }
 }
@@ -1147,11 +1394,18 @@ fn adjoint_gradient_on_multithreaded_path() {
     let a = ansatz(n, 2, true);
     let w = random_angles(a.param_count(), &mut r);
     let x = random_angles(n, &mut r);
-    let engine = ParameterShiftEngine::new(DataEncodingLayer::new(n, EncodingKind::Angle), a, PauliObservable::GlobalMeanZ);
+    let engine = ParameterShiftEngine::new(
+        DataEncodingLayer::new(n, EncodingKind::Angle),
+        a,
+        PauliObservable::GlobalMeanZ,
+    );
     let adj = engine.compute_circuit_gradients(&x, &w);
     let ps = engine.compute_circuit_gradients_parameter_shift(&x, &w);
     for (j, (ga, gp)) in adj.iter().zip(&ps).enumerate() {
-        assert!((ga - gp).abs() < 1e-10, "param {j}: adjoint {ga} vs shift {gp}");
+        assert!(
+            (ga - gp).abs() < 1e-10,
+            "param {j}: adjoint {ga} vs shift {gp}"
+        );
     }
 }
 
@@ -1240,5 +1494,7 @@ fn reuploading_rejects_depth_one() {
     let a = ansatz(4, 1, false);
     let mut s = QuantumState::new(16);
     let mut z = vec![0.0; 4];
-    a.forward_reuploading_in_place(&mut s, &[0.0; 4], &[1.0; 4], &[1.0; 4], 0, &[0.0; 4], &mut z);
+    a.forward_reuploading_in_place(
+        &mut s, &[0.0; 4], &[1.0; 4], &[1.0; 4], 0, &[0.0; 4], &mut z,
+    );
 }

@@ -15,13 +15,13 @@ use std::f64::consts::PI;
 
 /// Canonical 7-th root of unity phase table: omega^k = exp(2*pi*i*k / 7)
 const OMEGA_7: [(f64, f64); 7] = [
-    (1.0, 0.0),                               // k = 0
-    (0.6234898018587335, 0.7818314824680298),  // k = 1 (cos(2pi/7), sin(2pi/7))
-    (-0.22252093395631445, 0.9749279121818236),// k = 2 (cos(4pi/7), sin(4pi/7))
-    (-0.9009688679024191, 0.4338837391175581), // k = 3 (cos(6pi/7), sin(6pi/7))
-    (-0.9009688679024191, -0.4338837391175581),// k = 4 (cos(8pi/7), sin(8pi/7))
-    (-0.22252093395631445, -0.9749279121818236),// k = 5 (cos(10pi/7), sin(10pi/7))
-    (0.6234898018587335, -0.7818314824680298), // k = 6 (cos(12pi/7), sin(12pi/7))
+    (1.0, 0.0),                                  // k = 0
+    (0.6234898018587335, 0.7818314824680298),    // k = 1 (cos(2pi/7), sin(2pi/7))
+    (-0.22252093395631445, 0.9749279121818236),  // k = 2 (cos(4pi/7), sin(4pi/7))
+    (-0.9009688679024191, 0.4338837391175581),   // k = 3 (cos(6pi/7), sin(6pi/7))
+    (-0.9009688679024191, -0.4338837391175581),  // k = 4 (cos(8pi/7), sin(8pi/7))
+    (-0.22252093395631445, -0.9749279121818236), // k = 5 (cos(10pi/7), sin(10pi/7))
+    (0.6234898018587335, -0.7818314824680298),   // k = 6 (cos(12pi/7), sin(12pi/7))
 ];
 
 /// Multi-qudit Heptal wave statevector spanning Hilbert space dimension $D = 7^K$.
@@ -36,7 +36,9 @@ pub struct HeptalWaveState {
 impl HeptalWaveState {
     /// Constructs a Heptal wave state initialised to uniform superposition.
     pub fn new_superposition(sites: usize) -> Self {
-        let dim = 7usize.checked_pow(sites as u32).expect("Heptal dimension overflow");
+        let dim = 7usize
+            .checked_pow(sites as u32)
+            .expect("Heptal dimension overflow");
         let amp = 1.0 / (dim as f64).sqrt();
         Self {
             sites,
@@ -48,7 +50,9 @@ impl HeptalWaveState {
 
     /// Constructs a Heptal wave state initialised in the ground state |0...0>.
     pub fn new_ground(sites: usize) -> Self {
-        let dim = 7usize.checked_pow(sites as u32).expect("Heptal dimension overflow");
+        let dim = 7usize
+            .checked_pow(sites as u32)
+            .expect("Heptal dimension overflow");
         let mut real = vec![0.0; dim];
         real[0] = 1.0;
         Self {
@@ -67,13 +71,16 @@ impl HeptalWaveState {
 
     /// Normalises the statevector in $\ell_2$ norm.
     pub fn normalize(&mut self) {
-        let norm_sq: f64 = self.real.par_iter()
+        let norm_sq: f64 = self
+            .real
+            .par_iter()
             .zip(&self.imag)
             .map(|(&r, &i)| r * r + i * i)
             .sum();
         if norm_sq > 0.0 {
             let inv_norm = 1.0 / norm_sq.sqrt();
-            self.real.par_iter_mut()
+            self.real
+                .par_iter_mut()
                 .zip(&mut self.imag)
                 .for_each(|(r, i)| {
                     *r *= inv_norm;
@@ -153,7 +160,8 @@ impl HeptalWaveState {
 
         // Parallel streaming permutation sweep
         let chunk_size = 4096.min(self.dim);
-        self.real.par_chunks(chunk_size)
+        self.real
+            .par_chunks(chunk_size)
             .zip(self.imag.par_chunks(chunk_size))
             .enumerate()
             .for_each(|(chunk_idx, (r_chunk, i_chunk))| {
@@ -189,7 +197,8 @@ impl HeptalWaveState {
         let next_imag = vec![0.0; self.dim];
 
         let chunk_size = 4096.min(self.dim);
-        self.real.par_chunks(chunk_size)
+        self.real
+            .par_chunks(chunk_size)
             .zip(self.imag.par_chunks(chunk_size))
             .enumerate()
             .for_each(|(chunk_idx, (r_chunk, i_chunk))| {
@@ -221,7 +230,9 @@ impl HeptalWaveState {
         let stride1 = 7usize.pow(q1 as u32);
         let stride2 = 7usize.pow(q2 as u32);
 
-        let sum_comp: f64 = self.real.par_iter()
+        let sum_comp: f64 = self
+            .real
+            .par_iter()
             .zip(&self.imag)
             .enumerate()
             .map(|(idx, (&r, &i))| {
@@ -256,7 +267,8 @@ impl HeptalWaveState {
         let stride1 = 7usize.pow(q1 as u32);
         let stride2 = 7usize.pow(q2 as u32);
 
-        self.real.par_iter_mut()
+        self.real
+            .par_iter_mut()
             .zip(&mut self.imag)
             .enumerate()
             .for_each(|(idx, (r, i))| {
@@ -279,7 +291,8 @@ impl HeptalWaveState {
         let stride = 7usize.pow(qudit as u32);
         let cos_sin: Vec<(f64, f64)> = angles.iter().map(|&a| (a.cos(), a.sin())).collect();
 
-        self.real.par_iter_mut()
+        self.real
+            .par_iter_mut()
             .zip(&mut self.imag)
             .enumerate()
             .for_each(|(idx, (r, i))| {
@@ -296,7 +309,9 @@ impl HeptalWaveState {
     /// $C_{\ell_1}(\psi) = \left(\sum_x |c_x|\right)^2 - 1$
     /// and normalized coherence $C_{\text{norm}} = C_{\ell_1} / (D - 1) \in [0.0, 1.0]$.
     pub fn coherence_l1(&self) -> (f64, f64) {
-        let sum_abs: f64 = self.real.par_iter()
+        let sum_abs: f64 = self
+            .real
+            .par_iter()
             .zip(&self.imag)
             .map(|(&r, &i)| (r * r + i * i).sqrt())
             .sum();
@@ -332,18 +347,25 @@ impl HeptalWaveState {
 
     /// Shannon entropy in nats.
     pub fn entropy(&self) -> f64 {
-        self.real.par_iter()
+        self.real
+            .par_iter()
             .zip(&self.imag)
             .map(|(&r, &i)| {
                 let p = r * r + i * i;
-                if p > 1e-18 { -p * p.ln() } else { 0.0 }
+                if p > 1e-18 {
+                    -p * p.ln()
+                } else {
+                    0.0
+                }
             })
             .sum()
     }
 
     /// Scrambling Linear XEB fidelity against ideal Haar Porter-Thomas distribution.
     pub fn haar_scrambling_fidelity(&self) -> f64 {
-        let sum_p_sq: f64 = self.real.par_iter()
+        let sum_p_sq: f64 = self
+            .real
+            .par_iter()
             .zip(&self.imag)
             .map(|(&r, &i)| {
                 let p = r * r + i * i;
@@ -406,7 +428,12 @@ mod tests {
     fn test_heptal_chrestenson_unitarity() {
         let mut state = HeptalWaveState::new_ground(2); // 49 states
         state.apply_chrestenson(0);
-        let norm_sq: f64 = state.real.iter().zip(&state.imag).map(|(&r, &i)| r * r + i * i).sum();
+        let norm_sq: f64 = state
+            .real
+            .iter()
+            .zip(&state.imag)
+            .map(|(&r, &i)| r * r + i * i)
+            .sum();
         assert!((norm_sq - 1.0).abs() < 1e-10);
 
         // Applying Chrestenson 7 times in cyclic group or inverse
@@ -433,7 +460,7 @@ mod tests {
     fn test_heptal_modular_complement_exactness() {
         for seed in 0..7 {
             let mut state = HeptalWaveState::new_ground(2); // 49 states
-            // Initialize Q0 to |seed>, Q1 to |0>
+                                                            // Initialize Q0 to |seed>, Q1 to |0>
             state.real[0] = 0.0;
             state.real[seed] = 1.0;
 
@@ -566,7 +593,11 @@ impl HeptalZipperEngine {
             }
 
             let is_frozen = dom_p >= self.config.epoxy_threshold || i + 1 == total_qudits;
-            let frozen = if is_frozen { Some(dom_digit as u8) } else { None };
+            let frozen = if is_frozen {
+                Some(dom_digit as u8)
+            } else {
+                None
+            };
             if let Some(d) = frozen {
                 frozen_digits.push(d);
             }
@@ -597,7 +628,11 @@ impl HeptalZipperEngine {
         }
 
         let duration_ns = t0.elapsed().as_nanos() as u64;
-        let mean_fid = if comp_count > 0 { comp_sum / (comp_count as f64) } else { 1.0 };
+        let mean_fid = if comp_count > 0 {
+            comp_sum / (comp_count as f64)
+        } else {
+            1.0
+        };
         let active_bytes = 49 * 16; // 784 bytes
 
         HeptalZipperReport {
@@ -630,8 +665,12 @@ impl HeptalZipperEngine {
 
         if norm_sq > 1e-15 {
             let inv_norm = 1.0 / norm_sq.sqrt();
-            for r in next.real.iter_mut() { *r *= inv_norm; }
-            for i in next.imag.iter_mut() { *i *= inv_norm; }
+            for r in next.real.iter_mut() {
+                *r *= inv_norm;
+            }
+            for i in next.imag.iter_mut() {
+                *i *= inv_norm;
+            }
         } else {
             next.real[0] = 1.0;
         }

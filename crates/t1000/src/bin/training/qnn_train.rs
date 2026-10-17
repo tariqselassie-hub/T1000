@@ -1,12 +1,12 @@
-use t1000::{
-    AdamOptimizer, CircuitAnsatz, DataEncodingLayer, EncodingKind, ParameterShiftEngine,
-    PauliObservable,
-};
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
+use t1000::{
+    AdamOptimizer, CircuitAnsatz, DataEncodingLayer, EncodingKind, ParameterShiftEngine,
+    PauliObservable,
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EpochLog {
@@ -95,18 +95,33 @@ fn main() {
         "z0" => (PauliObservable::Z(0), "Local Pauli <Z_0>".to_string()),
         _ => (
             PauliObservable::GlobalMeanZ,
-            format!("Global Multi-Qubit Hamiltonian <H> = (1/{}) sum <Z_i>", n_qubits),
+            format!(
+                "Global Multi-Qubit Hamiltonian <H> = (1/{}) sum <Z_i>",
+                n_qubits
+            ),
         ),
     };
 
     println!("=========================================================================");
     println!("   VARIATIONAL QUANTUM NEURAL NETWORK (VQC) TRAINING ENGINE              ");
     println!("=========================================================================");
-    println!(" 1. Data Encoding   : Angle Encoding (Ry rotations across {} qubits)", n_qubits);
-    println!(" 2. Ansatz Layers   : Hardware-Efficient (Ry/Rz + CZ Ring, Depth {})", depth);
+    println!(
+        " 1. Data Encoding   : Angle Encoding (Ry rotations across {} qubits)",
+        n_qubits
+    );
+    println!(
+        " 2. Ansatz Layers   : Hardware-Efficient (Ry/Rz + CZ Ring, Depth {})",
+        depth
+    );
     println!(" 3. Observable      : {}", obs_name);
-    println!(" 4. Optimizer       : Exact Parameter-Shift + Adam (lr_0={}, gamma={}, step={})", lr, decay_gamma, decay_step);
-    println!(" Hilbert Space Dim  : {} (dim >= 1024 invariant satisfied)", 1 << n_qubits);
+    println!(
+        " 4. Optimizer       : Exact Parameter-Shift + Adam (lr_0={}, gamma={}, step={})",
+        lr, decay_gamma, decay_step
+    );
+    println!(
+        " Hilbert Space Dim  : {} (dim >= 1024 invariant satisfied)",
+        1 << n_qubits
+    );
     println!(" Trainable Params   : {} θ angles", 2 * n_qubits * depth);
     println!(" Telemetry Output   : {}", out_path.display());
     println!("-------------------------------------------------------------------------");
@@ -122,15 +137,24 @@ fn main() {
 
     // Synthetic non-linear classification dataset
     let dataset = generate_dataset(n_qubits);
-    println!("[*] Generated {} training samples with binary targets {{-1.0, +1.0}}", dataset.len());
+    println!(
+        "[*] Generated {} training samples with binary targets {{-1.0, +1.0}}",
+        dataset.len()
+    );
 
     let start_time = Instant::now();
     let mut epoch_logs = Vec::new();
     let mut initial_loss = 0.0;
 
-    println!("\n┌───────┬──────────┬──────────────┬──────────────┬──────────────┬──────────────────┐");
-    println!("│ Epoch │ LR       │ Train Loss   │ Accuracy (%) │ Max Grad     │ Status           │");
-    println!("├───────┼──────────┼──────────────┼──────────────┼──────────────┼──────────────────┤");
+    println!(
+        "\n┌───────┬──────────┬──────────────┬──────────────┬──────────────┬──────────────────┐"
+    );
+    println!(
+        "│ Epoch │ LR       │ Train Loss   │ Accuracy (%) │ Max Grad     │ Status           │"
+    );
+    println!(
+        "├───────┼──────────┼──────────────┼──────────────┼──────────────┼──────────────────┤"
+    );
 
     for ep in 1..=epochs {
         // Step exponential learning rate decay: eta_t = eta_0 * gamma^(floor((t-1) / k))
@@ -167,7 +191,10 @@ fn main() {
 
         if ep == 1 {
             let avg_bg = batch_grads.iter().map(|g| g.abs()).sum::<f64>() / num_params as f64;
-            println!("  [Debug Ep 1] Mean Absolute Batch Gradient across {} params = {:.6}", num_params, avg_bg);
+            println!(
+                "  [Debug Ep 1] Mean Absolute Batch Gradient across {} params = {:.6}",
+                num_params, avg_bg
+            );
         }
 
         // Average gradients
@@ -199,11 +226,16 @@ fn main() {
             max_grad,
         });
     }
-    println!("└───────┴──────────┴──────────────┴──────────────┴──────────────┴──────────────────┘\n");
+    println!(
+        "└───────┴──────────┴──────────────┴──────────────┴──────────────┴──────────────────┘\n"
+    );
 
     let total_elapsed_ms = start_time.elapsed().as_secs_f64() * 1000.0;
     let final_loss = epoch_logs.last().map(|l| l.train_loss).unwrap_or(0.0);
-    let final_acc = epoch_logs.last().map(|l| l.train_accuracy_pct).unwrap_or(0.0);
+    let final_acc = epoch_logs
+        .last()
+        .map(|l| l.train_accuracy_pct)
+        .unwrap_or(0.0);
     let final_lr = epoch_logs.last().map(|l| l.lr).unwrap_or(lr);
 
     let loss_reduction_pct = if initial_loss > 1e-6 {
@@ -216,7 +248,10 @@ fn main() {
     println!("   HYBRID OPTIMIZATION SUMMARY & CONVERGENCE LEDGER                      ");
     println!("=========================================================================");
     println!(" Initial Loss       : {:.5}", initial_loss);
-    println!(" Final Loss         : {:.5} ({:.1}% reduction)", final_loss, loss_reduction_pct);
+    println!(
+        " Final Loss         : {:.5} ({:.1}% reduction)",
+        final_loss, loss_reduction_pct
+    );
     println!(" Final Accuracy     : {:.1}%", final_acc);
     println!(" Final Learning Rate: {:.5}", final_lr);
     println!(" Elapsed Time       : {:.2} ms", total_elapsed_ms);

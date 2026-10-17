@@ -1,12 +1,12 @@
-use t1000::{
-    CircuitAnsatz, DataEncodingLayer, DeepQuantumNeuralNetwork, EncodingKind, PauliObservable,
-    QuantumAssociativeMemory, QuantumFeatureMap, QuantumState,
-};
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
+use t1000::{
+    CircuitAnsatz, DataEncodingLayer, DeepQuantumNeuralNetwork, EncodingKind, PauliObservable,
+    QuantumAssociativeMemory, QuantumFeatureMap, QuantumState,
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BenchPoint {
@@ -196,8 +196,20 @@ fn main() {
     for &dim in &dims {
         let fmap = QuantumFeatureMap::new(dim, 42);
         let sample_tokens = vec![
-            "heptal", "gauge", "confinement", "werner", "state", "entanglement", "bound",
-            "datalog", "hypergraph", "ast", "simulated", "bifurcation", "kerr", "oscillator",
+            "heptal",
+            "gauge",
+            "confinement",
+            "werner",
+            "state",
+            "entanglement",
+            "bound",
+            "datalog",
+            "hypergraph",
+            "ast",
+            "simulated",
+            "bifurcation",
+            "kerr",
+            "oscillator",
         ];
 
         // 1. Benchmark Token Encoding Throughput
@@ -243,7 +255,13 @@ fn main() {
             let mut mem = QuantumAssociativeMemory::new(dim);
             for idx in 0..16 {
                 let s = input_state.permute(idx * 7);
-                mem.insert(format!("m_{}", idx), format!("Item {}", idx), "test".into(), 10, s);
+                mem.insert(
+                    format!("m_{}", idx),
+                    format!("Item {}", idx),
+                    "test".into(),
+                    10,
+                    s,
+                );
             }
 
             let t2 = Instant::now();
@@ -380,8 +398,14 @@ fn main() {
     println!("=========================================================================");
     println!(" Recommended Dim   : {}", optimal.recommended_dim);
     println!(" Recommended Depth : {} layers", optimal.recommended_depth);
-    println!(" Ingestion Speed   : {:.1} tokens/sec", optimal.expected_throughput_tok_per_sec);
-    println!(" Forward Latency   : {:.2} µs/state", optimal.expected_latency_us);
+    println!(
+        " Ingestion Speed   : {:.1} tokens/sec",
+        optimal.expected_throughput_tok_per_sec
+    );
+    println!(
+        " Forward Latency   : {:.2} µs/state",
+        optimal.expected_latency_us
+    );
     println!(" Strategic Ground  : {}", optimal.rational);
     println!("=========================================================================");
 

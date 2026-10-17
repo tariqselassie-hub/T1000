@@ -17,16 +17,27 @@ fn main() {
     let ch = DecoherenceChannel::new(ChannelKind::AmplitudeDamping { gamma: 0.1 }, 1);
     let mut damped = reg.clone();
     let lost = apply(&mut damped, &ch);
-    println!("damping lost={:.4} entropy_after={:.4}", lost, damped.entropy());
+    println!(
+        "damping lost={:.4} entropy_after={:.4}",
+        lost,
+        damped.entropy()
+    );
 
     let cc = constructive_score(&reg, &other);
     let cd = destructive_score(&reg, &other);
-    println!("interference constructive={:.4} destructive={:.4} net={:.4}",
-        cc, cd, cc - cd);
+    println!(
+        "interference constructive={:.4} destructive={:.4} net={:.4}",
+        cc,
+        cd,
+        cc - cd
+    );
 
     let a = vec![0u64, 1, 2, 3];
     let b = vec![1u64, 1, 2, 2];
     let et = EntanglementTensor::from_events(&a, &b);
-    println!("tensor schmidt_rank={} mutual_info={:.4}",
-        et.schmidt_rank(), et.mutual_information());
+    println!(
+        "tensor schmidt_rank={} mutual_info={:.4}",
+        et.schmidt_rank(),
+        et.mutual_information()
+    );
 }

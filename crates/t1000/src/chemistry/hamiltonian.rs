@@ -6,9 +6,9 @@
 //! Maps molecular orbitals to qubit operators, computes expectation values,
 //! orbital electron densities, and quantum orbital entanglement entropy.
 
-use serde::{Deserialize, Serialize};
 use crate::chemistry::molecules::Period12Molecule;
 use crate::QuantumState;
+use serde::{Deserialize, Serialize};
 
 /// Single-qubit Pauli operator.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

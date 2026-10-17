@@ -184,7 +184,11 @@ pub enum CircuitOp {
     /// Two-qubit SWAP gate
     SWAP { q1: usize, q2: usize },
     /// Two-qubit Controlled-Phase gate: diag(1, 1, 1, exp(i theta))
-    ControlledPhase { control: usize, target: usize, theta: f64 },
+    ControlledPhase {
+        control: usize,
+        target: usize,
+        theta: f64,
+    },
     /// Multi-qubit Walsh-Rademacher ±π diagonal phase layer
     RademacherPhase { signs: Vec<f64> },
 }
@@ -199,7 +203,9 @@ impl CircuitOp {
             CircuitOp::CZ { q1, q2 } | CircuitOp::SWAP { q1, q2 } => vec![*q1, *q2],
             CircuitOp::CNOT { control, target }
             | CircuitOp::AntiCNOT { control, target }
-            | CircuitOp::ControlledPhase { control, target, .. } => vec![*control, *target],
+            | CircuitOp::ControlledPhase {
+                control, target, ..
+            } => vec![*control, *target],
             CircuitOp::RademacherPhase { signs } => (0..signs.len()).collect(),
         }
     }
@@ -213,7 +219,9 @@ impl CircuitOp {
             CircuitOp::CZ { q1, q2 } | CircuitOp::SWAP { q1, q2 } => *q1 == q || *q2 == q,
             CircuitOp::CNOT { control, target }
             | CircuitOp::AntiCNOT { control, target }
-            | CircuitOp::ControlledPhase { control, target, .. } => *control == q || *target == q,
+            | CircuitOp::ControlledPhase {
+                control, target, ..
+            } => *control == q || *target == q,
             CircuitOp::RademacherPhase { signs } => q < signs.len(),
         }
     }

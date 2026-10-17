@@ -77,7 +77,16 @@ pub fn adjoint_gradient_buffered(
     coefficients: impl FnOnce(&[f64]) -> Vec<f64>,
     ws: &mut AdjointWorkspace,
 ) -> AdjointResult {
-    adjoint_gradient_with_purity_buffered(ansatz, input, weights, observables, coefficients, 0.0, 0.75, ws)
+    adjoint_gradient_with_purity_buffered(
+        ansatz,
+        input,
+        weights,
+        observables,
+        coefficients,
+        0.0,
+        0.75,
+        ws,
+    )
 }
 
 /// Taking the coefficients as a function of the expectations lets loss gradients (for example
@@ -128,18 +137,35 @@ pub fn adjoint_gradient_with_purity_buffered(
     ws: &mut AdjointWorkspace,
 ) -> AdjointResult {
     let n = ansatz.n_qubits;
-    assert_eq!(input.dim, ansatz.dim, "input dimension does not match the ansatz");
-    assert_eq!(weights.len(), ansatz.param_count(), "weight count does not match the ansatz");
+    assert_eq!(
+        input.dim, ansatz.dim,
+        "input dimension does not match the ansatz"
+    );
+    assert_eq!(
+        weights.len(),
+        ansatz.param_count(),
+        "weight count does not match the ansatz"
+    );
     assert_eq!(ws.phi.dim, ansatz.dim, "workspace phi dimension mismatch");
-    assert_eq!(ws.lambda.dim, ansatz.dim, "workspace lambda dimension mismatch");
+    assert_eq!(
+        ws.lambda.dim, ansatz.dim,
+        "workspace lambda dimension mismatch"
+    );
 
     // Forward pass via in-place copy.
     ws.phi.copy_from(input);
     ansatz.forward_in_place(&mut ws.phi, weights);
 
-    let expectations: Vec<f64> = observables.iter().map(|o| o.expectation_value(&ws.phi)).collect();
+    let expectations: Vec<f64> = observables
+        .iter()
+        .map(|o| o.expectation_value(&ws.phi))
+        .collect();
     let coeffs = coefficients(&expectations);
-    assert_eq!(coeffs.len(), observables.len(), "one coefficient per observable");
+    assert_eq!(
+        coeffs.len(),
+        observables.len(),
+        "one coefficient per observable"
+    );
 
     // Zero-allocation lambda accumulation: lambda = sum_k c_k O_k |psi>
     ws.reset_lambda();
@@ -208,7 +234,8 @@ pub fn adjoint_gradient_with_purity_buffered(
                 for t in 0..(ansatz.dim / 2) {
                     let x0 = ((t >> q) << (q + 1)) | (t & (mask - 1));
                     let x1 = x0 | mask;
-                    g += ws.lambda.real[x1] * ws.phi.real[x0] + ws.lambda.imag[x1] * ws.phi.imag[x0]
+                    g += ws.lambda.real[x1] * ws.phi.real[x0]
+                        + ws.lambda.imag[x1] * ws.phi.imag[x0]
                         - ws.lambda.real[x0] * ws.phi.real[x1]
                         - ws.lambda.imag[x0] * ws.phi.imag[x1];
                 }
@@ -222,7 +249,8 @@ pub fn adjoint_gradient_with_purity_buffered(
                     for t in range.clone() {
                         let x0 = ((t >> q) << (q + 1)) | (t & (mask - 1));
                         let x1 = x0 | mask;
-                        *g += ws.lambda.real[x1] * ws.phi.real[x0] + ws.lambda.imag[x1] * ws.phi.imag[x0]
+                        *g += ws.lambda.real[x1] * ws.phi.real[x0]
+                            + ws.lambda.imag[x1] * ws.phi.imag[x0]
                             - ws.lambda.real[x0] * ws.phi.real[x1]
                             - ws.lambda.imag[x0] * ws.phi.imag[x1];
                     }
@@ -237,7 +265,12 @@ pub fn adjoint_gradient_with_purity_buffered(
         for s in [&mut ws.phi, &mut ws.lambda] {
             if n <= 16 {
                 for q in 0..n {
-                    crate::simd::apply_ry_kernel(&mut s.real, &mut s.imag, q, -weights[base + 2 * q]);
+                    crate::simd::apply_ry_kernel(
+                        &mut s.real,
+                        &mut s.imag,
+                        q,
+                        -weights[base + 2 * q],
+                    );
                 }
             } else {
                 for q in 0..n {
@@ -247,7 +280,10 @@ pub fn adjoint_gradient_with_purity_buffered(
         }
     }
 
-    AdjointResult { expectations, gradient }
+    AdjointResult {
+        expectations,
+        gradient,
+    }
 }
 
 // =========================================================================
@@ -267,17 +303,29 @@ pub struct Angle {
 impl Angle {
     /// Constant angle (data encoding, fixed phase layers).
     pub fn fixed(theta: f64) -> Self {
-        Self { param: None, scale: 0.0, offset: theta }
+        Self {
+            param: None,
+            scale: 0.0,
+            offset: theta,
+        }
     }
 
     /// The parameter itself.
     pub fn param(index: usize) -> Self {
-        Self { param: Some(index), scale: 1.0, offset: 0.0 }
+        Self {
+            param: Some(index),
+            scale: 1.0,
+            offset: 0.0,
+        }
     }
 
     /// `scale * params[index]`.
     pub fn scaled(index: usize, scale: f64) -> Self {
-        Self { param: Some(index), scale, offset: 0.0 }
+        Self {
+            param: Some(index),
+            scale,
+            offset: 0.0,
+        }
     }
 
     fn value(&self, params: &[f64]) -> f64 {
@@ -300,12 +348,18 @@ pub enum GateOp {
 fn apply_op(state: &mut QuantumState, op: &GateOp, params: &[f64], inverse: bool) {
     let sign = if inverse { -1.0 } else { 1.0 };
     match op {
-        GateOp::Ry { qubit, angle } => {
-            crate::parallel::apply_ry(&mut state.real, &mut state.imag, *qubit, sign * angle.value(params))
-        }
-        GateOp::Rz { qubit, angle } => {
-            crate::simd::apply_rz_kernel(&mut state.real, &mut state.imag, *qubit, sign * angle.value(params))
-        }
+        GateOp::Ry { qubit, angle } => crate::parallel::apply_ry(
+            &mut state.real,
+            &mut state.imag,
+            *qubit,
+            sign * angle.value(params),
+        ),
+        GateOp::Rz { qubit, angle } => crate::simd::apply_rz_kernel(
+            &mut state.real,
+            &mut state.imag,
+            *qubit,
+            sign * angle.value(params),
+        ),
         GateOp::Cz(a, b) => crate::simd::apply_cz_kernel(&mut state.real, &mut state.imag, *a, *b),
     }
 }
@@ -314,7 +368,11 @@ fn check_params(ops: &[GateOp], params: &[f64]) {
     for op in ops {
         if let GateOp::Ry { angle, .. } | GateOp::Rz { angle, .. } = op {
             if let Some(p) = angle.param {
-                assert!(p < params.len(), "gate refers to parameter {p} but only {} given", params.len());
+                assert!(
+                    p < params.len(),
+                    "gate refers to parameter {p} but only {} given",
+                    params.len()
+                );
             }
         }
     }
@@ -342,9 +400,16 @@ pub fn adjoint_program(
     coefficients: impl FnOnce(&[f64]) -> Vec<f64>,
 ) -> AdjointResult {
     let mut phi = run_program(initial, ops, params);
-    let expectations: Vec<f64> = observables.iter().map(|o| o.expectation_value(&phi)).collect();
+    let expectations: Vec<f64> = observables
+        .iter()
+        .map(|o| o.expectation_value(&phi))
+        .collect();
     let coeffs = coefficients(&expectations);
-    assert_eq!(coeffs.len(), observables.len(), "one coefficient per observable");
+    assert_eq!(
+        coeffs.len(),
+        observables.len(),
+        "one coefficient per observable"
+    );
 
     let dim = phi.dim;
     let mut lambda = QuantumState::zero(dim);
@@ -362,7 +427,15 @@ pub fn adjoint_program(
     let mut gradient = vec![0.0; params.len()];
     for op in ops.iter().rev() {
         match op {
-            GateOp::Ry { qubit, angle: Angle { param: Some(p), scale, .. } } => {
+            GateOp::Ry {
+                qubit,
+                angle:
+                    Angle {
+                        param: Some(p),
+                        scale,
+                        ..
+                    },
+            } => {
                 // Im <lambda| Y_q |phi> over pairs (x0, x1 = x0 | bit q).
                 let mask = 1usize << qubit;
                 let g = crate::parallel::chunked_sum(dim / 2, 1, |range, acc| {
@@ -376,7 +449,15 @@ pub fn adjoint_program(
                 })[0];
                 gradient[*p] += scale * g;
             }
-            GateOp::Rz { qubit, angle: Angle { param: Some(p), scale, .. } } => {
+            GateOp::Rz {
+                qubit,
+                angle:
+                    Angle {
+                        param: Some(p),
+                        scale,
+                        ..
+                    },
+            } => {
                 // Im <lambda| Z_q |phi>.
                 let g = crate::parallel::chunked_sum(dim, 1, |range, acc| {
                     for x in range {
@@ -396,7 +477,10 @@ pub fn adjoint_program(
         apply_op(&mut lambda, op, params, true);
     }
 
-    AdjointResult { expectations, gradient }
+    AdjointResult {
+        expectations,
+        gradient,
+    }
 }
 
 /// Injects the synthetic Bloch purity operator:
@@ -462,9 +546,8 @@ mod tests {
         let obs = vec![PauliObservable::Z(0)];
 
         let res_std = adjoint_gradient(&ansatz, &input, &weights, &obs, |_| vec![1.0]);
-        let res_purity = adjoint_gradient_with_purity(
-            &ansatz, &input, &weights, &obs, |_| vec![1.0], 1.0, 0.99,
-        );
+        let res_purity =
+            adjoint_gradient_with_purity(&ansatz, &input, &weights, &obs, |_| vec![1.0], 1.0, 0.99);
 
         assert_eq!(res_std.expectations, res_purity.expectations);
         assert_eq!(res_std.gradient.len(), res_purity.gradient.len());
@@ -494,7 +577,10 @@ mod tests {
             );
 
             for (e1, e2) in res_std.expectations.iter().zip(&res_buf.expectations) {
-                assert!((e1 - e2).abs() < 1e-12, "expectation mismatch at n={n_qubits}");
+                assert!(
+                    (e1 - e2).abs() < 1e-12,
+                    "expectation mismatch at n={n_qubits}"
+                );
             }
             for (g1, g2) in res_std.gradient.iter().zip(&res_buf.gradient) {
                 assert!((g1 - g2).abs() < 1e-12, "gradient mismatch at n={n_qubits}");
@@ -502,5 +588,3 @@ mod tests {
         }
     }
 }
-
-

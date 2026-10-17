@@ -129,12 +129,7 @@ fn vnni_dpbusd_scalar(src: [i32; 8], a_u8: [u8; 32], b_i8: [i8; 32]) -> [i32; 8]
 /// Evaluates binary symplectic inner product ⟨P1, P2⟩_symp = (X1 · Z2 - Z1 · X2) mod 2
 /// across up to 16 qubits in a single 32-way VNNI instruction.
 /// Returns `0` if P1 and P2 commute, or `1` if they anticommute.
-pub fn symplectic_commutation_16q(
-    x1: u16,
-    z1: u16,
-    x2: u16,
-    z2: u16,
-) -> u8 {
+pub fn symplectic_commutation_16q(x1: u16, z1: u16, x2: u16, z2: u16) -> u8 {
     let mut a_u8 = [0u8; 32];
     let mut b_i8 = [0i8; 32];
 
@@ -173,22 +168,46 @@ impl SurfaceCode9QVnniMatrix {
         let mut x_masks = [0u8; 32];
 
         // S_z1 = Z1 Z2 Z4 Z5 (qubits 1, 2, 4, 5) -> Dword 0 (bytes 0..4: 1, 2, 4, 5)
-        z_masks[0] = 1; z_masks[1] = 2; z_masks[2] = 4; z_masks[3] = 5;
+        z_masks[0] = 1;
+        z_masks[1] = 2;
+        z_masks[2] = 4;
+        z_masks[3] = 5;
         // S_z2 = Z3 Z4 Z6 Z7 (qubits 3, 4, 6, 7) -> Dword 1 (bytes 4..8)
-        z_masks[4] = 3; z_masks[5] = 4; z_masks[6] = 6; z_masks[7] = 7;
+        z_masks[4] = 3;
+        z_masks[5] = 4;
+        z_masks[6] = 6;
+        z_masks[7] = 7;
         // S_z3 = Z0 Z3 (qubits 0, 3) -> Dword 2 (bytes 8..12)
-        z_masks[8] = 0; z_masks[9] = 3; z_masks[10] = 0xFF; z_masks[11] = 0xFF;
+        z_masks[8] = 0;
+        z_masks[9] = 3;
+        z_masks[10] = 0xFF;
+        z_masks[11] = 0xFF;
         // S_z4 = Z5 Z8 (qubits 5, 8) -> Dword 3 (bytes 12..16)
-        z_masks[12] = 5; z_masks[13] = 8; z_masks[14] = 0xFF; z_masks[15] = 0xFF;
+        z_masks[12] = 5;
+        z_masks[13] = 8;
+        z_masks[14] = 0xFF;
+        z_masks[15] = 0xFF;
 
         // S_x1 = X0 X1 X3 X4 (qubits 0, 1, 3, 4) -> Dword 4 (bytes 16..20)
-        x_masks[16] = 0; x_masks[17] = 1; x_masks[18] = 3; x_masks[19] = 4;
+        x_masks[16] = 0;
+        x_masks[17] = 1;
+        x_masks[18] = 3;
+        x_masks[19] = 4;
         // S_x2 = X4 X5 X7 X8 (qubits 4, 5, 7, 8) -> Dword 5 (bytes 20..24)
-        x_masks[20] = 4; x_masks[21] = 5; x_masks[22] = 7; x_masks[23] = 8;
+        x_masks[20] = 4;
+        x_masks[21] = 5;
+        x_masks[22] = 7;
+        x_masks[23] = 8;
         // S_x3 = X1 X2 (qubits 1, 2) -> Dword 6 (bytes 24..28)
-        x_masks[24] = 1; x_masks[25] = 2; x_masks[26] = 0xFF; x_masks[27] = 0xFF;
+        x_masks[24] = 1;
+        x_masks[25] = 2;
+        x_masks[26] = 0xFF;
+        x_masks[27] = 0xFF;
         // S_x4 = X6 X7 (qubits 6, 7) -> Dword 7 (bytes 28..32)
-        x_masks[28] = 6; x_masks[29] = 7; x_masks[30] = 0xFF; x_masks[31] = 0xFF;
+        x_masks[28] = 6;
+        x_masks[29] = 7;
+        x_masks[30] = 0xFF;
+        x_masks[31] = 0xFF;
 
         Self { z_masks, x_masks }
     }

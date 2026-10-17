@@ -155,10 +155,8 @@ pub fn featurize_smiles(s: &str) -> [f64; 19] {
         + n_s as f64 * 32.065
         + n_p as f64 * 30.974;
 
-    let h_est_val = n_c as i64 * 2 + 2
-        - n_double as i64 * 2
-        - n_triple as i64 * 4
-        - n_rings as i64 * 2;
+    let h_est_val =
+        n_c as i64 * 2 + 2 - n_double as i64 * 2 - n_triple as i64 * 4 - n_rings as i64 * 2;
     mw_est += h_est_val.max(0) as f64 * 1.008;
 
     let arom_ratio = n_arom as f64 / heavy_atoms as f64;
@@ -233,7 +231,9 @@ fn parse_zinc_csv(csv_path: &Path) -> Result<Vec<RawMolecule>, String> {
             while pos < len && bytes[pos] != b',' && bytes[pos] != b'\n' && bytes[pos] != b'\r' {
                 pos += 1;
             }
-            smiles = String::from_utf8_lossy(&bytes[start..pos]).trim().to_string();
+            smiles = String::from_utf8_lossy(&bytes[start..pos])
+                .trim()
+                .to_string();
         }
 
         if smiles.is_empty() {
@@ -342,7 +342,9 @@ fn main() {
     let n_mols = raw_mols.len();
     println!("  -> Ingested {} molecules.", n_mols);
 
-    let ckpt_path = resolve_path("tests/benchmarks/zinc_molecular/outputs/zinc_12qubit_checkpoint_fused98.json");
+    let ckpt_path = resolve_path(
+        "tests/benchmarks/zinc_molecular/outputs/zinc_12qubit_checkpoint_fused98.json",
+    );
     let ckpt_str = fs::read_to_string(&ckpt_path).expect("Failed to read checkpoint");
     let ckpt: QnnFusedCheckpoint = serde_json::from_str(&ckpt_str).expect("Failed to parse JSON");
     let fused_params = ckpt.fused_hybrid_params_98;
@@ -433,7 +435,12 @@ fn main() {
 
     let el_time = t_start.elapsed();
     let tp_mols = n_mols as f64 / el_time.as_secs_f64();
-    println!("  -> Screened {} molecules in {:.2} ms ({:.1} mols/sec)", n_mols, el_time.as_secs_f64() * 1000.0, tp_mols);
+    println!(
+        "  -> Screened {} molecules in {:.2} ms ({:.1} mols/sec)",
+        n_mols,
+        el_time.as_secs_f64() * 1000.0,
+        tp_mols
+    );
 
     let mut all_hits: Vec<SearchHit> = Vec::with_capacity(n_mols);
     for sub in thread_results {
@@ -474,13 +481,22 @@ fn main() {
     let pareto_csv = out_dir.join("zinc_pareto_leads.csv");
     let sum_json = out_dir.join("zinc_dual_search_summary.json");
 
-    fs::write(&anom_json, serde_json::to_string_pretty(&top_100_anomalies).unwrap()).unwrap();
+    fs::write(
+        &anom_json,
+        serde_json::to_string_pretty(&top_100_anomalies).unwrap(),
+    )
+    .unwrap();
     export_hits_csv(&anom_csv, &top_100_anomalies).unwrap();
 
-    fs::write(&pareto_json, serde_json::to_string_pretty(&top_100_pareto).unwrap()).unwrap();
+    fs::write(
+        &pareto_json,
+        serde_json::to_string_pretty(&top_100_pareto).unwrap(),
+    )
+    .unwrap();
     export_hits_csv(&pareto_csv, &top_100_pareto).unwrap();
 
-    let mean_pareto = top_100_pareto.iter().map(|h| h.pareto_score).sum::<f64>() / top_100_pareto.len() as f64;
+    let mean_pareto =
+        top_100_pareto.iter().map(|h| h.pareto_score).sum::<f64>() / top_100_pareto.len() as f64;
     let summary = DualSearchSummary {
         total_screened: n_mols,
         inference_wall_clock_ms: el_time.as_secs_f64() * 1000.0,
@@ -497,8 +513,14 @@ fn main() {
     println!("             SEARCH 3: TOP 5 QUANTUM CHEMICAL ANOMALIES & OUTLIERS       ");
     println!("=========================================================================");
     for h in top_100_anomalies.iter().take(5) {
-        println!(" #{} | Anomaly Score: {:.4} (QCD: {:.4}, Hilbert: {:.4})", h.rank, h.total_anomaly_score, h.qcd_anomaly, h.hilbert_dispersion);
-        println!("     logP: {:.3} (pred: {:.3}) | QED: {:.3} (pred: {:.3}) | SAS: {:.3} (pred: {:.3})", h.true_logp, h.pred_logp, h.true_qed, h.pred_qed, h.true_sas, h.pred_sas);
+        println!(
+            " #{} | Anomaly Score: {:.4} (QCD: {:.4}, Hilbert: {:.4})",
+            h.rank, h.total_anomaly_score, h.qcd_anomaly, h.hilbert_dispersion
+        );
+        println!(
+            "     logP: {:.3} (pred: {:.3}) | QED: {:.3} (pred: {:.3}) | SAS: {:.3} (pred: {:.3})",
+            h.true_logp, h.pred_logp, h.true_qed, h.pred_qed, h.true_sas, h.pred_sas
+        );
         println!("     SMILES: {}", h.smiles);
     }
 
@@ -506,7 +528,10 @@ fn main() {
     println!("             SEARCH 1: TOP 5 FRONTIER PARETO DRUG CANDIDATES             ");
     println!("=========================================================================");
     for h in top_100_pareto.iter().take(5) {
-        println!(" #{} | Pareto Score: {:.4} | logP: {:.3} | QED: {:.3} | SAS: {:.3}", h.rank, h.pareto_score, h.true_logp, h.true_qed, h.true_sas);
+        println!(
+            " #{} | Pareto Score: {:.4} | logP: {:.3} | QED: {:.3} | SAS: {:.3}",
+            h.rank, h.pareto_score, h.true_logp, h.true_qed, h.true_sas
+        );
         println!("     SMILES: {}", h.smiles);
     }
     println!("=========================================================================\n");

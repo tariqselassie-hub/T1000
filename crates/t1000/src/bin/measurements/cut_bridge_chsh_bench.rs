@@ -202,7 +202,9 @@ fn print_usage_and_exit() -> ! {
     println!();
     println!("Options:");
     println!("  --qa <INDEX>   Bridge anchor qubit index on Fragment A (default: 4, range: 0..17)");
-    println!("  --qb <INDEX>   Bridge anchor qubit index on Fragment B (default: 13, range: 0..17)");
+    println!(
+        "  --qb <INDEX>   Bridge anchor qubit index on Fragment B (default: 13, range: 0..17)"
+    );
     println!("  -h, --help     Print this help and manual message");
     println!();
     println!("Architecture:");
@@ -239,14 +241,20 @@ fn main() {
     }
 
     if qa >= N_QUBITS || qb >= N_QUBITS {
-        eprintln!("Error: Bridge anchor qubits must be in range 0..{}", N_QUBITS - 1);
+        eprintln!(
+            "Error: Bridge anchor qubits must be in range 0..{}",
+            N_QUBITS - 1
+        );
         std::process::exit(1);
     }
 
     println!("┌────────────────────────────────────────────────────────────────────────┐");
     println!("│     T-1000: 36-QUBIT CROSS-BRIDGE BELL CHSH VERIFICATION BENCHMARK     │");
     println!("│     Architecture: Dual 18Q L3-Resident Registers (8 MB) via Cut-CZ     │");
-    println!("│     Boundary Bridge: Fragment A (q{:<2}) <───> Fragment B (q{:<2})           │", qa, qb);
+    println!(
+        "│     Boundary Bridge: Fragment A (q{:<2}) <───> Fragment B (q{:<2})           │",
+        qa, qb
+    );
     println!("└────────────────────────────────────────────────────────────────────────┘");
 
     let t_start = Instant::now();
@@ -306,26 +314,42 @@ fn main() {
     let t_eval = Instant::now();
     let m_a0 = unsafe {
         compute_transition_matrix(
-            &branch_a_re, &branch_a_im, qa, 0.0,
-            &mut scratch_a_re, &mut scratch_a_im,
+            &branch_a_re,
+            &branch_a_im,
+            qa,
+            0.0,
+            &mut scratch_a_re,
+            &mut scratch_a_im,
         )
     };
     let m_a1 = unsafe {
         compute_transition_matrix(
-            &branch_a_re, &branch_a_im, qa, -PI * 0.5,
-            &mut scratch_a_re, &mut scratch_a_im,
+            &branch_a_re,
+            &branch_a_im,
+            qa,
+            -PI * 0.5,
+            &mut scratch_a_re,
+            &mut scratch_a_im,
         )
     };
     let m_b0 = unsafe {
         compute_transition_matrix(
-            &branch_b_re, &branch_b_im, qb, -PI * 0.25,
-            &mut scratch_b_re, &mut scratch_b_im,
+            &branch_b_re,
+            &branch_b_im,
+            qb,
+            -PI * 0.25,
+            &mut scratch_b_re,
+            &mut scratch_b_im,
         )
     };
     let m_b1 = unsafe {
         compute_transition_matrix(
-            &branch_b_re, &branch_b_im, qb, PI * 0.25,
-            &mut scratch_b_re, &mut scratch_b_im,
+            &branch_b_re,
+            &branch_b_im,
+            qb,
+            PI * 0.25,
+            &mut scratch_b_re,
+            &mut scratch_b_im,
         )
     };
 
@@ -345,35 +369,68 @@ fn main() {
     println!("├────────────────────────────────────────────────────────────────────────┤");
     println!("│ CHSH OBSERVABLE CORRELATORS (Quasiprobability Reconstructed)          │");
     println!("├────────────────────────────────────────────────────────────────────────┤");
-    println!("│  ⟨A0 ⊗ B0⟩ = ⟨Z_4 ⊗ (Z_13 + X_13)/√2⟩  : {:+.8}                     │", e_a0_b0);
-    println!("│  ⟨A0 ⊗ B1⟩ = ⟨Z_4 ⊗ (Z_13 − X_13)/√2⟩  : {:+.8}                     │", e_a0_b1);
-    println!("│  ⟨A1 ⊗ B0⟩ = ⟨X_4 ⊗ (Z_13 + X_13)/√2⟩  : {:+.8}                     │", e_a1_b0);
-    println!("│  ⟨A1 ⊗ B1⟩ = ⟨X_4 ⊗ (Z_13 − X_13)/√2⟩  : {:+.8}                     │", e_a1_b1);
+    println!(
+        "│  ⟨A0 ⊗ B0⟩ = ⟨Z_4 ⊗ (Z_13 + X_13)/√2⟩  : {:+.8}                     │",
+        e_a0_b0
+    );
+    println!(
+        "│  ⟨A0 ⊗ B1⟩ = ⟨Z_4 ⊗ (Z_13 − X_13)/√2⟩  : {:+.8}                     │",
+        e_a0_b1
+    );
+    println!(
+        "│  ⟨A1 ⊗ B0⟩ = ⟨X_4 ⊗ (Z_13 + X_13)/√2⟩  : {:+.8}                     │",
+        e_a1_b0
+    );
+    println!(
+        "│  ⟨A1 ⊗ B1⟩ = ⟨X_4 ⊗ (Z_13 − X_13)/√2⟩  : {:+.8}                     │",
+        e_a1_b1
+    );
     println!("├────────────────────────────────────────────────────────────────────────┤");
     println!("│ CHSH WITNESS AND THEORETICAL BOUNDS                                   │");
     println!("├────────────────────────────────────────────────────────────────────────┤");
     println!("│  ⟨B_CHSH⟩_bridge = ⟨A0 B0⟩ + ⟨A0 B1⟩ + ⟨A1 B0⟩ − ⟨A1 B1⟩                │");
-    println!("│  Reconstructed S-Value                 : {:.8}                    │", chsh_s);
-    println!("│  Exact Tsirelson Bound (2√2)           : {:.8}                    │", tsirelson);
-    println!("│  Absolute Deviation (|S − 2√2|)        : {:.2e}                      │", deviation);
+    println!(
+        "│  Reconstructed S-Value                 : {:.8}                    │",
+        chsh_s
+    );
+    println!(
+        "│  Exact Tsirelson Bound (2√2)           : {:.8}                    │",
+        tsirelson
+    );
+    println!(
+        "│  Absolute Deviation (|S − 2√2|)        : {:.2e}                      │",
+        deviation
+    );
     println!("│  Classical Local Hidden Variable Bound : ≤ 2.00000000                  │");
     let status_str = if chsh_s > 2.0 {
         "VIOLATED (Maximal Quantum Non-Locality)"
     } else {
         "RESPECTED (Classical Bound)"
     };
-    println!("│  Bell Inequality Status                : {:<38}│", status_str);
+    println!(
+        "│  Bell Inequality Status                : {:<38}│",
+        status_str
+    );
     println!("├────────────────────────────────────────────────────────────────────────┤");
     println!("│ HARDWARE TELEMETRY & CACHE RESIDENCY                                   │");
     println!("├────────────────────────────────────────────────────────────────────────┤");
     println!("│  CPU Core Architecture                 : Intel Lion Cove P-Core (AVX2) │");
     println!("│  Statevector Buffers Resident in L3    : 2x 18-Qubit (8.00 MB total)   │");
     println!("│  Avoided Dense 36Q Allocation          : 1.00 Terabyte (2^36 * 16 B)   │");
-    println!("│  AVX2 Contraction Kernel Latency       : {:.2} ms                       │", eval_ms);
-    println!("│  Total Benchmark Execution Latency     : {:.2} ms                       │", total_ms);
+    println!(
+        "│  AVX2 Contraction Kernel Latency       : {:.2} ms                       │",
+        eval_ms
+    );
+    println!(
+        "│  Total Benchmark Execution Latency     : {:.2} ms                       │",
+        total_ms
+    );
     println!("└────────────────────────────────────────────────────────────────────────┘");
 
     assert!(chsh_s > 2.0, "CHSH violation check failed: S <= 2.0");
-    assert!(deviation < 1e-10, "Tsirelson bound mismatch: deviation >= 1e-10");
+    assert!(
+        deviation < 1e-10,
+        "Tsirelson bound mismatch: deviation >= 1e-10"
+    );
     println!("-> PASS: Verified maximal Tsirelson violation across 36-qubit cut-bridge.");
 }

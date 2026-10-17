@@ -18,14 +18,12 @@
 //!   4. Train linear readout W·o + b via closed-form least-squares (Ridge Regression)
 //!   5. Evaluate on 2,000 holdout molecules and compare MAE/R² vs baseline
 
-use t1000::{
-    CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState,
-};
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
+use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState};
 
 const N_QUBITS: usize = 12;
 const DIM: usize = 1 << N_QUBITS; // 4,096
@@ -154,7 +152,11 @@ fn parse_zinc_csv(csv_path: &Path, max_rows: usize) -> Result<Vec<MoleculeSample
 
         let log_p = parts[20].parse::<f64>().unwrap_or(0.0);
         let qed = parts[21].parse::<f64>().unwrap_or(0.0);
-        let sas = if parts.len() > 22 { parts[22].parse::<f64>().unwrap_or(0.0) } else { 0.0 };
+        let sas = if parts.len() > 22 {
+            parts[22].parse::<f64>().unwrap_or(0.0)
+        } else {
+            0.0
+        };
 
         records.push(MoleculeSample {
             smiles,
@@ -186,8 +188,8 @@ fn pair_index(i: usize, j: usize) -> usize {
 /// where X is (n_samples, n_features), Y is (n_samples, n_targets)
 /// Returns W (n_features, n_targets) and bias (n_targets)
 fn ridge_regression(
-    x: &[Vec<f64>],  // n_samples x n_features
-    y: &[Vec<f64>],  // n_samples x n_targets
+    x: &[Vec<f64>], // n_samples x n_features
+    y: &[Vec<f64>], // n_samples x n_targets
     n_features: usize,
     n_targets: usize,
     lambda: f64,
@@ -206,8 +208,12 @@ fn ridge_regression(
         }
     }
     let inv_n = 1.0 / n as f64;
-    for t in 0..n_targets { y_mean[t] *= inv_n; }
-    for f in 0..n_features { x_mean[f] *= inv_n; }
+    for t in 0..n_targets {
+        y_mean[t] *= inv_n;
+    }
+    for f in 0..n_features {
+        x_mean[f] *= inv_n;
+    }
 
     // Compute X^T X (n_features x n_features) + ridge term
     let mut xtx = vec![vec![0.0; n_features]; n_features];
@@ -254,12 +260,7 @@ fn ridge_regression(
 }
 
 /// Cholesky decomposition solve: A * X = B where A is symmetric positive definite
-fn cholesky_solve(
-    a: &[Vec<f64>],
-    b: &[Vec<f64>],
-    n: usize,
-    m: usize,
-) -> Vec<Vec<f64>> {
+fn cholesky_solve(a: &[Vec<f64>], b: &[Vec<f64>], n: usize, m: usize) -> Vec<Vec<f64>> {
     // L * L^T = A (Cholesky decomposition)
     let mut l = vec![vec![0.0; n]; n];
     for i in 0..n {
@@ -336,7 +337,11 @@ fn compute_mae_r2(
 
     let mut r2 = [0.0; N_PROPS];
     for p in 0..N_PROPS {
-        r2[p] = if ss_tot[p] > 1e-12 { 1.0 - ss_res[p] / ss_tot[p] } else { 0.0 };
+        r2[p] = if ss_tot[p] > 1e-12 {
+            1.0 - ss_res[p] / ss_tot[p]
+        } else {
+            0.0
+        };
     }
 
     (mae, r2)
@@ -356,19 +361,26 @@ fn main() {
     // =========================================================================
     // PHASE 1: LOAD DATA & CHECKPOINT
     // =========================================================================
-    let train_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/data/zinc_train_10k.csv");
+    let train_path =
+        resolve_workspace_path("tests/benchmarks/zinc_molecular/data/zinc_train_10k.csv");
     let test_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/data/zinc_test_2k.csv");
 
     // Try pruned checkpoint first, fall back to full checkpoint
-    let pruned_ckpt_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/checkpoints/zinc_12qubit_checkpoint_pruned99.json");
-    let full_ckpt_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/checkpoints/zinc_12qubit_checkpoint.json");
+    let pruned_ckpt_path = resolve_workspace_path(
+        "tests/benchmarks/zinc_molecular/checkpoints/zinc_12qubit_checkpoint_pruned99.json",
+    );
+    let full_ckpt_path = resolve_workspace_path(
+        "tests/benchmarks/zinc_molecular/checkpoints/zinc_12qubit_checkpoint.json",
+    );
 
     println!("[INIT] Loading training set...");
     let train_samples = match parse_zinc_csv(&train_path, 10_000) {
         Ok(s) => s,
         Err(e) => {
             // Try outputs/ fallback
-            let fallback = resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_train_10k.csv");
+            let fallback = resolve_workspace_path(
+                "tests/benchmarks/zinc_molecular/outputs/zinc_train_10k.csv",
+            );
             match parse_zinc_csv(&fallback, 10_000) {
                 Ok(s) => s,
                 Err(_) => {
@@ -384,7 +396,8 @@ fn main() {
     let test_samples = match parse_zinc_csv(&test_path, 2_000) {
         Ok(s) => s,
         Err(e) => {
-            let fallback = resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_test_2k.csv");
+            let fallback =
+                resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_test_2k.csv");
             match parse_zinc_csv(&fallback, 2_000) {
                 Ok(s) => s,
                 Err(_) => {
@@ -401,13 +414,20 @@ fn main() {
     let circuit_params: Vec<f64>;
 
     if pruned_ckpt_path.exists() {
-        println!("  -> Using pruned 99-parameter checkpoint: {}", pruned_ckpt_path.display());
+        println!(
+            "  -> Using pruned 99-parameter checkpoint: {}",
+            pruned_ckpt_path.display()
+        );
         let content = fs::read_to_string(&pruned_ckpt_path).expect("Read pruned checkpoint");
-        let ckpt: PrunedCheckpoint = serde_json::from_str(&content).expect("Parse pruned checkpoint");
+        let ckpt: PrunedCheckpoint =
+            serde_json::from_str(&content).expect("Parse pruned checkpoint");
         // Extract first 60 parameters (48 L1/L2 angles + 12 terminal Ry)
         circuit_params = ckpt.pruned_hybrid_params[..60].to_vec();
     } else if full_ckpt_path.exists() {
-        println!("  -> Using full 111-parameter checkpoint: {}", full_ckpt_path.display());
+        println!(
+            "  -> Using full 111-parameter checkpoint: {}",
+            full_ckpt_path.display()
+        );
         let content = fs::read_to_string(&full_ckpt_path).expect("Read full checkpoint");
         let ckpt: QnnCheckpoint = serde_json::from_str(&content).expect("Parse full checkpoint");
         // Construct pruned layout: first 48 params, then Ry-only from L3
@@ -422,7 +442,10 @@ fn main() {
         return;
     };
     assert_eq!(circuit_params.len(), 60, "Expected 60 circuit parameters");
-    println!("  -> Circuit parameters loaded ({} frozen angles).\n", circuit_params.len());
+    println!(
+        "  -> Circuit parameters loaded ({} frozen angles).\n",
+        circuit_params.len()
+    );
 
     let encoding = DataEncodingLayer::new(N_QUBITS, EncodingKind::Amplitude);
     let ansatz = CircuitAnsatz::new(N_QUBITS, 3).with_pi_layer(true);
@@ -460,7 +483,10 @@ fn main() {
         ansatz.forward_pruned_in_place(&mut verify_state, &circuit_params);
         let mut zz_brute = [0.0; N_PAIRS];
         t1000::simd::measure_zz_correlators(
-            &verify_state.real, &verify_state.imag, N_QUBITS, &mut zz_brute,
+            &verify_state.real,
+            &verify_state.imag,
+            N_QUBITS,
+            &mut zz_brute,
         );
 
         for p in 0..N_PAIRS {
@@ -470,9 +496,16 @@ fn main() {
     }
 
     let zz_verified = max_zz_error < 1e-8;
-    println!(" Verified {} molecules | Max |Fused - Brute| = {:.2e} | Status: {}",
-        n_verify, max_zz_error,
-        if zz_verified { "CONFIRMED ✓" } else { "DEVIATION DETECTED ✗" });
+    println!(
+        " Verified {} molecules | Max |Fused - Brute| = {:.2e} | Status: {}",
+        n_verify,
+        max_zz_error,
+        if zz_verified {
+            "CONFIRMED ✓"
+        } else {
+            "DEVIATION DETECTED ✗"
+        }
+    );
     println!("=========================================================================\n");
 
     // =========================================================================
@@ -493,8 +526,11 @@ fn main() {
         let mut z_out = [0.0; N_QUBITS];
         let mut zz_out = [0.0; N_PAIRS];
         t1000::simd::measure_fused_ry_full_readout(
-            &l2_state.real, &l2_state.imag, &circuit_params[48..60],
-            &mut z_out, &mut zz_out,
+            &l2_state.real,
+            &l2_state.imag,
+            &circuit_params[48..60],
+            &mut z_out,
+            &mut zz_out,
         );
 
         train_obs_12.push(z_out);
@@ -507,10 +543,12 @@ fn main() {
         train_truth.push((sample.log_p, sample.qed, sample.sas));
     }
     let t_extract_train = t_extract_start.elapsed();
-    println!("  -> Training: {} molecules in {:.2} ms ({:.0} mols/sec)",
+    println!(
+        "  -> Training: {} molecules in {:.2} ms ({:.0} mols/sec)",
         train_samples.len(),
         t_extract_train.as_secs_f64() * 1000.0,
-        train_samples.len() as f64 / t_extract_train.as_secs_f64());
+        train_samples.len() as f64 / t_extract_train.as_secs_f64()
+    );
 
     // Extract test observables
     let t_test_start = Instant::now();
@@ -525,8 +563,11 @@ fn main() {
         let mut z_out = [0.0; N_QUBITS];
         let mut zz_out = [0.0; N_PAIRS];
         t1000::simd::measure_fused_ry_full_readout(
-            &l2_state.real, &l2_state.imag, &circuit_params[48..60],
-            &mut z_out, &mut zz_out,
+            &l2_state.real,
+            &l2_state.imag,
+            &circuit_params[48..60],
+            &mut z_out,
+            &mut zz_out,
         );
 
         test_obs_12.push(z_out);
@@ -539,10 +580,12 @@ fn main() {
         test_truth.push((sample.log_p, sample.qed, sample.sas));
     }
     let t_test_extract = t_test_start.elapsed();
-    println!("  -> Test:     {} molecules in {:.2} ms ({:.0} mols/sec)\n",
+    println!(
+        "  -> Test:     {} molecules in {:.2} ms ({:.0} mols/sec)\n",
         test_samples.len(),
         t_test_extract.as_secs_f64() * 1000.0,
-        test_samples.len() as f64 / t_test_extract.as_secs_f64());
+        test_samples.len() as f64 / t_test_extract.as_secs_f64()
+    );
 
     // =========================================================================
     // PHASE 4: TRAIN BASELINE 12-OBSERVABLE READOUT HEAD
@@ -554,31 +597,35 @@ fn main() {
     let lambda = 1e-3; // Ridge regularization strength
 
     // Baseline: 12 observables
-    println!("\n[TRAINING] Baseline readout head: {} features → {} targets...",
-        N_QUBITS, N_PROPS);
-    let train_x_12: Vec<Vec<f64>> = train_obs_12.iter()
-        .map(|z| z.to_vec())
-        .collect();
-    let train_y: Vec<Vec<f64>> = train_truth.iter()
-        .map(|&(l, q, s)| vec![l, q, s])
-        .collect();
+    println!(
+        "\n[TRAINING] Baseline readout head: {} features → {} targets...",
+        N_QUBITS, N_PROPS
+    );
+    let train_x_12: Vec<Vec<f64>> = train_obs_12.iter().map(|z| z.to_vec()).collect();
+    let train_y: Vec<Vec<f64>> = train_truth.iter().map(|&(l, q, s)| vec![l, q, s]).collect();
 
     let t_train_b = Instant::now();
     let (w_12, b_12) = ridge_regression(&train_x_12, &train_y, N_QUBITS, N_PROPS, lambda);
     let t_train_b_dur = t_train_b.elapsed();
-    println!("  -> Baseline ridge fit: {:.2} ms", t_train_b_dur.as_secs_f64() * 1000.0);
+    println!(
+        "  -> Baseline ridge fit: {:.2} ms",
+        t_train_b_dur.as_secs_f64() * 1000.0
+    );
 
     // Predict baseline
-    let preds_baseline: Vec<[f64; N_PROPS]> = test_obs_12.iter().map(|z| {
-        let mut pred = [0.0; N_PROPS];
-        for p in 0..N_PROPS {
-            pred[p] = b_12[p];
-            for f in 0..N_QUBITS {
-                pred[p] += w_12[f][p] * z[f];
+    let preds_baseline: Vec<[f64; N_PROPS]> = test_obs_12
+        .iter()
+        .map(|z| {
+            let mut pred = [0.0; N_PROPS];
+            for p in 0..N_PROPS {
+                pred[p] = b_12[p];
+                for f in 0..N_QUBITS {
+                    pred[p] += w_12[f][p] * z[f];
+                }
             }
-        }
-        pred
-    }).collect();
+            pred
+        })
+        .collect();
 
     let (mae_b, r2_b) = compute_mae_r2(&preds_baseline, &test_truth);
 
@@ -594,25 +641,33 @@ fn main() {
     // =========================================================================
     // PHASE 5: TRAIN ENHANCED 78-OBSERVABLE READOUT HEAD
     // =========================================================================
-    println!("[TRAINING] Enhanced readout head: {} features → {} targets...",
-        N_OBS, N_PROPS);
+    println!(
+        "[TRAINING] Enhanced readout head: {} features → {} targets...",
+        N_OBS, N_PROPS
+    );
 
     let t_train_e = Instant::now();
     let (w_78, b_78) = ridge_regression(&train_obs_78, &train_y, N_OBS, N_PROPS, lambda);
     let t_train_e_dur = t_train_e.elapsed();
-    println!("  -> Enhanced ridge fit: {:.2} ms", t_train_e_dur.as_secs_f64() * 1000.0);
+    println!(
+        "  -> Enhanced ridge fit: {:.2} ms",
+        t_train_e_dur.as_secs_f64() * 1000.0
+    );
 
     // Predict enhanced
-    let preds_enhanced: Vec<[f64; N_PROPS]> = test_obs_78.iter().map(|obs| {
-        let mut pred = [0.0; N_PROPS];
-        for p in 0..N_PROPS {
-            pred[p] = b_78[p];
-            for f in 0..N_OBS {
-                pred[p] += w_78[f][p] * obs[f];
+    let preds_enhanced: Vec<[f64; N_PROPS]> = test_obs_78
+        .iter()
+        .map(|obs| {
+            let mut pred = [0.0; N_PROPS];
+            for p in 0..N_PROPS {
+                pred[p] = b_78[p];
+                for f in 0..N_OBS {
+                    pred[p] += w_78[f][p] * obs[f];
+                }
             }
-        }
-        pred
-    }).collect();
+            pred
+        })
+        .collect();
 
     let (mae_e, r2_e) = compute_mae_r2(&preds_enhanced, &test_truth);
 
@@ -628,9 +683,21 @@ fn main() {
     // =========================================================================
     // PHASE 6: COMPARATIVE ANALYSIS
     // =========================================================================
-    let imp_logp = if mae_b[0] > 1e-12 { (1.0 - mae_e[0] / mae_b[0]) * 100.0 } else { 0.0 };
-    let imp_qed = if mae_b[1] > 1e-12 { (1.0 - mae_e[1] / mae_b[1]) * 100.0 } else { 0.0 };
-    let imp_sas = if mae_b[2] > 1e-12 { (1.0 - mae_e[2] / mae_b[2]) * 100.0 } else { 0.0 };
+    let imp_logp = if mae_b[0] > 1e-12 {
+        (1.0 - mae_e[0] / mae_b[0]) * 100.0
+    } else {
+        0.0
+    };
+    let imp_qed = if mae_b[1] > 1e-12 {
+        (1.0 - mae_e[1] / mae_b[1]) * 100.0
+    } else {
+        0.0
+    };
+    let imp_sas = if mae_b[2] > 1e-12 {
+        (1.0 - mae_e[2] / mae_b[2]) * 100.0
+    } else {
+        0.0
+    };
 
     println!("=========================================================================");
     println!(" [PHASE 6] 2-BODY ENTANGLEMENT CORRELATOR EXPRESSIVITY GAIN LEDGER      ");
@@ -640,9 +707,18 @@ fn main() {
     println!(" ┌─────────────┬──────────────────┬──────────────────┬──────────────────┐");
     println!(" │  Property   │  Baseline MAE    │  Enhanced MAE    │  Improvement     │");
     println!(" ├─────────────┼──────────────────┼──────────────────┼──────────────────┤");
-    println!(" │  logP       │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │", mae_b[0], mae_e[0], imp_logp);
-    println!(" │  QED        │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │", mae_b[1], mae_e[1], imp_qed);
-    println!(" │  SAS        │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │", mae_b[2], mae_e[2], imp_sas);
+    println!(
+        " │  logP       │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │",
+        mae_b[0], mae_e[0], imp_logp
+    );
+    println!(
+        " │  QED        │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │",
+        mae_b[1], mae_e[1], imp_qed
+    );
+    println!(
+        " │  SAS        │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │",
+        mae_b[2], mae_e[2], imp_sas
+    );
     println!(" └─────────────┴──────────────────┴──────────────────┴──────────────────┘\n");
     println!(" ┌─────────────┬──────────────────┬──────────────────┐");
     println!(" │  Property   │  Baseline R²     │  Enhanced R²     │");
@@ -667,7 +743,10 @@ fn main() {
             ansatz.forward_l2_in_place(&mut l2_state, &circuit_params[..48]);
             let mut z_b = [0.0; N_QUBITS];
             t1000::simd::measure_fused_ry_z_readout(
-                &l2_state.real, &l2_state.imag, &circuit_params[48..60], &mut z_b,
+                &l2_state.real,
+                &l2_state.imag,
+                &circuit_params[48..60],
+                &mut z_b,
             );
         }
     }
@@ -683,8 +762,11 @@ fn main() {
             let mut z_e = [0.0; N_QUBITS];
             let mut zz_e = [0.0; N_PAIRS];
             t1000::simd::measure_fused_ry_full_readout(
-                &l2_state.real, &l2_state.imag, &circuit_params[48..60],
-                &mut z_e, &mut zz_e,
+                &l2_state.real,
+                &l2_state.imag,
+                &circuit_params[48..60],
+                &mut z_e,
+                &mut zz_e,
             );
         }
     }
@@ -693,7 +775,10 @@ fn main() {
 
     println!("  Baseline (12-obs) : {:.0} mols/sec", tp_b);
     println!("  Enhanced (78-obs) : {:.0} mols/sec", tp_e);
-    println!("  ZZ Overhead       : {:.1}%\n", (1.0 - tp_e / tp_b) * 100.0);
+    println!(
+        "  ZZ Overhead       : {:.1}%\n",
+        (1.0 - tp_e / tp_b) * 100.0
+    );
 
     // =========================================================================
     // PHASE 8: IDENTIFY TOP OUTLIER CORRECTIONS
@@ -712,13 +797,30 @@ fn main() {
     corrections.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
 
     println!(" Top 10 logP Error Reductions (Baseline → Enhanced):");
-    println!(" ┌────────┬────────────────┬────────────────┬────────────────┬──────────────────────────┐");
-    println!(" │  Rank  │  Baseline |ε|  │  Enhanced |ε|  │  Δ Correction  │  SMILES (truncated)      │");
-    println!(" ├────────┼────────────────┼────────────────┼────────────────┼──────────────────────────┤");
-    for (rank, &(_idx, correction, err_b, err_e, smiles)) in corrections.iter().take(10).enumerate() {
-        let smi_short = if smiles.len() > 24 { &smiles[..24] } else { smiles };
-        println!(" │  {:>4}  │ {:>14.4} │ {:>14.4} │ {:>+14.4} │  {:<24} │",
-            rank + 1, err_b, err_e, correction, smi_short);
+    println!(
+        " ┌────────┬────────────────┬────────────────┬────────────────┬──────────────────────────┐"
+    );
+    println!(
+        " │  Rank  │  Baseline |ε|  │  Enhanced |ε|  │  Δ Correction  │  SMILES (truncated)      │"
+    );
+    println!(
+        " ├────────┼────────────────┼────────────────┼────────────────┼──────────────────────────┤"
+    );
+    for (rank, &(_idx, correction, err_b, err_e, smiles)) in corrections.iter().take(10).enumerate()
+    {
+        let smi_short = if smiles.len() > 24 {
+            &smiles[..24]
+        } else {
+            smiles
+        };
+        println!(
+            " │  {:>4}  │ {:>14.4} │ {:>14.4} │ {:>+14.4} │  {:<24} │",
+            rank + 1,
+            err_b,
+            err_e,
+            correction,
+            smi_short
+        );
     }
     println!(" └────────┴────────────────┴────────────────┴────────────────┴──────────────────────────┘\n");
 
@@ -738,13 +840,23 @@ fn main() {
             zz_weights.push((i, j, w));
         }
     }
-    zz_weights.sort_by(|a, b| b.2.abs().partial_cmp(&a.2.abs()).unwrap_or(std::cmp::Ordering::Equal));
+    zz_weights.sort_by(|a, b| {
+        b.2.abs()
+            .partial_cmp(&a.2.abs())
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
 
     println!(" ┌────────┬────────────┬──────────────────┐");
     println!(" │  Rank  │  Pair      │  Weight (logP)   │");
     println!(" ├────────┼────────────┼──────────────────┤");
     for (rank, &(qi, qj, w)) in zz_weights.iter().take(15).enumerate() {
-        println!(" │  {:>4}  │  Z_{} Z_{}   │ {:>+16.8} │", rank + 1, qi, qj, w);
+        println!(
+            " │  {:>4}  │  Z_{} Z_{}   │ {:>+16.8} │",
+            rank + 1,
+            qi,
+            qj,
+            w
+        );
     }
     println!(" └────────┴────────────┴──────────────────┘");
     println!("=========================================================================\n");
@@ -760,8 +872,12 @@ fn main() {
 
     // Classical reference: ridge regression on the same raw features and train/test split.
     let classical_baselines = t1000::baselines::zinc_baselines(
-        train_samples.iter().map(|s| (s.features.as_slice(), [s.log_p, s.qed, s.sas])),
-        test_samples.iter().map(|s| (s.features.as_slice(), [s.log_p, s.qed, s.sas])),
+        train_samples
+            .iter()
+            .map(|s| (s.features.as_slice(), [s.log_p, s.qed, s.sas])),
+        test_samples
+            .iter()
+            .map(|s| (s.features.as_slice(), [s.log_p, s.qed, s.sas])),
     );
     let report = ZZCorrelatorReport {
         classical_baselines: classical_baselines.clone(),
@@ -799,12 +915,28 @@ fn main() {
     {
         use t1000::baselines::{print_comparison, QnnScore};
         let qnn_rows = [
-        QnnScore::new("12 Z readout")
-            .mae([report.baseline_mae_logp, report.baseline_mae_qed, report.baseline_mae_sas])
-            .r2([report.baseline_r2_logp, report.baseline_r2_qed, report.baseline_r2_sas]),
-        QnnScore::new("Z + ZZ readout (78 obs)")
-            .mae([report.enhanced_mae_logp, report.enhanced_mae_qed, report.enhanced_mae_sas])
-            .r2([report.enhanced_r2_logp, report.enhanced_r2_qed, report.enhanced_r2_sas]),
+            QnnScore::new("12 Z readout")
+                .mae([
+                    report.baseline_mae_logp,
+                    report.baseline_mae_qed,
+                    report.baseline_mae_sas,
+                ])
+                .r2([
+                    report.baseline_r2_logp,
+                    report.baseline_r2_qed,
+                    report.baseline_r2_sas,
+                ]),
+            QnnScore::new("Z + ZZ readout (78 obs)")
+                .mae([
+                    report.enhanced_mae_logp,
+                    report.enhanced_mae_qed,
+                    report.enhanced_mae_sas,
+                ])
+                .r2([
+                    report.enhanced_r2_logp,
+                    report.enhanced_r2_qed,
+                    report.enhanced_r2_sas,
+                ]),
         ];
         print_comparison(&qnn_rows, &classical_baselines);
     }
@@ -816,7 +948,10 @@ fn main() {
 
     // Save enhanced checkpoint with 78-observable readout weights
     let enhanced_ckpt_path = if report_path.parent().is_some() {
-        report_path.parent().unwrap().join("checkpoints/zinc_12qubit_checkpoint_zz78.json")
+        report_path
+            .parent()
+            .unwrap()
+            .join("checkpoints/zinc_12qubit_checkpoint_zz78.json")
     } else {
         PathBuf::from("zinc_12qubit_checkpoint_zz78.json")
     };
@@ -844,7 +979,10 @@ fn main() {
 
     if let Ok(json_str) = serde_json::to_string_pretty(&enhanced_ckpt) {
         let _ = fs::write(&enhanced_ckpt_path, json_str);
-        println!("[SAVED] Enhanced 78-Observable Checkpoint: {}", enhanced_ckpt_path.display());
+        println!(
+            "[SAVED] Enhanced 78-Observable Checkpoint: {}",
+            enhanced_ckpt_path.display()
+        );
     }
 
     println!("\n=========================================================================");
@@ -858,5 +996,10 @@ fn chrono_now() -> String {
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap_or_default()
         .as_secs();
-    format!("2026-10-13T{:02}:{:02}:{:02}Z", (now / 3600) % 24, (now / 60) % 60, now % 60)
+    format!(
+        "2026-10-13T{:02}:{:02}:{:02}Z",
+        (now / 3600) % 24,
+        (now / 60) % 60,
+        now % 60
+    )
 }

@@ -9,9 +9,9 @@
 
 pub mod opencl;
 
+use crate::state::QuantumState;
 use opencl::OpenClGpuContext;
 use serde::{Deserialize, Serialize};
-use crate::state::QuantumState;
 
 /// Configuration for dynamic execution routing between CPU AVX2 and iGPU.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -78,15 +78,22 @@ impl IGpuBridge {
     ) -> IGpuExecutionReport {
         let n_qubits = state.dim.trailing_zeros() as usize;
         let dim = state.dim;
-        let use_gpu = self.is_available() && (n_qubits >= self.config.threshold_qubits || self.config.force_igpu);
+        let use_gpu = self.is_available()
+            && (n_qubits >= self.config.threshold_qubits || self.config.force_igpu);
 
         let t0 = std::time::Instant::now();
         if use_gpu {
             if let Some(ref ctx) = self.context {
-                if ctx.execute_ry_zero_copy(&mut state.real, &mut state.imag, qubit, theta).is_ok() {
+                if ctx
+                    .execute_ry_zero_copy(&mut state.real, &mut state.imag, qubit, theta)
+                    .is_ok()
+                {
                     let dur_us = t0.elapsed().as_secs_f64() * 1e6;
                     return IGpuExecutionReport {
-                        backend_used: format!("Intel Xe iGPU ({}) [Zero-Copy UMA]", ctx.device_name),
+                        backend_used: format!(
+                            "Intel Xe iGPU ({}) [Zero-Copy UMA]",
+                            ctx.device_name
+                        ),
                         zero_copy_uma: true,
                         qubit,
                         dim,
@@ -168,6 +175,10 @@ mod tests {
         // Verify fidelity
         let fid = s_gpu.fidelity(&s_cpu);
         println!("Cross-Backend Numerical Fidelity: {:.14}", fid);
-        assert!((fid - 1.0).abs() < 1e-12, "Cross-backend fidelity mismatch: {}", fid);
+        assert!(
+            (fid - 1.0).abs() < 1e-12,
+            "Cross-backend fidelity mismatch: {}",
+            fid
+        );
     }
 }

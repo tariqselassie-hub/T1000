@@ -12,14 +12,12 @@
 //!
 //! Lab Branding: SMILE ⟨Ψ⁺|⨂|Ψ⁺⟩ SMILE Visual Lab
 
-use t1000::{
-    CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState,
-};
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
+use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState};
 
 const N_QUBITS: usize = 12;
 const DIM: usize = 1 << N_QUBITS; // 4,096
@@ -139,10 +137,8 @@ pub fn featurize_smiles_rust(s: &str) -> [f64; 19] {
         + n_s as f64 * 32.065
         + n_p as f64 * 30.974;
 
-    let h_est_val = n_c as i64 * 2 + 2
-        - n_double as i64 * 2
-        - n_triple as i64 * 4
-        - n_rings as i64 * 2;
+    let h_est_val =
+        n_c as i64 * 2 + 2 - n_double as i64 * 2 - n_triple as i64 * 4 - n_rings as i64 * 2;
     let h_est = h_est_val.max(0) as f64;
     mw_est += h_est * 1.008;
 
@@ -224,7 +220,9 @@ fn parse_zinc_250k_csv(csv_path: &Path) -> Result<Vec<RawMolecule>, String> {
             while pos < len && bytes[pos] != b',' && bytes[pos] != b'\n' && bytes[pos] != b'\r' {
                 pos += 1;
             }
-            smiles = String::from_utf8_lossy(&bytes[start..pos]).trim().to_string();
+            smiles = String::from_utf8_lossy(&bytes[start..pos])
+                .trim()
+                .to_string();
         }
 
         if smiles.is_empty() {
@@ -366,7 +364,10 @@ fn main() {
         resolve_workspace_path("data/zinc_250k.csv")
     };
 
-    println!("[1/6] Ingesting ZINC 250k raw dataset: {}...", raw_csv_path.display());
+    println!(
+        "[1/6] Ingesting ZINC 250k raw dataset: {}...",
+        raw_csv_path.display()
+    );
     let t_parse = Instant::now();
     let raw_mols = match parse_zinc_250k_csv(&raw_csv_path) {
         Ok(m) => m,
@@ -386,7 +387,10 @@ fn main() {
     let ckpt_path = resolve_workspace_path(
         "tests/benchmarks/zinc_molecular/outputs/zinc_12qubit_checkpoint_fused98.json",
     );
-    println!("[2/6] Loading 98-Parameter Fused Checkpoint: {}...", ckpt_path.display());
+    println!(
+        "[2/6] Loading 98-Parameter Fused Checkpoint: {}...",
+        ckpt_path.display()
+    );
     let ckpt_str = fs::read_to_string(&ckpt_path).expect("Failed to read checkpoint");
     let ckpt: QnnFusedCheckpoint = serde_json::from_str(&ckpt_str).expect("Failed to parse JSON");
     let fused_params = ckpt.fused_hybrid_params_98;
@@ -398,7 +402,10 @@ fn main() {
     let num_threads = std::thread::available_parallelism()
         .map(|n| n.get())
         .unwrap_or(20);
-    println!("  -> Parallelism: {} worker threads allocated.", num_threads);
+    println!(
+        "  -> Parallelism: {} worker threads allocated.",
+        num_threads
+    );
 
     // =========================================================================
     // MULTI-THREADED STREAMING SCREENING
@@ -471,9 +478,16 @@ fn main() {
     let lat_us = el_infer.as_secs_f64() * 1_000_000.0 / total_evals as f64;
     let tp_mols = total_evals as f64 / el_infer.as_secs_f64();
 
-    println!("  -> Completed 249,455 molecules in {:.2} ms", el_infer.as_secs_f64() * 1000.0);
+    println!(
+        "  -> Completed 249,455 molecules in {:.2} ms",
+        el_infer.as_secs_f64() * 1000.0
+    );
     println!("  -> Latency   : {:.2} μs/molecule", lat_us);
-    println!("  -> Throughput: {:.1} molecules/sec ({:.2}x real-time speedup)\n", tp_mols, tp_mols / 1000.0);
+    println!(
+        "  -> Throughput: {:.1} molecules/sec ({:.2}x real-time speedup)\n",
+        tp_mols,
+        tp_mols / 1000.0
+    );
 
     // =========================================================================
     // FLATTEN & COMPUTE WHOLE-LIBRARY REGRESSION METRICS
@@ -555,9 +569,18 @@ fn main() {
     println!("=========================================================================");
     println!(" Property Target       │ Mean Abs Error (MAE) │ Root Mean Sq (RMSE) │ R² Score ");
     println!("───────────────────────┼──────────────────────┼─────────────────────┼──────────");
-    println!(" logP (Lipophilicity)  │ {:>20.4} │ {:>19.4} │ {:>8.4}", mae_logp, rmse_logp, r2_logp);
-    println!(" QED  (Drug-Likeness)  │ {:>20.4} │ {:>19.4} │ {:>8.4}", mae_qed, rmse_qed, r2_qed);
-    println!(" SAS  (Synthetic Acc.) │ {:>20.4} │ {:>19.4} │ {:>8.4}", mae_sas, rmse_sas, r2_sas);
+    println!(
+        " logP (Lipophilicity)  │ {:>20.4} │ {:>19.4} │ {:>8.4}",
+        mae_logp, rmse_logp, r2_logp
+    );
+    println!(
+        " QED  (Drug-Likeness)  │ {:>20.4} │ {:>19.4} │ {:>8.4}",
+        mae_qed, rmse_qed, r2_qed
+    );
+    println!(
+        " SAS  (Synthetic Acc.) │ {:>20.4} │ {:>19.4} │ {:>8.4}",
+        mae_sas, rmse_sas, r2_sas
+    );
     println!("=========================================================================\n");
 
     // =========================================================================
@@ -753,7 +776,10 @@ fn main() {
     sampled_indices.insert(max_qd_idx);
     sampled_indices.insert(min_ss_idx);
 
-    println!("  -> Sampled {} points representing whole 250k manifold topology.", sampled_indices.len());
+    println!(
+        "  -> Sampled {} points representing whole 250k manifold topology.",
+        sampled_indices.len()
+    );
 
     // Build SMILES dictionary for sampled set
     let mut smiles_lookup: Vec<String> = Vec::with_capacity(sampled_indices.len());

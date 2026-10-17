@@ -52,11 +52,7 @@ pub struct PlaquetteLattice {
 
 impl PlaquetteLattice {
     /// Builds a gauge lattice from explicit links and plaquette link assignments.
-    pub fn new(
-        name: impl Into<String>,
-        links: Vec<GaugeLink>,
-        plaquettes: Vec<Plaquette>,
-    ) -> Self {
+    pub fn new(name: impl Into<String>, links: Vec<GaugeLink>, plaquettes: Vec<Plaquette>) -> Self {
         let total_qubits = links.len();
         let mut link_counts = HashMap::new();
         for p in &plaquettes {
@@ -74,7 +70,10 @@ impl PlaquetteLattice {
             } else if count == 2 {
                 internal_spoke_ids.push(l_id);
             } else {
-                panic!("Link ID {} shared by {} plaquettes (expected <= 2)", l_id, count);
+                panic!(
+                    "Link ID {} shared by {} plaquettes (expected <= 2)",
+                    l_id, count
+                );
             }
         }
 
@@ -245,7 +244,11 @@ impl PlaquetteLattice {
             },
         ];
 
-        Self::new("3-Triad Frustrated Central Hub (Delta_3)", links, plaquettes)
+        Self::new(
+            "3-Triad Frustrated Central Hub (Delta_3)",
+            links,
+            plaquettes,
+        )
     }
 
     // =========================================================================
@@ -293,7 +296,10 @@ impl PlaquetteLattice {
         });
 
         Self::new(
-            format!("Scaled Kagome Chain ({} Qubits / {} Plaquettes)", total_qubits, m),
+            format!(
+                "Scaled Kagome Chain ({} Qubits / {} Plaquettes)",
+                total_qubits, m
+            ),
             links,
             plaquettes,
         )
@@ -361,7 +367,11 @@ impl PlaquetteLattice {
 
         assert_eq!(plaquettes.len(), 99, "Nighthawk R2 must have 99 plaquettes");
 
-        Self::new("IBM Quantum Nighthawk R2 (120Q / 218 Couplers)", links, plaquettes)
+        Self::new(
+            "IBM Quantum Nighthawk R2 (120Q / 218 Couplers)",
+            links,
+            plaquettes,
+        )
     }
 
     // =========================================================================
@@ -386,7 +396,10 @@ mod tests {
         assert_eq!(lattice.plaquettes.len(), 99);
         assert_eq!(lattice.boundary_link_ids.len(), 40);
         assert_eq!(lattice.internal_spoke_ids.len(), 178);
-        assert_eq!(lattice.boundary_link_ids.len() + lattice.internal_spoke_ids.len(), 218);
+        assert_eq!(
+            lattice.boundary_link_ids.len() + lattice.internal_spoke_ids.len(),
+            218
+        );
     }
 
     #[test]
@@ -396,6 +409,9 @@ mod tests {
         assert_eq!(lattice.plaquettes.len(), 59);
         assert_eq!(lattice.internal_spoke_ids.len(), 58);
         assert_eq!(lattice.boundary_link_ids.len(), 61);
-        assert_eq!(lattice.internal_spoke_ids.len() + lattice.boundary_link_ids.len(), 119);
+        assert_eq!(
+            lattice.internal_spoke_ids.len() + lattice.boundary_link_ids.len(),
+            119
+        );
     }
 }

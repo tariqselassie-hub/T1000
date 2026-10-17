@@ -33,7 +33,10 @@ fn main() {
     }
     let src = [1, 2, 3, 4, 5, 6, 7, 8];
 
-    println!("─── [1] 32-WAY INT8 DOT-PRODUCT THROUGHPUT ({} ITERATIONS) ───", iters);
+    println!(
+        "─── [1] 32-WAY INT8 DOT-PRODUCT THROUGHPUT ({} ITERATIONS) ───",
+        iters
+    );
     let t0 = Instant::now();
     let mut acc = src;
     for _ in 0..iters {
@@ -45,7 +48,10 @@ fn main() {
 
     println!("  Accumulated Checksum      : {:?}", acc);
     println!("  Average Latency per Pass  : {:.3} ns", dur_dp_ns);
-    println!("  Effective INT8 Throughput : {:.2} Giga-Ops / sec", ops_sec / 1e9);
+    println!(
+        "  Effective INT8 Throughput : {:.2} Giga-Ops / sec",
+        ops_sec / 1e9
+    );
     println!();
 
     // =========================================================================
@@ -54,7 +60,10 @@ fn main() {
     let matrix = SurfaceCode9QVnniMatrix::new();
     let syn_iters = 5_000_000;
 
-    println!("─── [2] SURFACE CODE [[9, 1, 3]] SYNDROME EXTRACTION ({} RUNS) ───", syn_iters);
+    println!(
+        "─── [2] SURFACE CODE [[9, 1, 3]] SYNDROME EXTRACTION ({} RUNS) ───",
+        syn_iters
+    );
     let t1 = Instant::now();
     let mut syn_accum = 0i64;
     for i in 0..syn_iters {
@@ -69,15 +78,24 @@ fn main() {
 
     println!("  Syndrome Checksum Value   : {}", syn_accum);
     println!("  Extraction Latency (8-syn): {:.3} ns / pass", dur_syn_ns);
-    println!("  Full Syndrome Rate        : {:.2} Million decodings / sec", syn_rate / 1e6);
-    println!("  Per-Stabilizer Evaluation : {:.3} ns / stabilizer", dur_syn_ns / 8.0);
+    println!(
+        "  Full Syndrome Rate        : {:.2} Million decodings / sec",
+        syn_rate / 1e6
+    );
+    println!(
+        "  Per-Stabilizer Evaluation : {:.3} ns / stabilizer",
+        dur_syn_ns / 8.0
+    );
     println!();
 
     // =========================================================================
     // Benchmark 3: Clifford+T Symplectic Tableau Commutation Checks
     // =========================================================================
     let comm_iters = 5_000_000;
-    println!("─── [3] SYMPLECTIC COMMUTATION CHECKS ({} PAIRS) ───", comm_iters);
+    println!(
+        "─── [3] SYMPLECTIC COMMUTATION CHECKS ({} PAIRS) ───",
+        comm_iters
+    );
     let t2 = Instant::now();
     let mut comm_count = 0u64;
     for i in 0..comm_iters {
@@ -93,8 +111,14 @@ fn main() {
     let comm_rate = comm_iters as f64 / dur_comm.as_secs_f64();
 
     println!("  Anticommuting Pairs Found : {}", comm_count);
-    println!("  Commutation Check Latency : {:.3} ns / check", dur_comm_ns);
-    println!("  Commutation Rate          : {:.2} Million checks / sec", comm_rate / 1e6);
+    println!(
+        "  Commutation Check Latency : {:.3} ns / check",
+        dur_comm_ns
+    );
+    println!(
+        "  Commutation Rate          : {:.2} Million checks / sec",
+        comm_rate / 1e6
+    );
     println!();
 
     println!("────────────────────────────────────────────────────────────────────────");

@@ -69,7 +69,9 @@ fn generate_quench_dataset(
     let mut rng_state = 0x5EED_0042_AEC0u64;
 
     let next_float = |state: &mut u64| -> f64 {
-        *state = state.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+        *state = state
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
         ((*state >> 33) as f64) / (u32::MAX as f64)
     };
 
@@ -94,17 +96,32 @@ fn generate_quench_dataset(
 }
 
 fn main() {
-    println!("╔═══════════════════════════════════════════════════════════════════════════════════╗");
-    println!("║       T-1000 ZERO-DATA HAMILTONIAN QUENCH AUTOENCODER & DYNAMICAL PHASE CLASSIFIER ║");
-    println!("║       1D Transverse-Field Ising Quench • Real-Time Trotter • MPS Latent Readout   ║");
-    println!("╚═══════════════════════════════════════════════════════════════════════════════════╝");
+    println!(
+        "╔═══════════════════════════════════════════════════════════════════════════════════╗"
+    );
+    println!(
+        "║       T-1000 ZERO-DATA HAMILTONIAN QUENCH AUTOENCODER & DYNAMICAL PHASE CLASSIFIER ║"
+    );
+    println!(
+        "║       1D Transverse-Field Ising Quench • Real-Time Trotter • MPS Latent Readout   ║"
+    );
+    println!(
+        "╚═══════════════════════════════════════════════════════════════════════════════════╝"
+    );
     println!();
 
     let num_spins = 8;
     let seq_len = 30; // 30 time steps of real-time unitary evolution
 
-    println!("[CONFIG] Active Spin Chain : {} Spins (Hilbert Space Dim = {})", num_spins, 1 << num_spins);
-    println!("[CONFIG] Time Evolution    : {} Trotter Steps (dt = 0.05, T_final = 1.50)", seq_len);
+    println!(
+        "[CONFIG] Active Spin Chain : {} Spins (Hilbert Space Dim = {})",
+        num_spins,
+        1 << num_spins
+    );
+    println!(
+        "[CONFIG] Time Evolution    : {} Trotter Steps (dt = 0.05, T_final = 1.50)",
+        seq_len
+    );
     println!("[CONFIG] Dataset Source    : Zero External Files (Autonomous Hamiltonian Dynamics)");
     println!();
 
@@ -121,11 +138,21 @@ fn main() {
     let train_set = generate_quench_dataset(80, seq_len, num_spins);
     let test_set = generate_quench_dataset(24, seq_len, num_spins);
 
-    println!("┌───────────────────────────────────────────────────────────────────────────────────┐");
-    println!("│ 1. REAL-TIME NON-EQUILIBRIUM QUENCH AUTOENCODER TRAINING                          │");
-    println!("├───────┬──────────────────┬──────────────────┬──────────────────┬──────────────────┤");
-    println!("│ Epoch │ Train Class Loss │ Train Recon MSE  │ Test Accuracy %  │ Latent Fidelity  │");
-    println!("├───────┼──────────────────┼──────────────────┼──────────────────┼──────────────────┤");
+    println!(
+        "┌───────────────────────────────────────────────────────────────────────────────────┐"
+    );
+    println!(
+        "│ 1. REAL-TIME NON-EQUILIBRIUM QUENCH AUTOENCODER TRAINING                          │"
+    );
+    println!(
+        "├───────┬──────────────────┬──────────────────┬──────────────────┬──────────────────┤"
+    );
+    println!(
+        "│ Epoch │ Train Class Loss │ Train Recon MSE  │ Test Accuracy %  │ Latent Fidelity  │"
+    );
+    println!(
+        "├───────┼──────────────────┼──────────────────┼──────────────────┼──────────────────┤"
+    );
 
     let num_epochs = 10;
     let base_lr = 0.05;
@@ -154,7 +181,12 @@ fn main() {
             if report.predicted_class == *label {
                 correct += 1;
             }
-            let l_norm: f64 = (report.latent_vector.iter().map(|&z| z * z).sum::<f64>().sqrt()
+            let l_norm: f64 = (report
+                .latent_vector
+                .iter()
+                .map(|&z| z * z)
+                .sum::<f64>()
+                .sqrt()
                 / (report.latent_vector.len() as f64).sqrt())
             .clamp(0.0, 1.0);
             test_latent_coherence += l_norm;
@@ -169,15 +201,27 @@ fn main() {
             );
         }
     }
-    println!("└───────┴──────────────────┴──────────────────┴──────────────────┴──────────────────┘");
+    println!(
+        "└───────┴──────────────────┴──────────────────┴──────────────────┴──────────────────┘"
+    );
     println!();
 
     // 2. Trajectory Analysis on a Sample Non-Equilibrium Quench
-    println!("┌───────────────────────────────────────────────────────────────────────────────────┐");
-    println!("│ 2. NON-EQUILIBRIUM TRAJECTORY RECONSTRUCTION SAMPLE (T=30 STEPS)                  │");
-    println!("├──────┬──────────────┬──────────────┬──────────────┬──────────────┬────────────────┤");
-    println!("│ Step │ Actual <Z>   │ Recon <Ẑ>    │ Actual Ent S │ Recon Ent Ŝ  │ Error Delta    │");
-    println!("├──────┼──────────────┼──────────────┼──────────────┼──────────────┼────────────────┤");
+    println!(
+        "┌───────────────────────────────────────────────────────────────────────────────────┐"
+    );
+    println!(
+        "│ 2. NON-EQUILIBRIUM TRAJECTORY RECONSTRUCTION SAMPLE (T=30 STEPS)                  │"
+    );
+    println!(
+        "├──────┬──────────────┬──────────────┬──────────────┬──────────────┬────────────────┤"
+    );
+    println!(
+        "│ Step │ Actual <Z>   │ Recon <Ẑ>    │ Actual Ent S │ Recon Ent Ŝ  │ Error Delta    │"
+    );
+    println!(
+        "├──────┼──────────────┼──────────────┼──────────────┼──────────────┼────────────────┤"
+    );
 
     let sample_quench = simulate_quench_trajectory(num_spins, seq_len, 0.05, 1.0, 2.0, true);
     let sample_report = model.forward(&sample_quench);
@@ -194,7 +238,9 @@ fn main() {
             s, act_z, rec_z, act_s, rec_s, delta
         );
     }
-    println!("└──────┴──────────────┴──────────────┴──────────────┴──────────────┴────────────────┘");
+    println!(
+        "└──────┴──────────────┴──────────────┴──────────────┴──────────────┴────────────────┘"
+    );
     println!();
 
     // 3. Streaming Latency & Throughput Benchmark
@@ -208,19 +254,48 @@ fn main() {
     let ns_per_step = (total_us * 1000.0) / (seq_len as f64);
     let throughput = (seq_len as f64) / (total_us / 1e6);
 
-    println!("┌───────────────────────────────────────────────────────────────────────────────────┐");
-    println!("│ 3. QUANTUM HARDWARE INFERENCE TELEMETRY                                           │");
-    println!("├────────────────────────────────┬──────────────────────────────────────────────────┤");
-    println!("│ Active Hardware Buffer         │ CPU L1 Data Cache (128 Bytes Resident)            │");
-    println!("│ Latency per Quench Time Step   │ {:6.1} ns                                         │", ns_per_step);
-    println!("│ Real-Time Streaming Throughput │ {:9.0} states / sec                             │", throughput);
-    println!("│ Overall Trajectory Recon MSE   │ {:.6}                                           │", sample_report.reconstruction_mse);
-    println!("│ Dynamical Phase Classification │ Class {} (Confidence: {:.2}%)                    │", sample_report.predicted_class, sample_report.classification_confidence * 100.0);
-    println!("└────────────────────────────────┴──────────────────────────────────────────────────┘");
+    println!(
+        "┌───────────────────────────────────────────────────────────────────────────────────┐"
+    );
+    println!(
+        "│ 3. QUANTUM HARDWARE INFERENCE TELEMETRY                                           │"
+    );
+    println!(
+        "├────────────────────────────────┬──────────────────────────────────────────────────┤"
+    );
+    println!(
+        "│ Active Hardware Buffer         │ CPU L1 Data Cache (128 Bytes Resident)            │"
+    );
+    println!(
+        "│ Latency per Quench Time Step   │ {:6.1} ns                                         │",
+        ns_per_step
+    );
+    println!(
+        "│ Real-Time Streaming Throughput │ {:9.0} states / sec                             │",
+        throughput
+    );
+    println!(
+        "│ Overall Trajectory Recon MSE   │ {:.6}                                           │",
+        sample_report.reconstruction_mse
+    );
+    println!(
+        "│ Dynamical Phase Classification │ Class {} (Confidence: {:.2}%)                    │",
+        sample_report.predicted_class,
+        sample_report.classification_confidence * 100.0
+    );
+    println!(
+        "└────────────────────────────────┴──────────────────────────────────────────────────┘"
+    );
     println!();
 
     println!("[SOVEREIGN VERIFICATION]");
-    println!("- Zero-Data Protocol : Non-equilibrium states generated internally by Lie-Trotter quench.");
-    println!("- Latent Compression : 8-spin statevector (256 dims) compressed to 3 Bloch coordinates.");
-    println!("- Dynamical Phase    : 100% separation between sub-critical and super-critical quenches.");
+    println!(
+        "- Zero-Data Protocol : Non-equilibrium states generated internally by Lie-Trotter quench."
+    );
+    println!(
+        "- Latent Compression : 8-spin statevector (256 dims) compressed to 3 Bloch coordinates."
+    );
+    println!(
+        "- Dynamical Phase    : 100% separation between sub-critical and super-critical quenches."
+    );
 }

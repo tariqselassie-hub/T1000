@@ -26,9 +26,12 @@ use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use serde::{Deserialize, Serialize};
 
-use crate::baselines::{quadratic_features, regression_metrics, RidgeProblem, RidgeRegression, TargetMetrics, RIDGE_LAMBDAS, ZINC_TARGETS};
-use rayon::prelude::*;
+use crate::baselines::{
+    quadratic_features, regression_metrics, RidgeProblem, RidgeRegression, TargetMetrics,
+    RIDGE_LAMBDAS, ZINC_TARGETS,
+};
 use crate::smiles::{parse, BondKind, SmilesError};
+use rayon::prelude::*;
 
 // =========================================================================
 // Data
@@ -52,13 +55,21 @@ pub fn load_zinc_csv(path: &Path) -> Result<Vec<MoleculeRecord>, String> {
         }
         let parts: Vec<&str> = line.split(',').map(str::trim).collect();
         if parts.len() != 23 {
-            return Err(format!("{}:{}: expected 23 columns, got {}", path.display(), line_no + 1, parts.len()));
+            return Err(format!(
+                "{}:{}: expected 23 columns, got {}",
+                path.display(),
+                line_no + 1,
+                parts.len()
+            ));
         }
         let num = |s: &str| {
             s.parse::<f64>()
                 .map_err(|_| format!("{}:{}: not a number: {s:?}", path.display(), line_no + 1))
         };
-        let features = parts[1..20].iter().map(|s| num(s)).collect::<Result<Vec<_>, _>>()?;
+        let features = parts[1..20]
+            .iter()
+            .map(|s| num(s))
+            .collect::<Result<Vec<_>, _>>()?;
         out.push(MoleculeRecord {
             smiles: parts[0].to_string(),
             features,
@@ -71,7 +82,10 @@ pub fn load_zinc_csv(path: &Path) -> Result<Vec<MoleculeRecord>, String> {
 /// Concatenates pools, dropping repeated SMILES (first occurrence wins).
 pub fn dedupe_by_smiles(records: Vec<MoleculeRecord>) -> Vec<MoleculeRecord> {
     let mut seen = HashSet::new();
-    records.into_iter().filter(|r| seen.insert(r.smiles.clone())).collect()
+    records
+        .into_iter()
+        .filter(|r| seen.insert(r.smiles.clone()))
+        .collect()
 }
 
 /// Order-independent fingerprint of a pool's SMILES set (FNV-1a over the sorted SMILES).
@@ -91,8 +105,13 @@ pub fn pool_checksum<'a>(smiles: impl IntoIterator<Item = &'a str>) -> String {
 // =========================================================================
 
 /// Feature sets understood by [`compute_feature_set`].
-pub const FEATURE_SETS: [&str; 5] =
-    ["csv19_legacy", "descriptors", "ecfp4_2048", "descriptors+ecfp4", "quad_descriptors+ecfp4"];
+pub const FEATURE_SETS: [&str; 5] = [
+    "csv19_legacy",
+    "descriptors",
+    "ecfp4_2048",
+    "descriptors+ecfp4",
+    "quad_descriptors+ecfp4",
+];
 
 /// Computes a named feature set for every pool molecule (rows in pool order).
 ///
@@ -105,29 +124,39 @@ pub fn compute_feature_set(name: &str, pool: &[MoleculeRecord]) -> Result<Vec<Ve
     use crate::molfeatures::{descriptors, ecfp_counts};
     let desc = || -> Result<Vec<Vec<f64>>, String> {
         pool.iter()
-            .map(|r| descriptors(&r.smiles).map_err(|e| format!("descriptors for {}: {e}", r.smiles)))
+            .map(|r| {
+                descriptors(&r.smiles).map_err(|e| format!("descriptors for {}: {e}", r.smiles))
+            })
             .collect()
     };
     let ecfp = || -> Result<Vec<Vec<f64>>, String> {
         pool.iter()
-            .map(|r| ecfp_counts(&r.smiles, 2, 2048).map_err(|e| format!("ECFP for {}: {e}", r.smiles)))
+            .map(|r| {
+                ecfp_counts(&r.smiles, 2, 2048).map_err(|e| format!("ECFP for {}: {e}", r.smiles))
+            })
             .collect()
     };
     let concat = |a: Vec<Vec<f64>>, b: Vec<Vec<f64>>| -> Vec<Vec<f64>> {
-        a.into_iter().zip(b).map(|(mut x, y)| {
-            x.extend(y);
-            x
-        }).collect()
+        a.into_iter()
+            .zip(b)
+            .map(|(mut x, y)| {
+                x.extend(y);
+                x
+            })
+            .collect()
     };
     match name {
         "csv19_legacy" => Ok(pool.iter().map(|r| r.features.clone()).collect()),
         "descriptors" => desc(),
         "ecfp4_2048" => ecfp(),
         "descriptors+ecfp4" => Ok(concat(desc()?, ecfp()?)),
-        "quad_descriptors+ecfp4" => {
-            Ok(concat(desc()?.iter().map(|d| quadratic_features(d)).collect(), ecfp()?))
-        }
-        other => Err(format!("unknown feature set {other:?}; expected one of {FEATURE_SETS:?}")),
+        "quad_descriptors+ecfp4" => Ok(concat(
+            desc()?.iter().map(|d| quadratic_features(d)).collect(),
+            ecfp()?,
+        )),
+        other => Err(format!(
+            "unknown feature set {other:?}; expected one of {FEATURE_SETS:?}"
+        )),
     }
 }
 
@@ -156,16 +185,27 @@ impl Standardizer {
                 var[j] += (r[j] - mean[j]).powi(2) / n;
             }
         }
-        let scale = var.into_iter().map(|v| if v > 1e-24 { v.sqrt() } else { 1.0 }).collect();
+        let scale = var
+            .into_iter()
+            .map(|v| if v > 1e-24 { v.sqrt() } else { 1.0 })
+            .collect();
         Self { mean, scale }
     }
 
     pub fn transform(&self, row: &[f64]) -> Vec<f64> {
-        row.iter().zip(&self.mean).zip(&self.scale).map(|((x, m), s)| (x - m) / s).collect()
+        row.iter()
+            .zip(&self.mean)
+            .zip(&self.scale)
+            .map(|((x, m), s)| (x - m) / s)
+            .collect()
     }
 
     pub fn inverse(&self, row: &[f64]) -> Vec<f64> {
-        row.iter().zip(&self.mean).zip(&self.scale).map(|((z, m), s)| z * s + m).collect()
+        row.iter()
+            .zip(&self.mean)
+            .zip(&self.scale)
+            .map(|((z, m), s)| z * s + m)
+            .collect()
     }
 }
 
@@ -280,7 +320,11 @@ pub fn murcko_scaffold_key(smiles: &str) -> Result<String, SmilesError> {
 
     let mut final_labels: Vec<u64> = kept.iter().map(|&i| label[i]).collect();
     final_labels.sort_unstable();
-    let n_bonds = mol.bonds.iter().filter(|&&(a, b, _)| alive[a] && alive[b]).count();
+    let n_bonds = mol
+        .bonds
+        .iter()
+        .filter(|&&(a, b, _)| alive[a] && alive[b])
+        .count();
     let mut h = Fnv::new();
     h.write_u64(kept.len() as u64);
     h.write_u64(n_bonds as u64);
@@ -311,7 +355,11 @@ pub struct SplitFractions {
 
 impl Default for SplitFractions {
     fn default() -> Self {
-        Self { train: 0.8, valid: 0.1, test: 0.1 }
+        Self {
+            train: 0.8,
+            valid: 0.1,
+            test: 0.1,
+        }
     }
 }
 
@@ -350,7 +398,10 @@ pub fn make_split(
     let n = smiles.len();
     assert!(n >= 3, "need at least 3 molecules to split");
     let total = fractions.train + fractions.valid + fractions.test;
-    assert!((total - 1.0).abs() < 1e-9, "split fractions must sum to 1 (got {total})");
+    assert!(
+        (total - 1.0).abs() < 1e-9,
+        "split fractions must sum to 1 (got {total})"
+    );
     let valid_size = (fractions.valid * n as f64).round() as usize;
     let test_size = (fractions.test * n as f64).round() as usize;
     let train_size = n - valid_size - test_size;
@@ -421,12 +472,20 @@ impl DataSplit {
         if pool.len() != self.pool_size || checksum != self.pool_checksum {
             return Err(format!(
                 "split {} was made for a pool of {} molecules (checksum {}), got {} (checksum {})",
-                self.name, self.pool_size, self.pool_checksum, pool.len(), checksum
+                self.name,
+                self.pool_size,
+                self.pool_checksum,
+                pool.len(),
+                checksum
             ));
         }
         let valid: HashSet<&str> = self.valid.iter().map(String::as_str).collect();
         let test: HashSet<&str> = self.test.iter().map(String::as_str).collect();
-        let mut out = SplitIndices { train: Vec::new(), valid: Vec::new(), test: Vec::new() };
+        let mut out = SplitIndices {
+            train: Vec::new(),
+            valid: Vec::new(),
+            test: Vec::new(),
+        };
         for (i, r) in pool.iter().enumerate() {
             let s = r.smiles.as_str();
             if test.contains(s) {
@@ -460,7 +519,8 @@ pub fn fit_ridge_on_validation(
     let var: Vec<f64> = (0..k)
         .map(|t| {
             let m = y_valid.iter().map(|r| r[t]).sum::<f64>() / y_valid.len() as f64;
-            (y_valid.iter().map(|r| (r[t] - m).powi(2)).sum::<f64>() / y_valid.len() as f64).max(1e-300)
+            (y_valid.iter().map(|r| (r[t] - m).powi(2)).sum::<f64>() / y_valid.len() as f64)
+                .max(1e-300)
         })
         .collect();
     // Build the (expensive) normal equations once and solve them for each penalty in parallel.
@@ -542,8 +602,10 @@ pub fn aggregate(method: SplitMethod, results: &[SplitResult]) -> Vec<AggregateR
     groups
         .into_iter()
         .map(|(features, model)| {
-            let runs: Vec<&SplitResult> =
-                results.iter().filter(|r| r.features == features && r.model == model).collect();
+            let runs: Vec<&SplitResult> = results
+                .iter()
+                .filter(|r| r.features == features && r.model == model)
+                .collect();
             let targets: Vec<String> = runs[0].test.iter().map(|m| m.target.clone()).collect();
             let per = |f: fn(&TargetMetrics) -> f64| -> Vec<MeanStd> {
                 (0..targets.len())
@@ -599,7 +661,13 @@ fn normalised_mse(preds: &[Vec<f64>], targets: &[Vec<f64>]) -> f64 {
         .map(|t| {
             let mean = targets.iter().map(|r| r[t]).sum::<f64>() / n;
             let var = (targets.iter().map(|r| (r[t] - mean).powi(2)).sum::<f64>() / n).max(1e-300);
-            preds.iter().zip(targets).map(|(p, y)| (p[t] - y[t]).powi(2)).sum::<f64>() / n / var
+            preds
+                .iter()
+                .zip(targets)
+                .map(|(p, y)| (p[t] - y[t]).powi(2))
+                .sum::<f64>()
+                / n
+                / var
         })
         .sum::<f64>()
         / k as f64
@@ -607,14 +675,22 @@ fn normalised_mse(preds: &[Vec<f64>], targets: &[Vec<f64>]) -> f64 {
 
 /// For each query, the `k_max` most similar training molecules as (similarity, train position),
 /// most similar first; ties broken by training position.
-fn tanimoto_neighbours(train: &[Vec<u32>], queries: &[Vec<u32>], k_max: usize) -> Vec<Vec<(f64, usize)>> {
+fn tanimoto_neighbours(
+    train: &[Vec<u32>],
+    queries: &[Vec<u32>],
+    k_max: usize,
+) -> Vec<Vec<(f64, usize)>> {
     crate::parallel::install(|| {
         queries
             .par_iter()
             .map(|q| {
-                let mut sims: Vec<(f64, usize)> =
-                    train.iter().enumerate().map(|(i, t)| (crate::molfeatures::tanimoto(q, t), i)).collect();
-                let cmp = |a: &(f64, usize), b: &(f64, usize)| b.0.total_cmp(&a.0).then(a.1.cmp(&b.1));
+                let mut sims: Vec<(f64, usize)> = train
+                    .iter()
+                    .enumerate()
+                    .map(|(i, t)| (crate::molfeatures::tanimoto(q, t), i))
+                    .collect();
+                let cmp =
+                    |a: &(f64, usize), b: &(f64, usize)| b.0.total_cmp(&a.0).then(a.1.cmp(&b.1));
                 let k = k_max.min(sims.len());
                 if k < sims.len() {
                     sims.select_nth_unstable_by(k - 1, cmp);
@@ -657,37 +733,61 @@ pub fn baseline_on_split(
     split: &DataSplit,
 ) -> Result<SplitResult, String> {
     if features.len() != pool.len() {
-        return Err(format!("{} feature rows for a pool of {}", features.len(), pool.len()));
+        return Err(format!(
+            "{} feature rows for a pool of {}",
+            features.len(),
+            pool.len()
+        ));
     }
     let idx = split.indices(pool)?;
-    let take = |ids: &[usize], f: &dyn Fn(usize) -> Vec<f64>| -> Vec<Vec<f64>> { ids.iter().map(|&i| f(i)).collect() };
-    let targ = |i: usize| pool[i].targets.to_vec();
-    let (y_tr, y_va, y_te) = (take(&idx.train, &targ), take(&idx.valid, &targ), take(&idx.test, &targ));
-    let result = |preds: Vec<Vec<f64>>, features: &str, lambda: Option<f64>, k: Option<usize>| SplitResult {
-        split: split.name.clone(),
-        features: features.to_string(),
-        model: model.name().to_string(),
-        lambda,
-        k,
-        test: regression_metrics(&preds, &y_te, &ZINC_TARGETS),
+    let take = |ids: &[usize], f: &dyn Fn(usize) -> Vec<f64>| -> Vec<Vec<f64>> {
+        ids.iter().map(|&i| f(i)).collect()
     };
+    let targ = |i: usize| pool[i].targets.to_vec();
+    let (y_tr, y_va, y_te) = (
+        take(&idx.train, &targ),
+        take(&idx.valid, &targ),
+        take(&idx.test, &targ),
+    );
+    let result =
+        |preds: Vec<Vec<f64>>, features: &str, lambda: Option<f64>, k: Option<usize>| SplitResult {
+            split: split.name.clone(),
+            features: features.to_string(),
+            model: model.name().to_string(),
+            lambda,
+            k,
+            test: regression_metrics(&preds, &y_te, &ZINC_TARGETS),
+        };
 
     Ok(match model {
         BaselineModel::Mean => {
-            let mean: Vec<f64> =
-                (0..3).map(|t| y_tr.iter().map(|r| r[t]).sum::<f64>() / y_tr.len() as f64).collect();
+            let mean: Vec<f64> = (0..3)
+                .map(|t| y_tr.iter().map(|r| r[t]).sum::<f64>() / y_tr.len() as f64)
+                .collect();
             result(vec![mean; y_te.len()], "none", None, None)
         }
         BaselineModel::RidgeLinear | BaselineModel::RidgeQuadratic => {
             let quadratic = model == BaselineModel::RidgeQuadratic;
-            let row = |i: usize| if quadratic { quadratic_features(&features[i]) } else { features[i].clone() };
-            let (x_tr, x_va, x_te) = (take(&idx.train, &row), take(&idx.valid, &row), take(&idx.test, &row));
+            let row = |i: usize| {
+                if quadratic {
+                    quadratic_features(&features[i])
+                } else {
+                    features[i].clone()
+                }
+            };
+            let (x_tr, x_va, x_te) = (
+                take(&idx.train, &row),
+                take(&idx.valid, &row),
+                take(&idx.test, &row),
+            );
             let ridge = fit_ridge_on_validation(&x_tr, &y_tr, &x_va, &y_va, &RIDGE_LAMBDAS);
             result(ridge.predict(&x_te), feature_name, Some(ridge.lambda), None)
         }
         BaselineModel::KnnTanimoto => {
             let bits = |ids: &[usize]| -> Vec<Vec<u32>> {
-                ids.iter().map(|&i| crate::molfeatures::on_bits(&features[i])).collect()
+                ids.iter()
+                    .map(|&i| crate::molfeatures::on_bits(&features[i]))
+                    .collect()
             };
             let (b_tr, b_va, b_te) = (bits(&idx.train), bits(&idx.valid), bits(&idx.test));
             let k_max = *KNN_K_GRID.iter().max().expect("non-empty grid");
@@ -699,7 +799,12 @@ pub fn baseline_on_split(
                 .map(|(k, _)| k)
                 .expect("non-empty grid");
             let nb_te = tanimoto_neighbours(&b_tr, &b_te, best_k);
-            result(knn_predict(&nb_te, &y_tr, best_k), feature_name, None, Some(best_k))
+            result(
+                knn_predict(&nb_te, &y_tr, best_k),
+                feature_name,
+                None,
+                Some(best_k),
+            )
         }
     })
 }
@@ -718,9 +823,21 @@ mod tests {
         assert!(!benzene.is_empty());
         assert_eq!(key("Cc1ccccc1"), benzene);
         assert_eq!(key("c1ccccc1C"), benzene);
-        assert_eq!(key("CC(=O)Oc1ccccc1C(=O)O"), benzene, "aspirin's scaffold is benzene");
-        assert_eq!(key("C1CCNCC1"), key("N1CCCCC1"), "ring written from a different atom");
-        assert_eq!(key("[Na+].[O-]C(=O)c1ccccc1"), benzene, "counter-ion and side chain removed");
+        assert_eq!(
+            key("CC(=O)Oc1ccccc1C(=O)O"),
+            benzene,
+            "aspirin's scaffold is benzene"
+        );
+        assert_eq!(
+            key("C1CCNCC1"),
+            key("N1CCCCC1"),
+            "ring written from a different atom"
+        );
+        assert_eq!(
+            key("[Na+].[O-]C(=O)c1ccccc1"),
+            benzene,
+            "counter-ion and side chain removed"
+        );
     }
 
     #[test]
@@ -729,8 +846,16 @@ mod tests {
         assert_ne!(key("c1ccncc1"), benzene, "pyridine");
         assert_ne!(key("c1ccc2ccccc2c1"), benzene, "naphthalene");
         assert_ne!(key("C1CCCCC1"), benzene, "cyclohexane");
-        assert_ne!(key("c1ccc(-c2ccccc2)cc1"), key("c1ccc(Cc2ccccc2)cc1"), "biphenyl vs diphenylmethane linker");
-        assert_eq!(key("Cc1ccc(Cc2ccccc2)cc1O"), key("c1ccc(Cc2ccccc2)cc1"), "substituents removed, linker kept");
+        assert_ne!(
+            key("c1ccc(-c2ccccc2)cc1"),
+            key("c1ccc(Cc2ccccc2)cc1"),
+            "biphenyl vs diphenylmethane linker"
+        );
+        assert_eq!(
+            key("Cc1ccc(Cc2ccccc2)cc1O"),
+            key("c1ccc(Cc2ccccc2)cc1"),
+            "substituents removed, linker kept"
+        );
     }
 
     #[test]
@@ -763,22 +888,60 @@ mod tests {
     fn splits_partition_the_pool_and_are_deterministic() {
         let (smiles, keys) = toy_pool();
         for method in [SplitMethod::Random, SplitMethod::Scaffold] {
-            let a = make_split("t", &smiles, Some(&keys), method, 7, SplitFractions::default());
-            let b = make_split("t", &smiles, Some(&keys), method, 7, SplitFractions::default());
+            let a = make_split(
+                "t",
+                &smiles,
+                Some(&keys),
+                method,
+                7,
+                SplitFractions::default(),
+            );
+            let b = make_split(
+                "t",
+                &smiles,
+                Some(&keys),
+                method,
+                7,
+                SplitFractions::default(),
+            );
             assert_eq!(a, b, "{method:?} split must be deterministic for a seed");
             let v: HashSet<_> = a.valid.iter().collect();
             let t: HashSet<_> = a.test.iter().collect();
             assert!(v.is_disjoint(&t));
             let pool: Vec<MoleculeRecord> = smiles
                 .iter()
-                .map(|s| MoleculeRecord { smiles: s.clone(), features: vec![0.0], targets: [0.0; 3] })
+                .map(|s| MoleculeRecord {
+                    smiles: s.clone(),
+                    features: vec![0.0],
+                    targets: [0.0; 3],
+                })
                 .collect();
             let idx = a.indices(&pool).unwrap();
-            assert_eq!(idx.train.len() + idx.valid.len() + idx.test.len(), pool.len());
+            assert_eq!(
+                idx.train.len() + idx.valid.len() + idx.test.len(),
+                pool.len()
+            );
         }
-        let r0 = make_split("t", &smiles, None, SplitMethod::Random, 0, SplitFractions::default());
-        let r1 = make_split("t", &smiles, None, SplitMethod::Random, 1, SplitFractions::default());
-        assert_ne!(r0.test, r1.test, "different seeds give different random splits");
+        let r0 = make_split(
+            "t",
+            &smiles,
+            None,
+            SplitMethod::Random,
+            0,
+            SplitFractions::default(),
+        );
+        let r1 = make_split(
+            "t",
+            &smiles,
+            None,
+            SplitMethod::Random,
+            1,
+            SplitFractions::default(),
+        );
+        assert_ne!(
+            r0.test, r1.test,
+            "different seeds give different random splits"
+        );
         // 158 molecules: round(0.1 * 158) = 16 each for validation and test.
         assert_eq!(r0.test.len(), 16);
         assert_eq!(r0.valid.len(), 16);
@@ -787,28 +950,61 @@ mod tests {
     #[test]
     fn scaffold_split_keeps_scaffolds_on_one_side() {
         let (smiles, keys) = toy_pool();
-        let split = make_split("s", &smiles, Some(&keys), SplitMethod::Scaffold, 3, SplitFractions::default());
-        let key_of: HashMap<&str, &str> = smiles.iter().map(String::as_str).zip(keys.iter().map(String::as_str)).collect();
+        let split = make_split(
+            "s",
+            &smiles,
+            Some(&keys),
+            SplitMethod::Scaffold,
+            3,
+            SplitFractions::default(),
+        );
+        let key_of: HashMap<&str, &str> = smiles
+            .iter()
+            .map(String::as_str)
+            .zip(keys.iter().map(String::as_str))
+            .collect();
         let test_keys: HashSet<&str> = split.test.iter().map(|s| key_of[s.as_str()]).collect();
         let valid_keys: HashSet<&str> = split.valid.iter().map(|s| key_of[s.as_str()]).collect();
-        let held: HashSet<&str> = split.valid.iter().chain(&split.test).map(String::as_str).collect();
+        let held: HashSet<&str> = split
+            .valid
+            .iter()
+            .chain(&split.test)
+            .map(String::as_str)
+            .collect();
         let train_keys: HashSet<&str> = smiles
             .iter()
             .filter(|s| !held.contains(s.as_str()))
             .map(|s| key_of[s.as_str()])
             .collect();
-        assert!(train_keys.is_disjoint(&test_keys), "a scaffold appears in both train and test");
-        assert!(train_keys.is_disjoint(&valid_keys), "a scaffold appears in both train and valid");
+        assert!(
+            train_keys.is_disjoint(&test_keys),
+            "a scaffold appears in both train and test"
+        );
+        assert!(
+            train_keys.is_disjoint(&valid_keys),
+            "a scaffold appears in both train and valid"
+        );
         assert!(!split.test.is_empty() && !split.valid.is_empty());
     }
 
     #[test]
     fn split_rejects_a_different_pool() {
         let (smiles, _) = toy_pool();
-        let split = make_split("t", &smiles, None, SplitMethod::Random, 0, SplitFractions::default());
+        let split = make_split(
+            "t",
+            &smiles,
+            None,
+            SplitMethod::Random,
+            0,
+            SplitFractions::default(),
+        );
         let other: Vec<MoleculeRecord> = smiles[1..]
             .iter()
-            .map(|s| MoleculeRecord { smiles: s.clone(), features: vec![0.0], targets: [0.0; 3] })
+            .map(|s| MoleculeRecord {
+                smiles: s.clone(),
+                features: vec![0.0],
+                targets: [0.0; 3],
+            })
             .collect();
         assert!(split.indices(&other).is_err());
     }
@@ -816,10 +1012,18 @@ mod tests {
     #[test]
     fn knn_neighbours_and_predictions() {
         let train = vec![vec![1, 2, 3], vec![1, 2], vec![7, 8], vec![]];
-        let y = vec![vec![1.0, 10.0, 0.0], vec![2.0, 20.0, 0.0], vec![3.0, 30.0, 0.0], vec![4.0, 40.0, 0.0]];
+        let y = vec![
+            vec![1.0, 10.0, 0.0],
+            vec![2.0, 20.0, 0.0],
+            vec![3.0, 30.0, 0.0],
+            vec![4.0, 40.0, 0.0],
+        ];
         let nb = tanimoto_neighbours(&train, &[vec![1, 2, 3]], 3);
         // Similarities: 1.0 (exact), 2/3, 0, 0 -> ties at 0 broken by training position.
-        assert_eq!(nb[0].iter().map(|&(_, i)| i).collect::<Vec<_>>(), vec![0, 1, 2]);
+        assert_eq!(
+            nb[0].iter().map(|&(_, i)| i).collect::<Vec<_>>(),
+            vec![0, 1, 2]
+        );
         assert!((nb[0][1].0 - 2.0 / 3.0).abs() < 1e-12);
         let p1 = knn_predict(&nb, &y, 1);
         assert_eq!(p1[0], vec![1.0, 10.0, 0.0]);
@@ -840,11 +1044,22 @@ mod tests {
             .enumerate()
             .map(|(i, s)| {
                 let x = i as f64 * 0.1;
-                MoleculeRecord { smiles: s.clone(), features: vec![x], targets: [2.0 * x + 1.0, -x, 3.0 * x] }
+                MoleculeRecord {
+                    smiles: s.clone(),
+                    features: vec![x],
+                    targets: [2.0 * x + 1.0, -x, 3.0 * x],
+                }
             })
             .collect();
         let feats: Vec<Vec<f64>> = pool.iter().map(|r| r.features.clone()).collect();
-        let split = make_split("t", &smiles, None, SplitMethod::Random, 0, SplitFractions::default());
+        let split = make_split(
+            "t",
+            &smiles,
+            None,
+            SplitMethod::Random,
+            0,
+            SplitFractions::default(),
+        );
         let r = baseline_on_split(BaselineModel::RidgeLinear, "x", &feats, &pool, &split).unwrap();
         assert!(r.test.iter().all(|m| m.r2 > 0.999), "{:?}", r.test);
         let mean = baseline_on_split(BaselineModel::Mean, "x", &feats, &pool, &split).unwrap();

@@ -13,14 +13,12 @@
 //!   sin(α_q · ⟨Z_8⟩) terms, yielding degree-4, degree-6, and higher-order transcendental
 //!   non-linearities that break the quadratic ceiling and resolve deep-regime Born solvation.
 
-use t1000::{
-    CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState,
-};
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
+use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState};
 
 const N_QUBITS: usize = 12;
 const DIM: usize = 1 << N_QUBITS; // 4,096
@@ -60,12 +58,12 @@ pub struct MidCircuitCheckpoint {
     pub n_qubits: usize,
     pub depth: usize,
     pub source_qubit: usize,
-    pub circuit_params: Vec<f64>,         // 60 params
-    pub feedforward_alphas: Vec<f64>,     // 12 alphas
-    pub readout_weights_12: Vec<Vec<f64>>,// 12 x 3
-    pub readout_biases_12: Vec<f64>,      // 3
-    pub readout_weights_78: Vec<Vec<f64>>,// 78 x 3
-    pub readout_biases_78: Vec<f64>,      // 3
+    pub circuit_params: Vec<f64>,          // 60 params
+    pub feedforward_alphas: Vec<f64>,      // 12 alphas
+    pub readout_weights_12: Vec<Vec<f64>>, // 12 x 3
+    pub readout_biases_12: Vec<f64>,       // 3
+    pub readout_weights_78: Vec<Vec<f64>>, // 78 x 3
+    pub readout_biases_78: Vec<f64>,       // 3
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -273,7 +271,11 @@ fn compute_mae_and_r2(preds: &[Vec<f64>], targets: &[Vec<f64>]) -> ([f64; 3], [f
     let mut r2 = [0.0; 3];
     for k in 0..3 {
         mae[k] /= n;
-        r2[k] = if ss_tot[k] > 1e-12 { 1.0 - ss_res[k] / ss_tot[k] } else { 0.0 };
+        r2[k] = if ss_tot[k] > 1e-12 {
+            1.0 - ss_res[k] / ss_tot[k]
+        } else {
+            0.0
+        };
     }
 
     (mae, r2)
@@ -335,7 +337,12 @@ fn chrono_now() -> String {
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap_or_default()
         .as_secs();
-    format!("2026-10-13T{:02}:{:02}:{:02}Z", (now / 3600) % 24, (now / 60) % 60, now % 60)
+    format!(
+        "2026-10-13T{:02}:{:02}:{:02}Z",
+        (now / 3600) % 24,
+        (now / 60) % 60,
+        now % 60
+    )
 }
 
 fn main() {
@@ -343,15 +350,27 @@ fn main() {
     println!(" GUDDANETWORKS 12-QUBIT QNN: MID-CIRCUIT FEED-FORWARD ENGINE (QUBIT 8)  ");
     println!("=========================================================================");
     println!(" Mode               : Dynamic Feed-Forward Non-Linearity Injection");
-    println!(" Source Qubit       : Qubit {} (⟨Z_{}⟩ Mid-Circuit Readout)", SOURCE_QUBIT, SOURCE_QUBIT);
-    println!(" Mechanism          : θ̃_{{y,q}} = θ_{{y,q}} + α_q · ⟨Z_{}⟩_L1", SOURCE_QUBIT);
-    println!(" Hilbert Space Dim  : {} (12 Qubits, 64 KB L2 Cache-Resident)", DIM);
+    println!(
+        " Source Qubit       : Qubit {} (⟨Z_{}⟩ Mid-Circuit Readout)",
+        SOURCE_QUBIT, SOURCE_QUBIT
+    );
+    println!(
+        " Mechanism          : θ̃_{{y,q}} = θ_{{y,q}} + α_q · ⟨Z_{}⟩_L1",
+        SOURCE_QUBIT
+    );
+    println!(
+        " Hilbert Space Dim  : {} (12 Qubits, 64 KB L2 Cache-Resident)",
+        DIM
+    );
     println!(" Hardware Target    : Bare-Metal AVX2 + FMA Single-Pass Fused POVM");
     println!(" Palette            : Deen OS Sovereign (Quantum Green / Hardware Gold / Alert Red)");
     println!("-------------------------------------------------------------------------\n");
 
-    let pruned_ckpt_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/checkpoints/zinc_12qubit_checkpoint_pruned99.json");
-    let train_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/data/zinc_train_10k.csv");
+    let pruned_ckpt_path = resolve_workspace_path(
+        "tests/benchmarks/zinc_molecular/checkpoints/zinc_12qubit_checkpoint_pruned99.json",
+    );
+    let train_path =
+        resolve_workspace_path("tests/benchmarks/zinc_molecular/data/zinc_train_10k.csv");
     let test_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/data/zinc_test_2k.csv");
 
     // Load datasets
@@ -359,7 +378,9 @@ fn main() {
     let train_samples = match parse_zinc_csv(&train_path, 10_000) {
         Ok(s) => s,
         Err(e) => {
-            let fallback = resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_train_10k.csv");
+            let fallback = resolve_workspace_path(
+                "tests/benchmarks/zinc_molecular/outputs/zinc_train_10k.csv",
+            );
             match parse_zinc_csv(&fallback, 10_000) {
                 Ok(s) => s,
                 Err(_) => {
@@ -375,7 +396,8 @@ fn main() {
     let test_samples = match parse_zinc_csv(&test_path, 2_000) {
         Ok(s) => s,
         Err(e) => {
-            let fallback = resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_test_2k.csv");
+            let fallback =
+                resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_test_2k.csv");
             match parse_zinc_csv(&fallback, 2_000) {
                 Ok(s) => s,
                 Err(_) => {
@@ -391,15 +413,25 @@ fn main() {
     println!("[INIT] Loading quantum circuit parameters...");
     let circuit_params: Vec<f64>;
     if pruned_ckpt_path.exists() {
-        println!("  -> Using pruned 99-parameter checkpoint: {}", pruned_ckpt_path.display());
+        println!(
+            "  -> Using pruned 99-parameter checkpoint: {}",
+            pruned_ckpt_path.display()
+        );
         let content = fs::read_to_string(&pruned_ckpt_path).expect("Read pruned checkpoint");
-        let ckpt: PrunedCheckpoint = serde_json::from_str(&content).expect("Parse pruned checkpoint");
+        let ckpt: PrunedCheckpoint =
+            serde_json::from_str(&content).expect("Parse pruned checkpoint");
         circuit_params = ckpt.pruned_hybrid_params[..60].to_vec();
     } else {
-        eprintln!("[-] Pruned checkpoint not found at: {}", pruned_ckpt_path.display());
+        eprintln!(
+            "[-] Pruned checkpoint not found at: {}",
+            pruned_ckpt_path.display()
+        );
         return;
     }
-    println!("  -> Active circuit parameters: {} (48 L1/L2 angles + 12 terminal Ry)\n", circuit_params.len());
+    println!(
+        "  -> Active circuit parameters: {} (48 L1/L2 angles + 12 terminal Ry)\n",
+        circuit_params.len()
+    );
 
     let ansatz = CircuitAnsatz::new(N_QUBITS, 3).with_pi_layer(true);
     let encoding = DataEncodingLayer::new(N_QUBITS, EncodingKind::Amplitude);
@@ -472,8 +504,8 @@ fn main() {
 
     // Evaluate Molecule #10640 under baseline
     let feats_10640 = [
-        24.0, 408.279, 15.0, 5.0, 2.0, 1.0, 0.0, 0.0, 1.0, 1.0,
-        12.0, 0.5, 9.0, 0.375, 5.0, 0.0, 4.0, 3.0, 4.0
+        24.0, 408.279, 15.0, 5.0, 2.0, 1.0, 0.0, 0.0, 1.0, 1.0, 12.0, 0.5, 9.0, 0.375, 5.0, 0.0,
+        4.0, 3.0, 4.0,
     ];
     let true_lp_10640 = -6.7716;
 
@@ -495,9 +527,17 @@ fn main() {
     println!("  [ANOMALY CHECK] Molecule #10640 Baseline Status:");
     println!("    SMILES           : O=[N+]([O-])c1ccc2c(c1)=[NH+][C@@H](CS[C@H]1[NH+]=c3ccc(Br)cc3=[NH+]1)[NH+]=2");
     println!("    True logP        : {:>+10.4}", true_lp_10640);
-    println!("    Baseline Pred    : {:>+10.4} (Absolute Error = {:.4})", pred_lp_10640_b, (pred_lp_10640_b - true_lp_10640).abs());
-    println!("    ⟨Z_{}⟩_L1 Signal  : {:>+10.6} (Spin Polarization = {:.1}%)\n",
-        SOURCE_QUBIT, m8_10640, (1.0 + m8_10640.abs()) * 50.0);
+    println!(
+        "    Baseline Pred    : {:>+10.4} (Absolute Error = {:.4})",
+        pred_lp_10640_b,
+        (pred_lp_10640_b - true_lp_10640).abs()
+    );
+    println!(
+        "    ⟨Z_{}⟩_L1 Signal  : {:>+10.6} (Spin Polarization = {:.1}%)\n",
+        SOURCE_QUBIT,
+        m8_10640,
+        (1.0 + m8_10640.abs()) * 50.0
+    );
 
     // =========================================================================
     // PHASE 2: OPTIMIZING FEED-FORWARD ANGLES (α_q)
@@ -531,7 +571,14 @@ fn main() {
     println!("───────┼────────────────┼─────────────────────┼───────────┼────────────────────────────────────");
 
     for epoch in 1..=n_epochs {
-        let (loss_curr, w_curr, b_curr) = eval_alpha_loss(&ansatz, &encoding, &circuit_params, &alphas, &opt_subset, 1e-3);
+        let (loss_curr, w_curr, b_curr) = eval_alpha_loss(
+            &ansatz,
+            &encoding,
+            &circuit_params,
+            &alphas,
+            &opt_subset,
+            1e-3,
+        );
 
         // Check Molecule #10640 prediction at current alpha
         encoding.encode_amplitude_into(&feats_10640, &mut l2_state);
@@ -553,11 +600,25 @@ fn main() {
         for q in 0..N_QUBITS {
             let mut alphas_plus = alphas.clone();
             alphas_plus[q] += eps;
-            let (l_plus, _, _) = eval_alpha_loss(&ansatz, &encoding, &circuit_params, &alphas_plus, &opt_subset, 1e-3);
+            let (l_plus, _, _) = eval_alpha_loss(
+                &ansatz,
+                &encoding,
+                &circuit_params,
+                &alphas_plus,
+                &opt_subset,
+                1e-3,
+            );
 
             let mut alphas_minus = alphas.clone();
             alphas_minus[q] -= eps;
-            let (l_minus, _, _) = eval_alpha_loss(&ansatz, &encoding, &circuit_params, &alphas_minus, &opt_subset, 1e-3);
+            let (l_minus, _, _) = eval_alpha_loss(
+                &ansatz,
+                &encoding,
+                &circuit_params,
+                &alphas_minus,
+                &opt_subset,
+                1e-3,
+            );
 
             grad[q] = (l_plus - l_minus) / (2.0 * eps);
         }
@@ -578,14 +639,20 @@ fn main() {
         // Print top 3 alphas
         let mut alpha_pairs: Vec<(usize, f64)> = alphas.iter().cloned().enumerate().collect();
         alpha_pairs.sort_by(|a, b| b.1.abs().partial_cmp(&a.1.abs()).unwrap());
-        let top_str = format!("q{}: {:>+5.2}, q{}: {:>+5.2}, q{}: {:>+5.2}",
-            alpha_pairs[0].0, alpha_pairs[0].1,
-            alpha_pairs[1].0, alpha_pairs[1].1,
-            alpha_pairs[2].0, alpha_pairs[2].1,
+        let top_str = format!(
+            "q{}: {:>+5.2}, q{}: {:>+5.2}, q{}: {:>+5.2}",
+            alpha_pairs[0].0,
+            alpha_pairs[0].1,
+            alpha_pairs[1].0,
+            alpha_pairs[1].1,
+            alpha_pairs[2].0,
+            alpha_pairs[2].1,
         );
 
-        println!("  {:>3}  │   {:>10.6}   │      {:>+10.4}     │  {:>7.4}  │ {}",
-            epoch, loss_curr, pred_lp_10640_epoch, norm_alpha, top_str);
+        println!(
+            "  {:>3}  │   {:>10.6}   │      {:>+10.4}     │  {:>7.4}  │ {}",
+            epoch, loss_curr, pred_lp_10640_epoch, norm_alpha, top_str
+        );
     }
     let el_opt = t_opt.elapsed();
     println!("───────┴────────────────┴─────────────────────┴───────────┴────────────────────────────────────");
@@ -661,9 +728,18 @@ fn main() {
     println!("  ┌─────────────┬──────────────────┬──────────────────┬──────────────────┐");
     println!("  │  Property   │  Baseline MAE    │  Feed-Fwd MAE    │  Improvement     │");
     println!("  ├─────────────┼──────────────────┼──────────────────┼──────────────────┤");
-    println!("  │  logP       │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │", mae_b[0], mae_ff[0], imp_ff_lp);
-    println!("  │  QED        │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │", mae_b[1], mae_ff[1], imp_ff_qed);
-    println!("  │  SAS        │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │", mae_b[2], mae_ff[2], imp_ff_sas);
+    println!(
+        "  │  logP       │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │",
+        mae_b[0], mae_ff[0], imp_ff_lp
+    );
+    println!(
+        "  │  QED        │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │",
+        mae_b[1], mae_ff[1], imp_ff_qed
+    );
+    println!(
+        "  │  SAS        │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │",
+        mae_b[2], mae_ff[2], imp_ff_sas
+    );
     println!("  └─────────────┴──────────────────┴──────────────────┴──────────────────┘\n");
     println!("  ┌─────────────┬──────────────────┬──────────────────┐");
     println!("  │  Property   │  Baseline R²     │  Feed-Fwd R²     │");
@@ -743,13 +819,40 @@ fn main() {
     println!("  ┌─────────────┬──────────────────┬──────────────────┬──────────────────┬──────────────────┐");
     println!("  │  Property   │  Baseline (12)   │  Feed-Fwd (12)   │  Combined (78)   │  Total Imp. (%)  │");
     println!("  ├─────────────┼──────────────────┼──────────────────┼──────────────────┼──────────────────┤");
-    println!("  │  logP MAE   │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │", mae_b[0], mae_ff[0], mae_comb[0], imp_comb_lp);
-    println!("  │  QED MAE    │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │", mae_b[1], mae_ff[1], mae_comb[1], imp_comb_qed);
-    println!("  │  SAS MAE    │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │", mae_b[2], mae_ff[2], mae_comb[2], imp_comb_sas);
+    println!(
+        "  │  logP MAE   │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │",
+        mae_b[0], mae_ff[0], mae_comb[0], imp_comb_lp
+    );
+    println!(
+        "  │  QED MAE    │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │",
+        mae_b[1], mae_ff[1], mae_comb[1], imp_comb_qed
+    );
+    println!(
+        "  │  SAS MAE    │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │",
+        mae_b[2], mae_ff[2], mae_comb[2], imp_comb_sas
+    );
     println!("  ├─────────────┼──────────────────┼──────────────────┼──────────────────┼──────────────────┤");
-    println!("  │  logP R²    │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │", r2_b[0], r2_ff[0], r2_comb[0], (r2_comb[0] - r2_b[0]) / r2_b[0].abs() * 100.0);
-    println!("  │  QED R²     │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │", r2_b[1], r2_ff[1], r2_comb[1], (r2_comb[1] - r2_b[1]) / r2_b[1].abs() * 100.0);
-    println!("  │  SAS R²     │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │", r2_b[2], r2_ff[2], r2_comb[2], (r2_comb[2] - r2_b[2]) / r2_b[2].abs() * 100.0);
+    println!(
+        "  │  logP R²    │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │",
+        r2_b[0],
+        r2_ff[0],
+        r2_comb[0],
+        (r2_comb[0] - r2_b[0]) / r2_b[0].abs() * 100.0
+    );
+    println!(
+        "  │  QED R²     │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │",
+        r2_b[1],
+        r2_ff[1],
+        r2_comb[1],
+        (r2_comb[1] - r2_b[1]) / r2_b[1].abs() * 100.0
+    );
+    println!(
+        "  │  SAS R²     │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │",
+        r2_b[2],
+        r2_ff[2],
+        r2_comb[2],
+        (r2_comb[2] - r2_b[2]) / r2_b[2].abs() * 100.0
+    );
     println!("  └─────────────┴──────────────────┴──────────────────┴──────────────────┴──────────────────┘\n");
 
     // =========================================================================
@@ -802,17 +905,36 @@ fn main() {
     println!("  Compound Identifier : ZINC-250k Molecule #10640");
     println!("  SMILES              : O=[N+]([O-])c1ccc2c(c1)=[NH+][C@@H](CS[C@H]1[NH+]=c3ccc(Br)cc3=[NH+]1)[NH+]=2");
     println!("  Zwitterionic Bridge : Hyper-polarized thioether bridge, 3 formal iminium charges");
-    println!("  Mid-Circuit Signal  : ⟨Z_{}⟩_L1 = {:>+10.6}\n", SOURCE_QUBIT, m8_10640);
+    println!(
+        "  Mid-Circuit Signal  : ⟨Z_{}⟩_L1 = {:>+10.6}\n",
+        SOURCE_QUBIT, m8_10640
+    );
     println!("  ┌────────────────────────────────┬──────────────────┬──────────────────┐");
     println!("  │  Architecture Stage            │  Predicted logP  │  Absolute Error  │");
     println!("  ├────────────────────────────────┼──────────────────┼──────────────────┤");
-    println!("  │  True Physical Target          │ {:>16.4} │ {:>16.4} │", true_lp_10640, 0.0);
-    println!("  │  Baseline 12-Qubit QNN         │ {:>16.4} │ {:>16.4} │", pred_lp_10640_b, err_base);
-    println!("  │  + Mid-Circuit Feed-Forward    │ {:>16.4} │ {:>16.4} │", pred_lp_10640_ff, err_ff);
-    println!("  │  + Combined (FF + 78 ZZ)       │ {:>16.4} │ {:>16.4} │", pred_lp_10640_comb, err_comb);
+    println!(
+        "  │  True Physical Target          │ {:>16.4} │ {:>16.4} │",
+        true_lp_10640, 0.0
+    );
+    println!(
+        "  │  Baseline 12-Qubit QNN         │ {:>16.4} │ {:>16.4} │",
+        pred_lp_10640_b, err_base
+    );
+    println!(
+        "  │  + Mid-Circuit Feed-Forward    │ {:>16.4} │ {:>16.4} │",
+        pred_lp_10640_ff, err_ff
+    );
+    println!(
+        "  │  + Combined (FF + 78 ZZ)       │ {:>16.4} │ {:>16.4} │",
+        pred_lp_10640_comb, err_comb
+    );
     println!("  └────────────────────────────────┴──────────────────┴──────────────────┘\n");
-    println!("  Anomaly Error Reduction: {:.4} -> {:.4} (Gain = {:>+6.2}%)\n",
-        err_base, err_comb, (1.0 - err_comb / err_base) * 100.0);
+    println!(
+        "  Anomaly Error Reduction: {:.4} -> {:.4} (Gain = {:>+6.2}%)\n",
+        err_base,
+        err_comb,
+        (1.0 - err_comb / err_base) * 100.0
+    );
 
     // =========================================================================
     // PHASE 6: TOP OUTLIER CORRECTIONS
@@ -831,13 +953,30 @@ fn main() {
     corrections.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
 
     println!(" Top 10 logP Error Reductions (Baseline → Combined Feed-Forward + ZZ):");
-    println!(" ┌────────┬────────────────┬────────────────┬────────────────┬──────────────────────────┐");
-    println!(" │  Rank  │  Baseline |ε|  │  Combined |ε|  │  Δ Correction  │  SMILES (truncated)      │");
-    println!(" ├────────┼────────────────┼────────────────┼────────────────┼──────────────────────────┤");
-    for (rank, &(_idx, correction, err_b, err_c, smiles)) in corrections.iter().take(10).enumerate() {
-        let smi_short = if smiles.len() > 24 { &smiles[..24] } else { smiles };
-        println!(" │  {:>4}  │ {:>14.4} │ {:>14.4} │ {:>+14.4} │  {:<24} │",
-            rank + 1, err_b, err_c, correction, smi_short);
+    println!(
+        " ┌────────┬────────────────┬────────────────┬────────────────┬──────────────────────────┐"
+    );
+    println!(
+        " │  Rank  │  Baseline |ε|  │  Combined |ε|  │  Δ Correction  │  SMILES (truncated)      │"
+    );
+    println!(
+        " ├────────┼────────────────┼────────────────┼────────────────┼──────────────────────────┤"
+    );
+    for (rank, &(_idx, correction, err_b, err_c, smiles)) in corrections.iter().take(10).enumerate()
+    {
+        let smi_short = if smiles.len() > 24 {
+            &smiles[..24]
+        } else {
+            smiles
+        };
+        println!(
+            " │  {:>4}  │ {:>14.4} │ {:>14.4} │ {:>+14.4} │  {:<24} │",
+            rank + 1,
+            err_b,
+            err_c,
+            correction,
+            smi_short
+        );
     }
     println!(" └────────┴────────────────┴────────────────┴────────────────┴──────────────────────────┘\n");
 
@@ -857,7 +996,10 @@ fn main() {
             ansatz.forward_l2_in_place(&mut l2_state, &circuit_params[..48]);
             let mut z = [0.0; N_QUBITS];
             t1000::simd::measure_fused_ry_z_readout(
-                &l2_state.real, &l2_state.imag, &circuit_params[48..60], &mut z,
+                &l2_state.real,
+                &l2_state.imag,
+                &circuit_params[48..60],
+                &mut z,
             );
         }
     }
@@ -899,10 +1041,19 @@ fn main() {
     }
     let tp_combined = (test_samples.len() * repeats) as f64 / t_cc.elapsed().as_secs_f64();
 
-    println!("  Baseline Readout (12 obs) : {:>7.0} mols/sec", tp_baseline);
-    println!("  Feed-Forward     (12 obs) : {:>7.0} mols/sec (Overhead: {:>+.2}%)",
-        tp_feedforward, (1.0 - tp_feedforward / tp_baseline) * 100.0);
-    println!("  Combined Readout (78 obs) : {:>7.0} mols/sec\n", tp_combined);
+    println!(
+        "  Baseline Readout (12 obs) : {:>7.0} mols/sec",
+        tp_baseline
+    );
+    println!(
+        "  Feed-Forward     (12 obs) : {:>7.0} mols/sec (Overhead: {:>+.2}%)",
+        tp_feedforward,
+        (1.0 - tp_feedforward / tp_baseline) * 100.0
+    );
+    println!(
+        "  Combined Readout (78 obs) : {:>7.0} mols/sec\n",
+        tp_combined
+    );
 
     // =========================================================================
     // PHASE 8: PERSISTENCE (CHECKPOINT & REPORT)
@@ -924,18 +1075,27 @@ fn main() {
         readout_biases_78: b_comb,
     };
 
-    let ckpt_save_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/checkpoints/zinc_12qubit_checkpoint_midcircuit.json");
+    let ckpt_save_path = resolve_workspace_path(
+        "tests/benchmarks/zinc_molecular/checkpoints/zinc_12qubit_checkpoint_midcircuit.json",
+    );
     if let Some(parent) = ckpt_save_path.parent() {
         fs::create_dir_all(parent).ok();
     }
     let ckpt_json = serde_json::to_string_pretty(&checkpoint).expect("Serialize checkpoint");
     fs::write(&ckpt_save_path, ckpt_json).expect("Write checkpoint");
-    println!("  [✓] Saved Mid-Circuit Checkpoint: {}", ckpt_save_path.display());
+    println!(
+        "  [✓] Saved Mid-Circuit Checkpoint: {}",
+        ckpt_save_path.display()
+    );
 
     // Classical reference: ridge regression on the same raw features and train/test split.
     let classical_baselines = t1000::baselines::zinc_baselines(
-        train_samples.iter().map(|s| (s.features.as_slice(), [s.log_p, s.qed, s.sas])),
-        test_samples.iter().map(|s| (s.features.as_slice(), [s.log_p, s.qed, s.sas])),
+        train_samples
+            .iter()
+            .map(|s| (s.features.as_slice(), [s.log_p, s.qed, s.sas])),
+        test_samples
+            .iter()
+            .map(|s| (s.features.as_slice(), [s.log_p, s.qed, s.sas])),
     );
     let report = MidCircuitReport {
         classical_baselines: classical_baselines.clone(),
@@ -974,29 +1134,58 @@ fn main() {
         combined_throughput_mols_per_sec: tp_combined,
     };
 
-    let report_save_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/reports/zinc_12qubit_midcircuit_report.json");
+    let report_save_path = resolve_workspace_path(
+        "tests/benchmarks/zinc_molecular/reports/zinc_12qubit_midcircuit_report.json",
+    );
     if let Some(parent) = report_save_path.parent() {
         fs::create_dir_all(parent).ok();
     }
     {
         use t1000::baselines::{print_comparison, QnnScore};
         let qnn_rows = [
-        QnnScore::new("circuit, no feed-forward")
-            .mae([report.baseline_mae_logp, report.baseline_mae_qed, report.baseline_mae_sas])
-            .r2([report.baseline_r2_logp, report.baseline_r2_qed, report.baseline_r2_sas]),
-        QnnScore::new("mid-circuit feed-forward")
-            .mae([report.feedforward_mae_logp, report.feedforward_mae_qed, report.feedforward_mae_sas])
-            .r2([report.feedforward_r2_logp, report.feedforward_r2_qed, report.feedforward_r2_sas]),
-        QnnScore::new("feed-forward + ZZ readout")
-            .mae([report.combined_mae_logp, report.combined_mae_qed, report.combined_mae_sas])
-            .r2([report.combined_r2_logp, report.combined_r2_qed, report.combined_r2_sas]),
+            QnnScore::new("circuit, no feed-forward")
+                .mae([
+                    report.baseline_mae_logp,
+                    report.baseline_mae_qed,
+                    report.baseline_mae_sas,
+                ])
+                .r2([
+                    report.baseline_r2_logp,
+                    report.baseline_r2_qed,
+                    report.baseline_r2_sas,
+                ]),
+            QnnScore::new("mid-circuit feed-forward")
+                .mae([
+                    report.feedforward_mae_logp,
+                    report.feedforward_mae_qed,
+                    report.feedforward_mae_sas,
+                ])
+                .r2([
+                    report.feedforward_r2_logp,
+                    report.feedforward_r2_qed,
+                    report.feedforward_r2_sas,
+                ]),
+            QnnScore::new("feed-forward + ZZ readout")
+                .mae([
+                    report.combined_mae_logp,
+                    report.combined_mae_qed,
+                    report.combined_mae_sas,
+                ])
+                .r2([
+                    report.combined_r2_logp,
+                    report.combined_r2_qed,
+                    report.combined_r2_sas,
+                ]),
         ];
         print_comparison(&qnn_rows, &classical_baselines);
     }
 
     let report_json = serde_json::to_string_pretty(&report).expect("Serialize report");
     fs::write(&report_save_path, report_json).expect("Write report");
-    println!("  [✓] Saved Machine-Readable Report: {}", report_save_path.display());
+    println!(
+        "  [✓] Saved Machine-Readable Report: {}",
+        report_save_path.display()
+    );
     println!("\n=========================================================================");
     println!(" MECHANISM #2 MID-CIRCUIT FEED-FORWARD VERIFICATION COMPLETE             ");
     println!("=========================================================================");

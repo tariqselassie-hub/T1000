@@ -1,6 +1,6 @@
 use crate::state::QuantumState;
-use t1000_core::{simulated_bifurcation, BifurcationConfig};
 use serde::{Deserialize, Serialize};
+use t1000_core::{simulated_bifurcation, BifurcationConfig};
 
 /// Memory entry stored in the Quantum Associative Memory.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -86,10 +86,7 @@ impl QuantumAssociativeMemory {
             .map(|e| query.fidelity(&e.quantum_state))
             .collect();
 
-        let max_f = fidelities
-            .iter()
-            .copied()
-            .fold(f64::NEG_INFINITY, f64::max);
+        let max_f = fidelities.iter().copied().fold(f64::NEG_INFINITY, f64::max);
         let min_f = fidelities.iter().copied().fold(f64::INFINITY, f64::min);
         let spread = (max_f - min_f).max(1e-9);
 

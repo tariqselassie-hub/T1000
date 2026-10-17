@@ -1,25 +1,27 @@
-use t1000::{
-    CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState,
-};
 use std::fs;
 use std::path::PathBuf;
+use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState};
 
 const N_QUBITS: usize = 12;
 const DIM: usize = 1 << N_QUBITS;
 
 fn main() {
     let smi = "O=[N+]([O-])c1ccc2c(c1)=[NH+][C@@H](CS[C@H]1[NH+]=c3ccc(Br)cc3=[NH+]1)[NH+]=2";
-    
+
     // Featurize
     let feats = [
-        24.0, 408.279, 15.0, 5.0, 2.0, 1.0, 0.0, 0.0, 1.0, 1.0,
-        12.0, 0.5, 9.0, 0.375, 5.0, 0.0, 4.0, 3.0, 4.0
+        24.0, 408.279, 15.0, 5.0, 2.0, 1.0, 0.0, 0.0, 1.0, 1.0, 12.0, 0.5, 9.0, 0.375, 5.0, 0.0,
+        4.0, 3.0, 4.0,
     ];
 
-    let ckpt_path = PathBuf::from("tests/benchmarks/zinc_molecular/outputs/zinc_12qubit_checkpoint_fused98.json");
+    let ckpt_path = PathBuf::from(
+        "tests/benchmarks/zinc_molecular/outputs/zinc_12qubit_checkpoint_fused98.json",
+    );
     let ckpt_str = fs::read_to_string(&ckpt_path).expect("Read ckpt");
     let v: serde_json::Value = serde_json::from_str(&ckpt_str).expect("Parse json");
-    let p_arr = v["fused_hybrid_params_98"].as_array().expect("params array");
+    let p_arr = v["fused_hybrid_params_98"]
+        .as_array()
+        .expect("params array");
     let p: Vec<f64> = p_arr.iter().map(|x| x.as_f64().unwrap()).collect();
 
     let ansatz = CircuitAnsatz::new(N_QUBITS, 3).with_pi_layer(true);

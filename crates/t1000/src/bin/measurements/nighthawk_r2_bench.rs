@@ -68,7 +68,10 @@ fn main() {
     println!("  Elementary Plaquettes: 99 Square Plaquettes (11 x 9 grid)");
     println!("  Perimeter Boundary:    40 Links (Outer Wall)");
     println!("  Internal Spokes:       178 Couplers (Involution Cancelled: Z_e^2 = I)");
-    println!("  L1 Cache Peak Active:  {} Bytes", report_nh.max_active_bytes);
+    println!(
+        "  L1 Cache Peak Active:  {} Bytes",
+        report_nh.max_active_bytes
+    );
     println!("  Discrete Stokes Drift: {:+.6}", report_nh.stokes_drift);
     println!("  Execution Latency:     {:.2} us", dur_nh_us);
     println!();
@@ -103,7 +106,10 @@ fn main() {
     println!("  Physical Qubits:       119 Qubits (59 Triangular Plaquettes)");
     println!("  Internal Spokes:       58 Couplers (Involution Cancelled: Z_e^2 = I)");
     println!("  Boundary Links:        61 Links (Perimeter Stabilization)");
-    println!("  L1 Cache Peak Active:  {} Bytes", report_kg.max_active_bytes);
+    println!(
+        "  L1 Cache Peak Active:  {} Bytes",
+        report_kg.max_active_bytes
+    );
     println!("  Discrete Stokes Drift: {:+.6}", report_kg.stokes_drift);
     println!("  Execution Latency:     {:.2} us", dur_kg_us);
     println!();
@@ -131,10 +137,22 @@ fn main() {
 
     println!("  Dual Graph Storage:    Compile-Time .rodata (Zero Heap Allocations)");
     println!("  Coupler Mask Width:    256 Bits ([u64; 4] = 32 Bytes)");
-    println!("  Active Zipper Window:  {} Bytes (Exact 6x 64-Byte L1 Lines)", std::mem::size_of::<t1000::plaquette::PlaquetteZipperWindow>());
-    println!("  Contraction Invariant: {} Boundary Links | {} Canceled Spokes", last_b, last_s);
-    println!("  XOR Involution Speed:  {:.2} ns / full 99-plaquette pass", dur_dual_ns);
-    println!("  Contraction Rate:      {:.2} Million Plaquettes/sec", (99.0 / (dur_dual_ns * 1e-9)) / 1_000_000.0);
+    println!(
+        "  Active Zipper Window:  {} Bytes (Exact 6x 64-Byte L1 Lines)",
+        std::mem::size_of::<t1000::plaquette::PlaquetteZipperWindow>()
+    );
+    println!(
+        "  Contraction Invariant: {} Boundary Links | {} Canceled Spokes",
+        last_b, last_s
+    );
+    println!(
+        "  XOR Involution Speed:  {:.2} ns / full 99-plaquette pass",
+        dur_dual_ns
+    );
+    println!(
+        "  Contraction Rate:      {:.2} Million Plaquettes/sec",
+        (99.0 / (dur_dual_ns * 1e-9)) / 1_000_000.0
+    );
     println!();
 
     // -------------------------------------------------------------------------

@@ -279,8 +279,14 @@ mod tests {
     #[test]
     fn test_restoring_force_calculation() {
         let bvs = vec![
-            BlochVector { radius: 0.90, ..Default::default() }, // pure enough, no force
-            BlochVector { radius: 0.50, ..Default::default() }, // collapsed, restoring force active
+            BlochVector {
+                radius: 0.90,
+                ..Default::default()
+            }, // pure enough, no force
+            BlochVector {
+                radius: 0.50,
+                ..Default::default()
+            }, // collapsed, restoring force active
         ];
         let weights = compute_bloch_restoring_weights(&bvs, 0.1, 0.75);
         assert_eq!(weights[0], 0.0);

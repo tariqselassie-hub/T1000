@@ -22,9 +22,7 @@ pub enum AnsatzMode {
     /// Standard Hardware-Efficient Ansatz:
     /// Alternating 1Q rotations (Rx, Rz) with 1D nearest-neighbor Ring CZ.
     /// Best for broad expressibility benchmarking.
-    HardwareEfficient {
-        layers: usize,
-    },
+    HardwareEfficient { layers: usize },
 
     /// Fused Bipartite Clustered Ansatz (for N=18):
     /// K9 all-to-all inside R1 (0..8), K9 inside R2 (9..17), plus bridge CZs.
@@ -37,24 +35,17 @@ pub enum AnsatzMode {
     /// Data Re-Uploading Layered Ansatz:
     /// Interleaves continuous parameter updates θ with external classical input features x.
     /// Overcomes single-layer expressibility limits in quantum classifiers.
-    DataReuploading {
-        layers: usize,
-        feature_dim: usize,
-    },
+    DataReuploading { layers: usize, feature_dim: usize },
 
     /// Discrete Fault-Tolerant Clifford+T Ansatz:
     /// Decomposed via Ross-Selinger into discrete tokens (H, S, T, CZ).
     /// Used for fault-tolerant steganography, stabilizer tracking, and exact circuit depth auditing.
-    CliffordTDecomposed {
-        target_epsilon: f64,
-    },
+    CliffordTDecomposed { target_epsilon: f64 },
 
     /// 36-Qubit Bipartite Cut Ansatz across dual 18-qubit L3-resident registers:
     /// Cuts cross-fragment CZ bridges into quasiprobability branches,
     /// evaluating a 36-qubit system in 8 MB RAM without a 1 TB dense statevector.
-    BipartiteCut36 {
-        bridge_pairs: Vec<(usize, usize)>,
-    },
+    BipartiteCut36 { bridge_pairs: Vec<(usize, usize)> },
 }
 
 impl AnsatzMode {
@@ -69,9 +60,10 @@ impl AnsatzMode {
                 // Parameters for R1 and R2 single-qubit rotations per layer
                 2 * n_qubits * layers
             }
-            AnsatzMode::DataReuploading { layers, feature_dim } => {
-                layers * (2 * n_qubits + feature_dim)
-            }
+            AnsatzMode::DataReuploading {
+                layers,
+                feature_dim,
+            } => layers * (2 * n_qubits + feature_dim),
             AnsatzMode::CliffordTDecomposed { .. } => 0, // Discrete gates carry no continuous angles
             AnsatzMode::BipartiteCut36 { .. } => 2 * n_qubits,
         }
@@ -86,14 +78,12 @@ impl AnsatzMode {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum AncillaRole {
     /// Latent Autoencoder Compression:
-    /// Ancilla register is driven to |0⟩. The training loss penalizes any 
+    /// Ancilla register is driven to |0⟩. The training loss penalizes any
     /// probability mass remaining in |1⟩ (e.g., minimizing 1 - ⟨Z_ancilla⟩).
-    TrashRegister {
-        target_qubit: usize,
-    },
+    TrashRegister { target_qubit: usize },
 
     /// Non-Destructive Parity / Syndrome Extraction:
-    /// Measures multi-qubit stabilizers (e.g. Z_i Z_j) into the ancilla 
+    /// Measures multi-qubit stabilizers (e.g. Z_i Z_j) into the ancilla
     /// to detect errors without collapsing computational superpositions.
     ParitySyndrome {
         ancilla_qubit: usize,
@@ -170,7 +160,10 @@ impl QnnCircuit {
         assert_eq!(state_im.len(), 1 << n, "State length must equal 2^N");
 
         match &self.ansatz {
-            AnsatzMode::DualFragmentCluster { layers, bridge_pairs } => {
+            AnsatzMode::DualFragmentCluster {
+                layers,
+                bridge_pairs,
+            } => {
                 debug_assert_eq!(self.n_total_qubits, 18);
                 for l in 0..*layers {
                     let offset = l * 2 * n;
@@ -221,7 +214,10 @@ impl QnnCircuit {
                 }
             }
 
-            AnsatzMode::DataReuploading { layers, feature_dim } => {
+            AnsatzMode::DataReuploading {
+                layers,
+                feature_dim,
+            } => {
                 let stride = 2 * n + *feature_dim;
                 for l in 0..*layers {
                     let offset = l * stride;
@@ -263,8 +259,16 @@ impl QnnCircuit {
             AnsatzMode::BipartiteCut36 { bridge_pairs } => {
                 // Fragment evaluation: runs 18-qubit L3-resident state with bridge CZs
                 for q in 0..n {
-                    let rx = if 2 * q < self.parameters.len() { self.parameters[2 * q] } else { 0.0 };
-                    let rz = if 2 * q + 1 < self.parameters.len() { self.parameters[2 * q + 1] } else { 0.0 };
+                    let rx = if 2 * q < self.parameters.len() {
+                        self.parameters[2 * q]
+                    } else {
+                        0.0
+                    };
+                    let rz = if 2 * q + 1 < self.parameters.len() {
+                        self.parameters[2 * q + 1]
+                    } else {
+                        0.0
+                    };
                     if rx.abs() > 1e-14 {
                         apply_rx_op(state_re, state_im, q, rx);
                     }
@@ -326,7 +330,12 @@ impl QnnCircuit {
     }
 
     /// Evaluates autoencoder trash penalty P(|1⟩) = (1 - ⟨Z⟩)/2 on target qubit.
-    pub fn evaluate_trash_penalty(&self, state_re: &[f64], state_im: &[f64], target_qubit: usize) -> f64 {
+    pub fn evaluate_trash_penalty(
+        &self,
+        state_re: &[f64],
+        state_im: &[f64],
+        target_qubit: usize,
+    ) -> f64 {
         let mask = 1usize << target_qubit;
         let mut p_one = 0.0;
         for i in 0..state_re.len() {
@@ -575,18 +584,16 @@ mod tests {
         };
         assert_eq!(dru.parameter_count(6), 2 * (2 * 6 + 8)); // 40
 
-        let ct = AnsatzMode::CliffordTDecomposed { target_epsilon: 1e-5 };
+        let ct = AnsatzMode::CliffordTDecomposed {
+            target_epsilon: 1e-5,
+        };
         assert_eq!(ct.parameter_count(18), 0);
     }
 
     #[test]
     fn test_hardware_efficient_execution() {
         let n = 4;
-        let circuit = QnnCircuit::new(
-            n,
-            AnsatzMode::HardwareEfficient { layers: 1 },
-            vec![],
-        );
+        let circuit = QnnCircuit::new(n, AnsatzMode::HardwareEfficient { layers: 1 }, vec![]);
         let mut re = vec![0.0; 1 << n];
         let mut im = vec![0.0; 1 << n];
         re[0] = 1.0;
@@ -616,7 +623,11 @@ mod tests {
         re[0] = 1.0; // |000>
         circuit.execute(&mut re, &mut im);
         let overlap = circuit.evaluate_swap_test_overlap(&re, &im, 0);
-        assert!((overlap - 1.0).abs() < 1e-12, "Expected 1.0, got {}", overlap);
+        assert!(
+            (overlap - 1.0).abs() < 1e-12,
+            "Expected 1.0, got {}",
+            overlap
+        );
 
         // Case 2: Orthogonal states (|0⟩ on reg A, |1⟩ on reg B -> |100> = index 4) -> Overlap = 0.0
         let mut re2 = vec![0.0; 1 << n];
@@ -720,4 +731,3 @@ mod tests {
         assert!((norm_sq - 1.0).abs() < 1e-12);
     }
 }
-

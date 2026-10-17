@@ -120,6 +120,11 @@ pub use optimizer::{
 pub use parallel::{
     DEFAULT_SYSTEM_QUBITS, PARALLEL_CUTOFF_QUBITS, PARALLEL_MIN_DIM, PARALLEL_MIN_QUBITS,
 };
+pub use plaquette::{
+    CouplerMask, DiscreteStokesEngine, GaugeLink, NighthawkDualGraph, Plaquette, PlaquetteLattice,
+    PlaquetteNode, PlaquetteZipper2D, PlaquetteZipperReport, PlaquetteZipperWindow,
+    StokesPressureReport, WilsonFluxTableau, NUM_COUPLERS, NUM_PLAQUETTES, NUM_VERTICES,
+};
 pub use qec::{
     detect_and_recover, encode_logical_state, extract_syndrome, inject_pauli_error, PauliErrorKind,
     QecCodeKind, QecRecoveryResult, SyndromeReport,
@@ -132,11 +137,6 @@ pub use smiles::{
 };
 pub use state::{QuantumFeatureMap, QuantumState};
 pub use tiled_butterfly::{apply_layer_fused, tiled_apply_cz, tiled_apply_ry, tiled_apply_rz};
-pub use plaquette::{
-    CouplerMask, DiscreteStokesEngine, GaugeLink, NighthawkDualGraph, Plaquette, PlaquetteLattice,
-    PlaquetteNode, PlaquetteZipper2D, PlaquetteZipperReport, PlaquetteZipperWindow,
-    StokesPressureReport, WilsonFluxTableau, NUM_COUPLERS, NUM_PLAQUETTES, NUM_VERTICES,
-};
 pub use zipper::{BlochZipperEngine, ZipperConfig, ZipperExecutionReport, ZipperStepTelemetry};
 
 /// Seed used by the plain `new` constructors so default-initialised models are reproducible.

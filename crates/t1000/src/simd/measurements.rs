@@ -6,7 +6,9 @@
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::*;
 
-use super::guards::{assert_fused_readout_width, assert_qubit, assert_qubit_pair, assert_statevector};
+use super::guards::{
+    assert_fused_readout_width, assert_qubit, assert_qubit_pair, assert_statevector,
+};
 
 /// Vectorized Dual Pauli-Z and Pauli-X Read-Only Reduction Kernel:
 /// Simultaneously accumulates <Z_q> and <X_q> for each qubit q across the statevector.
@@ -26,11 +28,19 @@ pub fn measure_dual_zx_expectations(
         n,
         n_qubits
     );
-    #[cfg(all(target_arch = "x86_64", target_feature = "avx2", target_feature = "fma"))]
+    #[cfg(all(
+        target_arch = "x86_64",
+        target_feature = "avx2",
+        target_feature = "fma"
+    ))]
     unsafe {
         measure_dual_zx_avx2(real, imag, &mut z_out[..n], &mut x_out[..n]);
     }
-    #[cfg(not(all(target_arch = "x86_64", target_feature = "avx2", target_feature = "fma")))]
+    #[cfg(not(all(
+        target_arch = "x86_64",
+        target_feature = "avx2",
+        target_feature = "fma"
+    )))]
     {
         #[cfg(target_arch = "x86_64")]
         if is_x86_feature_detected!("avx2") && is_x86_feature_detected!("fma") {
@@ -92,12 +102,7 @@ pub fn measure_single_qubit_z(real: &[f64], imag: &[f64], qubit: usize) -> f64 {
 /// Output layout: zz_out[pair_idx] where pair_idx = i * (i-1)/2 + j for i > j.
 /// Total pairs = n * (n-1) / 2.
 #[inline(always)]
-pub fn measure_zz_correlators(
-    real: &[f64],
-    imag: &[f64],
-    n_qubits: usize,
-    zz_out: &mut [f64],
-) {
+pub fn measure_zz_correlators(real: &[f64], imag: &[f64], n_qubits: usize, zz_out: &mut [f64]) {
     let state_qubits = assert_statevector(real, imag);
     assert!(
         n_qubits <= state_qubits,
@@ -107,7 +112,11 @@ pub fn measure_zz_correlators(
     );
     let dim = real.len();
     let n_pairs = n_qubits * n_qubits.saturating_sub(1) / 2;
-    assert!(zz_out.len() >= n_pairs, "zz_out must have room for {} pairs", n_pairs);
+    assert!(
+        zz_out.len() >= n_pairs,
+        "zz_out must have room for {} pairs",
+        n_pairs
+    );
 
     for v in zz_out[..n_pairs].iter_mut() {
         *v = 0.0;
@@ -219,10 +228,9 @@ pub fn measure_fused_ry_full_readout(
     for i in 1..n {
         for j in 0..i {
             let (zz, zx, xz, xx) = measure_2qubit_pauli_correlators(real, imag, i, j);
-            zz_final[pair_idx] = cos_t[i] * cos_t[j] * zz
-                - cos_t[i] * sin_t[j] * zx
-                - sin_t[i] * cos_t[j] * xz
-                + sin_t[i] * sin_t[j] * xx;
+            zz_final[pair_idx] =
+                cos_t[i] * cos_t[j] * zz - cos_t[i] * sin_t[j] * zx - sin_t[i] * cos_t[j] * xz
+                    + sin_t[i] * sin_t[j] * xx;
             pair_idx += 1;
         }
     }
@@ -409,7 +417,12 @@ unsafe fn measure_dual_zx_avx2(real: &[f64], imag: &[f64], z_out: &mut [f64], x_
 // =========================================================================
 
 #[allow(dead_code)]
-pub(crate) fn measure_dual_zx_scalar(real: &[f64], imag: &[f64], z_out: &mut [f64], x_out: &mut [f64]) {
+pub(crate) fn measure_dual_zx_scalar(
+    real: &[f64],
+    imag: &[f64],
+    z_out: &mut [f64],
+    x_out: &mut [f64],
+) {
     let dim = real.len();
     let n = z_out.len().min(x_out.len());
     for q in 0..n {

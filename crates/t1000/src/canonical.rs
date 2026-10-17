@@ -82,7 +82,10 @@ pub fn build_grover_diffusion(builder: &mut CircuitBuilder, qubits: &[usize]) {
 
     // 3. Multi-controlled phase flip
     if n == 1 {
-        builder.dag.add_op(CircuitOp::Rz { qubit: qubits[0], theta: PI });
+        builder.dag.add_op(CircuitOp::Rz {
+            qubit: qubits[0],
+            theta: PI,
+        });
     } else if n == 2 {
         builder.cz(qubits[0], qubits[1]);
     } else {
@@ -307,19 +310,11 @@ pub fn mitigate_readout_errors(
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum CanonicalAlgorithm {
     /// Bernstein-Vazirani single-query hidden linear bitstring recovery.
-    BernsteinVazirani {
-        n_inputs: usize,
-        hidden_mask: usize,
-    },
+    BernsteinVazirani { n_inputs: usize, hidden_mask: usize },
     /// Grover amplitude diffusion operator on an n-qubit register.
-    GroverDiffusion {
-        n_qubits: usize,
-    },
+    GroverDiffusion { n_qubits: usize },
     /// Quantum Phase Estimation for an eigenvalue phase theta in [0, 2*pi).
-    QuantumPhaseEstimation {
-        n_counting: usize,
-        phase_phi: f64,
-    },
+    QuantumPhaseEstimation { n_counting: usize, phase_phi: f64 },
     /// Hardware-Efficient Ansatz parameterized layer.
     HardwareEfficientAnsatz {
         n_qubits: usize,
@@ -390,7 +385,10 @@ impl CanonicalRunner {
     /// Builds the circuit DAG for this algorithm.
     pub fn build_circuit(&self) -> CircuitBuilder {
         match &self.algorithm {
-            CanonicalAlgorithm::BernsteinVazirani { n_inputs, hidden_mask } => {
+            CanonicalAlgorithm::BernsteinVazirani {
+                n_inputs,
+                hidden_mask,
+            } => {
                 let total_qubits = n_inputs + 1;
                 let ancilla = *n_inputs;
                 let mut builder = CircuitBuilder::new(total_qubits);
@@ -404,25 +402,52 @@ impl CanonicalRunner {
                 build_grover_diffusion(&mut builder, &qubits);
                 builder
             }
-            CanonicalAlgorithm::QuantumPhaseEstimation { n_counting, phase_phi } => {
+            CanonicalAlgorithm::QuantumPhaseEstimation {
+                n_counting,
+                phase_phi,
+            } => {
                 let total_qubits = n_counting + 1;
                 let state_qubit = *n_counting;
                 let mut builder = CircuitBuilder::new(total_qubits);
                 let counting_qubits: Vec<usize> = (0..*n_counting).collect();
-                build_quantum_phase_estimation(&mut builder, &counting_qubits, state_qubit, *phase_phi);
+                build_quantum_phase_estimation(
+                    &mut builder,
+                    &counting_qubits,
+                    state_qubit,
+                    *phase_phi,
+                );
                 builder
             }
-            CanonicalAlgorithm::HardwareEfficientAnsatz { n_qubits, thetas_y, thetas_z, topology } => {
+            CanonicalAlgorithm::HardwareEfficientAnsatz {
+                n_qubits,
+                thetas_y,
+                thetas_z,
+                topology,
+            } => {
                 let mut builder = CircuitBuilder::new(*n_qubits);
                 let qubits: Vec<usize> = (0..*n_qubits).collect();
                 build_hea_layer(&mut builder, &qubits, thetas_y, thetas_z, *topology);
                 builder
             }
-            CanonicalAlgorithm::TrotterIsing { n_qubits, j_coupling, h_transverse, dt } => {
+            CanonicalAlgorithm::TrotterIsing {
+                n_qubits,
+                j_coupling,
+                h_transverse,
+                dt,
+            } => {
                 let mut builder = CircuitBuilder::new(*n_qubits);
                 let qubits: Vec<usize> = (0..*n_qubits).collect();
-                let pairs: Vec<(usize, usize)> = (0..n_qubits.saturating_sub(1)).map(|i| (i, i + 1)).collect();
-                build_trotter_ising_step(&mut builder, &pairs, &qubits, *j_coupling, *h_transverse, *dt);
+                let pairs: Vec<(usize, usize)> = (0..n_qubits.saturating_sub(1))
+                    .map(|i| (i, i + 1))
+                    .collect();
+                build_trotter_ising_step(
+                    &mut builder,
+                    &pairs,
+                    &qubits,
+                    *j_coupling,
+                    *h_transverse,
+                    *dt,
+                );
                 builder
             }
         }
@@ -475,7 +500,10 @@ impl CanonicalRunner {
 
         // Determine success probability
         let success_probability = match self.algorithm {
-            CanonicalAlgorithm::BernsteinVazirani { n_inputs, hidden_mask } => {
+            CanonicalAlgorithm::BernsteinVazirani {
+                n_inputs,
+                hidden_mask,
+            } => {
                 let mask = (1 << n_inputs) - 1;
                 let mut sum = 0.0;
                 for (idx, &p) in probabilities_mitigated.iter().enumerate() {
@@ -544,7 +572,12 @@ mod tests {
         let mut state = QuantumState::ground(8);
         compiled.execute(&mut state);
 
-        let norm_sq: f64 = state.real.iter().zip(&state.imag).map(|(&r, &i)| r * r + i * i).sum();
+        let norm_sq: f64 = state
+            .real
+            .iter()
+            .zip(&state.imag)
+            .map(|(&r, &i)| r * r + i * i)
+            .sum();
         assert!((norm_sq - 1.0).abs() < 1e-5);
     }
 

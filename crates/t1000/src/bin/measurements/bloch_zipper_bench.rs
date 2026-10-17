@@ -134,7 +134,9 @@ fn main() {
     println!("[DIAGNOSTIC VERIFICATION]");
     println!("- L1 Data Cache Resident: Qubit buffer strictly occupies 128/256 B; Heptal buffer occupies 784 B.");
     println!("- 0 Cache Misses to Main RAM: Memory bus bandwidth overhead = 0.0 MB/s across both engines.");
-    println!("- Linear Scaling Verified: Latency per unit is strictly constant across N=14 to N=200.");
+    println!(
+        "- Linear Scaling Verified: Latency per unit is strictly constant across N=14 to N=200."
+    );
     println!("- 100% Anti-Correlation: Qubit Singlet states locked by continuous Bloch-probability feedback.");
     println!("- 100% Modular Complementarity: Heptal qudit states locked by q_i + q_{{i+1}} = 0 (mod 7).");
 }

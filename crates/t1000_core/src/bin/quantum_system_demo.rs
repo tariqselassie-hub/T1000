@@ -1,5 +1,5 @@
-use t1000_core::*;
 use num_complex::Complex64;
+use t1000_core::*;
 
 fn main() {
     println!("=== quantum_system_demo ===");
@@ -25,12 +25,18 @@ fn main() {
     let ham = Hamiltonian::new(16, energies);
     let mut evolved = reg.clone();
     hamiltonian_time_evolve(&ham, &mut evolved, 1.0);
-    println!("hamiltonian evolve norm_sq_sum={:.6}", evolved.amplitudes.iter().map(|a| a.norm_sqr()).sum::<f64>());
+    println!(
+        "hamiltonian evolve norm_sq_sum={:.6}",
+        evolved.amplitudes.iter().map(|a| a.norm_sqr()).sum::<f64>()
+    );
 
     let perm = Permutation::new((0..16).rev().collect());
     let mut permuted = reg.clone();
     permutation_apply(&perm, &mut permuted);
-    println!("permutation reversed_amp[0]={:.6}", permuted.amplitudes[0].re);
+    println!(
+        "permutation reversed_amp[0]={:.6}",
+        permuted.amplitudes[0].re
+    );
 
     let tensor_state: Vec<_> = joint.amplitudes.clone();
     let rho_a = PartialTrace::trace_out_b(&tensor_state, 16, 8);

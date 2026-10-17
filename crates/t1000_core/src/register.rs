@@ -1,7 +1,7 @@
 use num_complex::Complex64;
 use rand::Rng;
-use rand_chacha::ChaCha8Rng;
 use rand::SeedableRng;
+use rand_chacha::ChaCha8Rng;
 
 use crate::porter_thomas::{
     exact_linear_xeb, naive_linear_xeb, verify_porter_thomas, PorterThomasReport,
@@ -47,7 +47,7 @@ pub fn infer_radix_and_sites(basis: usize) -> (QuditRadix, usize) {
     // Check if power of 7 (Heptal)
     let mut temp = basis;
     let mut sites_7 = 0;
-    while temp > 1 && temp % 7 == 0 {
+    while temp > 1 && temp.is_multiple_of(7) {
         temp /= 7;
         sites_7 += 1;
     }
@@ -117,7 +117,9 @@ impl QuditRegister {
 
     /// Constructs a canonical Heptal qudit register of `sites` qudits (D = 7^sites).
     pub fn new_heptal(sites: usize, seed: u64) -> Self {
-        let basis = 7usize.checked_pow(sites as u32).expect("Heptal dimension overflow");
+        let basis = 7usize
+            .checked_pow(sites as u32)
+            .expect("Heptal dimension overflow");
         let amp = Complex64::new(1.0 / (basis as f64).sqrt(), 0.0);
         Self {
             amplitudes: vec![amp; basis],
@@ -130,7 +132,9 @@ impl QuditRegister {
 
     /// Constructs a binary qubit register of `qubits` sites (D = 2^qubits).
     pub fn new_binary(qubits: usize, seed: u64) -> Self {
-        let basis = 1usize.checked_shl(qubits as u32).expect("Binary dimension overflow");
+        let basis = 1usize
+            .checked_shl(qubits as u32)
+            .expect("Binary dimension overflow");
         let amp = Complex64::new(1.0 / (basis as f64).sqrt(), 0.0);
         Self {
             amplitudes: vec![amp; basis],
@@ -144,7 +148,9 @@ impl QuditRegister {
     /// Constructs a general qudit register of `sites` sites with explicit `radix`.
     pub fn new_qudit(radix: QuditRadix, sites: usize, seed: u64) -> Self {
         let d = radix.dim();
-        let basis = d.checked_pow(sites as u32).expect("Qudit dimension overflow");
+        let basis = d
+            .checked_pow(sites as u32)
+            .expect("Qudit dimension overflow");
         let amp = Complex64::new(1.0 / (basis as f64).sqrt(), 0.0);
         Self {
             amplitudes: vec![amp; basis],
@@ -162,7 +168,9 @@ impl QuditRegister {
     /// resulting measurement probabilities strictly follow the Porter-Thomas distribution.
     pub fn new_haar_random(radix: QuditRadix, sites: usize, seed: u64) -> Self {
         let d = radix.dim();
-        let basis = d.checked_pow(sites as u32).expect("Qudit dimension overflow");
+        let basis = d
+            .checked_pow(sites as u32)
+            .expect("Qudit dimension overflow");
         let mut rng = ChaCha8Rng::seed_from_u64(seed);
         let mut amps = Vec::with_capacity(basis);
 
@@ -206,7 +214,12 @@ impl QuditRegister {
 
     /// Normalizes the state vector in L2 norm (sum |c_x|^2 = 1).
     pub fn normalize(&mut self) {
-        let norm: f64 = self.amplitudes.iter().map(|a| a.norm_sqr()).sum::<f64>().sqrt();
+        let norm: f64 = self
+            .amplitudes
+            .iter()
+            .map(|a| a.norm_sqr())
+            .sum::<f64>()
+            .sqrt();
         if norm > 0.0 {
             for a in &mut self.amplitudes {
                 *a /= norm;
@@ -220,7 +233,11 @@ impl QuditRegister {
             .iter()
             .map(|a| {
                 let p = a.norm_sqr();
-                if p > 1e-18 { -p * p.ln() } else { 0.0 }
+                if p > 1e-18 {
+                    -p * p.ln()
+                } else {
+                    0.0
+                }
             })
             .sum()
     }
@@ -282,7 +299,8 @@ impl QuditRegister {
         }
 
         let binary_sites = k * 3;
-        let binary_basis = 1usize.checked_shl(binary_sites as u32)
+        let binary_basis = 1usize
+            .checked_shl(binary_sites as u32)
             .ok_or("Binary physical dimension overflow")?;
 
         let mut binary_amps = vec![Complex64::new(0.0, 0.0); binary_basis];
@@ -322,11 +340,12 @@ impl QuditRegister {
     /// the Heptal subspace, and renormalizes.
     /// Returns `(heptal_register, somatic_leakage)`.
     pub fn project_binary_to_heptal(binary_reg: &Self) -> Result<(Self, f64), &'static str> {
-        if binary_reg.sites % 3 != 0 {
+        if !binary_reg.sites.is_multiple_of(3) {
             return Err("Binary qubit count must be a multiple of 3 to embed Heptal qudits");
         }
         let k = binary_reg.sites / 3;
-        let heptal_basis = 7usize.checked_pow(k as u32)
+        let heptal_basis = 7usize
+            .checked_pow(k as u32)
             .ok_or("Heptal logical dimension overflow")?;
 
         let mut heptal_amps = vec![Complex64::new(0.0, 0.0); heptal_basis];
@@ -372,7 +391,7 @@ impl QuditRegister {
     /// Evaluates the total somatic leakage probability Lambda of a physical binary register
     /// into the non-computational subspace.
     pub fn somatic_leakage(binary_reg: &Self) -> f64 {
-        if binary_reg.sites % 3 != 0 {
+        if !binary_reg.sites.is_multiple_of(3) {
             return 1.0;
         }
         let k = binary_reg.sites / 3;

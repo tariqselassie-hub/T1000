@@ -8,10 +8,10 @@
 //! $T_2^*$ environmental dephasing via ASAP/ALAP slack scheduling and automatic
 //! Dynamical Decoupling (DD) pulse injection.
 
-use std::collections::HashSet;
-use serde::{Deserialize, Serialize};
 use super::dag::CircuitDag;
 use super::op::CircuitOp;
+use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 
 /// Classification of an execution stage based on its constituent operations.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -229,7 +229,10 @@ pub fn schedule_circuit_dag_with_coherence_dd(
                     remaining_ready.push(node_id);
                     continue;
                 }
-                if stage_ops.iter().any(|o| matches!(o, CircuitOp::RademacherPhase { .. })) {
+                if stage_ops
+                    .iter()
+                    .any(|o| matches!(o, CircuitOp::RademacherPhase { .. }))
+                {
                     remaining_ready.push(node_id);
                     continue;
                 }

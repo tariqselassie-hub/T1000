@@ -11,14 +11,12 @@
 //!
 //! Hardware Platform: Intel Core Ultra 7 265 (20 Cores) | AVX2 + FMA SIMD | 64 KB L2 State Cache
 
-use t1000::{
-    CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState,
-};
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
+use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState};
 
 const N_QUBITS: usize = 12;
 const DIM: usize = 1 << N_QUBITS; // 4,096
@@ -168,10 +166,16 @@ fn main() {
     println!(" Target Hardware   : Intel Core Ultra 7 265 (20 Cores) | AVX2 + FMA SIMD");
     println!("=========================================================================\n");
 
-    let test_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_test_2k.csv");
-    let ckpt_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_12qubit_checkpoint.json");
+    let test_path =
+        resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_test_2k.csv");
+    let ckpt_path = resolve_workspace_path(
+        "tests/benchmarks/zinc_molecular/outputs/zinc_12qubit_checkpoint.json",
+    );
 
-    println!("[INIT] Loading ZINC 2,000 holdout molecules: {}", test_path.display());
+    println!(
+        "[INIT] Loading ZINC 2,000 holdout molecules: {}",
+        test_path.display()
+    );
     let test_samples = match parse_zinc_csv(&test_path, 2000) {
         Ok(s) => s,
         Err(e) => {
@@ -181,7 +185,10 @@ fn main() {
     };
     println!("  -> Loaded {} molecules.\n", test_samples.len());
 
-    println!("[INIT] Loading 30-epoch checkpoint: {}", ckpt_path.display());
+    println!(
+        "[INIT] Loading 30-epoch checkpoint: {}",
+        ckpt_path.display()
+    );
     let ckpt_content = match fs::read_to_string(&ckpt_path) {
         Ok(c) => c,
         Err(e) => {
@@ -198,7 +205,11 @@ fn main() {
     };
 
     let full_params = ckpt.hybrid_params.clone();
-    assert_eq!(full_params.len(), 111, "Checkpoint must contain 111 parameters");
+    assert_eq!(
+        full_params.len(),
+        111,
+        "Checkpoint must contain 111 parameters"
+    );
 
     // Pruned 99-parameter hybrid parameters:
     // Layers 1 & 2: 48 angles
@@ -228,10 +239,18 @@ fn main() {
     println!("-------------------------------------------------------------------------");
     println!(" [KERNEL EVOLUTION & ARCHITECTURE MATRIX]");
     println!("-------------------------------------------------------------------------");
-    println!(" Mode A (Full Baseline)     : 108 Gates (36 Ry + 36 Rz + 36 CZ) | 111 Params (888 B)");
-    println!(" Mode B (Pruned Canonical)  :  84 Gates (36 Ry + 24 Rz + 24 CZ) |  99 Params (792 B)");
-    println!(" Mode C (Fused Observable)  :  72 Gates (24 Ry + 24 Rz + 24 CZ) |  99 Params (792 B)");
-    println!(" Mode D (Fused Q11-Pruned)  :  72 Gates + Skip Q11 POVM Readout |  98 Params (784 B)");
+    println!(
+        " Mode A (Full Baseline)     : 108 Gates (36 Ry + 36 Rz + 36 CZ) | 111 Params (888 B)"
+    );
+    println!(
+        " Mode B (Pruned Canonical)  :  84 Gates (36 Ry + 24 Rz + 24 CZ) |  99 Params (792 B)"
+    );
+    println!(
+        " Mode C (Fused Observable)  :  72 Gates (24 Ry + 24 Rz + 24 CZ) |  99 Params (792 B)"
+    );
+    println!(
+        " Mode D (Fused Q11-Pruned)  :  72 Gates + Skip Q11 POVM Readout |  98 Params (784 B)"
+    );
     println!("-------------------------------------------------------------------------\n");
 
     let encoding = DataEncodingLayer::new(N_QUBITS, EncodingKind::Amplitude);
@@ -244,8 +263,16 @@ fn main() {
     let total_evals = test_samples.len() * repeats;
 
     println!("[BENCHMARK CONFIGURATION]");
-    println!(" Concurrency     : {} Worker Threads (Intel Core Ultra 7 265)", num_threads);
-    println!(" Holdout Dataset : {} Molecules x {} Repeats = {} Total Evaluations\n", test_samples.len(), repeats, total_evals);
+    println!(
+        " Concurrency     : {} Worker Threads (Intel Core Ultra 7 265)",
+        num_threads
+    );
+    println!(
+        " Holdout Dataset : {} Molecules x {} Repeats = {} Total Evaluations\n",
+        test_samples.len(),
+        repeats,
+        total_evals
+    );
 
     // =========================================================================
     // MODE A: FULL 111-PARAMETER CIRCUIT (108 GATES)
@@ -272,7 +299,8 @@ fn main() {
                     for rep in 0..repeats {
                         if rep == 0 {
                             for sample in chunk {
-                                encoding_ref.encode_amplitude_into(&sample.features, &mut out_state);
+                                encoding_ref
+                                    .encode_amplitude_into(&sample.features, &mut out_state);
                                 ansatz_ref.forward_in_place(&mut out_state, &p_ref[..72]);
                                 eval_all_z12(&out_state, &mut z_eval);
 
@@ -288,7 +316,8 @@ fn main() {
                             }
                         } else {
                             for sample in chunk {
-                                encoding_ref.encode_amplitude_into(&sample.features, &mut out_state);
+                                encoding_ref
+                                    .encode_amplitude_into(&sample.features, &mut out_state);
                                 ansatz_ref.forward_in_place(&mut out_state, &p_ref[..72]);
                                 eval_all_z12(&out_state, &mut z_eval);
                             }
@@ -307,7 +336,12 @@ fn main() {
     let el_a = t_a_start.elapsed();
     let lat_a = el_a.as_secs_f64() * 1_000_000.0 / total_evals as f64;
     let tp_a = total_evals as f64 / el_a.as_secs_f64();
-    println!("  -> Mode A: {:.2} ms | {:.2} μs/mol | {:.1} mols/sec\n", el_a.as_secs_f64() * 1000.0, lat_a, tp_a);
+    println!(
+        "  -> Mode A: {:.2} ms | {:.2} μs/mol | {:.1} mols/sec\n",
+        el_a.as_secs_f64() * 1000.0,
+        lat_a,
+        tp_a
+    );
 
     // =========================================================================
     // MODE B: PRUNED 99-PARAMETER CANONICAL KERNEL (84 GATES)
@@ -334,7 +368,8 @@ fn main() {
                     for rep in 0..repeats {
                         if rep == 0 {
                             for sample in chunk {
-                                encoding_ref.encode_amplitude_into(&sample.features, &mut out_state);
+                                encoding_ref
+                                    .encode_amplitude_into(&sample.features, &mut out_state);
                                 ansatz_ref.forward_pruned_in_place(&mut out_state, &p_ref[..60]);
                                 eval_all_z12(&out_state, &mut z_eval);
 
@@ -350,7 +385,8 @@ fn main() {
                             }
                         } else {
                             for sample in chunk {
-                                encoding_ref.encode_amplitude_into(&sample.features, &mut out_state);
+                                encoding_ref
+                                    .encode_amplitude_into(&sample.features, &mut out_state);
                                 ansatz_ref.forward_pruned_in_place(&mut out_state, &p_ref[..60]);
                                 eval_all_z12(&out_state, &mut z_eval);
                             }
@@ -369,12 +405,19 @@ fn main() {
     let el_b = t_b_start.elapsed();
     let lat_b = el_b.as_secs_f64() * 1_000_000.0 / total_evals as f64;
     let tp_b = total_evals as f64 / el_b.as_secs_f64();
-    println!("  -> Mode B: {:.2} ms | {:.2} μs/mol | {:.1} mols/sec\n", el_b.as_secs_f64() * 1000.0, lat_b, tp_b);
+    println!(
+        "  -> Mode B: {:.2} ms | {:.2} μs/mol | {:.1} mols/sec\n",
+        el_b.as_secs_f64() * 1000.0,
+        lat_b,
+        tp_b
+    );
 
     // =========================================================================
     // MODE C: FUSED OBSERVABLE ROTATION KERNEL (72 GATES + 12-QUBIT AVX2 POVM)
     // =========================================================================
-    println!("[EXECUTION] Benchmarking Mode C: Fused Observable Rotation (72 Gates + 12-Qubit AVX2)...");
+    println!(
+        "[EXECUTION] Benchmarking Mode C: Fused Observable Rotation (72 Gates + 12-Qubit AVX2)..."
+    );
     let t_c_start = Instant::now();
     let preds_c: Vec<[f64; 3]> = {
         let chunk_size = (test_samples.len() + num_threads - 1) / num_threads;
@@ -442,7 +485,12 @@ fn main() {
     let el_c = t_c_start.elapsed();
     let lat_c = el_c.as_secs_f64() * 1_000_000.0 / total_evals as f64;
     let tp_c = total_evals as f64 / el_c.as_secs_f64();
-    println!("  -> Mode C: {:.2} ms | {:.2} μs/mol | {:.1} mols/sec\n", el_c.as_secs_f64() * 1000.0, lat_c, tp_c);
+    println!(
+        "  -> Mode C: {:.2} ms | {:.2} μs/mol | {:.1} mols/sec\n",
+        el_c.as_secs_f64() * 1000.0,
+        lat_c,
+        tp_c
+    );
 
     // =========================================================================
     // MODE D: FUSED OBSERVABLE ROTATION WITH QUBIT 11 PRUNED (98 PARAMS)
@@ -515,7 +563,12 @@ fn main() {
     let el_d = t_d_start.elapsed();
     let lat_d = el_d.as_secs_f64() * 1_000_000.0 / total_evals as f64;
     let tp_d = total_evals as f64 / el_d.as_secs_f64();
-    println!("  -> Mode D: {:.2} ms | {:.2} μs/mol | {:.1} mols/sec\n", el_d.as_secs_f64() * 1000.0, lat_d, tp_d);
+    println!(
+        "  -> Mode D: {:.2} ms | {:.2} μs/mol | {:.1} mols/sec\n",
+        el_d.as_secs_f64() * 1000.0,
+        lat_d,
+        tp_d
+    );
 
     // =========================================================================
     // DEDICATED SINGLE-CORE BENCHMARK (1 THREAD)
@@ -553,7 +606,12 @@ fn main() {
     let el_sc = t_sc_start.elapsed();
     let lat_sc = el_sc.as_secs_f64() * 1_000_000.0 / test_samples.len() as f64;
     let tp_sc = test_samples.len() as f64 / el_sc.as_secs_f64();
-    println!("  -> Single-Core Mode D: {:.2} ms | {:.2} μs/mol | {:.1} mols/sec\n", el_sc.as_secs_f64() * 1000.0, lat_sc, tp_sc);
+    println!(
+        "  -> Single-Core Mode D: {:.2} ms | {:.2} μs/mol | {:.1} mols/sec\n",
+        el_sc.as_secs_f64() * 1000.0,
+        lat_sc,
+        tp_sc
+    );
 
     // =========================================================================
     // EQUIVALENCE & ACCELERATION PROFILE LEDGER
@@ -589,12 +647,31 @@ fn main() {
     println!("=========================================================================");
     println!(" Comparison Mode          │ Max Deviation logP │ Max Deviation QED  │ Max Deviation SAS  │ Status");
     println!("──────────────────────────┼────────────────────┼────────────────────┼────────────────────┼───────");
-    println!(" Mode C vs Baseline A     │ {:>18.12e} │ {:>18.12e} │ {:>18.12e} │ EXACT", diff_c_logp, diff_c_qed, diff_c_sas);
-    println!(" Mode D vs Baseline A (Q11│ {:>18.12e} │ {:>18.12e} │ {:>18.12e} │ BOUNDED", diff_d_logp, diff_d_qed, diff_d_sas);
+    println!(
+        " Mode C vs Baseline A     │ {:>18.12e} │ {:>18.12e} │ {:>18.12e} │ EXACT",
+        diff_c_logp, diff_c_qed, diff_c_sas
+    );
+    println!(
+        " Mode D vs Baseline A (Q11│ {:>18.12e} │ {:>18.12e} │ {:>18.12e} │ BOUNDED",
+        diff_d_logp, diff_d_qed, diff_d_sas
+    );
     println!("=========================================================================");
-    println!(" Mode C Overall Max Error : {:.2e} (Machine Precision Rounding Floor)", max_diff_c);
-    println!(" Mode D Overall Max Error : {:.2e} (Zero-Impact Qubit 11 Pruning Floor)", max_diff_d);
-    println!(" Mode C Equivalence       : {}", if max_diff_c < 1e-12 { "CONFIRMED (100% BIT-FOR-BIT IDENTICAL)" } else { "DEVIATION DETECTED" });
+    println!(
+        " Mode C Overall Max Error : {:.2e} (Machine Precision Rounding Floor)",
+        max_diff_c
+    );
+    println!(
+        " Mode D Overall Max Error : {:.2e} (Zero-Impact Qubit 11 Pruning Floor)",
+        max_diff_d
+    );
+    println!(
+        " Mode C Equivalence       : {}",
+        if max_diff_c < 1e-12 {
+            "CONFIRMED (100% BIT-FOR-BIT IDENTICAL)"
+        } else {
+            "DEVIATION DETECTED"
+        }
+    );
     println!("=========================================================================\n");
 
     println!("=========================================================================");
@@ -602,14 +679,34 @@ fn main() {
     println!("=========================================================================");
     println!(" Generation / Kernel Mode      │ Gates │ State Mutation │ Latency (μs) │ Mols / Sec │ Speedup");
     println!("───────────────────────────────┼───────┼────────────────┼──────────────┼────────────┼────────");
-    println!(" Gen 1: Baseline Circuit (A)   │  108  │    1,536 KB    │ {:>12.2} │ {:>10.1} │ 1.000x", lat_a, tp_a);
-    println!(" Gen 2: Pruned Canonical (B)   │   84  │    1,152 KB    │ {:>12.2} │ {:>10.1} │ {:>5.3}x", lat_b, tp_b, tp_b / tp_a);
-    println!(" Gen 3: Fused Observable (C)   │   72  │      768 KB    │ {:>12.2} │ {:>10.1} │ {:>5.3}x", lat_c, tp_c, tp_c / tp_a);
-    println!(" Gen 4: Fused Q11-Pruned (D)   │   72  │      768 KB    │ {:>12.2} │ {:>10.1} │ {:>5.3}x", lat_d, tp_d, tp_d / tp_a);
+    println!(
+        " Gen 1: Baseline Circuit (A)   │  108  │    1,536 KB    │ {:>12.2} │ {:>10.1} │ 1.000x",
+        lat_a, tp_a
+    );
+    println!(
+        " Gen 2: Pruned Canonical (B)   │   84  │    1,152 KB    │ {:>12.2} │ {:>10.1} │ {:>5.3}x",
+        lat_b,
+        tp_b,
+        tp_b / tp_a
+    );
+    println!(
+        " Gen 3: Fused Observable (C)   │   72  │      768 KB    │ {:>12.2} │ {:>10.1} │ {:>5.3}x",
+        lat_c,
+        tp_c,
+        tp_c / tp_a
+    );
+    println!(
+        " Gen 4: Fused Q11-Pruned (D)   │   72  │      768 KB    │ {:>12.2} │ {:>10.1} │ {:>5.3}x",
+        lat_d,
+        tp_d,
+        tp_d / tp_a
+    );
     println!("=========================================================================\n");
 
     // Save Fused Checkpoint (98 Parameters)
-    let fused_ckpt_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_12qubit_checkpoint_fused98.json");
+    let fused_ckpt_path = resolve_workspace_path(
+        "tests/benchmarks/zinc_molecular/outputs/zinc_12qubit_checkpoint_fused98.json",
+    );
     let fused_checkpoint = QnnFusedCheckpoint {
         timestamp_rfc3339: "2026-10-13T20:45:00Z".to_string(),
         n_qubits: N_QUBITS,
@@ -626,11 +723,16 @@ fn main() {
     };
     if let Ok(json_str) = serde_json::to_string_pretty(&fused_checkpoint) {
         let _ = fs::write(&fused_ckpt_path, json_str);
-        println!("[SAVED] Fused 98-Parameter Checkpoint: {}", fused_ckpt_path.display());
+        println!(
+            "[SAVED] Fused 98-Parameter Checkpoint: {}",
+            fused_ckpt_path.display()
+        );
     }
 
     // Save Equivalence Report
-    let report_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_12qubit_fused_verification.json");
+    let report_path = resolve_workspace_path(
+        "tests/benchmarks/zinc_molecular/outputs/zinc_12qubit_fused_verification.json",
+    );
     let report = FusedEquivalenceReport {
         timestamp_rfc3339: "2026-10-13T20:45:00Z".to_string(),
         host_cpu: "Intel Core Ultra 7 265 (20 Cores)".to_string(),
@@ -681,6 +783,9 @@ fn main() {
     };
     if let Ok(json_str) = serde_json::to_string_pretty(&report) {
         let _ = fs::write(&report_path, json_str);
-        println!("[SAVED] Fused Verification & Telemetry Report: {}", report_path.display());
+        println!(
+            "[SAVED] Fused Verification & Telemetry Report: {}",
+            report_path.display()
+        );
     }
 }

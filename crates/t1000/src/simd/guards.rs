@@ -40,7 +40,11 @@ pub fn assert_qubit(qubit: usize, n_qubits: usize) {
 pub fn assert_qubit_pair(q1: usize, q2: usize, n_qubits: usize) {
     assert_qubit(q1, n_qubits);
     assert_qubit(q2, n_qubits);
-    assert_ne!(q1, q2, "two-qubit gate requires distinct qubits (got {} twice)", q1);
+    assert_ne!(
+        q1, q2,
+        "two-qubit gate requires distinct qubits (got {} twice)",
+        q1
+    );
 }
 
 /// Asserts that the requested fused readout width is supported by stack scratch space.

@@ -9,14 +9,12 @@
 //! Stripping the redundant terminal Rz and Ring-CZ gates in Layer 3 yields identical
 //! Pauli-Z expectation values down to machine precision while cutting gate depth by 22.2%.
 
-use t1000::{
-    CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState,
-};
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
+use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState};
 
 const N_QUBITS: usize = 12;
 const DIM: usize = 1 << N_QUBITS; // 4,096
@@ -176,10 +174,16 @@ fn main() {
     println!(" Hardware Host  : Intel Core Ultra 7 265 (20 Cores) | 16.0 GB RAM Ceiling");
     println!("=========================================================================\n");
 
-    let test_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_test_2k.csv");
-    let ckpt_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_12qubit_checkpoint.json");
+    let test_path =
+        resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_test_2k.csv");
+    let ckpt_path = resolve_workspace_path(
+        "tests/benchmarks/zinc_molecular/outputs/zinc_12qubit_checkpoint.json",
+    );
 
-    println!("[INIT] Loading ZINC 2,000 holdout molecules: {}", test_path.display());
+    println!(
+        "[INIT] Loading ZINC 2,000 holdout molecules: {}",
+        test_path.display()
+    );
     let test_samples = match parse_zinc_csv(&test_path, 2000) {
         Ok(s) => s,
         Err(e) => {
@@ -189,7 +193,10 @@ fn main() {
     };
     println!("  -> Loaded {} molecules.\n", test_samples.len());
 
-    println!("[INIT] Loading 30-epoch checkpoint: {}", ckpt_path.display());
+    println!(
+        "[INIT] Loading 30-epoch checkpoint: {}",
+        ckpt_path.display()
+    );
     let ckpt_content = match fs::read_to_string(&ckpt_path) {
         Ok(c) => c,
         Err(e) => {
@@ -204,10 +211,17 @@ fn main() {
             return;
         }
     };
-    println!("  -> Epochs Completed: {}, Full Parameters: {}\n", ckpt.epochs_completed, ckpt.hybrid_params.len());
+    println!(
+        "  -> Epochs Completed: {}, Full Parameters: {}\n",
+        ckpt.epochs_completed,
+        ckpt.hybrid_params.len()
+    );
 
     if ckpt.hybrid_params.len() != 111 {
-        eprintln!("[-] Expected 111 hybrid parameters in checkpoint, found {}", ckpt.hybrid_params.len());
+        eprintln!(
+            "[-] Expected 111 hybrid parameters in checkpoint, found {}",
+            ckpt.hybrid_params.len()
+        );
         return;
     }
 
@@ -230,13 +244,21 @@ fn main() {
     // Readout weights & biases
     pruned_params.extend_from_slice(&full_params[72..111]);
 
-    assert_eq!(pruned_params.len(), 99, "Pruned parameter count must equal 99");
+    assert_eq!(
+        pruned_params.len(),
+        99,
+        "Pruned parameter count must equal 99"
+    );
 
     println!("-------------------------------------------------------------------------");
     println!(" [SUB-SYSTEM ALLOCATION & GATE DEPTH COMPARISON]");
     println!("-------------------------------------------------------------------------");
-    println!(" Full Model Architecture  : 72 Quantum Angles + 39 Classical = 111 Params (888 bytes)");
-    println!(" Pruned Model Architecture: 60 Quantum Angles + 39 Classical = 99 Params (792 bytes)");
+    println!(
+        " Full Model Architecture  : 72 Quantum Angles + 39 Classical = 111 Params (888 bytes)"
+    );
+    println!(
+        " Pruned Model Architecture: 60 Quantum Angles + 39 Classical = 99 Params (792 bytes)"
+    );
     println!(" Full Circuit Operations  : 36 Ry + 36 Rz + 36 CZ = 108 Gates / Molecule");
     println!(" Pruned Circuit Operations: 36 Ry + 24 Rz + 24 CZ = 84 Gates / Molecule");
     println!(" Gate Depth Reduction     : -24 Gates (-22.2%) with Zero Mathematical Loss");
@@ -298,7 +320,12 @@ fn main() {
     let full_elapsed = t_full_start.elapsed();
     let full_latency_us = full_elapsed.as_secs_f64() * 1_000_000.0 / test_samples.len() as f64;
     let full_throughput = test_samples.len() as f64 / full_elapsed.as_secs_f64();
-    println!("  -> Completed in {:.2} ms ({:.2} μs/mol | {:.1} mols/sec)", full_elapsed.as_secs_f64() * 1000.0, full_latency_us, full_throughput);
+    println!(
+        "  -> Completed in {:.2} ms ({:.2} μs/mol | {:.1} mols/sec)",
+        full_elapsed.as_secs_f64() * 1000.0,
+        full_latency_us,
+        full_throughput
+    );
 
     println!("[EXECUTION] Running Mode B: Pruned 99-Parameter Canonical Kernel (84 Gates)...");
     let t_pruned_start = Instant::now();
@@ -322,7 +349,11 @@ fn main() {
 
                     for sample in chunk {
                         let state_in = encoding_ref.encode(&sample.features);
-                        ansatz_ref.forward_pruned_into(&state_in, &pruned_params_ref[..60], &mut out_state);
+                        ansatz_ref.forward_pruned_into(
+                            &state_in,
+                            &pruned_params_ref[..60],
+                            &mut out_state,
+                        );
                         eval_all_z12(&out_state, &mut z_eval);
 
                         let mut p_logp = pruned_params_ref[b_off + 0];
@@ -348,7 +379,12 @@ fn main() {
     let pruned_elapsed = t_pruned_start.elapsed();
     let pruned_latency_us = pruned_elapsed.as_secs_f64() * 1_000_000.0 / test_samples.len() as f64;
     let pruned_throughput = test_samples.len() as f64 / pruned_elapsed.as_secs_f64();
-    println!("  -> Completed in {:.2} ms ({:.2} μs/mol | {:.1} mols/sec)\n", pruned_elapsed.as_secs_f64() * 1000.0, pruned_latency_us, pruned_throughput);
+    println!(
+        "  -> Completed in {:.2} ms ({:.2} μs/mol | {:.1} mols/sec)\n",
+        pruned_elapsed.as_secs_f64() * 1000.0,
+        pruned_latency_us,
+        pruned_throughput
+    );
 
     // Compute Bit-for-Bit Equivalence Metrics
     let mut max_diff_logp = 0.0f64;
@@ -381,12 +417,34 @@ fn main() {
     println!("=========================================================================");
     println!(" Target Property     │ Max Absolute Deviation │ Mean Absolute Deviation │ Status");
     println!("─────────────────────┼────────────────────────┼─────────────────────────┼───────");
-    println!(" logP (Lipophilicity)│ {:>22.16} │ {:>23.16} │ EXACT", max_diff_logp, sum_diff_logp / n);
-    println!(" QED  (Drug-Likeness)│ {:>22.16} │ {:>23.16} │ EXACT", max_diff_qed, sum_diff_qed / n);
-    println!(" SAS  (Synthetic Acc)│ {:>22.16} │ {:>23.16} │ EXACT", max_diff_sas, sum_diff_sas / n);
+    println!(
+        " logP (Lipophilicity)│ {:>22.16} │ {:>23.16} │ EXACT",
+        max_diff_logp,
+        sum_diff_logp / n
+    );
+    println!(
+        " QED  (Drug-Likeness)│ {:>22.16} │ {:>23.16} │ EXACT",
+        max_diff_qed,
+        sum_diff_qed / n
+    );
+    println!(
+        " SAS  (Synthetic Acc)│ {:>22.16} │ {:>23.16} │ EXACT",
+        max_diff_sas,
+        sum_diff_sas / n
+    );
     println!("=========================================================================");
-    println!(" Overall Maximum Error  : {:.2e} (Machine-Precision Rounding Floor)", max_overall);
-    println!(" Mathematical Equivalence: {}", if exact_match { "CONFIRMED (100% BIT-FOR-BIT IDENTICAL)" } else { "FAILED" });
+    println!(
+        " Overall Maximum Error  : {:.2e} (Machine-Precision Rounding Floor)",
+        max_overall
+    );
+    println!(
+        " Mathematical Equivalence: {}",
+        if exact_match {
+            "CONFIRMED (100% BIT-FOR-BIT IDENTICAL)"
+        } else {
+            "FAILED"
+        }
+    );
     println!("=========================================================================\n");
 
     let latency_reduction_pct = ((full_latency_us - pruned_latency_us) / full_latency_us) * 100.0;
@@ -395,17 +453,37 @@ fn main() {
     println!("-------------------------------------------------------------------------");
     println!(" [HARDWARE PERFORMANCE & ACCELERATION PROFILE]");
     println!("-------------------------------------------------------------------------");
-    println!(" Full Circuit Latency (108 Gates)   : {:.2} μs / molecule", full_latency_us);
-    println!(" Pruned Circuit Latency (84 Gates)  : {:.2} μs / molecule", pruned_latency_us);
-    println!(" Latency Reduction                  : {:+.2}%", latency_reduction_pct);
-    println!(" Full Circuit Throughput            : {:.1} molecules / second", full_throughput);
-    println!(" Pruned Circuit Throughput          : {:.1} molecules / second", pruned_throughput);
-    println!(" Throughput Acceleration Factor     : {:.3}x Speedup", speedup_x);
+    println!(
+        " Full Circuit Latency (108 Gates)   : {:.2} μs / molecule",
+        full_latency_us
+    );
+    println!(
+        " Pruned Circuit Latency (84 Gates)  : {:.2} μs / molecule",
+        pruned_latency_us
+    );
+    println!(
+        " Latency Reduction                  : {:+.2}%",
+        latency_reduction_pct
+    );
+    println!(
+        " Full Circuit Throughput            : {:.1} molecules / second",
+        full_throughput
+    );
+    println!(
+        " Pruned Circuit Throughput          : {:.1} molecules / second",
+        pruned_throughput
+    );
+    println!(
+        " Throughput Acceleration Factor     : {:.3}x Speedup",
+        speedup_x
+    );
     println!(" State Memory Saving                : 888 bytes -> 792 bytes (-10.8%)");
     println!("-------------------------------------------------------------------------\n");
 
     // Save pruned checkpoint
-    let pruned_ckpt_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_12qubit_checkpoint_pruned99.json");
+    let pruned_ckpt_path = resolve_workspace_path(
+        "tests/benchmarks/zinc_molecular/outputs/zinc_12qubit_checkpoint_pruned99.json",
+    );
     let pruned_checkpoint = QnnPrunedCheckpoint {
         timestamp_rfc3339: "2026-10-13T20:15:00Z".to_string(),
         n_qubits: N_QUBITS,
@@ -420,11 +498,16 @@ fn main() {
     };
     if let Ok(json_str) = serde_json::to_string_pretty(&pruned_checkpoint) {
         let _ = fs::write(&pruned_ckpt_path, json_str);
-        println!("[SAVED] Canonical 99-parameter checkpoint: {}", pruned_ckpt_path.display());
+        println!(
+            "[SAVED] Canonical 99-parameter checkpoint: {}",
+            pruned_ckpt_path.display()
+        );
     }
 
     // Save verification report
-    let report_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_12qubit_pruned_verification.json");
+    let report_path = resolve_workspace_path(
+        "tests/benchmarks/zinc_molecular/outputs/zinc_12qubit_pruned_verification.json",
+    );
     let report = EquivalenceReport {
         timestamp_rfc3339: "2026-10-13T20:15:00Z".to_string(),
         host_cpu: "Intel Core Ultra 7 265 (20 Cores)".to_string(),
@@ -447,6 +530,9 @@ fn main() {
     };
     if let Ok(json_str) = serde_json::to_string_pretty(&report) {
         let _ = fs::write(&report_path, json_str);
-        println!("[SAVED] Pruned Equivalence Report: {}", report_path.display());
+        println!(
+            "[SAVED] Pruned Equivalence Report: {}",
+            report_path.display()
+        );
     }
 }

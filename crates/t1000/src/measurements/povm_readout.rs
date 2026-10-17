@@ -2,9 +2,9 @@
 // Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
 
 use crate::state::QuantumState;
-use t1000_core::{interference, POVM};
 use num_complex::Complex64;
 use serde::{Deserialize, Serialize};
+use t1000_core::{interference, POVM};
 
 /// Generalized Positive Operator-Valued Measure (POVM) Readout Classifier.
 ///
@@ -80,10 +80,7 @@ impl POVMClassifier {
         let reg = state.to_register(42);
         let raw_scores = povm.measure_soft(&reg);
 
-        let max_score = raw_scores
-            .iter()
-            .copied()
-            .fold(f64::NEG_INFINITY, f64::max);
+        let max_score = raw_scores.iter().copied().fold(f64::NEG_INFINITY, f64::max);
         let min_score = raw_scores.iter().copied().fold(f64::INFINITY, f64::min);
         let spread = (max_score - min_score).max(1e-9);
 
@@ -103,11 +100,7 @@ impl POVMClassifier {
             vec![1.0 / self.class_labels.len() as f64; self.class_labels.len()]
         };
 
-        self.class_labels
-            .iter()
-            .cloned()
-            .zip(probs)
-            .collect()
+        self.class_labels.iter().cloned().zip(probs).collect()
     }
 
     /// Set category operator directly from a calibrated category centroid state.

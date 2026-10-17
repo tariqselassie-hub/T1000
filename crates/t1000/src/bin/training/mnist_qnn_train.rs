@@ -80,7 +80,9 @@ fn locate_mnist_file(filename_candidates: &[&str]) -> Option<PathBuf> {
                 return Some(p1);
             }
             // Check subdirectories (e.g., train-images-idx3-ubyte/train-images-idx3-ubyte)
-            let stem = candidate.trim_end_matches(".idx3-ubyte").trim_end_matches(".idx1-ubyte");
+            let stem = candidate
+                .trim_end_matches(".idx3-ubyte")
+                .trim_end_matches(".idx1-ubyte");
             let p2 = Path::new(dir).join(stem).join(candidate);
             if p2.is_file() {
                 return Some(p2);
@@ -92,20 +94,27 @@ fn locate_mnist_file(filename_candidates: &[&str]) -> Option<PathBuf> {
 
 /// Read bytes from an IDX file.
 fn read_idx_bytes(path: &Path) -> Vec<u8> {
-    fs::read(path).unwrap_or_else(|e| panic!("Failed to read IDX file at {}: {}", path.display(), e))
+    fs::read(path)
+        .unwrap_or_else(|e| panic!("Failed to read IDX file at {}: {}", path.display(), e))
 }
 
 /// Parse IDX image file into normalized f64 pixel vectors.
 fn parse_mnist_images(path: &Path, max_samples: Option<usize>) -> Vec<Vec<f64>> {
     let data = read_idx_bytes(path);
-    assert!(data.len() >= 16, "IDX image header too small: {}", path.display());
+    assert!(
+        data.len() >= 16,
+        "IDX image header too small: {}",
+        path.display()
+    );
     let total_images = u32::from_be_bytes([data[4], data[5], data[6], data[7]]) as usize;
     let rows = u32::from_be_bytes([data[8], data[9], data[10], data[11]]) as usize;
     let cols = u32::from_be_bytes([data[12], data[13], data[14], data[15]]) as usize;
     assert_eq!(rows, 28, "MNIST row mismatch");
     assert_eq!(cols, 28, "MNIST col mismatch");
 
-    let count = max_samples.map(|m| m.min(total_images)).unwrap_or(total_images);
+    let count = max_samples
+        .map(|m| m.min(total_images))
+        .unwrap_or(total_images);
     let mut images = Vec::with_capacity(count);
 
     let offset = 16;
@@ -123,9 +132,15 @@ fn parse_mnist_images(path: &Path, max_samples: Option<usize>) -> Vec<Vec<f64>> 
 /// Parse IDX label file.
 fn parse_mnist_labels(path: &Path, max_samples: Option<usize>) -> Vec<u8> {
     let data = read_idx_bytes(path);
-    assert!(data.len() >= 8, "IDX label header too small: {}", path.display());
+    assert!(
+        data.len() >= 8,
+        "IDX label header too small: {}",
+        path.display()
+    );
     let total_labels = u32::from_be_bytes([data[4], data[5], data[6], data[7]]) as usize;
-    let count = max_samples.map(|m| m.min(total_labels)).unwrap_or(total_labels);
+    let count = max_samples
+        .map(|m| m.min(total_labels))
+        .unwrap_or(total_labels);
     data[8..8 + count].to_vec()
 }
 
@@ -170,7 +185,11 @@ impl LinearHead {
             .map(|_| rng.gen_range(-scale..scale))
             .collect();
         let biases = vec![0.0; N_CLASSES];
-        Self { num_obs, weights, biases }
+        Self {
+            num_obs,
+            weights,
+            biases,
+        }
     }
 
     fn forward(&self, exp: &[f64]) -> [f64; 10] {
@@ -321,10 +340,14 @@ fn main() {
     let test_img_candidates = ["t10k-images-idx3-ubyte", "t10k-images.idx3-ubyte"];
     let test_lbl_candidates = ["t10k-labels-idx1-ubyte", "t10k-labels.idx1-ubyte"];
 
-    let train_img_path = locate_mnist_file(&train_img_candidates).expect("MNIST train images not found");
-    let train_lbl_path = locate_mnist_file(&train_lbl_candidates).expect("MNIST train labels not found");
-    let test_img_path = locate_mnist_file(&test_img_candidates).expect("MNIST test images not found");
-    let test_lbl_path = locate_mnist_file(&test_lbl_candidates).expect("MNIST test labels not found");
+    let train_img_path =
+        locate_mnist_file(&train_img_candidates).expect("MNIST train images not found");
+    let train_lbl_path =
+        locate_mnist_file(&train_lbl_candidates).expect("MNIST train labels not found");
+    let test_img_path =
+        locate_mnist_file(&test_img_candidates).expect("MNIST test images not found");
+    let test_lbl_path =
+        locate_mnist_file(&test_lbl_candidates).expect("MNIST test labels not found");
 
     println!(" [DISCOVERY] Dataset Grounding:");
     println!("   Train Images : {}", train_img_path.display());
@@ -335,17 +358,25 @@ fn main() {
     // 2. Load dataset partitions (scalable training slice for fast AVX2 turnaround)
     let n_train = 10000;
     let n_test = 2000;
-    println!("\n [INGEST] Parsing MNIST partitions: {} train, {} test...", n_train, n_test);
+    println!(
+        "\n [INGEST] Parsing MNIST partitions: {} train, {} test...",
+        n_train, n_test
+    );
 
     let t0_load = Instant::now();
     let train_pixels = parse_mnist_images(&train_img_path, Some(n_train));
     let train_labels = parse_mnist_labels(&train_lbl_path, Some(n_train));
     let test_pixels = parse_mnist_images(&test_img_path, Some(n_test));
     let test_labels = parse_mnist_labels(&test_lbl_path, Some(n_test));
-    println!(" [INGEST] Binary parse completed in {:.2} ms", t0_load.elapsed().as_secs_f64() * 1000.0);
+    println!(
+        " [INGEST] Binary parse completed in {:.2} ms",
+        t0_load.elapsed().as_secs_f64() * 1000.0
+    );
 
     // 3. Pre-encode into 10-Qubit Hilbert Space
-    println!(" [ENCODE] Projecting 784-pixel vectors into 10-qubit statevectors (2^10 = 1024 states)...");
+    println!(
+        " [ENCODE] Projecting 784-pixel vectors into 10-qubit statevectors (2^10 = 1024 states)..."
+    );
     let train_states: Vec<(QuantumState, usize)> = train_pixels
         .into_par_iter()
         .zip(train_labels.into_par_iter())
@@ -381,21 +412,37 @@ fn main() {
     let mut opt_head = AdamOptimizer::new_unwrapped(n_head_params, lr_head);
 
     println!("\n [ARCHITECTURE] Sovereign Model Configuration:");
-    println!("   Qubits                 : {} (Hilbert space dimension = {})", N_QUBITS, STATE_DIM);
-    println!("   Circuit Depth          : {} layers (Ring CZ Entanglement + Ry/Rz)", depth);
+    println!(
+        "   Qubits                 : {} (Hilbert space dimension = {})",
+        N_QUBITS, STATE_DIM
+    );
+    println!(
+        "   Circuit Depth          : {} layers (Ring CZ Entanglement + Ry/Rz)",
+        depth
+    );
     println!("   Walsh-Rademacher Pi    : Enabled (Bipolar Phase Scrambler)",);
-    println!("   Observables (Z + ZZ)   : {} (10 single-qubit Z + 45 two-body ZZ correlators)", n_obs);
+    println!(
+        "   Observables (Z + ZZ)   : {} (10 single-qubit Z + 45 two-body ZZ correlators)",
+        n_obs
+    );
     println!("   Ansatz Parameters      : {}", n_ansatz_params);
     println!("   Linear Head Parameters : {}", n_head_params);
-    println!("   Total Trainable        : {}", n_ansatz_params + n_head_params);
+    println!(
+        "   Total Trainable        : {}",
+        n_ansatz_params + n_head_params
+    );
     println!("   Baseline Comparisons   : BNN-BSC (78.59%), BNN-MAP (79.40%), HDC-10k (81.25%)");
 
     // 5. Initial Pre-Training Metrics & Coherence Scan
     println!("\n [TELEMETRY] Evaluating Zero-Shot Quantum Interference Invariants...");
-    let (init_intra, init_inter, init_contrast) = evaluate_interference_contrast(&ansatz, &ansatz_weights, &test_states, 200);
+    let (init_intra, init_inter, init_contrast) =
+        evaluate_interference_contrast(&ansatz, &ansatz_weights, &test_states, 200);
     println!("   Pre-train Intra-Class Interference : {:+.4}", init_intra);
     println!("   Pre-train Inter-Class Interference : {:+.4}", init_inter);
-    println!("   Pre-train Contrast Gap             : {:+.4}", init_contrast);
+    println!(
+        "   Pre-train Contrast Gap             : {:+.4}",
+        init_contrast
+    );
 
     // 6. Training Loop
     let epochs = 16;
@@ -431,30 +478,36 @@ fn main() {
                     // Unified single-pass Adjoint Differentiation:
                     // Evaluates forward evolution, observable expectations, classical linear head backprop,
                     // and reverse-mode adjoint circuit gradients in a single unified pass.
-                    let adj = adjoint_gradient(&ansatz, input_state, &ansatz_weights, &observables, |exps| {
-                        let logits = head.forward(exps);
-                        let (loss, d_logits, pred) = softmax_cross_entropy(&logits, *label);
-                        sample_loss = loss;
-                        sample_correct = if pred == *label { 1 } else { 0 };
+                    let adj = adjoint_gradient(
+                        &ansatz,
+                        input_state,
+                        &ansatz_weights,
+                        &observables,
+                        |exps| {
+                            let logits = head.forward(exps);
+                            let (loss, d_logits, pred) = softmax_cross_entropy(&logits, *label);
+                            sample_loss = loss;
+                            sample_correct = if pred == *label { 1 } else { 0 };
 
-                        for c in 0..N_CLASSES {
-                            let row = c * n_obs;
-                            for q in 0..n_obs {
-                                d_head[row + q] = d_logits[c] * exps[q];
-                            }
-                            d_head[N_CLASSES * n_obs + c] = d_logits[c];
-                        }
-
-                        let mut d_exps = vec![0.0; n_obs];
-                        for q in 0..n_obs {
-                            let mut sum = 0.0;
                             for c in 0..N_CLASSES {
-                                sum += d_logits[c] * head.weights[c * n_obs + q];
+                                let row = c * n_obs;
+                                for q in 0..n_obs {
+                                    d_head[row + q] = d_logits[c] * exps[q];
+                                }
+                                d_head[N_CLASSES * n_obs + c] = d_logits[c];
                             }
-                            d_exps[q] = sum;
-                        }
-                        d_exps
-                    });
+
+                            let mut d_exps = vec![0.0; n_obs];
+                            for q in 0..n_obs {
+                                let mut sum = 0.0;
+                                for c in 0..N_CLASSES {
+                                    sum += d_logits[c] * head.weights[c * n_obs + q];
+                                }
+                                d_exps[q] = sum;
+                            }
+                            d_exps
+                        },
+                    );
 
                     (sample_loss, sample_correct, adj.gradient, d_head)
                 })
@@ -477,7 +530,8 @@ fn main() {
             train_correct += batch_correct;
 
             // Average gradients over batch
-            let avg_ansatz_grad: Vec<f64> = batch_ansatz_grad.iter().map(|&g| g / batch_len).collect();
+            let avg_ansatz_grad: Vec<f64> =
+                batch_ansatz_grad.iter().map(|&g| g / batch_len).collect();
             let avg_head_grad: Vec<f64> = batch_head_grad.iter().map(|&g| g / batch_len).collect();
 
             // Adam steps
@@ -496,7 +550,10 @@ fn main() {
                 let mut phi = input_state.clone();
                 ansatz.forward_in_place(&mut phi, &ansatz_weights);
                 let coh = compute_l1_coherence(&phi);
-                let exps: Vec<f64> = observables.iter().map(|o| o.expectation_value(&phi)).collect();
+                let exps: Vec<f64> = observables
+                    .iter()
+                    .map(|o| o.expectation_value(&phi))
+                    .collect();
                 let logits = head.forward(&exps);
                 let (loss, _, pred) = softmax_cross_entropy(&logits, *label);
                 let correct = if pred == *label { 1 } else { 0 };
@@ -517,7 +574,8 @@ fn main() {
         let avg_l1_coherence = mean_coherence / n_test as f64;
 
         // Sample quantum state interference
-        let (intra_score, inter_score, _) = evaluate_interference_contrast(&ansatz, &ansatz_weights, &test_states, 150);
+        let (intra_score, inter_score, _) =
+            evaluate_interference_contrast(&ansatz, &ansatz_weights, &test_states, 150);
         let ep_duration = t_ep_start.elapsed().as_secs_f64() * 1000.0;
 
         history.push(EpochTelemetry {
@@ -543,7 +601,8 @@ fn main() {
     let per_sample_us = (total_train_sec * 1_000_000.0) / (n_train * epochs) as f64;
 
     let final_ep = history.last().unwrap();
-    let contrast_ratio = final_ep.intra_class_interference / (final_ep.inter_class_interference.abs() + 1e-6);
+    let contrast_ratio =
+        final_ep.intra_class_interference / (final_ep.inter_class_interference.abs() + 1e-6);
 
     println!("\n╔═══════════════════════════════════════════════════════════════════════════════╗");
     println!("║                    SOVEREIGN BENCHMARK COMPARISON MATRIX                      ║");
@@ -560,11 +619,26 @@ fn main() {
     println!("╚═══════════════════════════════════╩══════════════╩═════════════╩══════════════╝");
 
     println!("\n [COHERENCE INVARIANT ANALYSIS]");
-    println!("   Intra-Class Constructive Interference : {:+.4} (Same Digits)", final_ep.intra_class_interference);
-    println!("   Inter-Class Constructive Interference : {:+.4} (Different Digits)", final_ep.inter_class_interference);
-    println!("   Interference Contrast Delta           : {:+.4}", final_ep.intra_class_interference - final_ep.inter_class_interference);
-    println!("   Quantum State Coherence L1-Norm       : {:.2}", final_ep.mean_coherence_l1);
-    println!("   Training Throughput                   : {:.2} us / sample", per_sample_us);
+    println!(
+        "   Intra-Class Constructive Interference : {:+.4} (Same Digits)",
+        final_ep.intra_class_interference
+    );
+    println!(
+        "   Inter-Class Constructive Interference : {:+.4} (Different Digits)",
+        final_ep.inter_class_interference
+    );
+    println!(
+        "   Interference Contrast Delta           : {:+.4}",
+        final_ep.intra_class_interference - final_ep.inter_class_interference
+    );
+    println!(
+        "   Quantum State Coherence L1-Norm       : {:.2}",
+        final_ep.mean_coherence_l1
+    );
+    println!(
+        "   Training Throughput                   : {:.2} us / sample",
+        per_sample_us
+    );
 
     // 7. Write telemetry outputs
     let report = MnistQnnReport {
@@ -609,8 +683,17 @@ fn main() {
         writeln!(
             csv_file,
             "{},{:.5},{:.3},{:.5},{:.3},{:.3},{:.5},{:.5},{:.2}",
-            h.epoch, h.train_loss, h.train_accuracy_pct, h.test_loss, h.test_accuracy_pct, h.mean_coherence_l1, h.intra_class_interference, h.inter_class_interference, h.epoch_time_ms
-        ).unwrap();
+            h.epoch,
+            h.train_loss,
+            h.train_accuracy_pct,
+            h.test_loss,
+            h.test_accuracy_pct,
+            h.mean_coherence_l1,
+            h.intra_class_interference,
+            h.inter_class_interference,
+            h.epoch_time_ms
+        )
+        .unwrap();
     }
 
     println!("\n [PERSISTENCE]");

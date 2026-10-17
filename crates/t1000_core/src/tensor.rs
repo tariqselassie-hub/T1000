@@ -58,16 +58,12 @@ impl EntanglementTensor {
     /// Partial trace: reduce to the kept side by summing out the other.
     pub fn partial_trace(&self, keep: Side) -> Vec<f64> {
         match keep {
-            Side::A => {
-                (0..self.dim_a)
-                    .map(|i| self.correlations[i].iter().sum())
-                    .collect()
-            }
-            Side::B => {
-                (0..self.dim_b)
-                    .map(|j| self.correlations.iter().map(|row| row[j]).sum())
-                    .collect()
-            }
+            Side::A => (0..self.dim_a)
+                .map(|i| self.correlations[i].iter().sum())
+                .collect(),
+            Side::B => (0..self.dim_b)
+                .map(|j| self.correlations.iter().map(|row| row[j]).sum())
+                .collect(),
         }
     }
 }

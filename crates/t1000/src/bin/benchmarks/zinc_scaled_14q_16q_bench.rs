@@ -224,7 +224,8 @@ fn main() {
     println!(" Batch Source   : ZINC 250k Bioactive Small Molecules                           ");
     println!("================================================================================");
 
-    let test_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_test_1k.csv");
+    let test_path =
+        resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_test_1k.csv");
     let records = match parse_zinc_csv(&test_path, 200) {
         Ok(r) => r,
         Err(e) => {
@@ -232,7 +233,10 @@ fn main() {
             return;
         }
     };
-    println!("\n[INIT] Loaded {} test molecules for benchmarking.", records.len());
+    println!(
+        "\n[INIT] Loaded {} test molecules for benchmarking.",
+        records.len()
+    );
 
     let configs = [
         (12, 3, "L1 / L2 Cache (64 KB)"),
@@ -242,13 +246,28 @@ fn main() {
 
     let mut results = Vec::new();
     for &(n_qubits, depth, tier) in &configs {
-        println!("\n[BENCH] Running {}-Qubit VQC (depth = {}, tier = {})...", n_qubits, depth, tier);
+        println!(
+            "\n[BENCH] Running {}-Qubit VQC (depth = {}, tier = {})...",
+            n_qubits, depth, tier
+        );
         let res = benchmark_scale(n_qubits, &records, depth, tier);
-        println!("  -> Unbuffered Time : {:.2} ms (Heap Churn: {:.2} MB)", res.unbuffered_time_ms, res.memory_allocated_mb_unbuffered);
-        println!("  -> Buffered Time   : {:.2} ms (Fixed Alloc: {:.2} MB)", res.buffered_time_ms, res.memory_allocated_mb_buffered);
+        println!(
+            "  -> Unbuffered Time : {:.2} ms (Heap Churn: {:.2} MB)",
+            res.unbuffered_time_ms, res.memory_allocated_mb_unbuffered
+        );
+        println!(
+            "  -> Buffered Time   : {:.2} ms (Fixed Alloc: {:.2} MB)",
+            res.buffered_time_ms, res.memory_allocated_mb_buffered
+        );
         println!("  -> Speedup Factor  : {:.2}x", res.speedup_factor);
-        println!("  -> Throughput      : {:.1} mols/sec", res.throughput_mols_per_sec);
-        println!("  -> Gradient Diff   : {:.2e} (Exact Agreement)", res.max_gradient_diff);
+        println!(
+            "  -> Throughput      : {:.1} mols/sec",
+            res.throughput_mols_per_sec
+        );
+        println!(
+            "  -> Gradient Diff   : {:.2e} (Exact Agreement)",
+            res.max_gradient_diff
+        );
         results.push(res);
     }
 
@@ -275,10 +294,16 @@ fn main() {
     }
     println!("└──────┴──────────┴──────────┴──────────────┴──────────────┴─────────┴─────────┘");
 
-    let total_unbuf_mb: f64 = results.iter().map(|r| r.memory_allocated_mb_unbuffered).sum();
+    let total_unbuf_mb: f64 = results
+        .iter()
+        .map(|r| r.memory_allocated_mb_unbuffered)
+        .sum();
     let total_buf_mb: f64 = results.iter().map(|r| r.memory_allocated_mb_buffered).sum();
     println!("\n[MEMORY SUMMARY]");
-    println!("  Total Garbage Allocations Prevented : {:.2} MB", total_unbuf_mb - total_buf_mb);
+    println!(
+        "  Total Garbage Allocations Prevented : {:.2} MB",
+        total_unbuf_mb - total_buf_mb
+    );
     println!("  Cache-Resident Memory Bound Reached : 16 Qubits (1.00 MB / Core)");
     println!("  Gradient Numerical Divergence       : 0.000000000000 (Exact Machine Precision)");
     println!("\n================================================================================");

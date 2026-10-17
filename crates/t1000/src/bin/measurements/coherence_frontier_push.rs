@@ -13,18 +13,17 @@
 //!    - Chrestenson Fourier interference, modular Z_7 CNOT entangling rings, and topological braid phases.
 //!    - Quantum \ell_1-norm coherence capacity, somatic leakage tracking, and wave contrast.
 
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
 use std::time::Instant;
-use serde::{Deserialize, Serialize};
 
-use t1000::{CircuitAnsatz, QuantumState};
 use t1000::heptal_wave::{evolve_heptal_wave_cycle, HeptalWaveState};
 use t1000::tensor_network::{
-    apply_single_qubit_gate, apply_two_qubit_gate,
-    EvolutionTelemetry, LatticeTopology,
+    apply_single_qubit_gate, apply_two_qubit_gate, EvolutionTelemetry, LatticeTopology,
     PlanarTensorNetwork, SingleQubitGate, TwoQubitGate,
 };
+use t1000::{CircuitAnsatz, QuantumState};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AcademicScalePoint {
@@ -99,9 +98,17 @@ fn compute_academic_dense_point(n: usize, depth: usize) -> AcademicScalePoint {
 
     let dim = num_states as f64;
     let raw_xeb = (dim * sum_p_sq - 1.0).max(0.0);
-    let haar_fidelity = if raw_xeb <= 1.0 { raw_xeb } else { 1.0 / raw_xeb };
+    let haar_fidelity = if raw_xeb <= 1.0 {
+        raw_xeb
+    } else {
+        1.0 / raw_xeb
+    };
     let coherence_raw = (sum_abs * sum_abs - 1.0).max(0.0);
-    let coherence_norm = if dim > 1.0 { (coherence_raw / (dim - 1.0)).clamp(0.0, 1.0) } else { 0.0 };
+    let coherence_norm = if dim > 1.0 {
+        (coherence_raw / (dim - 1.0)).clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
 
     AcademicScalePoint {
         mode: "DenseAVX2".to_string(),
@@ -127,7 +134,10 @@ fn compute_academic_tn_point(grid_side: usize, cycle_depth: usize) -> AcademicSc
     };
 
     let t0 = Instant::now();
-    let topo = LatticeTopology::SquareGrid { width: grid_side, height: grid_side };
+    let topo = LatticeTopology::SquareGrid {
+        width: grid_side,
+        height: grid_side,
+    };
     let mut tn = PlanarTensorNetwork::new_product_state(topo, max_bond_dim);
     let mut tel = EvolutionTelemetry::new();
 
@@ -143,7 +153,11 @@ fn compute_academic_tn_point(grid_side: usize, cycle_depth: usize) -> AcademicSc
             for x in 0..(grid_side - 1) {
                 let u = y * grid_side + x;
                 let v = y * grid_side + (x + 1);
-                let gate = if (x + y + d) % 2 == 0 { TwoQubitGate::sqrt_iswap() } else { TwoQubitGate::cz() };
+                let gate = if (x + y + d) % 2 == 0 {
+                    TwoQubitGate::sqrt_iswap()
+                } else {
+                    TwoQubitGate::cz()
+                };
                 apply_two_qubit_gate(&mut tn, u, v, &gate, &mut tel);
             }
         }
@@ -151,14 +165,19 @@ fn compute_academic_tn_point(grid_side: usize, cycle_depth: usize) -> AcademicSc
             for y in 0..(grid_side - 1) {
                 let u = y * grid_side + x;
                 let v = (y + 1) * grid_side + x;
-                let gate = if (x + y + d) % 2 == 1 { TwoQubitGate::sqrt_iswap() } else { TwoQubitGate::cz() };
+                let gate = if (x + y + d) % 2 == 1 {
+                    TwoQubitGate::sqrt_iswap()
+                } else {
+                    TwoQubitGate::cz()
+                };
                 apply_two_qubit_gate(&mut tn, u, v, &gate, &mut tel);
             }
         }
     }
 
     let latency_ms = t0.elapsed().as_secs_f64() * 1000.0;
-    let actual_tn_ram_mb = (qubits * max_bond_dim * max_bond_dim * 16) as f64 / (1024.0 * 1024.0) + 4.5;
+    let actual_tn_ram_mb =
+        (qubits * max_bond_dim * max_bond_dim * 16) as f64 / (1024.0 * 1024.0) + 4.5;
 
     AcademicScalePoint {
         mode: "TensorNetworkBP".to_string(),
@@ -227,8 +246,14 @@ fn main() {
         let pt = compute_academic_dense_point(n, 12);
         println!(
             "│ {:<12} │ {:>2} │ {:<14} │ {:>8.2} │ {:>11.2} │ {:>9.2} │ {:>7.4} │ {:>7.4} │",
-            pt.mode, pt.qubits, pt.hilbert_dim_str, pt.ram_actual_mb, pt.ram_theoretical_dense_mb,
-            pt.latency_ms, pt.f_xeb, pt.coherence_normalized
+            pt.mode,
+            pt.qubits,
+            pt.hilbert_dim_str,
+            pt.ram_actual_mb,
+            pt.ram_theoretical_dense_mb,
+            pt.latency_ms,
+            pt.f_xeb,
+            pt.coherence_normalized
         );
         academic_points.push(pt);
     }
@@ -238,8 +263,14 @@ fn main() {
         let pt = compute_academic_tn_point(side, 8);
         println!(
             "│ {:<12} │ {:>2} │ {:<14} │ {:>8.2} │ {:>11.2e} │ {:>9.2} │ {:>7.4} │ {:>7.4} │",
-            pt.mode, pt.qubits, pt.hilbert_dim_str, pt.ram_actual_mb, pt.ram_theoretical_dense_mb,
-            pt.latency_ms, pt.f_xeb, pt.coherence_normalized
+            pt.mode,
+            pt.qubits,
+            pt.hilbert_dim_str,
+            pt.ram_actual_mb,
+            pt.ram_theoretical_dense_mb,
+            pt.latency_ms,
+            pt.f_xeb,
+            pt.coherence_normalized
         );
         academic_points.push(pt);
     }
@@ -261,8 +292,14 @@ fn main() {
         let pt = compute_spectral_heptal_point(k, 3);
         println!(
             "│ {:>2} │ {:>8.2} │ {:>12} │ {:>8.2} │ {:>9.2} │ {:>12.2e} │ {:>8.6} │ {:>9.4}% │",
-            pt.heptal_qudits, pt.equiv_binary_qubits, pt.hilbert_dim, pt.ram_mb,
-            pt.latency_ms, pt.coherence_l1_raw, pt.coherence_l1_normalized, pt.somatic_leakage_rate * 100.0
+            pt.heptal_qudits,
+            pt.equiv_binary_qubits,
+            pt.hilbert_dim,
+            pt.ram_mb,
+            pt.latency_ms,
+            pt.coherence_l1_raw,
+            pt.coherence_l1_normalized,
+            pt.somatic_leakage_rate * 100.0
         );
         spectral_points.push(pt);
     }
@@ -288,24 +325,55 @@ fn main() {
     let json_path = out_dir.join("coherence_frontier_push.json");
     if let Ok(json_str) = serde_json::to_string_pretty(&report) {
         let _ = fs::write(&json_path, json_str);
-        println!("[TELEMETRY] Coherence frontier JSON saved to: {}", json_path.display());
+        println!(
+            "[TELEMETRY] Coherence frontier JSON saved to: {}",
+            json_path.display()
+        );
     }
 
     let csv_academic = out_dir.join("academic_coherence_frontier.csv");
-    let mut csv_a = String::from("mode,qubits,hilbert_dim,ram_actual_mb,ram_theor_mb,latency_ms,f_xeb,c_norm\n");
+    let mut csv_a = String::from(
+        "mode,qubits,hilbert_dim,ram_actual_mb,ram_theor_mb,latency_ms,f_xeb,c_norm\n",
+    );
     for p in &report.academic_points {
-        csv_a.push_str(&format!("{},{},{},{:.4},{:.4},{:.4},{:.6},{:.6}\n",
-            p.mode, p.qubits, p.hilbert_dim_str, p.ram_actual_mb, p.ram_theoretical_dense_mb, p.latency_ms, p.f_xeb, p.coherence_normalized));
+        csv_a.push_str(&format!(
+            "{},{},{},{:.4},{:.4},{:.4},{:.6},{:.6}\n",
+            p.mode,
+            p.qubits,
+            p.hilbert_dim_str,
+            p.ram_actual_mb,
+            p.ram_theoretical_dense_mb,
+            p.latency_ms,
+            p.f_xeb,
+            p.coherence_normalized
+        ));
     }
     let _ = fs::write(&csv_academic, csv_a);
 
     let csv_spectral = out_dir.join("spectral_coherence_frontier.csv");
-    let mut csv_s = String::from("heptal_qudits,equiv_qubits,hilbert_dim,ram_mb,latency_ms,c_l1_raw,c_norm,leakage_pct\n");
+    let mut csv_s = String::from(
+        "heptal_qudits,equiv_qubits,hilbert_dim,ram_mb,latency_ms,c_l1_raw,c_norm,leakage_pct\n",
+    );
     for p in &report.spectral_points {
-        csv_s.push_str(&format!("{},{:.4},{},{:.4},{:.4},{:.4e},{:.6},{:.6}\n",
-            p.heptal_qudits, p.equiv_binary_qubits, p.hilbert_dim, p.ram_mb, p.latency_ms, p.coherence_l1_raw, p.coherence_l1_normalized, p.somatic_leakage_rate * 100.0));
+        csv_s.push_str(&format!(
+            "{},{:.4},{},{:.4},{:.4},{:.4e},{:.6},{:.6}\n",
+            p.heptal_qudits,
+            p.equiv_binary_qubits,
+            p.hilbert_dim,
+            p.ram_mb,
+            p.latency_ms,
+            p.coherence_l1_raw,
+            p.coherence_l1_normalized,
+            p.somatic_leakage_rate * 100.0
+        ));
     }
     let _ = fs::write(&csv_spectral, csv_s);
-    println!("[TELEMETRY] Academic CSV saved to: {}", csv_academic.display());
-    println!("[TELEMETRY] Spectral CSV saved to: {}", csv_spectral.display());
+    println!(
+        "[TELEMETRY] Academic CSV saved to: {}",
+        csv_academic.display()
+    );
+    println!(
+        "[TELEMETRY] Spectral CSV saved to: {}",
+        csv_spectral.display()
+    );
 }

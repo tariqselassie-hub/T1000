@@ -42,8 +42,16 @@ pub struct BaselineResult {
 }
 
 /// MAE, MSE, R^2 and Pearson r for each target column.
-pub fn regression_metrics(preds: &[Vec<f64>], targets: &[Vec<f64>], names: &[&str]) -> Vec<TargetMetrics> {
-    assert_eq!(preds.len(), targets.len(), "prediction/target row count mismatch");
+pub fn regression_metrics(
+    preds: &[Vec<f64>],
+    targets: &[Vec<f64>],
+    names: &[&str],
+) -> Vec<TargetMetrics> {
+    assert_eq!(
+        preds.len(),
+        targets.len(),
+        "prediction/target row count mismatch"
+    );
     assert!(!targets.is_empty(), "cannot score an empty set");
     let k = names.len();
     let n = targets.len() as f64;
@@ -52,14 +60,31 @@ pub fn regression_metrics(preds: &[Vec<f64>], targets: &[Vec<f64>], names: &[&st
             let p: Vec<f64> = preds.iter().map(|row| row[t]).collect();
             let y: Vec<f64> = targets.iter().map(|row| row[t]).collect();
             let mae = p.iter().zip(&y).map(|(a, b)| (a - b).abs()).sum::<f64>() / n;
-            let mse = p.iter().zip(&y).map(|(a, b)| (a - b) * (a - b)).sum::<f64>() / n;
+            let mse = p
+                .iter()
+                .zip(&y)
+                .map(|(a, b)| (a - b) * (a - b))
+                .sum::<f64>()
+                / n;
             let y_mean = y.iter().sum::<f64>() / n;
             let p_mean = p.iter().sum::<f64>() / n;
             let ss_tot = y.iter().map(|v| (v - y_mean).powi(2)).sum::<f64>();
-            let r2 = if ss_tot > 0.0 { 1.0 - mse * n / ss_tot } else { 0.0 };
-            let cov = p.iter().zip(&y).map(|(a, b)| (a - p_mean) * (b - y_mean)).sum::<f64>();
+            let r2 = if ss_tot > 0.0 {
+                1.0 - mse * n / ss_tot
+            } else {
+                0.0
+            };
+            let cov = p
+                .iter()
+                .zip(&y)
+                .map(|(a, b)| (a - p_mean) * (b - y_mean))
+                .sum::<f64>();
             let var_p = p.iter().map(|v| (v - p_mean).powi(2)).sum::<f64>();
-            let pearson_r = if var_p > 0.0 && ss_tot > 0.0 { cov / (var_p * ss_tot).sqrt() } else { 0.0 };
+            let pearson_r = if var_p > 0.0 && ss_tot > 0.0 {
+                cov / (var_p * ss_tot).sqrt()
+            } else {
+                0.0
+            };
             TargetMetrics {
                 target: names[t].to_string(),
                 mae,
@@ -201,14 +226,21 @@ impl RidgeProblem {
     }
 
     pub(crate) fn solve(&self, lambda: f64) -> RidgeRegression {
-        assert!(lambda > 0.0, "ridge penalty must be positive (got {lambda})");
+        assert!(
+            lambda > 0.0,
+            "ridge penalty must be positive (got {lambda})"
+        );
         let d = self.feature_mean.len();
         let mut a = self.gram.clone();
         for i in 0..d {
             a[i * d + i] += lambda;
         }
         let l = cholesky(&a, d).expect("Z^T Z / n + lambda I is positive definite for lambda > 0");
-        let coef = self.cross.iter().map(|b| cholesky_solve(&l, d, b)).collect();
+        let coef = self
+            .cross
+            .iter()
+            .map(|b| cholesky_solve(&l, d, b))
+            .collect();
         RidgeRegression {
             lambda,
             feature_mean: self.feature_mean.clone(),
@@ -251,7 +283,10 @@ impl RidgeRegression {
 /// Selection minimizes the mean over targets of validation MSE / validation variance.
 pub fn fit_ridge_validated(x: &[Vec<f64>], y: &[Vec<f64>], lambdas: &[f64]) -> RidgeRegression {
     assert!(!lambdas.is_empty(), "need at least one candidate lambda");
-    assert!(x.len() >= 10, "need at least 10 training rows for a validation split");
+    assert!(
+        x.len() >= 10,
+        "need at least 10 training rows for a validation split"
+    );
     let (mut xt, mut yt, mut xv, mut yv) = (Vec::new(), Vec::new(), Vec::new(), Vec::new());
     for (i, (xr, yr)) in x.iter().zip(y).enumerate() {
         if i % 5 == 4 {
@@ -278,7 +313,12 @@ pub fn fit_ridge_validated(x: &[Vec<f64>], y: &[Vec<f64>], lambdas: &[f64]) -> R
         .map(|&lambda| {
             let model = problem.solve(lambda);
             let m = regression_metrics(&model.predict(&xv), &yv, &name_refs);
-            let score = m.iter().zip(&variances).map(|(tm, v)| tm.mse / v).sum::<f64>() / k as f64;
+            let score = m
+                .iter()
+                .zip(&variances)
+                .map(|(tm, v)| tm.mse / v)
+                .sum::<f64>()
+                / k as f64;
             (lambda, score)
         })
         .min_by(|a, b| a.1.total_cmp(&b.1))
@@ -339,8 +379,14 @@ pub fn zinc_baselines<'a>(
     train: impl IntoIterator<Item = (&'a [f64], [f64; 3])>,
     test: impl IntoIterator<Item = (&'a [f64], [f64; 3])>,
 ) -> Vec<BaselineResult> {
-    let train: Vec<(Vec<f64>, Vec<f64>)> = train.into_iter().map(|(x, y)| (x.to_vec(), y.to_vec())).collect();
-    let test: Vec<(Vec<f64>, Vec<f64>)> = test.into_iter().map(|(x, y)| (x.to_vec(), y.to_vec())).collect();
+    let train: Vec<(Vec<f64>, Vec<f64>)> = train
+        .into_iter()
+        .map(|(x, y)| (x.to_vec(), y.to_vec()))
+        .collect();
+    let test: Vec<(Vec<f64>, Vec<f64>)> = test
+        .into_iter()
+        .map(|(x, y)| (x.to_vec(), y.to_vec()))
+        .collect();
     evaluate_baselines(&train, &test, &ZINC_TARGETS)
 }
 
@@ -388,7 +434,10 @@ pub fn print_comparison(qnn: &[QnnScore], baselines: &[BaselineResult]) {
     println!("=========================================================================");
     for (t, name) in ZINC_TARGETS.iter().enumerate() {
         println!("  {name}");
-        println!("    {:<40} {:>7} {:>7} {:>7} {:>7}", "model", "MAE", "MSE", "R2", "r");
+        println!(
+            "    {:<40} {:>7} {:>7} {:>7} {:>7}",
+            "model", "MAE", "MSE", "R2", "r"
+        );
         for q in qnn {
             println!(
                 "    {:<40} {} {} {} {}",
@@ -438,8 +487,16 @@ impl RandomFourierMap {
         use rand::{Rng, SeedableRng};
         assert!(bandwidth > 0.0, "bandwidth must be positive");
         let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(seed);
-        let w = (0..n_features).map(|_| (0..n_inputs).map(|_| gaussian(&mut rng) / bandwidth).collect()).collect();
-        let b = (0..n_features).map(|_| rng.gen_range(0.0..2.0 * std::f64::consts::PI)).collect();
+        let w = (0..n_features)
+            .map(|_| {
+                (0..n_inputs)
+                    .map(|_| gaussian(&mut rng) / bandwidth)
+                    .collect()
+            })
+            .collect();
+        let b = (0..n_features)
+            .map(|_| rng.gen_range(0.0..2.0 * std::f64::consts::PI))
+            .collect();
         Self { w, b }
     }
 
@@ -478,7 +535,12 @@ impl Mlp {
         for p in params[w2..w2 + n_out * n_hidden].iter_mut() {
             *p = rng.gen_range(-a2..a2);
         }
-        Self { n_in, n_hidden, n_out, params }
+        Self {
+            n_in,
+            n_hidden,
+            n_out,
+            params,
+        }
     }
 
     pub fn n_params(&self) -> usize {
@@ -501,7 +563,8 @@ impl Mlp {
         (0..o)
             .map(|t| {
                 let row = &self.params[w2 + t * h..w2 + (t + 1) * h];
-                row.iter().zip(hidden).map(|(w, v)| w * v).sum::<f64>() + self.params[w2 + o * h + t]
+                row.iter().zip(hidden).map(|(w, v)| w * v).sum::<f64>()
+                    + self.params[w2 + o * h + t]
             })
             .collect()
     }
@@ -548,7 +611,12 @@ pub struct MlpTraining {
 
 impl Default for MlpTraining {
     fn default() -> Self {
-        Self { epochs: 300, batch_size: 64, lr: 0.01, patience: 20 }
+        Self {
+            epochs: 300,
+            batch_size: 64,
+            lr: 0.01,
+            patience: 20,
+        }
     }
 }
 
@@ -563,7 +631,13 @@ pub struct TrainedMlp {
 
 impl TrainedMlp {
     pub fn predict(&self, x: &[f64]) -> Vec<f64> {
-        self.net.predict(x).iter().zip(&self.y_mean).zip(&self.y_scale).map(|((z, m), s)| z * s + m).collect()
+        self.net
+            .predict(x)
+            .iter()
+            .zip(&self.y_mean)
+            .zip(&self.y_scale)
+            .map(|((z, m), s)| z * s + m)
+            .collect()
     }
 }
 
@@ -582,14 +656,25 @@ pub fn train_mlp(
     use rand::SeedableRng;
     let k = y_train[0].len();
     let n = y_train.len() as f64;
-    let y_mean: Vec<f64> = (0..k).map(|t| y_train.iter().map(|r| r[t]).sum::<f64>() / n).collect();
+    let y_mean: Vec<f64> = (0..k)
+        .map(|t| y_train.iter().map(|r| r[t]).sum::<f64>() / n)
+        .collect();
     let y_scale: Vec<f64> = (0..k)
         .map(|t| {
-            let v = y_train.iter().map(|r| (r[t] - y_mean[t]).powi(2)).sum::<f64>() / n;
-            if v > 1e-24 { v.sqrt() } else { 1.0 }
+            let v = y_train
+                .iter()
+                .map(|r| (r[t] - y_mean[t]).powi(2))
+                .sum::<f64>()
+                / n;
+            if v > 1e-24 {
+                v.sqrt()
+            } else {
+                1.0
+            }
         })
         .collect();
-    let std_y = |y: &[f64]| -> Vec<f64> { (0..k).map(|t| (y[t] - y_mean[t]) / y_scale[t]).collect() };
+    let std_y =
+        |y: &[f64]| -> Vec<f64> { (0..k).map(|t| (y[t] - y_mean[t]) / y_scale[t]).collect() };
     let ys: Vec<Vec<f64>> = y_train.iter().map(|y| std_y(y)).collect();
 
     let mut net = Mlp::new(x_train[0].len(), n_hidden, k, seed);
@@ -601,9 +686,20 @@ pub fn train_mlp(
     let valid_score = |net: &Mlp| -> f64 {
         let preds: Vec<Vec<f64>> = x_valid
             .iter()
-            .map(|x| net.predict(x).iter().zip(&y_mean).zip(&y_scale).map(|((z, m), s)| z * s + m).collect())
+            .map(|x| {
+                net.predict(x)
+                    .iter()
+                    .zip(&y_mean)
+                    .zip(&y_scale)
+                    .map(|((z, m), s)| z * s + m)
+                    .collect()
+            })
             .collect();
-        regression_metrics(&preds, y_valid, &refs).iter().map(|m| 1.0 - m.r2).sum::<f64>() / k as f64
+        regression_metrics(&preds, y_valid, &refs)
+            .iter()
+            .map(|m| 1.0 - m.r2)
+            .sum::<f64>()
+            / k as f64
     };
 
     let mut best = (valid_score(&net), 0usize, net.params.clone());
@@ -627,7 +723,12 @@ pub fn train_mlp(
         }
     }
     net.params = best.2;
-    TrainedMlp { net, y_mean, y_scale, best_epoch: best.1 }
+    TrainedMlp {
+        net,
+        y_mean,
+        y_scale,
+        best_epoch: best.1,
+    }
 }
 
 // ----- dense SPD solver -----
@@ -676,17 +777,25 @@ mod tests {
 
     fn rows(n: usize, d: usize, seed: u64) -> Vec<Vec<f64>> {
         let mut r = ChaCha8Rng::seed_from_u64(seed);
-        (0..n).map(|_| (0..d).map(|_| r.gen_range(-3.0..3.0)).collect()).collect()
+        (0..n)
+            .map(|_| (0..d).map(|_| r.gen_range(-3.0..3.0)).collect())
+            .collect()
     }
 
     #[test]
     fn ridge_recovers_exact_linear_model() {
         let x = rows(200, 3, 1);
-        let y: Vec<Vec<f64>> = x.iter().map(|r| vec![3.0 * r[0] - 2.0 * r[1] + 5.0, -r[2] + 0.5]).collect();
+        let y: Vec<Vec<f64>> = x
+            .iter()
+            .map(|r| vec![3.0 * r[0] - 2.0 * r[1] + 5.0, -r[2] + 0.5])
+            .collect();
         let model = RidgeRegression::fit(&x, &y, 1e-10);
         for (xr, yr) in x.iter().zip(&y).take(20) {
             let p = model.predict_one(xr);
-            assert!((p[0] - yr[0]).abs() < 1e-6 && (p[1] - yr[1]).abs() < 1e-6, "{p:?} vs {yr:?}");
+            assert!(
+                (p[0] - yr[0]).abs() < 1e-6 && (p[1] - yr[1]).abs() < 1e-6,
+                "{p:?} vs {yr:?}"
+            );
         }
     }
 
@@ -715,15 +824,28 @@ mod tests {
     #[test]
     fn quadratic_ridge_fits_interaction_that_linear_cannot() {
         let x = rows(400, 2, 2);
-        let train: Vec<(Vec<f64>, Vec<f64>)> = x[..300].iter().map(|r| (r.clone(), vec![r[0] * r[1]; 3])).collect();
-        let test: Vec<(Vec<f64>, Vec<f64>)> = x[300..].iter().map(|r| (r.clone(), vec![r[0] * r[1]; 3])).collect();
+        let train: Vec<(Vec<f64>, Vec<f64>)> = x[..300]
+            .iter()
+            .map(|r| (r.clone(), vec![r[0] * r[1]; 3]))
+            .collect();
+        let test: Vec<(Vec<f64>, Vec<f64>)> = x[300..]
+            .iter()
+            .map(|r| (r.clone(), vec![r[0] * r[1]; 3]))
+            .collect();
         let res = evaluate_baselines(&train, &test, &ZINC_TARGETS);
         let (mean, lin, quad) = (&res[0], &res[1], &res[2]);
         assert_eq!(quad.n_features, 2 + 3);
         assert!(mean.metrics[0].r2.abs() < 0.1);
         assert!(lin.metrics[0].r2 < 0.2, "linear r2 {}", lin.metrics[0].r2);
-        assert!(quad.metrics[0].r2 > 0.999, "quadratic r2 {}", quad.metrics[0].r2);
-        assert!(quad.lambda.unwrap() <= 1e-3, "noiseless data should pick a small penalty");
+        assert!(
+            quad.metrics[0].r2 > 0.999,
+            "quadratic r2 {}",
+            quad.metrics[0].r2
+        );
+        assert!(
+            quad.lambda.unwrap() <= 1e-3,
+            "noiseless data should pick a small penalty"
+        );
     }
 
     #[test]
@@ -743,7 +865,10 @@ mod tests {
 
     #[test]
     fn quadratic_features_layout() {
-        assert_eq!(quadratic_features(&[2.0, 3.0]), vec![2.0, 3.0, 4.0, 6.0, 9.0]);
+        assert_eq!(
+            quadratic_features(&[2.0, 3.0]),
+            vec![2.0, 3.0, 4.0, 6.0, 9.0]
+        );
         assert_eq!(quadratic_features(&[1.0; 19]).len(), 19 + 190);
     }
 
@@ -754,7 +879,14 @@ mod tests {
         let x = [0.3, -1.1, 0.8, 2.0];
         let y = [0.5, -0.4, 1.2];
         let (loss, g) = net.loss_and_gradient(&x, &y);
-        let loss_at = |m: &Mlp| m.predict(&x).iter().zip(&y).map(|(p, t)| (p - t).powi(2)).sum::<f64>() / 3.0;
+        let loss_at = |m: &Mlp| {
+            m.predict(&x)
+                .iter()
+                .zip(&y)
+                .map(|(p, t)| (p - t).powi(2))
+                .sum::<f64>()
+                / 3.0
+        };
         assert!((loss - loss_at(&net)).abs() < 1e-12);
         for j in 0..net.n_params() {
             let h = 1e-6;
@@ -773,7 +905,19 @@ mod tests {
         let y: Vec<Vec<f64>> = x.iter().map(|r| vec![r[0] * r[1] / 3.0; 3]).collect();
         let (xt, xv) = (&x[..500], &x[500..]);
         let (yt, yv) = (&y[..500], &y[500..]);
-        let mlp = train_mlp(xt, yt, xv, yv, 12, 1, MlpTraining { epochs: 400, lr: 0.02, ..MlpTraining::default() });
+        let mlp = train_mlp(
+            xt,
+            yt,
+            xv,
+            yv,
+            12,
+            1,
+            MlpTraining {
+                epochs: 400,
+                lr: 0.02,
+                ..MlpTraining::default()
+            },
+        );
         let preds: Vec<Vec<f64>> = xv.iter().map(|r| mlp.predict(r)).collect();
         let r2 = regression_metrics(&preds, yv, &ZINC_TARGETS)[0].r2;
         let ridge = RidgeRegression::fit(xt, yt, 1e-6);

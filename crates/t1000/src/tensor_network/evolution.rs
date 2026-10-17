@@ -1,6 +1,6 @@
-use num_complex::Complex64;
-use super::linalg::{ComplexMatrix, svd};
+use super::linalg::{svd, ComplexMatrix};
 use super::state::PlanarTensorNetwork;
+use num_complex::Complex64;
 
 /// Gate error and circuit fidelity telemetry.
 #[derive(Debug, Clone, Default)]
@@ -424,7 +424,10 @@ mod tests {
 
     #[test]
     fn test_apply_single_qubit_hadamard() {
-        let topo = LatticeTopology::SquareGrid { width: 2, height: 2 };
+        let topo = LatticeTopology::SquareGrid {
+            width: 2,
+            height: 2,
+        };
         let mut tn = PlanarTensorNetwork::new_product_state(topo, 8);
         let mut tel = EvolutionTelemetry::new();
 
@@ -440,7 +443,10 @@ mod tests {
 
     #[test]
     fn test_create_bell_pair_with_cnot() {
-        let topo = LatticeTopology::SquareGrid { width: 2, height: 1 };
+        let topo = LatticeTopology::SquareGrid {
+            width: 2,
+            height: 1,
+        };
         let mut tn = PlanarTensorNetwork::new_product_state(topo, 8);
         let mut tel = EvolutionTelemetry::new();
 
@@ -452,7 +458,10 @@ mod tests {
         let err = apply_two_qubit_gate(&mut tn, 0, 1, &cnot, &mut tel);
 
         assert_eq!(tel.two_qubit_gates, 1);
-        assert!(err < 1e-12, "Bell pair creation must have zero truncation error");
+        assert!(
+            err < 1e-12,
+            "Bell pair creation must have zero truncation error"
+        );
         assert_eq!(tn.site(0).neighbor_bond_dim(1), Some(2));
         assert_eq!(tn.site(1).neighbor_bond_dim(0), Some(2));
         assert_eq!(tn.bond(0, 1).unwrap().dim(), 2);
@@ -461,6 +470,9 @@ mod tests {
         // Entanglement entropy of maximally entangled Bell pair should be ln(2)
         let entropy = tn.bond(0, 1).unwrap().entanglement_entropy();
         let expected = 2.0_f64.ln();
-        assert!((entropy - expected).abs() < 1e-6, "Bell pair entropy was {entropy}, expected {expected}");
+        assert!(
+            (entropy - expected).abs() < 1e-6,
+            "Bell pair entropy was {entropy}, expected {expected}"
+        );
     }
 }

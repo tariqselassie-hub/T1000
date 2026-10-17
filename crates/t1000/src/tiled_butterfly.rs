@@ -56,11 +56,19 @@ pub fn tiled_apply_ry(real: &mut [f64], imag: &mut [f64], qubit: usize, theta: f
     if qubit < INTERLEAVE_THRESHOLD {
         crate::simd::apply_ry_kernel(real, imag, qubit, theta);
     } else {
-        #[cfg(all(target_arch = "x86_64", target_feature = "avx2", target_feature = "fma"))]
+        #[cfg(all(
+            target_arch = "x86_64",
+            target_feature = "avx2",
+            target_feature = "fma"
+        ))]
         unsafe {
             apply_ry_tiled_interleaved(real, imag, qubit, theta);
         }
-        #[cfg(not(all(target_arch = "x86_64", target_feature = "avx2", target_feature = "fma")))]
+        #[cfg(not(all(
+            target_arch = "x86_64",
+            target_feature = "avx2",
+            target_feature = "fma"
+        )))]
         {
             #[cfg(target_arch = "x86_64")]
             if is_x86_feature_detected!("avx2") && is_x86_feature_detected!("fma") {
@@ -82,11 +90,19 @@ pub fn tiled_apply_rz(real: &mut [f64], imag: &mut [f64], qubit: usize, theta: f
     if qubit < INTERLEAVE_THRESHOLD {
         crate::simd::apply_rz_kernel(real, imag, qubit, theta);
     } else {
-        #[cfg(all(target_arch = "x86_64", target_feature = "avx2", target_feature = "fma"))]
+        #[cfg(all(
+            target_arch = "x86_64",
+            target_feature = "avx2",
+            target_feature = "fma"
+        ))]
         unsafe {
             apply_rz_tiled_interleaved(real, imag, qubit, theta);
         }
-        #[cfg(not(all(target_arch = "x86_64", target_feature = "avx2", target_feature = "fma")))]
+        #[cfg(not(all(
+            target_arch = "x86_64",
+            target_feature = "avx2",
+            target_feature = "fma"
+        )))]
         {
             #[cfg(target_arch = "x86_64")]
             if is_x86_feature_detected!("avx2") && is_x86_feature_detected!("fma") {
@@ -120,12 +136,7 @@ pub fn tiled_apply_rz(real: &mut [f64], imag: &mut [f64], qubit: usize, theta: f
 ///   → Repack 2×W_TILE window into AoS, apply butterfly, write back → halves DRAM fetches.
 ///
 /// `theta_ry[q]` and `theta_rz[q]` are the rotation angles for qubit `q`.
-pub fn apply_layer_fused(
-    real: &mut [f64],
-    imag: &mut [f64],
-    theta_ry: &[f64],
-    theta_rz: &[f64],
-) {
+pub fn apply_layer_fused(real: &mut [f64], imag: &mut [f64], theta_ry: &[f64], theta_rz: &[f64]) {
     let state_qubits = crate::simd::assert_statevector(real, imag);
     assert_eq!(
         theta_ry.len(),
@@ -199,8 +210,10 @@ pub fn apply_layer_fused(
                         let j0 = k;
                         let j1 = k + block;
                         if j1 < dim {
-                            let r0 = real[j0]; let r1 = real[j1];
-                            let i0 = imag[j0]; let i1 = imag[j1];
+                            let r0 = real[j0];
+                            let r1 = real[j1];
+                            let i0 = imag[j0];
+                            let i1 = imag[j1];
                             real[j0] = cy * r0 - sy * r1;
                             real[j1] = sy * r0 + cy * r1;
                             imag[j0] = cy * i0 - sy * i1;
@@ -216,8 +229,10 @@ pub fn apply_layer_fused(
             for q in 0..inline_n {
                 let block = 1usize << q;
                 let stride = block << 1;
-                let cn = rz_cn[q]; let sn = rz_sn[q];
-                let cp = rz_cp[q]; let sp = rz_sp[q];
+                let cn = rz_cn[q];
+                let sn = rz_sn[q];
+                let cp = rz_cp[q];
+                let sp = rz_sp[q];
 
                 let first_base = (tile_base / stride) * stride;
                 let mut base = first_base;
@@ -227,7 +242,8 @@ pub fn apply_layer_fused(
                     let b0_e = (base + block).min(tile_end);
                     let mut k = b0_s;
                     while k < b0_e && k < dim {
-                        let r = real[k]; let im = imag[k];
+                        let r = real[k];
+                        let im = imag[k];
                         real[k] = r * cn - im * sn;
                         imag[k] = r * sn + im * cn;
                         k += 1;
@@ -237,7 +253,8 @@ pub fn apply_layer_fused(
                     let b1_e = (base + stride).min(tile_end);
                     let mut k = b1_s;
                     while k < b1_e && k < dim {
-                        let r = real[k]; let im = imag[k];
+                        let r = real[k];
+                        let im = imag[k];
                         real[k] = r * cp - im * sp;
                         imag[k] = r * sp + im * cp;
                         k += 1;
@@ -257,7 +274,6 @@ pub fn apply_layer_fused(
         tiled_apply_rz(real, imag, q, theta_rz[q]);
     }
 }
-
 
 /// Cache-oblivious tiled CZ gate.
 ///
@@ -298,8 +314,10 @@ fn apply_ry_tiled_scalar(real: &mut [f64], imag: &mut [f64], qubit: usize, theta
                 let j0 = k;
                 let j1 = k + block;
                 if j1 < dim {
-                    let r0 = real[j0]; let r1 = real[j1];
-                    let i0 = imag[j0]; let i1 = imag[j1];
+                    let r0 = real[j0];
+                    let r1 = real[j1];
+                    let i0 = imag[j0];
+                    let i1 = imag[j1];
                     real[j0] = c * r0 - s * r1;
                     real[j1] = s * r0 + c * r1;
                     imag[j0] = c * i0 - s * i1;
@@ -328,7 +346,8 @@ fn apply_rz_tiled_scalar(real: &mut [f64], imag: &mut [f64], qubit: usize, theta
         while ti < b0_end {
             let te = (ti + W_TILE).min(b0_end);
             for k in ti..te {
-                let r = real[k]; let im = imag[k];
+                let r = real[k];
+                let im = imag[k];
                 real[k] = r * cn - im * sn;
                 imag[k] = r * sn + im * cn;
             }
@@ -342,7 +361,8 @@ fn apply_rz_tiled_scalar(real: &mut [f64], imag: &mut [f64], qubit: usize, theta
         while ti < b1_end {
             let te = (ti + W_TILE).min(b1_end);
             for k in ti..te {
-                let r = real[k]; let im = imag[k];
+                let r = real[k];
+                let im = imag[k];
                 real[k] = r * cp - im * sp;
                 imag[k] = r * sp + im * cp;
             }
@@ -365,8 +385,7 @@ fn apply_cz_tiled(real: &mut [f64], imag: &mut [f64], q1: usize, q2: usize) {
 
         // Check if any index in [tile_base, tile_end) can have both bits set.
         // If neither bit is set in tile_base..tile_end range, skip the tile entirely.
-        let tile_has_candidates = (tile_base..tile_end)
-            .any(|k| (k & both) == both);
+        let tile_has_candidates = (tile_base..tile_end).any(|k| (k & both) == both);
 
         if tile_has_candidates {
             for k in tile_base..tile_end {
@@ -506,8 +525,14 @@ unsafe fn apply_rz_tiled_interleaved(real: &mut [f64], imag: &mut [f64], qubit: 
             // Prefetch next tile
             if te + PREFETCH_DIST < b0_end {
                 unsafe {
-                    _mm_prefetch(real.as_ptr().add(te + PREFETCH_DIST) as *const i8, _MM_HINT_T0);
-                    _mm_prefetch(imag.as_ptr().add(te + PREFETCH_DIST) as *const i8, _MM_HINT_T0);
+                    _mm_prefetch(
+                        real.as_ptr().add(te + PREFETCH_DIST) as *const i8,
+                        _MM_HINT_T0,
+                    );
+                    _mm_prefetch(
+                        imag.as_ptr().add(te + PREFETCH_DIST) as *const i8,
+                        _MM_HINT_T0,
+                    );
                 }
             }
 
@@ -524,7 +549,8 @@ unsafe fn apply_rz_tiled_interleaved(real: &mut [f64], imag: &mut [f64], qubit: 
                 k += 4;
             }
             while k < te {
-                let r = real[k]; let im = imag[k];
+                let r = real[k];
+                let im = imag[k];
                 real[k] = r * cn - im * sn;
                 imag[k] = r * sn + im * cn;
                 k += 1;
@@ -541,8 +567,14 @@ unsafe fn apply_rz_tiled_interleaved(real: &mut [f64], imag: &mut [f64], qubit: 
 
             if te + PREFETCH_DIST < b1_end {
                 unsafe {
-                    _mm_prefetch(real.as_ptr().add(te + PREFETCH_DIST) as *const i8, _MM_HINT_T0);
-                    _mm_prefetch(imag.as_ptr().add(te + PREFETCH_DIST) as *const i8, _MM_HINT_T0);
+                    _mm_prefetch(
+                        real.as_ptr().add(te + PREFETCH_DIST) as *const i8,
+                        _MM_HINT_T0,
+                    );
+                    _mm_prefetch(
+                        imag.as_ptr().add(te + PREFETCH_DIST) as *const i8,
+                        _MM_HINT_T0,
+                    );
                 }
             }
 
@@ -557,7 +589,8 @@ unsafe fn apply_rz_tiled_interleaved(real: &mut [f64], imag: &mut [f64], qubit: 
                 k += 4;
             }
             while k < te {
-                let r = real[k]; let im = imag[k];
+                let r = real[k];
+                let im = imag[k];
                 real[k] = r * cp - im * sp;
                 imag[k] = r * sp + im * cp;
                 k += 1;
@@ -585,7 +618,10 @@ mod tests {
     }
 
     fn norm_sq(real: &[f64], imag: &[f64]) -> f64 {
-        real.iter().zip(imag.iter()).map(|(&r, &i)| r * r + i * i).sum()
+        real.iter()
+            .zip(imag.iter())
+            .map(|(&r, &i)| r * r + i * i)
+            .sum()
     }
 
     #[test]
@@ -598,8 +634,18 @@ mod tests {
         tiled_apply_ry(&mut r_tiled, &mut i_tiled, 3, theta);
 
         for k in 0..1024 {
-            assert!((r_std[k] - r_tiled[k]).abs() < 1e-12, "k={}: re mismatch: {} vs {}", k, r_std[k], r_tiled[k]);
-            assert!((i_std[k] - i_tiled[k]).abs() < 1e-12, "k={}: im mismatch", k);
+            assert!(
+                (r_std[k] - r_tiled[k]).abs() < 1e-12,
+                "k={}: re mismatch: {} vs {}",
+                k,
+                r_std[k],
+                r_tiled[k]
+            );
+            assert!(
+                (i_std[k] - i_tiled[k]).abs() < 1e-12,
+                "k={}: im mismatch",
+                k
+            );
         }
     }
 
@@ -613,8 +659,12 @@ mod tests {
         tiled_apply_ry(&mut real, &mut imag, 18, 0.77);
         let norm_after = norm_sq(&real, &imag);
 
-        assert!((norm_before - norm_after).abs() < 1e-8,
-            "Norm not preserved: before={}, after={}", norm_before, norm_after);
+        assert!(
+            (norm_before - norm_after).abs() < 1e-8,
+            "Norm not preserved: before={}, after={}",
+            norm_before,
+            norm_after
+        );
     }
 
     #[test]
@@ -626,8 +676,12 @@ mod tests {
         tiled_apply_rz(&mut real, &mut imag, 17, 1.21);
         let norm_after = norm_sq(&real, &imag);
 
-        assert!((norm_before - norm_after).abs() < 1e-8,
-            "Norm not preserved: before={}, after={}", norm_before, norm_after);
+        assert!(
+            (norm_before - norm_after).abs() < 1e-8,
+            "Norm not preserved: before={}, after={}",
+            norm_before,
+            norm_after
+        );
     }
 
     #[test]
@@ -650,10 +704,20 @@ mod tests {
         apply_layer_fused(&mut r_fused, &mut i_fused, &theta_ry, &theta_rz);
 
         for k in 0..dim {
-            assert!((r_seq[k] - r_fused[k]).abs() < 1e-10,
-                "k={}: real mismatch: seq={}, fused={}", k, r_seq[k], r_fused[k]);
-            assert!((i_seq[k] - i_fused[k]).abs() < 1e-10,
-                "k={}: imag mismatch: seq={}, fused={}", k, i_seq[k], i_fused[k]);
+            assert!(
+                (r_seq[k] - r_fused[k]).abs() < 1e-10,
+                "k={}: real mismatch: seq={}, fused={}",
+                k,
+                r_seq[k],
+                r_fused[k]
+            );
+            assert!(
+                (i_seq[k] - i_fused[k]).abs() < 1e-10,
+                "k={}: imag mismatch: seq={}, fused={}",
+                k,
+                i_seq[k],
+                i_fused[k]
+            );
         }
     }
 
@@ -666,8 +730,11 @@ mod tests {
         tiled_apply_cz(&mut r_tiled, &mut i_tiled, 2, 5);
 
         for k in 0..512 {
-            assert!((r_std[k] - r_tiled[k]).abs() < 1e-14,
-                "k={}: CZ real mismatch", k);
+            assert!(
+                (r_std[k] - r_tiled[k]).abs() < 1e-14,
+                "k={}: CZ real mismatch",
+                k
+            );
         }
     }
 }

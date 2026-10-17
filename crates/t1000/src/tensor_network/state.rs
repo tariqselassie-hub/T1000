@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use num_complex::Complex64;
+use std::collections::HashMap;
 
 /// 2D Planar Lattice Topologies.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -209,7 +209,10 @@ impl SiteTensor {
     }
 
     pub fn neighbor_bond_dim(&self, nbr: usize) -> Option<usize> {
-        self.neighbors.iter().position(|&x| x == nbr).map(|pos| self.bond_dims[pos])
+        self.neighbors
+            .iter()
+            .position(|&x| x == nbr)
+            .map(|pos| self.bond_dims[pos])
     }
 
     pub fn neighbor_bond_pos(&self, nbr: usize) -> Option<usize> {
@@ -374,7 +377,10 @@ mod tests {
 
     #[test]
     fn test_square_grid_topology_4x4() {
-        let topo = LatticeTopology::SquareGrid { width: 4, height: 4 };
+        let topo = LatticeTopology::SquareGrid {
+            width: 4,
+            height: 4,
+        };
         assert_eq!(topo.num_qubits(), 16);
         assert_eq!(topo.neighbors(0), vec![1, 4]); // Corner (deg 2)
         assert_eq!(topo.neighbors(1), vec![0, 2, 5]); // Edge (deg 3)
@@ -384,31 +390,49 @@ mod tests {
 
     #[test]
     fn test_heavy_hex_topology_bounds() {
-        let topo = LatticeTopology::HeavyHex { width: 3, height: 3 };
+        let topo = LatticeTopology::HeavyHex {
+            width: 3,
+            height: 3,
+        };
         let n = topo.num_qubits();
         assert!(n > 9);
         for i in 0..n {
             let deg = topo.neighbors(i).len();
-            assert!(deg <= 3, "heavy-hex site {i} exceeds max coordination 3 (got {deg})");
+            assert!(
+                deg <= 3,
+                "heavy-hex site {i} exceeds max coordination 3 (got {deg})"
+            );
         }
     }
 
     #[test]
     fn test_planar_tensor_network_initialization_36_qubits() {
-        let topo = LatticeTopology::SquareGrid { width: 6, height: 6 };
+        let topo = LatticeTopology::SquareGrid {
+            width: 6,
+            height: 6,
+        };
         let tn = PlanarTensorNetwork::new_product_state(topo, 16);
         assert_eq!(tn.num_qubits(), 36);
         assert_eq!(tn.bonds.len(), 60); // 6*5 + 6*5 = 60 edges
 
         // Check memory consumption for initial state
         let mem = tn.memory_bytes();
-        assert!(mem < 50_000, "Initial product state memory must be < 50 KB (was {mem} bytes)");
+        assert!(
+            mem < 50_000,
+            "Initial product state memory must be < 50 KB (was {mem} bytes)"
+        );
         assert!(tn.validate_integrity().is_ok());
 
         // Verify state is |0>
         for site in &tn.sites {
-            assert_eq!(site.get_elem(0, &vec![0; site.neighbors.len()]), Complex64::new(1.0, 0.0));
-            assert_eq!(site.get_elem(1, &vec![0; site.neighbors.len()]), Complex64::new(0.0, 0.0));
+            assert_eq!(
+                site.get_elem(0, &vec![0; site.neighbors.len()]),
+                Complex64::new(1.0, 0.0)
+            );
+            assert_eq!(
+                site.get_elem(1, &vec![0; site.neighbors.len()]),
+                Complex64::new(0.0, 0.0)
+            );
         }
     }
 }

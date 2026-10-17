@@ -26,9 +26,8 @@ pub use guards::{
     MAX_FUSED_READOUT_QUBITS,
 };
 pub use measurements::{
-    measure_2qubit_pauli_correlators, measure_dual_zx_expectations,
-    measure_fused_ry_full_readout, measure_fused_ry_z_readout, measure_single_qubit_z,
-    measure_zz_correlators,
+    measure_2qubit_pauli_correlators, measure_dual_zx_expectations, measure_fused_ry_full_readout,
+    measure_fused_ry_z_readout, measure_single_qubit_z, measure_zz_correlators,
 };
 pub use model::{SimdBackend, SimdStateView, SimdStateViewMut};
 pub use rotations::{apply_cz_kernel, apply_ry_kernel, apply_rz_kernel};

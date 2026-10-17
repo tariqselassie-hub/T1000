@@ -9,10 +9,11 @@ pub mod fusion;
 pub mod op;
 pub mod scheduler;
 
+use crate::state::QuantumState;
 pub use dag::{CircuitDag, DagNode};
 pub use executor::{
-    apply_anticnot_op, apply_cnot_op, apply_controlled_phase_op, apply_hadamard_op,
-    apply_swap_op, apply_unitary2x2_op, CompiledCircuit, CompilerTelemetry,
+    apply_anticnot_op, apply_cnot_op, apply_controlled_phase_op, apply_hadamard_op, apply_swap_op,
+    apply_unitary2x2_op, CompiledCircuit, CompilerTelemetry,
 };
 pub use fusion::{optimize_dag_fusion, FusionStats};
 pub use op::{CircuitOp, Unitary2x2};
@@ -20,7 +21,6 @@ pub use scheduler::{
     compute_asap_alap, schedule_circuit_dag, schedule_circuit_dag_with_coherence_dd,
     AsapAlapSchedule, CoherenceScheduleTelemetry, ScheduledStage, StageKind,
 };
-use crate::state::QuantumState;
 
 /// Fluent builder for constructing quantum circuits and compiling through the DAG optimizer.
 #[derive(Debug, Clone)]
@@ -178,14 +178,29 @@ impl CircuitBuilder {
     }
 
     /// Appends a Bernstein-Vazirani parity oracle and measurement preparation.
-    pub fn bernstein_vazirani(&mut self, qubits: &[usize], ancilla: usize, hidden_mask: usize) -> &mut Self {
+    pub fn bernstein_vazirani(
+        &mut self,
+        qubits: &[usize],
+        ancilla: usize,
+        hidden_mask: usize,
+    ) -> &mut Self {
         crate::canonical::build_bernstein_vazirani(self, qubits, ancilla, hidden_mask);
         self
     }
 
     /// Appends Quantum Phase Estimation (QPE) kernel.
-    pub fn qpe(&mut self, precision_qubits: &[usize], target_qubit: usize, phase_phi: f64) -> &mut Self {
-        crate::canonical::build_quantum_phase_estimation(self, precision_qubits, target_qubit, phase_phi);
+    pub fn qpe(
+        &mut self,
+        precision_qubits: &[usize],
+        target_qubit: usize,
+        phase_phi: f64,
+    ) -> &mut Self {
+        crate::canonical::build_quantum_phase_estimation(
+            self,
+            precision_qubits,
+            target_qubit,
+            phase_phi,
+        );
         self
     }
 
@@ -210,7 +225,14 @@ impl CircuitBuilder {
         h_transverse: f64,
         dt: f64,
     ) -> &mut Self {
-        crate::canonical::build_trotter_ising_step(self, qubit_pairs, qubits, j_coupling, h_transverse, dt);
+        crate::canonical::build_trotter_ising_step(
+            self,
+            qubit_pairs,
+            qubits,
+            j_coupling,
+            h_transverse,
+            dt,
+        );
         self
     }
 
@@ -269,12 +291,21 @@ mod tests {
     fn test_dag_dependency_tracking() {
         let mut builder = CircuitBuilder::new(4);
         // Qubit 0 and Qubit 1 gates: disjoint, independent
-        let id0 = builder.dag.add_op(CircuitOp::Ry { qubit: 0, theta: 0.5 });
-        let id1 = builder.dag.add_op(CircuitOp::Ry { qubit: 1, theta: 0.8 });
+        let id0 = builder.dag.add_op(CircuitOp::Ry {
+            qubit: 0,
+            theta: 0.5,
+        });
+        let id1 = builder.dag.add_op(CircuitOp::Ry {
+            qubit: 1,
+            theta: 0.8,
+        });
         // CZ on (0, 1): depends on both id0 and id1
         let id2 = builder.dag.add_op(CircuitOp::CZ { q1: 0, q2: 1 });
         // Ry on qubit 2: completely independent of id0, id1, id2
-        let id3 = builder.dag.add_op(CircuitOp::Ry { qubit: 2, theta: 1.2 });
+        let id3 = builder.dag.add_op(CircuitOp::Ry {
+            qubit: 2,
+            theta: 1.2,
+        });
 
         assert!(builder.dag.are_independent(id0, id1));
         assert!(builder.dag.are_independent(id0, id3));
@@ -307,7 +338,11 @@ mod tests {
         compiled.execute(&mut state_compiled);
 
         let fid = state_raw.fidelity(&state_compiled);
-        assert!((fid - 1.0).abs() < 1e-12, "Fidelity delta exceeds tolerance: {}", fid);
+        assert!(
+            (fid - 1.0).abs() < 1e-12,
+            "Fidelity delta exceeds tolerance: {}",
+            fid
+        );
     }
 
     #[test]
@@ -393,7 +428,10 @@ mod tests {
         // AntiCNOT chain: Q0=1 -> Q1=0 -> Q2=1 -> Q3=0 -> |0101> (idx = 1010b in little-endian wire order)
         // With wire 0 as LSB: bit 0 is 1, bit 1 is 0, bit 2 is 1, bit 3 is 0 => 1 + 4 = 5 (0101b = 5)
         let prob_5 = state.real[5] * state.real[5] + state.imag[5] * state.imag[5];
-        assert!((prob_5 - 1.0).abs() < 1e-6, "Expected state |0101> prob 1.0, got {}", prob_5);
+        assert!(
+            (prob_5 - 1.0).abs() < 1e-6,
+            "Expected state |0101> prob 1.0, got {}",
+            prob_5
+        );
     }
 }
-

@@ -9,10 +9,10 @@
 //! - Circuit compiler telemetry (DAG fusion, stage count, cache pass reduction).
 //! - Hardware and timing latency metrics.
 
-use serde::{Deserialize, Serialize};
 use crate::coherence::{compute_coherence_metrics, CoherenceMetrics};
 use crate::compiler::CompilerTelemetry;
 use crate::state::QuantumState;
+use serde::{Deserialize, Serialize};
 use t1000_core::porter_thomas::{verify_porter_thomas, PorterThomasReport};
 
 /// Comprehensive unified telemetry report for quantum states and circuit evolutions.
@@ -83,29 +83,69 @@ impl QuantumTelemetryReport {
         out.push_str("┌──────────────────────────────────────────────────────────────┐\n");
         out.push_str("│             T-1000 QUANTUM TELEMETRY REPORT                  │\n");
         out.push_str("├──────────────────────────────┬───────────────────────────────┤\n");
-        out.push_str(&format!("│ Qubit Count / State Dim      │ {:>2} Qubits ({:>10} states) │\n", self.n_qubits, self.register_dim));
-        out.push_str(&format!("│ State Purity Tr(rho^2)       │ {:>29.6} │\n", self.coherence.purity));
-        out.push_str(&format!("│ Normalized Coherence C_norm  │ {:>29.6} │\n", self.coherence.l1_normalized));
-        out.push_str(&format!("│ Bipartite Entropy (bits)     │ {:>29.6} │\n", self.coherence.von_neumann_entropy));
-        out.push_str(&format!("│ Shannon Entropy (nats)       │ {:>29.6} │\n", self.coherence.shannon_entropy_nats));
+        out.push_str(&format!(
+            "│ Qubit Count / State Dim      │ {:>2} Qubits ({:>10} states) │\n",
+            self.n_qubits, self.register_dim
+        ));
+        out.push_str(&format!(
+            "│ State Purity Tr(rho^2)       │ {:>29.6} │\n",
+            self.coherence.purity
+        ));
+        out.push_str(&format!(
+            "│ Normalized Coherence C_norm  │ {:>29.6} │\n",
+            self.coherence.l1_normalized
+        ));
+        out.push_str(&format!(
+            "│ Bipartite Entropy (bits)     │ {:>29.6} │\n",
+            self.coherence.von_neumann_entropy
+        ));
+        out.push_str(&format!(
+            "│ Shannon Entropy (nats)       │ {:>29.6} │\n",
+            self.coherence.shannon_entropy_nats
+        ));
 
         if let Some(ref pt) = self.porter_thomas {
             out.push_str("├──────────────────────────────┼───────────────────────────────┤\n");
-            out.push_str(&format!("│ Exact Linear XEB Fidelity    │ {:>29.6} │\n", pt.exact_xeb));
-            out.push_str(&format!("│ Kolmogorov-Smirnov Distance  │ {:>29.6} │\n", pt.ks_statistic));
-            out.push_str(&format!("│ Porter-Thomas Conformity     │ {:>29} │\n", if pt.is_porter_thomas_conforming { "CONFORMS (PASSED)" } else { "NON-CONFORMANT" }));
+            out.push_str(&format!(
+                "│ Exact Linear XEB Fidelity    │ {:>29.6} │\n",
+                pt.exact_xeb
+            ));
+            out.push_str(&format!(
+                "│ Kolmogorov-Smirnov Distance  │ {:>29.6} │\n",
+                pt.ks_statistic
+            ));
+            out.push_str(&format!(
+                "│ Porter-Thomas Conformity     │ {:>29} │\n",
+                if pt.is_porter_thomas_conforming {
+                    "CONFORMS (PASSED)"
+                } else {
+                    "NON-CONFORMANT"
+                }
+            ));
         }
 
         if let Some(ref cmp) = self.compiler {
             out.push_str("├──────────────────────────────┼───────────────────────────────┤\n");
-            out.push_str(&format!("│ Raw Ops -> Fused Ops         │ {:>13} -> {:>12} │\n", cmp.raw_ops, cmp.fused_ops));
-            out.push_str(&format!("│ Grouped Execution Stages     │ {:>29} │\n", cmp.stage_count));
-            out.push_str(&format!("│ Cache Pass Reduction         │ {:>28.2}% │\n", cmp.cache_pass_reduction_pct));
+            out.push_str(&format!(
+                "│ Raw Ops -> Fused Ops         │ {:>13} -> {:>12} │\n",
+                cmp.raw_ops, cmp.fused_ops
+            ));
+            out.push_str(&format!(
+                "│ Grouped Execution Stages     │ {:>29} │\n",
+                cmp.stage_count
+            ));
+            out.push_str(&format!(
+                "│ Cache Pass Reduction         │ {:>28.2}% │\n",
+                cmp.cache_pass_reduction_pct
+            ));
         }
 
         if self.execution_time_us > 0.0 {
             out.push_str("├──────────────────────────────┼───────────────────────────────┤\n");
-            out.push_str(&format!("│ Execution Latency            │ {:>26.2} us │\n", self.execution_time_us));
+            out.push_str(&format!(
+                "│ Execution Latency            │ {:>26.2} us │\n",
+                self.execution_time_us
+            ));
         }
 
         out.push_str("└──────────────────────────────┴───────────────────────────────┘\n");

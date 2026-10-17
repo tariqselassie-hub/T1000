@@ -16,15 +16,22 @@
 //! mean +/- std over seeds, plus the classical baseline bar) go to
 //! `tests/benchmarks/zinc_molecular/reports/qnn_protocol/<name>.json`.
 
-use t1000::protocol::{aggregate, compute_feature_set, dedupe_by_smiles, load_zinc_csv, DataSplit, MeanStd, SplitMethod};
-use t1000::trainer::{train_on_split, Encoding, Readout, TrainConfig, TrainRun};
 use serde::Serialize;
 use std::fs;
 use std::path::PathBuf;
+use t1000::protocol::{
+    aggregate, compute_feature_set, dedupe_by_smiles, load_zinc_csv, DataSplit, MeanStd,
+    SplitMethod,
+};
+use t1000::trainer::{train_on_split, Encoding, Readout, TrainConfig, TrainRun};
 
 fn workspace(rel: &str) -> PathBuf {
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    manifest_dir.ancestors().nth(3).unwrap_or(&manifest_dir).join(rel)
+    manifest_dir
+        .ancestors()
+        .nth(3)
+        .unwrap_or(&manifest_dir)
+        .join(rel)
 }
 
 fn fail(msg: impl std::fmt::Display) -> ! {
@@ -52,17 +59,29 @@ struct SummaryRow {
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
-    let value = |flag: &str| args.iter().position(|a| a == flag).and_then(|i| args.get(i + 1)).cloned();
+    let value = |flag: &str| {
+        args.iter()
+            .position(|a| a == flag)
+            .and_then(|i| args.get(i + 1))
+            .cloned()
+    };
     let has = |flag: &str| args.iter().any(|a| a == flag);
 
     let mut cfg = match value("--config") {
         Some(path) => {
-            let text = fs::read_to_string(&path).unwrap_or_else(|e| fail(format!("read {path}: {e}")));
-            serde_json::from_str::<TrainConfig>(&text).unwrap_or_else(|e| fail(format!("parse {path}: {e}")))
+            let text =
+                fs::read_to_string(&path).unwrap_or_else(|e| fail(format!("read {path}: {e}")));
+            serde_json::from_str::<TrainConfig>(&text)
+                .unwrap_or_else(|e| fail(format!("parse {path}: {e}")))
         }
         None => TrainConfig::default(),
     };
-    let parse = |flag: &str| value(flag).map(|v| v.parse::<f64>().unwrap_or_else(|_| fail(format!("bad {flag}: {v}"))));
+    let parse = |flag: &str| {
+        value(flag).map(|v| {
+            v.parse::<f64>()
+                .unwrap_or_else(|_| fail(format!("bad {flag}: {v}")))
+        })
+    };
     if let Some(v) = value("--name") {
         cfg.name = v;
     }
@@ -117,7 +136,10 @@ fn main() {
 
     // Pool, features and stored splits.
     let mut pool = Vec::new();
-    for src in ["tests/benchmarks/zinc_molecular/data/zinc_train_10k.csv", "tests/benchmarks/zinc_molecular/data/zinc_test_2k.csv"] {
+    for src in [
+        "tests/benchmarks/zinc_molecular/data/zinc_train_10k.csv",
+        "tests/benchmarks/zinc_molecular/data/zinc_test_2k.csv",
+    ] {
         pool.extend(load_zinc_csv(&workspace(src)).unwrap_or_else(|e| fail(e)));
     }
     let pool = dedupe_by_smiles(pool);
@@ -129,17 +151,31 @@ fn main() {
             SplitMethod::Scaffold => "scaffold",
         };
         for seed in 0..3 {
-            let path = workspace(&format!("tests/benchmarks/zinc_molecular/splits/zinc12k_{tag}_seed{seed}.json"));
-            let text = fs::read_to_string(&path)
-                .unwrap_or_else(|_| fail(format!("{} missing; run zinc_protocol first", path.display())));
-            splits.push(serde_json::from_str(&text).unwrap_or_else(|e| fail(format!("parse {}: {e}", path.display()))));
+            let path = workspace(&format!(
+                "tests/benchmarks/zinc_molecular/splits/zinc12k_{tag}_seed{seed}.json"
+            ));
+            let text = fs::read_to_string(&path).unwrap_or_else(|_| {
+                fail(format!(
+                    "{} missing; run zinc_protocol first",
+                    path.display()
+                ))
+            });
+            splits.push(
+                serde_json::from_str(&text)
+                    .unwrap_or_else(|e| fail(format!("parse {}: {e}", path.display()))),
+            );
         }
     }
 
     println!("=========================================================================");
     println!(" QNN UNDER THE ZINC PROTOCOL: {}", cfg.name);
     println!("=========================================================================");
-    println!("  features {} ({} dims) | {:?}", cfg.features, features[0].len(), cfg.model);
+    println!(
+        "  features {} ({} dims) | {:?}",
+        cfg.features,
+        features[0].len(),
+        cfg.model
+    );
     println!(
         "  epochs {} | batch {} | lr {} | clip {} | patience {} | {} threads{}",
         cfg.epochs,
@@ -148,15 +184,24 @@ fn main() {
         cfg.max_grad_norm,
         cfg.patience,
         t1000::parallel::num_threads(),
-        max_train.map(|m| format!(" | max-train {m} (NOT protocol-compliant)")).unwrap_or_default()
+        max_train
+            .map(|m| format!(" | max-train {m} (NOT protocol-compliant)"))
+            .unwrap_or_default()
     );
 
     let mut runs = Vec::new();
     for split in &splits {
         println!("\n  [{}]", split.name);
-        let run = train_on_split(&cfg, &features, &pool, split, max_train, |line| println!("{line}"))
-            .unwrap_or_else(|e| fail(e));
-        let r2 = |m: &[t1000::baselines::TargetMetrics]| m.iter().map(|t| format!("{:.3}", t.r2)).collect::<Vec<_>>().join(" / ");
+        let run = train_on_split(&cfg, &features, &pool, split, max_train, |line| {
+            println!("{line}")
+        })
+        .unwrap_or_else(|e| fail(e));
+        let r2 = |m: &[t1000::baselines::TargetMetrics]| {
+            m.iter()
+                .map(|t| format!("{:.3}", t.r2))
+                .collect::<Vec<_>>()
+                .join(" / ")
+        };
         println!(
             "    best epoch {} of {} | valid R2 {} | test R2 {} | {} params",
             run.best_epoch,
@@ -169,18 +214,41 @@ fn main() {
     }
 
     // Summary and comparison with the classical bar.
-    let baseline_path = workspace("tests/benchmarks/zinc_molecular/reports/zinc_protocol_baselines.json");
-    let baselines: Option<serde_json::Value> =
-        fs::read_to_string(&baseline_path).ok().and_then(|t| serde_json::from_str(&t).ok());
+    let baseline_path =
+        workspace("tests/benchmarks/zinc_molecular/reports/zinc_protocol_baselines.json");
+    let baselines: Option<serde_json::Value> = fs::read_to_string(&baseline_path)
+        .ok()
+        .and_then(|t| serde_json::from_str(&t).ok());
     let mut summary = Vec::new();
     for method in &methods {
-        let mine: Vec<&TrainRun> = runs.iter().filter(|r| splits.iter().any(|s| s.name == r.split && s.method == *method)).collect();
+        let mine: Vec<&TrainRun> = runs
+            .iter()
+            .filter(|r| {
+                splits
+                    .iter()
+                    .any(|s| s.name == r.split && s.method == *method)
+            })
+            .collect();
         let tests: Vec<_> = mine.iter().map(|r| r.test.clone()).collect();
         let agg = aggregate(*method, &tests).remove(0);
-        let valid_r2 = (0..3).map(|t| MeanStd::of(&mine.iter().map(|r| r.valid[t].r2).collect::<Vec<_>>())).collect();
-        println!("\n  {method:?} splits, mean +/- std over {} seeds (test R2: logP / QED / SAS)", mine.len());
-        let cells = |v: &[MeanStd]| v.iter().map(|m| format!("{:.3} +/- {:.3}", m.mean, m.std)).collect::<Vec<_>>().join(" | ");
-        println!("    {:<44} {}", format!("QNN: {}", cfg.name), cells(&agg.r2));
+        let valid_r2 = (0..3)
+            .map(|t| MeanStd::of(&mine.iter().map(|r| r.valid[t].r2).collect::<Vec<_>>()))
+            .collect();
+        println!(
+            "\n  {method:?} splits, mean +/- std over {} seeds (test R2: logP / QED / SAS)",
+            mine.len()
+        );
+        let cells = |v: &[MeanStd]| {
+            v.iter()
+                .map(|m| format!("{:.3} +/- {:.3}", m.mean, m.std))
+                .collect::<Vec<_>>()
+                .join(" | ")
+        };
+        println!(
+            "    {:<44} {}",
+            format!("QNN: {}", cfg.name),
+            cells(&agg.r2)
+        );
         if let Some(b) = &baselines {
             let tag = match method {
                 SplitMethod::Random => "random",
@@ -188,25 +256,48 @@ fn main() {
             };
             for row in b["summary"].as_array().into_iter().flatten() {
                 let wanted = row["method"] == tag
-                    && ((row["model"] == "Ridge (linear)" && row["features"] == cfg.features.as_str())
-                        || (row["model"] == "Ridge (linear)" && row["features"] == "quad_descriptors+ecfp4")
+                    && ((row["model"] == "Ridge (linear)"
+                        && row["features"] == cfg.features.as_str())
+                        || (row["model"] == "Ridge (linear)"
+                            && row["features"] == "quad_descriptors+ecfp4")
                         || row["model"] == "Mean predictor");
                 if wanted {
-                    let r2: Vec<MeanStd> = serde_json::from_value(row["r2"].clone()).unwrap_or_default();
+                    let r2: Vec<MeanStd> =
+                        serde_json::from_value(row["r2"].clone()).unwrap_or_default();
                     if r2.len() == 3 {
-                        let label = format!("Classical: {} [{}]", row["model"].as_str().unwrap_or(""), row["features"].as_str().unwrap_or(""));
+                        let label = format!(
+                            "Classical: {} [{}]",
+                            row["model"].as_str().unwrap_or(""),
+                            row["features"].as_str().unwrap_or("")
+                        );
                         println!("    {:<44} {}", label, cells(&r2));
                     }
                 }
             }
         }
-        summary.push(SummaryRow { method: *method, seeds: mine.len(), valid_r2, test_r2: agg.r2, test_mae: agg.mae });
+        summary.push(SummaryRow {
+            method: *method,
+            seeds: mine.len(),
+            valid_r2,
+            test_r2: agg.r2,
+            test_mae: agg.mae,
+        });
     }
 
-    let report = Report { config: cfg.clone(), protocol_compliant: max_train.is_none(), max_train, runs, summary };
+    let report = Report {
+        config: cfg.clone(),
+        protocol_compliant: max_train.is_none(),
+        max_train,
+        runs,
+        summary,
+    };
     let out_dir = workspace("tests/benchmarks/zinc_molecular/reports/qnn_protocol");
     fs::create_dir_all(&out_dir).unwrap_or_else(|e| fail(e));
     let out = out_dir.join(format!("{}.json", cfg.name));
-    fs::write(&out, serde_json::to_string_pretty(&report).expect("serialize")).unwrap_or_else(|e| fail(e));
+    fs::write(
+        &out,
+        serde_json::to_string_pretty(&report).expect("serialize"),
+    )
+    .unwrap_or_else(|e| fail(e));
     println!("\n[OK] report written to {}", out.display());
 }

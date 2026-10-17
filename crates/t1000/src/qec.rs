@@ -11,8 +11,8 @@
 //! - Canonical look-up table Pauli recovery operators ($X_k, Z_k, Y_k$).
 //! - Realistic Pauli channel error injection for benchmarking noise robustness.
 
-use serde::{Deserialize, Serialize};
 use crate::state::QuantumState;
+use serde::{Deserialize, Serialize};
 
 pub mod vnni;
 
@@ -83,13 +83,20 @@ pub fn encode_logical_state(
 
     // Normalize input amplitudes
     let norm_sq = alpha.0 * alpha.0 + alpha.1 * alpha.1 + beta.0 * beta.0 + beta.1 * beta.1;
-    let inv_norm = if norm_sq > 1e-15 { 1.0 / norm_sq.sqrt() } else { 1.0 };
+    let inv_norm = if norm_sq > 1e-15 {
+        1.0 / norm_sq.sqrt()
+    } else {
+        1.0
+    };
     let a = (alpha.0 * inv_norm, alpha.1 * inv_norm);
     let b = (beta.0 * inv_norm, beta.1 * inv_norm);
 
     match code {
         QecCodeKind::BitFlip3Q => {
-            assert!(offset + 3 <= total_qubits, "BitFlip3Q requires 3 physical qubits");
+            assert!(
+                offset + 3 <= total_qubits,
+                "BitFlip3Q requires 3 physical qubits"
+            );
             // |0_L> = |000>, |1_L> = |111>
             let idx0 = 0usize;
             let idx1 = (1 << offset) | (1 << (offset + 1)) | (1 << (offset + 2));
@@ -100,7 +107,10 @@ pub fn encode_logical_state(
             state.imag[idx1] = b.1;
         }
         QecCodeKind::PhaseFlip3Q => {
-            assert!(offset + 3 <= total_qubits, "PhaseFlip3Q requires 3 physical qubits");
+            assert!(
+                offset + 3 <= total_qubits,
+                "PhaseFlip3Q requires 3 physical qubits"
+            );
             // |0_L> = |+++> = 1/2*sqrt(2) (|000> + |001> + ... + |111>)
             // |1_L> = |---> = 1/2*sqrt(2) sum (-1)^wt |x>
             state.real[0] = 0.0;
@@ -119,7 +129,10 @@ pub fn encode_logical_state(
             }
         }
         QecCodeKind::Steane7Q => {
-            assert!(offset + 7 <= total_qubits, "Steane7Q requires 7 physical qubits");
+            assert!(
+                offset + 7 <= total_qubits,
+                "Steane7Q requires 7 physical qubits"
+            );
             // Steane [[7,1,3]] code codewords:
             // The 8 codewords of the dual [7,3,4] simplex code C^\perp spanned by rows of H:
             // r1 = bits 3,4,5,6 (120)
@@ -142,7 +155,10 @@ pub fn encode_logical_state(
             }
         }
         QecCodeKind::SurfaceCode9Q => {
-            assert!(offset + 9 <= total_qubits, "SurfaceCode9Q requires 9 physical qubits");
+            assert!(
+                offset + 9 <= total_qubits,
+                "SurfaceCode9Q requires 9 physical qubits"
+            );
             state.real[0] = 0.0;
             let norm = 0.25f64; // 1 / sqrt(16)
             for &w in &SURFACE_9Q_WORDS {
@@ -243,13 +259,19 @@ pub fn extract_syndrome(state: &QuantumState, code: QecCodeKind, offset: usize) 
             // Steane 6 stabilizer generators:
             // Z-stabilizers detect X errors: S_z1 = Z3 Z4 Z5 Z6, S_z2 = Z1 Z2 Z5 Z6, S_z3 = Z0 Z2 Z4 Z6
             // X-stabilizers detect Z errors: S_x1 = X3 X4 X5 X6, S_x2 = X1 X2 X5 X6, S_x3 = X0 X2 X4 X6
-            let sz1 = measure_pauli_multi_z(state, &[offset + 3, offset + 4, offset + 5, offset + 6]);
-            let sz2 = measure_pauli_multi_z(state, &[offset + 1, offset + 2, offset + 5, offset + 6]);
-            let sz3 = measure_pauli_multi_z(state, &[offset + 0, offset + 2, offset + 4, offset + 6]);
+            let sz1 =
+                measure_pauli_multi_z(state, &[offset + 3, offset + 4, offset + 5, offset + 6]);
+            let sz2 =
+                measure_pauli_multi_z(state, &[offset + 1, offset + 2, offset + 5, offset + 6]);
+            let sz3 =
+                measure_pauli_multi_z(state, &[offset + 0, offset + 2, offset + 4, offset + 6]);
 
-            let sx1 = measure_pauli_multi_x(state, &[offset + 3, offset + 4, offset + 5, offset + 6]);
-            let sx2 = measure_pauli_multi_x(state, &[offset + 1, offset + 2, offset + 5, offset + 6]);
-            let sx3 = measure_pauli_multi_x(state, &[offset + 0, offset + 2, offset + 4, offset + 6]);
+            let sx1 =
+                measure_pauli_multi_x(state, &[offset + 3, offset + 4, offset + 5, offset + 6]);
+            let sx2 =
+                measure_pauli_multi_x(state, &[offset + 1, offset + 2, offset + 5, offset + 6]);
+            let sx3 =
+                measure_pauli_multi_x(state, &[offset + 0, offset + 2, offset + 4, offset + 6]);
 
             let bits = vec![sz1, sz2, sz3, sx1, sx2, sx3];
 
@@ -262,10 +284,18 @@ pub fn extract_syndrome(state: &QuantumState, code: QecCodeKind, offset: usize) 
                 (false, None, None)
             } else if z_idx > 0 && x_idx == 0 {
                 // Pure Bit-Flip X on qubit (z_idx - 1)
-                (true, Some(offset + (z_idx - 1)), Some(PauliErrorKind::BitFlip))
+                (
+                    true,
+                    Some(offset + (z_idx - 1)),
+                    Some(PauliErrorKind::BitFlip),
+                )
             } else if z_idx == 0 && x_idx > 0 {
                 // Pure Phase-Flip Z on qubit (x_idx - 1)
-                (true, Some(offset + (x_idx - 1)), Some(PauliErrorKind::PhaseFlip))
+                (
+                    true,
+                    Some(offset + (x_idx - 1)),
+                    Some(PauliErrorKind::PhaseFlip),
+                )
             } else {
                 // Combined Y error (both syndromes fire on same qubit)
                 let q = if z_idx == x_idx { z_idx - 1 } else { z_idx - 1 };
@@ -287,8 +317,10 @@ pub fn extract_syndrome(state: &QuantumState, code: QecCodeKind, offset: usize) 
             // S_z2 = Z3 Z4 Z6 Z7 (bulk bottom-left)
             // S_z3 = Z0 Z3       (left boundary)
             // S_z4 = Z5 Z8       (right boundary)
-            let sz1 = measure_pauli_multi_z(state, &[offset + 1, offset + 2, offset + 4, offset + 5]);
-            let sz2 = measure_pauli_multi_z(state, &[offset + 3, offset + 4, offset + 6, offset + 7]);
+            let sz1 =
+                measure_pauli_multi_z(state, &[offset + 1, offset + 2, offset + 4, offset + 5]);
+            let sz2 =
+                measure_pauli_multi_z(state, &[offset + 3, offset + 4, offset + 6, offset + 7]);
             let sz3 = measure_pauli_multi_z(state, &[offset + 0, offset + 3]);
             let sz4 = measure_pauli_multi_z(state, &[offset + 5, offset + 8]);
 
@@ -297,8 +329,10 @@ pub fn extract_syndrome(state: &QuantumState, code: QecCodeKind, offset: usize) 
             // S_x2 = X4 X5 X7 X8 (bulk bottom-right)
             // S_x3 = X1 X2       (top boundary)
             // S_x4 = X6 X7       (bottom boundary)
-            let sx1 = measure_pauli_multi_x(state, &[offset + 0, offset + 1, offset + 3, offset + 4]);
-            let sx2 = measure_pauli_multi_x(state, &[offset + 4, offset + 5, offset + 7, offset + 8]);
+            let sx1 =
+                measure_pauli_multi_x(state, &[offset + 0, offset + 1, offset + 3, offset + 4]);
+            let sx2 =
+                measure_pauli_multi_x(state, &[offset + 4, offset + 5, offset + 7, offset + 8]);
             let sx3 = measure_pauli_multi_x(state, &[offset + 1, offset + 2]);
             let sx4 = measure_pauli_multi_x(state, &[offset + 6, offset + 7]);
 
@@ -397,7 +431,12 @@ pub fn detect_and_recover(
 
     state.normalize();
     let fid = state.fidelity(reference_clean);
-    let purity = state.real.iter().zip(&state.imag).map(|(&r, &i)| (r * r + i * i).powi(2)).sum();
+    let purity = state
+        .real
+        .iter()
+        .zip(&state.imag)
+        .map(|(&r, &i)| (r * r + i * i).powi(2))
+        .sum();
 
     QecRecoveryResult {
         syndrome,
@@ -421,7 +460,11 @@ fn measure_pauli_zz_parity(state: &QuantumState, qa: usize, qb: usize) -> i8 {
         let sign = if ba ^ bb == 0 { 1.0 } else { -1.0 };
         exp_z += sign * p;
     }
-    if exp_z >= 0.0 { 1 } else { -1 }
+    if exp_z >= 0.0 {
+        1
+    } else {
+        -1
+    }
 }
 
 /// Measures multi-qubit Pauli Z_q1 Z_q2 ... Z_qk expectation value.
@@ -436,7 +479,11 @@ fn measure_pauli_multi_z(state: &QuantumState, qubits: &[usize]) -> i8 {
         let p = state.real[i] * state.real[i] + state.imag[i] * state.imag[i];
         exp_val += sign * p;
     }
-    if exp_val >= 0.0 { 1 } else { -1 }
+    if exp_val >= 0.0 {
+        1
+    } else {
+        -1
+    }
 }
 
 /// Measures Pauli X_a X_b expectation value by rotating to X-basis via Hadamard gates.
@@ -544,7 +591,8 @@ mod tests {
     fn test_bit_flip_3q_recovery_on_all_qubits() {
         let n_qubits = 3;
         // Test arbitrary superposition (0.6 |0> + 0.8 |1>)
-        let clean = encode_logical_state((0.6, 0.0), (0.8, 0.0), QecCodeKind::BitFlip3Q, n_qubits, 0);
+        let clean =
+            encode_logical_state((0.6, 0.0), (0.8, 0.0), QecCodeKind::BitFlip3Q, n_qubits, 0);
 
         for target in 0..3 {
             let mut corrupted = clean.clone();
@@ -555,7 +603,11 @@ mod tests {
 
             // Autonomous detection and recovery
             let res = detect_and_recover(&mut corrupted, &clean, QecCodeKind::BitFlip3Q, 0);
-            assert!(res.success, "Failed to recover bit-flip on qubit {}", target);
+            assert!(
+                res.success,
+                "Failed to recover bit-flip on qubit {}",
+                target
+            );
             assert_eq!(res.syndrome.faulty_qubit, Some(target));
             assert!((res.fidelity_restored - 1.0).abs() < 1e-4);
         }
@@ -564,14 +616,24 @@ mod tests {
     #[test]
     fn test_phase_flip_3q_recovery_on_all_qubits() {
         let n_qubits = 3;
-        let clean = encode_logical_state((0.8, 0.0), (0.6, 0.0), QecCodeKind::PhaseFlip3Q, n_qubits, 0);
+        let clean = encode_logical_state(
+            (0.8, 0.0),
+            (0.6, 0.0),
+            QecCodeKind::PhaseFlip3Q,
+            n_qubits,
+            0,
+        );
 
         for target in 0..3 {
             let mut corrupted = clean.clone();
             inject_pauli_error(&mut corrupted, target, PauliErrorKind::PhaseFlip);
 
             let res = detect_and_recover(&mut corrupted, &clean, QecCodeKind::PhaseFlip3Q, 0);
-            assert!(res.success, "Failed to recover phase-flip on qubit {}", target);
+            assert!(
+                res.success,
+                "Failed to recover phase-flip on qubit {}",
+                target
+            );
             assert_eq!(res.syndrome.faulty_qubit, Some(target));
             assert!((res.fidelity_restored - 1.0).abs() < 1e-4);
         }
@@ -580,7 +642,8 @@ mod tests {
     #[test]
     fn test_steane_7q_recovers_arbitrary_single_qubit_x_and_z() {
         let n_qubits = 7;
-        let clean = encode_logical_state((1.0, 0.0), (0.0, 0.0), QecCodeKind::Steane7Q, n_qubits, 0);
+        let clean =
+            encode_logical_state((1.0, 0.0), (0.0, 0.0), QecCodeKind::Steane7Q, n_qubits, 0);
 
         // Test single X error on qubit 2
         let mut x_err = clean.clone();
@@ -588,7 +651,10 @@ mod tests {
         let res_x = detect_and_recover(&mut x_err, &clean, QecCodeKind::Steane7Q, 0);
         assert!(res_x.success);
         assert_eq!(res_x.syndrome.faulty_qubit, Some(2));
-        assert_eq!(res_x.syndrome.recommended_recovery, Some(PauliErrorKind::BitFlip));
+        assert_eq!(
+            res_x.syndrome.recommended_recovery,
+            Some(PauliErrorKind::BitFlip)
+        );
 
         // Test single Z error on qubit 5
         let mut z_err = clean.clone();
@@ -596,7 +662,10 @@ mod tests {
         let res_z = detect_and_recover(&mut z_err, &clean, QecCodeKind::Steane7Q, 0);
         assert!(res_z.success);
         assert_eq!(res_z.syndrome.faulty_qubit, Some(5));
-        assert_eq!(res_z.syndrome.recommended_recovery, Some(PauliErrorKind::PhaseFlip));
+        assert_eq!(
+            res_z.syndrome.recommended_recovery,
+            Some(PauliErrorKind::PhaseFlip)
+        );
 
         // Test combined Y error on qubit 4
         let mut y_err = clean.clone();
@@ -604,14 +673,23 @@ mod tests {
         let res_y = detect_and_recover(&mut y_err, &clean, QecCodeKind::Steane7Q, 0);
         assert!(res_y.success);
         assert_eq!(res_y.syndrome.faulty_qubit, Some(4));
-        assert_eq!(res_y.syndrome.recommended_recovery, Some(PauliErrorKind::BitPhaseFlip));
+        assert_eq!(
+            res_y.syndrome.recommended_recovery,
+            Some(PauliErrorKind::BitPhaseFlip)
+        );
     }
 
     #[test]
     fn test_surface_code_9q_recovers_all_single_qubit_errors() {
         let n_qubits = 9;
         // Test non-trivial superposition (0.6 |0_L> + 0.8 |1_L>)
-        let clean = encode_logical_state((0.6, 0.0), (0.8, 0.0), QecCodeKind::SurfaceCode9Q, n_qubits, 0);
+        let clean = encode_logical_state(
+            (0.6, 0.0),
+            (0.8, 0.0),
+            QecCodeKind::SurfaceCode9Q,
+            n_qubits,
+            0,
+        );
 
         // Verify clean state satisfies all 8 stabilizers
         let clean_syndrome = extract_syndrome(&clean, QecCodeKind::SurfaceCode9Q, 0);
@@ -685,6 +763,15 @@ pub fn render_surface_code_ascii(report: &SyndromeReport) -> String {
          │   │         [Sz2:{}]    │         [Sx2:{}]  [Sz4:{}]│\n\
          │   │                     │                     │   │\n\
          └── d6 ──── [Sx4:{}] ──── d7 ──── [Sx4:{}] ──── d8 ──┘",
-        f(sx3), f(sx3), f(sz3), f(sx1), f(sz1), f(sz2), f(sx2), f(sz4), f(sx4), f(sx4)
+        f(sx3),
+        f(sx3),
+        f(sz3),
+        f(sx1),
+        f(sz1),
+        f(sz2),
+        f(sx2),
+        f(sz4),
+        f(sx4),
+        f(sx4)
     )
 }

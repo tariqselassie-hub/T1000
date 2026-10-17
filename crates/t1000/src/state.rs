@@ -1,7 +1,7 @@
-use t1000_core::QubitRegister;
 use num_complex::Complex64;
 use serde::{Deserialize, Serialize};
 use std::f64::consts::PI;
+use t1000_core::QubitRegister;
 
 /// Panics unless `dim` is a power of two >= 2 (i.e. a whole number of qubits).
 /// The SIMD gate kernels rely on this layout invariant.
@@ -151,7 +151,11 @@ impl QuantumState {
 
     /// Traces out subsystem B using `t1000_core::PartialTrace`, returning the reduced density matrix of subsystem A.
     pub fn partial_trace_b(&self, dim_a: usize, dim_b: usize) -> Vec<Complex64> {
-        assert_eq!(self.dim, dim_a * dim_b, "State dimension must equal dim_a * dim_b");
+        assert_eq!(
+            self.dim,
+            dim_a * dim_b,
+            "State dimension must equal dim_a * dim_b"
+        );
         let complex_state = self.to_complex_vec();
         t1000_core::PartialTrace::trace_out_b(&complex_state, dim_a, dim_b)
     }
@@ -173,9 +177,8 @@ impl QuantumState {
     /// Returns the L2 norm squared: \sum_i (|re_i|^2 + |im_i|^2) via hardware-accelerated AVX2+FMA.
     #[inline(always)]
     pub fn l2_norm_sq(&self) -> f64 {
-        let (re, _) = crate::simd::inner_product_kernel(
-            &self.real, &self.imag, &self.real, &self.imag,
-        );
+        let (re, _) =
+            crate::simd::inner_product_kernel(&self.real, &self.imag, &self.real, &self.imag);
         re
     }
 
@@ -201,17 +204,15 @@ impl QuantumState {
     /// Hardware-vectorized inner product <self | other> (AVX2 + FMA).
     pub fn inner_product(&self, other: &Self) -> Complex64 {
         assert_eq!(self.dim, other.dim);
-        let (re, im) = crate::simd::inner_product_kernel(
-            &self.real, &self.imag, &other.real, &other.imag,
-        );
+        let (re, im) =
+            crate::simd::inner_product_kernel(&self.real, &self.imag, &other.real, &other.imag);
         Complex64::new(re, im)
     }
 
     /// Quantum fidelity |<self | other>|^2
     pub fn fidelity(&self, other: &Self) -> f64 {
-        let (re, im) = crate::simd::inner_product_kernel(
-            &self.real, &self.imag, &other.real, &other.imag,
-        );
+        let (re, im) =
+            crate::simd::inner_product_kernel(&self.real, &self.imag, &other.real, &other.imag);
         re * re + im * im
     }
 
@@ -434,7 +435,7 @@ mod tests {
         assert_eq!(rho_a.len(), 4);
         assert!((rho_a[0].re - 0.5).abs() < 1e-10); // <0|rho|0> = 0.5
         assert!((rho_a[3].re - 0.5).abs() < 1e-10); // <1|rho|1> = 0.5
-        assert!(rho_a[1].norm() < 1e-10);          // off-diagonal = 0
+        assert!(rho_a[1].norm() < 1e-10); // off-diagonal = 0
         assert!(rho_a[2].norm() < 1e-10);
     }
 

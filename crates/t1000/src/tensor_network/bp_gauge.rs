@@ -1,7 +1,7 @@
-use std::collections::HashMap;
-use num_complex::Complex64;
-use super::linalg::{ComplexMatrix, svd};
+use super::linalg::{svd, ComplexMatrix};
 use super::state::PlanarTensorNetwork;
+use num_complex::Complex64;
+use std::collections::HashMap;
 
 /// Container for directed message matrices M_{u, v} on each directed edge (u, v).
 #[derive(Debug, Clone)]
@@ -66,9 +66,15 @@ pub fn matrix_sqrt_and_inv_sqrt(m: &ComplexMatrix) -> (ComplexMatrix, ComplexMat
     }
 
     // M^{1/2} = U * diag(S^{1/2}) * U^dag
-    let m_sqrt = svd_res.u.matmul(&sqrt_diag).matmul(&svd_res.u.conjugate_transpose());
+    let m_sqrt = svd_res
+        .u
+        .matmul(&sqrt_diag)
+        .matmul(&svd_res.u.conjugate_transpose());
     // M^{-1/2} = U * diag(S^{-1/2}) * U^dag
-    let m_inv_sqrt = svd_res.u.matmul(&inv_sqrt_diag).matmul(&svd_res.u.conjugate_transpose());
+    let m_inv_sqrt = svd_res
+        .u
+        .matmul(&inv_sqrt_diag)
+        .matmul(&svd_res.u.conjugate_transpose());
 
     (m_sqrt, m_inv_sqrt)
 }
@@ -202,7 +208,8 @@ pub fn run_belief_propagation(
             // Forward update M_{u, v}
             let new_m_uv = compute_outgoing_message(tn, &old_messages, u, v);
             let prev_m_uv = old_messages.get(u, v).unwrap();
-            let diff_uv = new_m_uv.data
+            let diff_uv = new_m_uv
+                .data
                 .iter()
                 .zip(&prev_m_uv.data)
                 .map(|(a, b)| (a - b).norm())
@@ -225,7 +232,8 @@ pub fn run_belief_propagation(
             // Backward update M_{v, u}
             let new_m_vu = compute_outgoing_message(tn, &old_messages, v, u);
             let prev_m_vu = old_messages.get(v, u).unwrap();
-            let diff_vu = new_m_vu.data
+            let diff_vu = new_m_vu
+                .data
                 .iter()
                 .zip(&prev_m_vu.data)
                 .map(|(a, b)| (a - b).norm())
@@ -303,12 +311,8 @@ pub fn gauge_into_vidal(tn: &mut PlanarTensorNetwork, messages: &BpMessageSet) {
                 let dim = site.bond_dims[bond_pos];
                 if dim > 1 && x_mat.rows == dim && x_mat.cols == dim {
                     // Contract index bond_pos with x_mat
-                    transformed_data = contract_bond_with_matrix(
-                        &site,
-                        bond_pos,
-                        x_mat,
-                        &transformed_data,
-                    );
+                    transformed_data =
+                        contract_bond_with_matrix(&site, bond_pos, x_mat, &transformed_data);
                 }
             }
         }
@@ -415,7 +419,10 @@ mod tests {
 
     #[test]
     fn test_bp_message_set_initialization() {
-        let topo = LatticeTopology::SquareGrid { width: 3, height: 3 };
+        let topo = LatticeTopology::SquareGrid {
+            width: 3,
+            height: 3,
+        };
         let tn = PlanarTensorNetwork::new_product_state(topo, 16);
         let msgs = BpMessageSet::new_identity(&tn);
         assert_eq!(msgs.messages.len(), 24); // 12 edges * 2 directed
@@ -441,7 +448,10 @@ mod tests {
 
     #[test]
     fn test_run_bp_on_product_state() {
-        let topo = LatticeTopology::SquareGrid { width: 4, height: 4 };
+        let topo = LatticeTopology::SquareGrid {
+            width: 4,
+            height: 4,
+        };
         let mut tn = PlanarTensorNetwork::new_product_state(topo, 16);
         let config = BpConfig {
             max_iter: 10,
@@ -450,7 +460,10 @@ mod tests {
         };
 
         let (msgs, delta, iters) = run_belief_propagation(&tn, &config);
-        assert!(iters <= 2, "Product state BP must converge in <= 2 iterations (took {iters})");
+        assert!(
+            iters <= 2,
+            "Product state BP must converge in <= 2 iterations (took {iters})"
+        );
         assert!(delta < 1e-7);
 
         // Terminal Vidal gauge transformation

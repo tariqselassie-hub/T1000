@@ -209,10 +209,8 @@ impl CorpusIngestor {
                 let e1 = &self.memory.entries[i];
                 let e2 = &self.memory.entries[j];
                 if e1.category != e2.category {
-                    let score = POVMClassifier::net_interference(
-                        &e1.quantum_state,
-                        &e2.quantum_state,
-                    );
+                    let score =
+                        POVMClassifier::net_interference(&e1.quantum_state, &e2.quantum_state);
                     results.push((e1.id.clone(), e2.id.clone(), score));
                 }
             }
@@ -274,10 +272,10 @@ fn extract_title(content: &str, path: &Path) -> String {
 
 pub fn tokenize_text(text: &str) -> Vec<String> {
     const STOPWORDS: &[&str] = &[
-        "the", "and", "in", "of", "to", "is", "for", "with", "as", "by", "on", "at",
-        "it", "this", "that", "from", "an", "be", "or", "are", "we", "can", "our",
-        "all", "which", "each", "into", "has", "have", "more", "also", "its", "then",
-        "such", "when", "where", "how", "what", "their", "they", "will", "would",
+        "the", "and", "in", "of", "to", "is", "for", "with", "as", "by", "on", "at", "it", "this",
+        "that", "from", "an", "be", "or", "are", "we", "can", "our", "all", "which", "each",
+        "into", "has", "have", "more", "also", "its", "then", "such", "when", "where", "how",
+        "what", "their", "they", "will", "would",
     ];
 
     text.split(|c: char| !c.is_alphanumeric() && c != '_' && c != '-')

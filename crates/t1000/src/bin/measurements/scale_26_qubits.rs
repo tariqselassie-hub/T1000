@@ -1,8 +1,8 @@
-use t1000::{CircuitAnsatz, QuantumState};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 use std::time::Instant;
+use t1000::{CircuitAnsatz, QuantumState};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct QubitScalePoint {
@@ -83,12 +83,21 @@ fn main() {
     println!("     GUDDANETWORKS QNN DENSE SCALING BENCHMARK: UP TO 26 QUBITS         ");
     println!("=========================================================================");
     println!(" Microarchitecture : 256-Bit AVX2 + FMA (Intel Core Ultra 7 265)        ");
-    println!(" Circuit Depth     : {} Layers (Ring CZ Entanglement)                    ", depth);
+    println!(
+        " Circuit Depth     : {} Layers (Ring CZ Entanglement)                    ",
+        depth
+    );
     println!(" Max Dimension     : 2^26 = 67,108,864 States (1.024 GB RAM per buffer)  ");
     println!("-------------------------------------------------------------------------");
-    println!("┌────┬──────────────┬──────────┬──────────────┬──────────────┬────────────┬─────────────┐");
-    println!("│ N  │ States (2^N) │ RAM (MB) │ Latency (ms) │ Per-Lyr (ms) │ F_XEB (Pi) │ Cross (5%)  │");
-    println!("├────┼──────────────┼──────────┼──────────────┼──────────────┼────────────┼─────────────┤");
+    println!(
+        "┌────┬──────────────┬──────────┬──────────────┬──────────────┬────────────┬─────────────┐"
+    );
+    println!(
+        "│ N  │ States (2^N) │ RAM (MB) │ Latency (ms) │ Per-Lyr (ms) │ F_XEB (Pi) │ Cross (5%)  │"
+    );
+    println!(
+        "├────┼──────────────┼──────────┼──────────────┼──────────────┼────────────┼─────────────┤"
+    );
 
     let mut points = Vec::new();
 
@@ -188,7 +197,9 @@ fn main() {
         });
     }
 
-    println!("└────┴──────────────┴──────────┴──────────────┴──────────────┴────────────┴─────────────┘");
+    println!(
+        "└────┴──────────────┴──────────┴──────────────┴──────────────┴────────────┴─────────────┘"
+    );
 
     let report = QubitScaleReport {
         timestamp: "2026-10-13T11:55:00Z".to_string(),
@@ -203,7 +214,10 @@ fn main() {
     }
     if let Ok(json) = serde_json::to_string_pretty(&report) {
         let _ = fs::write(&out_path, json);
-        println!("\n[SUCCESS] Full 26-Qubit Telemetry JSON saved to: {}", out_path.display());
+        println!(
+            "\n[SUCCESS] Full 26-Qubit Telemetry JSON saved to: {}",
+            out_path.display()
+        );
     }
 
     let csv_path = PathBuf::from("results/experiments/qnn_scaling_26_qubits.csv");
@@ -230,6 +244,9 @@ fn main() {
         ));
     }
     if let Ok(()) = fs::write(&csv_path, csv_lines.join("\n")) {
-        println!("[SUCCESS] Full 26-Qubit Telemetry CSV saved to : {}", csv_path.display());
+        println!(
+            "[SUCCESS] Full 26-Qubit Telemetry CSV saved to : {}",
+            csv_path.display()
+        );
     }
 }

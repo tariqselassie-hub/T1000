@@ -1,8 +1,8 @@
-use t1000::CorpusIngestor;
 use std::env;
 use std::fs;
 use std::path::PathBuf;
 use std::time::Instant;
+use t1000::CorpusIngestor;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -42,7 +42,10 @@ fn main() {
     println!("=========================================================================");
     println!("   QUANTUM NEURAL NETWORK (QNN) ARCHIVE CORPUS INGESTION ENGINE          ");
     println!("=========================================================================");
-    println!(" Hilbert Space Dim : {} (dim >= 1024 invariant satisfied)", dim);
+    println!(
+        " Hilbert Space Dim : {} (dim >= 1024 invariant satisfied)",
+        dim
+    );
     println!(" Variational Depth  : {} Ansatz Layers", depth);
     println!(" Target Corpus Dir  : {}", corpus_dir.display());
     println!(" Telemetry Output   : {}", out_path.display());
@@ -123,8 +126,9 @@ fn main() {
         let q_state = ingestor.feature_map.encode_sequence(&token_refs);
         let evolved_q = ingestor.qnn.forward(&q_state);
 
-        if let Some((winner, win_fid, win_prob)) =
-            ingestor.memory.recall_bifurcation(&evolved_q, 42 + q_idx as u64)
+        if let Some((winner, win_fid, win_prob)) = ingestor
+            .memory
+            .recall_bifurcation(&evolved_q, 42 + q_idx as u64)
         {
             println!(
                 "  -> Bifurcation Ground State: \"{}\" (Fidelity: {:.4}, Born Prob: {:.2}%)",
@@ -144,7 +148,10 @@ fn main() {
             if let Err(e) = fs::write(&out_path, json_str) {
                 eprintln!("[-] Failed to export telemetry: {}", e);
             } else {
-                println!("\n[+] Telemetry successfully persisted to: {}", out_path.display());
+                println!(
+                    "\n[+] Telemetry successfully persisted to: {}",
+                    out_path.display()
+                );
             }
         }
         Err(e) => eprintln!("[-] Serialization failed: {}", e),
@@ -192,4 +199,3 @@ fn resolve_workspace_out(target: &std::path::Path) -> PathBuf {
     }
     target.to_path_buf()
 }
-

@@ -246,8 +246,12 @@ impl HeptalMolecularZipperQnn {
 
         if norm_sq > 1e-15 {
             let inv_norm = 1.0 / norm_sq.sqrt();
-            for r in next.real.iter_mut() { *r *= inv_norm; }
-            for i in next.imag.iter_mut() { *i *= inv_norm; }
+            for r in next.real.iter_mut() {
+                *r *= inv_norm;
+            }
+            for i in next.imag.iter_mut() {
+                *i *= inv_norm;
+            }
         } else {
             next.real[0] = 1.0;
         }

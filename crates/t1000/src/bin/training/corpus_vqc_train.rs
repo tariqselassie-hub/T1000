@@ -1,12 +1,12 @@
-use t1000::{
-    tokenize_text, AdamOptimizer, CircuitAnsatz, DataEncodingLayer, EncodingKind,
-    POVMClassifier, ParameterShiftEngine, PauliObservable, QuantumFeatureMap, QuantumState,
-};
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
+use t1000::{
+    tokenize_text, AdamOptimizer, CircuitAnsatz, DataEncodingLayer, EncodingKind, POVMClassifier,
+    ParameterShiftEngine, PauliObservable, QuantumFeatureMap, QuantumState,
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DocTrainingSummary {
@@ -120,9 +120,19 @@ fn main() {
     println!(" Corpus Directory   : {}", corpus_root.display());
     println!(" Task Mode          : {}", task_mode);
     println!(" Circuit Depth      : {}", depth);
-    println!(" Pi Phase Layer     : {}", if use_pi_layer { "ENABLED (±π Rademacher Mask)" } else { "DISABLED" });
+    println!(
+        " Pi Phase Layer     : {}",
+        if use_pi_layer {
+            "ENABLED (±π Rademacher Mask)"
+        } else {
+            "DISABLED"
+        }
+    );
     println!(" Trainable Params   : {} θ angles", 2 * 10 * depth);
-    println!(" LR Schedule        : lr_0={}, decay_gamma={}, step_interval={}", lr, decay_gamma, decay_step);
+    println!(
+        " LR Schedule        : lr_0={}, decay_gamma={}, step_interval={}",
+        lr, decay_gamma, decay_step
+    );
     println!(" Telemetry Output   : {}", out_path.display());
     println!("-------------------------------------------------------------------------");
 
@@ -139,22 +149,33 @@ fn main() {
     let n_qubits = 10;
     let feature_map = QuantumFeatureMap::new(dim, 1337);
 
-    println!("[*] Ingesting and embedding corpus documents into Hilbert space (dim={})...", dim);
+    println!(
+        "[*] Ingesting and embedding corpus documents into Hilbert space (dim={})...",
+        dim
+    );
     let docs = load_and_encode_corpus(&corpus_root, &categories, &feature_map);
-    println!("[+] Successfully prepared {} documents across {} categories.", docs.len(), categories.len());
+    println!(
+        "[+] Successfully prepared {} documents across {} categories.",
+        docs.len(),
+        categories.len()
+    );
 
     for doc in &docs {
-        println!("    - [{:<8}] {:<42} ({} tokens)", doc.category, doc.file_name, doc.token_count);
+        println!(
+            "    - [{:<8}] {:<42} ({} tokens)",
+            doc.category, doc.file_name, doc.token_count
+        );
     }
     println!("-------------------------------------------------------------------------");
 
     // 2. POVM Subspace Centroid Calibration
     let mut povm = POVMClassifier::new(dim, categories.clone());
-    let mut cat_accumulators: std::collections::HashMap<String, QuantumState> = std::collections::HashMap::new();
+    let mut cat_accumulators: std::collections::HashMap<String, QuantumState> =
+        std::collections::HashMap::new();
     for doc in &docs {
-        let acc = cat_accumulators.entry(doc.category.clone()).or_insert_with(|| {
-            QuantumState::zero(dim)
-        });
+        let acc = cat_accumulators
+            .entry(doc.category.clone())
+            .or_insert_with(|| QuantumState::zero(dim));
         acc.superpose(&doc.quantum_state, 1.0);
     }
     for (cat_name, centroid) in &cat_accumulators {
@@ -180,9 +201,15 @@ fn main() {
     let mut epoch_logs = Vec::new();
     let mut initial_loss = 0.0;
 
-    println!("\n┌───────┬──────────┬──────────────┬──────────────┬──────────────┬──────────────────┐");
-    println!("│ Epoch │ LR       │ Train Loss   │ Accuracy (%) │ Max Grad     │ Status           │");
-    println!("├───────┼──────────┼──────────────┼──────────────┼──────────────┼──────────────────┤");
+    println!(
+        "\n┌───────┬──────────┬──────────────┬──────────────┬──────────────┬──────────────────┐"
+    );
+    println!(
+        "│ Epoch │ LR       │ Train Loss   │ Accuracy (%) │ Max Grad     │ Status           │"
+    );
+    println!(
+        "├───────┼──────────┼──────────────┼──────────────┼──────────────┼──────────────────┤"
+    );
 
     for ep in 1..=epochs {
         let current_lr = optimizer.step_epoch_decay(ep - 1, decay_gamma, decay_step);
@@ -202,7 +229,8 @@ fn main() {
                     -1.0
                 };
 
-                let (pred, loss, grads) = engine.compute_loss_gradients_for_state(&doc.quantum_state, y_target, &weights);
+                let (pred, loss, grads) =
+                    engine.compute_loss_gradients_for_state(&doc.quantum_state, y_target, &weights);
                 total_loss += loss;
 
                 let predicted_class = if pred >= 0.0 { 1.0 } else { -1.0 };
@@ -275,7 +303,9 @@ fn main() {
             max_grad,
         });
     }
-    println!("└───────┴──────────┴──────────────┴──────────────┴──────────────┴──────────────────┘\n");
+    println!(
+        "└───────┴──────────┴──────────────┴──────────────┴──────────────┴──────────────────┘\n"
+    );
 
     let total_elapsed_ms = start_time.elapsed().as_secs_f64() * 1000.0;
     let final_loss = epoch_logs.last().map(|l| l.train_loss).unwrap_or(0.0);
@@ -293,7 +323,10 @@ fn main() {
     println!("=========================================================================================================");
     println!("   FINAL QUANTUM INFERENCE & CATEGORY DISCRIMINATION LEDGER                                              ");
     println!("=========================================================================================================");
-    println!(" {:<34} │ {:<8} │ {:<8} │ {:<5} │ {:<7} │ {:<7} │ {:<18}", "Document", "Target", "Pred(Z)", "Match", "Z_exp", "<Z_7>", "POVM Top (Prob)");
+    println!(
+        " {:<34} │ {:<8} │ {:<8} │ {:<5} │ {:<7} │ {:<7} │ {:<18}",
+        "Document", "Target", "Pred(Z)", "Match", "Z_exp", "<Z_7>", "POVM Top (Prob)"
+    );
     println!("───────────────────────────────────┼──────────┼──────────┼───────┼─────────┼─────────┼───────────────────");
 
     let obs_z7 = PauliObservable::Z(7);
@@ -311,13 +344,24 @@ fn main() {
 
         if task_mode == "sovereign" {
             let pred = engine.predict_state(&doc.quantum_state, &weights);
-            let target_str = if doc.category == "bridges" || doc.category == "deen" { "sovereign" } else { "reference" };
-            let pred_str = if pred >= 0.0 { "sovereign" } else { "reference" };
+            let target_str = if doc.category == "bridges" || doc.category == "deen" {
+                "sovereign"
+            } else {
+                "reference"
+            };
+            let pred_str = if pred >= 0.0 {
+                "sovereign"
+            } else {
+                "reference"
+            };
             let is_correct = target_str == pred_str;
             let status = if is_correct { "MATCH" } else { "MISS" };
 
             let povm_str = format!("{} ({:.1}%)", povm_top_class, povm_top_prob * 100.0);
-            println!(" {:<34} │ {:<8} │ {:<8} │ {:<5} │ {:<+7.3} │ {:<+7.3} │ {:<18}", doc.file_name, target_str, pred_str, status, pred, z7_exp, povm_str);
+            println!(
+                " {:<34} │ {:<8} │ {:<8} │ {:<5} │ {:<+7.3} │ {:<+7.3} │ {:<18}",
+                doc.file_name, target_str, pred_str, status, pred, z7_exp, povm_str
+            );
 
             doc_summaries.push(DocTrainingSummary {
                 file_name: doc.file_name.clone(),
@@ -330,7 +374,8 @@ fn main() {
                 z7_exp,
             });
         } else {
-            let preds = engine.predict_multi_observables(&doc.quantum_state, &observables, &weights);
+            let preds =
+                engine.predict_multi_observables(&doc.quantum_state, &observables, &weights);
             let (top_idx, &top_z) = preds
                 .iter()
                 .enumerate()
@@ -342,7 +387,10 @@ fn main() {
             let status = if is_correct { "MATCH" } else { "MISS" };
 
             let povm_str = format!("{} ({:.1}%)", povm_top_class, povm_top_prob * 100.0);
-            println!(" {:<34} │ {:<8} │ {:<8} │ {:<5} │ {:<+7.3} │ {:<+7.3} │ {:<18}", doc.file_name, doc.category, pred_cat, status, top_z, z7_exp, povm_str);
+            println!(
+                " {:<34} │ {:<8} │ {:<8} │ {:<5} │ {:<+7.3} │ {:<+7.3} │ {:<18}",
+                doc.file_name, doc.category, pred_cat, status, top_z, z7_exp, povm_str
+            );
 
             doc_summaries.push(DocTrainingSummary {
                 file_name: doc.file_name.clone(),
@@ -359,7 +407,10 @@ fn main() {
 
     println!("=========================================================================");
     println!(" Initial Loss       : {:.5}", initial_loss);
-    println!(" Final Loss         : {:.5} ({:.1}% reduction)", final_loss, loss_reduction_pct);
+    println!(
+        " Final Loss         : {:.5} ({:.1}% reduction)",
+        final_loss, loss_reduction_pct
+    );
     println!(" Final Accuracy     : {:.1}%", final_acc);
     println!(" Final Learning Rate: {:.5}", final_lr);
     println!(" Elapsed Time       : {:.2} ms", total_elapsed_ms);
@@ -391,7 +442,10 @@ fn main() {
     }
     if let Ok(json_str) = serde_json::to_string_pretty(&telemetry) {
         let _ = fs::write(&out_path, json_str);
-        println!("[+] Corpus VQC telemetry exported to: {}", out_path.display());
+        println!(
+            "[+] Corpus VQC telemetry exported to: {}",
+            out_path.display()
+        );
     }
 }
 

@@ -10,11 +10,11 @@
 //!   (12-qubit hybrid, mid-circuit, re-uploading, QNG, ZZ, 10k-train and 20-epoch runs)
 //! - bench: first 2,000 rows of `zinc_train_5k.csv` / 1,000 of `zinc_test_1k.csv` (`zinc_qnn_bench`)
 
-use t1000::baselines::{print_comparison, zinc_baselines, BaselineResult, QnnScore};
 use serde::Serialize;
 use serde_json::Value;
 use std::fs;
 use std::path::{Path, PathBuf};
+use t1000::baselines::{print_comparison, zinc_baselines, BaselineResult, QnnScore};
 
 struct Sample {
     features: Vec<f64>,
@@ -58,7 +58,10 @@ fn parse_zinc_csv(path: &Path, max_rows: usize) -> Result<Vec<Sample>, String> {
 fn load(rel: &str, max_rows: usize) -> Result<Vec<Sample>, String> {
     let primary = resolve_workspace_path(&format!("tests/benchmarks/zinc_molecular/data/{rel}"));
     parse_zinc_csv(&primary, max_rows).or_else(|_| {
-        parse_zinc_csv(&resolve_workspace_path(&format!("tests/benchmarks/zinc_molecular/outputs/{rel}")), max_rows)
+        parse_zinc_csv(
+            &resolve_workspace_path(&format!("tests/benchmarks/zinc_molecular/outputs/{rel}")),
+            max_rows,
+        )
     })
 }
 
@@ -81,13 +84,19 @@ fn triple(v: &Value, f: impl Fn(&str) -> String) -> Option<[f64; 3]> {
 
 /// Rows from reports that store `<variant>_mae_<target>` / `<variant>_r2_<target>`.
 fn mae_r2_rows(rel: &str, experiment: &str, variants: &[(&str, &str)]) -> Vec<QnnScore> {
-    let Some(v) = read_report(rel) else { return Vec::new() };
+    let Some(v) = read_report(rel) else {
+        return Vec::new();
+    };
     variants
         .iter()
         .filter_map(|(key, label)| {
             let mae = triple(&v, |t| format!("{key}_mae_{t}"))?;
             let r2 = triple(&v, |t| format!("{key}_r2_{t}"))?;
-            Some(QnnScore::new(format!("{experiment}: {label}")).mae(mae).r2(r2))
+            Some(
+                QnnScore::new(format!("{experiment}: {label}"))
+                    .mae(mae)
+                    .r2(r2),
+            )
         })
         .collect()
 }
@@ -123,26 +132,41 @@ fn main() {
     let mut reports = Vec::new();
 
     // ---- main split ----
-    let (train, test) = match (load("zinc_train_10k.csv", 10_000), load("zinc_test_2k.csv", 2_000)) {
+    let (train, test) = match (
+        load("zinc_train_10k.csv", 10_000),
+        load("zinc_test_2k.csv", 2_000),
+    ) {
         (Ok(a), Ok(b)) => (a, b),
         (Err(e), _) | (_, Err(e)) => {
             eprintln!("[-] {e}");
             std::process::exit(1);
         }
     };
-    println!("\n[main split] train = {}, test = {}", train.len(), test.len());
+    println!(
+        "\n[main split] train = {}, test = {}",
+        train.len(),
+        test.len()
+    );
     let main_baselines = baselines_for(&train, &test);
 
     let mut rows = Vec::new();
     rows.extend(mae_r2_rows(
         "reports/zinc_12qubit_midcircuit_report.json",
         "midcircuit",
-        &[("baseline", "no feed-forward"), ("feedforward", "feed-forward"), ("combined", "feed-forward + ZZ")],
+        &[
+            ("baseline", "no feed-forward"),
+            ("feedforward", "feed-forward"),
+            ("combined", "feed-forward + ZZ"),
+        ],
     ));
     rows.extend(mae_r2_rows(
         "reports/zinc_12qubit_reuploading_report.json",
         "reuploading",
-        &[("baseline", "no mechanisms"), ("reuploading", "re-uploading"), ("unified", "re-uploading + ZZ")],
+        &[
+            ("baseline", "no mechanisms"),
+            ("reuploading", "re-uploading"),
+            ("unified", "re-uploading + ZZ"),
+        ],
     ));
     rows.extend(mae_r2_rows(
         "reports/zinc_12qubit_qng_report.json",
@@ -152,11 +176,23 @@ fn main() {
     rows.extend(mae_r2_rows(
         "reports/zinc_12qubit_zz_correlator_report.json",
         "zz",
-        &[("baseline", "12 Z readout"), ("enhanced", "Z + ZZ (78 obs)")],
+        &[
+            ("baseline", "12 Z readout"),
+            ("enhanced", "Z + ZZ (78 obs)"),
+        ],
     ));
-    rows.extend(property_metric_row("outputs/zinc_12qubit_30ep_results.json", "hybrid 12q (30 epochs)"));
-    rows.extend(property_metric_row("outputs/zinc_qnn_10k_results.json", "10q train (10k)"));
-    rows.extend(property_metric_row("outputs/zinc_qnn_20ep_eval_results.json", "10q train (20 epochs)"));
+    rows.extend(property_metric_row(
+        "outputs/zinc_12qubit_30ep_results.json",
+        "hybrid 12q (30 epochs)",
+    ));
+    rows.extend(property_metric_row(
+        "outputs/zinc_qnn_10k_results.json",
+        "10q train (10k)",
+    ));
+    rows.extend(property_metric_row(
+        "outputs/zinc_qnn_20ep_eval_results.json",
+        "10q train (20 epochs)",
+    ));
     if rows.is_empty() {
         println!("  (no saved QNN reports found; showing baselines only)");
     }
@@ -169,8 +205,15 @@ fn main() {
     });
 
     // ---- zinc_qnn_bench split ----
-    if let (Ok(train), Ok(test)) = (load("zinc_train_5k.csv", 2_000), load("zinc_test_1k.csv", 1_000)) {
-        println!("\n[bench split] train = {}, test = {}", train.len(), test.len());
+    if let (Ok(train), Ok(test)) = (
+        load("zinc_train_5k.csv", 2_000),
+        load("zinc_test_1k.csv", 1_000),
+    ) {
+        println!(
+            "\n[bench split] train = {}, test = {}",
+            train.len(),
+            test.len()
+        );
         let bench_baselines = baselines_for(&train, &test);
         let bench_rows: Vec<QnnScore> = read_report("outputs/zinc_qnn_results.json")
             .and_then(|v| triple(&v, |t| format!("tuned_{t}_mse")))
@@ -185,7 +228,9 @@ fn main() {
         });
     }
 
-    let out = resolve_workspace_path("tests/benchmarks/zinc_molecular/reports/zinc_classical_baselines.json");
+    let out = resolve_workspace_path(
+        "tests/benchmarks/zinc_molecular/reports/zinc_classical_baselines.json",
+    );
     match serde_json::to_string_pretty(&reports) {
         Ok(json) => match fs::write(&out, json) {
             Ok(()) => println!("\n[OK] Baselines written to {}", out.display()),

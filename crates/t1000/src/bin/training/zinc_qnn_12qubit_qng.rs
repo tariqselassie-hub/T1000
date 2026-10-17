@@ -22,12 +22,12 @@
 //!   Evaluated on 10,000 ZINC train / 2,000 holdout test molecules across:
 //!   logP, QED, SAS, Molecule #10640 solvation recovery, and Fubini-Study spectrum.
 
-use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState};
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
+use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState};
 
 const N_QUBITS: usize = 12;
 const DIM: usize = 1 << N_QUBITS; // 4,096
@@ -53,9 +53,9 @@ pub struct ReuploadingCheckpoint {
     pub n_qubits: usize,
     pub depth: usize,
     pub source_qubit: usize,
-    pub circuit_params: Vec<f64>,         // 60 params
-    pub feedforward_alphas: Vec<f64>,     // 12 alphas
-    pub upload_scales_l0: Vec<f64>,       // 12 DRU scales
+    pub circuit_params: Vec<f64>,     // 60 params
+    pub feedforward_alphas: Vec<f64>, // 12 alphas
+    pub upload_scales_l0: Vec<f64>,   // 12 DRU scales
     pub readout_weights_12: Vec<Vec<f64>>,
     pub readout_biases_12: Vec<f64>,
     pub readout_weights_78: Vec<Vec<f64>>,
@@ -439,9 +439,12 @@ fn main() {
     println!(" Visual Standard       : Deen OS Sovereign Palette                       ");
     println!("-------------------------------------------------------------------------\n");
 
-    let train_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/data/zinc_train_10k.csv");
+    let train_path =
+        resolve_workspace_path("tests/benchmarks/zinc_molecular/data/zinc_train_10k.csv");
     let test_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/data/zinc_test_2k.csv");
-    let ckpt_reupload_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/checkpoints/zinc_12qubit_checkpoint_reuploading.json");
+    let ckpt_reupload_path = resolve_workspace_path(
+        "tests/benchmarks/zinc_molecular/checkpoints/zinc_12qubit_checkpoint_reuploading.json",
+    );
 
     let train_samples = parse_zinc_csv(&train_path, 10_000).expect("Load train data");
     let test_samples = parse_zinc_csv(&test_path, 2_000).expect("Load test data");
@@ -462,8 +465,8 @@ fn main() {
     let encoding = DataEncodingLayer::new(N_QUBITS, EncodingKind::Amplitude);
 
     let feats_10640 = vec![
-        24.0, 408.279, 15.0, 5.0, 2.0, 1.0, 0.0, 0.0, 1.0, 1.0,
-        12.0, 0.5, 9.0, 0.375, 5.0, 0.0, 4.0, 3.0, 4.0,
+        24.0, 408.279, 15.0, 5.0, 2.0, 1.0, 0.0, 0.0, 1.0, 1.0, 12.0, 0.5, 9.0, 0.375, 5.0, 0.0,
+        4.0, 3.0, 4.0,
     ];
     let true_lp_10640 = -6.7716;
 
@@ -523,8 +526,14 @@ fn main() {
     let (mae_init_qd, r2_init_qd) = compute_mae_and_r2(&preds_init_qed, &targets_qed);
     let (mae_init_ss, r2_init_ss) = compute_mae_and_r2(&preds_init_sas, &targets_sas);
 
-    println!("  Holdout MAE : logP = {:.4}, QED = {:.4}, SAS = {:.4}", mae_init_lp, mae_init_qd, mae_init_ss);
-    println!("  Holdout R²  : logP = {:.4}, QED = {:.4}, SAS = {:.4}\n", r2_init_lp, r2_init_qd, r2_init_ss);
+    println!(
+        "  Holdout MAE : logP = {:.4}, QED = {:.4}, SAS = {:.4}",
+        mae_init_lp, mae_init_qd, mae_init_ss
+    );
+    println!(
+        "  Holdout R²  : logP = {:.4}, QED = {:.4}, SAS = {:.4}\n",
+        r2_init_lp, r2_init_qd, r2_init_ss
+    );
 
     // =========================================================================
     // DUAL COMPARISON: PATH A (EUCLIDEAN ADAM) vs PATH B (QUANTUM NATURAL GRADIENT)
@@ -538,7 +547,10 @@ fn main() {
     println!("=========================================================================");
     println!(" [PHASE 2] TRAINING TRAJECTORY AUDIT: EUCLIDEAN ADAM vs QUANTUM NATURAL GRADIENT");
     println!("=========================================================================");
-    println!("  Batch Size : 2,000 Molecules | Learning Rate: {:.2} | Damping λ: {:.3}", lr, lambda_qng);
+    println!(
+        "  Batch Size : 2,000 Molecules | Learning Rate: {:.2} | Damping λ: {:.3}",
+        lr, lambda_qng
+    );
     println!("  Param Space: 60 Quantum Circuit Angles (All 3 Layers)\n");
 
     let mut params_euc = circuit_params_init.clone();
@@ -608,7 +620,9 @@ fn main() {
             &mut z_10640,
         );
         let mut pred_10640_euc = b_euc[0];
-        for q in 0..N_QUBITS { pred_10640_euc += w_euc[0][q] * z_10640[q]; }
+        for q in 0..N_QUBITS {
+            pred_10640_euc += w_euc[0][q] * z_10640[q];
+        }
 
         ansatz.forward_reuploading_in_place(
             &mut l2_state,
@@ -620,7 +634,9 @@ fn main() {
             &mut z_10640,
         );
         let mut pred_10640_qng = b_qng[0];
-        for q in 0..N_QUBITS { pred_10640_qng += w_qng[0][q] * z_10640[q]; }
+        for q in 0..N_QUBITS {
+            pred_10640_qng += w_qng[0][q] * z_10640[q];
+        }
 
         telemetry_history.push(QngEpochTelemetry {
             epoch,
@@ -644,10 +660,26 @@ fn main() {
         for i in 0..params_euc.len() {
             let mut p_plus = params_euc.clone();
             p_plus[i] += eps;
-            let (l_plus, _, _) = eval_loss_and_weights(&ansatz, &encoding, &p_plus, &dru_euc, &feedforward_alphas, &opt_subset[..500], 1e-3);
+            let (l_plus, _, _) = eval_loss_and_weights(
+                &ansatz,
+                &encoding,
+                &p_plus,
+                &dru_euc,
+                &feedforward_alphas,
+                &opt_subset[..500],
+                1e-3,
+            );
             let mut p_minus = params_euc.clone();
             p_minus[i] -= eps;
-            let (l_minus, _, _) = eval_loss_and_weights(&ansatz, &encoding, &p_minus, &dru_euc, &feedforward_alphas, &opt_subset[..500], 1e-3);
+            let (l_minus, _, _) = eval_loss_and_weights(
+                &ansatz,
+                &encoding,
+                &p_minus,
+                &dru_euc,
+                &feedforward_alphas,
+                &opt_subset[..500],
+                1e-3,
+            );
             grad_euc[i] = (l_plus - l_minus) / (2.0 * eps);
         }
 
@@ -656,10 +688,26 @@ fn main() {
         for i in 0..params_qng.len() {
             let mut p_plus = params_qng.clone();
             p_plus[i] += eps;
-            let (l_plus, _, _) = eval_loss_and_weights(&ansatz, &encoding, &p_plus, &dru_qng, &feedforward_alphas, &opt_subset[..500], 1e-3);
+            let (l_plus, _, _) = eval_loss_and_weights(
+                &ansatz,
+                &encoding,
+                &p_plus,
+                &dru_qng,
+                &feedforward_alphas,
+                &opt_subset[..500],
+                1e-3,
+            );
             let mut p_minus = params_qng.clone();
             p_minus[i] -= eps;
-            let (l_minus, _, _) = eval_loss_and_weights(&ansatz, &encoding, &p_minus, &dru_qng, &feedforward_alphas, &opt_subset[..500], 1e-3);
+            let (l_minus, _, _) = eval_loss_and_weights(
+                &ansatz,
+                &encoding,
+                &p_minus,
+                &dru_qng,
+                &feedforward_alphas,
+                &opt_subset[..500],
+                1e-3,
+            );
             grad_qng[i] = (l_plus - l_minus) / (2.0 * eps);
         }
 
@@ -693,7 +741,10 @@ fn main() {
 
     let el_train = t_train_start.elapsed();
     println!("───────┴──────────────────┴────────────────┴─────────────┴───────────────────┴──────────────────");
-    println!("  Dual optimization completed in {:.2}s\n", el_train.as_secs_f64());
+    println!(
+        "  Dual optimization completed in {:.2}s\n",
+        el_train.as_secs_f64()
+    );
 
     // =========================================================================
     // PHASE 3: HOLDOUT TEST SET EVALUATION ACROSS BOTH OPTIMIZERS
@@ -807,29 +858,73 @@ fn main() {
     // PHASE 4: MOLECULE #10640 SOLVATION RECOVERY COMPARISON
     // =========================================================================
     encoding.encode_amplitude_into(&feats_10640, &mut l2_state);
-    ansatz.forward_reuploading_in_place(&mut l2_state, &circuit_params_init, &feats_10640, &dru_scales_init, SOURCE_QUBIT, &feedforward_alphas, &mut z);
+    ansatz.forward_reuploading_in_place(
+        &mut l2_state,
+        &circuit_params_init,
+        &feats_10640,
+        &dru_scales_init,
+        SOURCE_QUBIT,
+        &feedforward_alphas,
+        &mut z,
+    );
     let mut pred_lp_init_10640 = b_init[0];
-    for q in 0..N_QUBITS { pred_lp_init_10640 += w_init[0][q] * z[q]; }
+    for q in 0..N_QUBITS {
+        pred_lp_init_10640 += w_init[0][q] * z[q];
+    }
 
-    ansatz.forward_reuploading_in_place(&mut l2_state, &params_euc, &feats_10640, &dru_euc, SOURCE_QUBIT, &feedforward_alphas, &mut z);
+    ansatz.forward_reuploading_in_place(
+        &mut l2_state,
+        &params_euc,
+        &feats_10640,
+        &dru_euc,
+        SOURCE_QUBIT,
+        &feedforward_alphas,
+        &mut z,
+    );
     let mut pred_lp_euc_10640 = b_euc_final[0];
-    for q in 0..N_QUBITS { pred_lp_euc_10640 += w_euc_final[0][q] * z[q]; }
+    for q in 0..N_QUBITS {
+        pred_lp_euc_10640 += w_euc_final[0][q] * z[q];
+    }
 
-    ansatz.forward_reuploading_in_place(&mut l2_state, &params_qng, &feats_10640, &dru_qng, SOURCE_QUBIT, &feedforward_alphas, &mut z);
+    ansatz.forward_reuploading_in_place(
+        &mut l2_state,
+        &params_qng,
+        &feats_10640,
+        &dru_qng,
+        SOURCE_QUBIT,
+        &feedforward_alphas,
+        &mut z,
+    );
     let mut pred_lp_qng_10640 = b_qng_final[0];
-    for q in 0..N_QUBITS { pred_lp_qng_10640 += w_qng_final[0][q] * z[q]; }
+    for q in 0..N_QUBITS {
+        pred_lp_qng_10640 += w_qng_final[0][q] * z[q];
+    }
 
     println!("=========================================================================");
     println!(" [PHASE 4] MOLECULE #10640 BORN SOLVATION RECOVERY AUDIT                 ");
     println!("=========================================================================");
-    println!("  SMILES: O=[N+]([O-])c1ccc2c(c1)=[NH+][C@@H](CS[C@H]1[NH+]=c3ccc(Br)cc3=[NH+]1)[NH+]=2");
+    println!(
+        "  SMILES: O=[N+]([O-])c1ccc2c(c1)=[NH+][C@@H](CS[C@H]1[NH+]=c3ccc(Br)cc3=[NH+]1)[NH+]=2"
+    );
     println!("  Physical Target : True logP = {:>+8.4}", true_lp_10640);
     println!("  ┌────────────────────────────────┬──────────────────┬──────────────────┐");
     println!("  │  Optimization Method           │  Predicted logP  │  Absolute Error  │");
     println!("  ├────────────────────────────────┼──────────────────┼──────────────────┤");
-    println!("  │  Pre-Optimization Baseline     │       {:>+10.4} │       {:>10.4} │", pred_lp_init_10640, (pred_lp_init_10640 - true_lp_10640).abs());
-    println!("  │  Euclidean Adam Optimizer      │       {:>+10.4} │       {:>10.4} │", pred_lp_euc_10640, (pred_lp_euc_10640 - true_lp_10640).abs());
-    println!("  │  Quantum Natural Gradient (QNG)│       {:>+10.4} │       {:>10.4} │", pred_lp_qng_10640, (pred_lp_qng_10640 - true_lp_10640).abs());
+    println!(
+        "  │  Pre-Optimization Baseline     │       {:>+10.4} │       {:>10.4} │",
+        pred_lp_init_10640,
+        (pred_lp_init_10640 - true_lp_10640).abs()
+    );
+    println!(
+        "  │  Euclidean Adam Optimizer      │       {:>+10.4} │       {:>10.4} │",
+        pred_lp_euc_10640,
+        (pred_lp_euc_10640 - true_lp_10640).abs()
+    );
+    println!(
+        "  │  Quantum Natural Gradient (QNG)│       {:>+10.4} │       {:>10.4} │",
+        pred_lp_qng_10640,
+        (pred_lp_qng_10640 - true_lp_10640).abs()
+    );
     println!("  └────────────────────────────────┴──────────────────┴──────────────────┘\n");
 
     // =========================================================================
@@ -852,16 +947,24 @@ fn main() {
         readout_biases_78: ckpt.readout_biases_78,
     };
 
-    let ckpt_save_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/checkpoints/zinc_12qubit_checkpoint_qng.json");
-    if let Some(parent) = ckpt_save_path.parent() { fs::create_dir_all(parent).ok(); }
+    let ckpt_save_path = resolve_workspace_path(
+        "tests/benchmarks/zinc_molecular/checkpoints/zinc_12qubit_checkpoint_qng.json",
+    );
+    if let Some(parent) = ckpt_save_path.parent() {
+        fs::create_dir_all(parent).ok();
+    }
     let ckpt_json = serde_json::to_string_pretty(&checkpoint).expect("Serialize checkpoint");
     fs::write(&ckpt_save_path, ckpt_json).expect("Write checkpoint");
     println!("  [OK] Saved QNG Checkpoint: {}", ckpt_save_path.display());
 
     // Classical reference: ridge regression on the same raw features and train/test split.
     let classical_baselines = t1000::baselines::zinc_baselines(
-        train_samples.iter().map(|s| (s.features.as_slice(), [s.log_p, s.qed, s.sas])),
-        test_samples.iter().map(|s| (s.features.as_slice(), [s.log_p, s.qed, s.sas])),
+        train_samples
+            .iter()
+            .map(|s| (s.features.as_slice(), [s.log_p, s.qed, s.sas])),
+        test_samples
+            .iter()
+            .map(|s| (s.features.as_slice(), [s.log_p, s.qed, s.sas])),
     );
     let report = QngComparisonReport {
         classical_baselines: classical_baselines.clone(),
@@ -895,27 +998,50 @@ fn main() {
         epoch_history: telemetry_history,
     };
 
-    let report_save_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/reports/zinc_12qubit_qng_report.json");
-    if let Some(parent) = report_save_path.parent() { fs::create_dir_all(parent).ok(); }
+    let report_save_path = resolve_workspace_path(
+        "tests/benchmarks/zinc_molecular/reports/zinc_12qubit_qng_report.json",
+    );
+    if let Some(parent) = report_save_path.parent() {
+        fs::create_dir_all(parent).ok();
+    }
     {
         use t1000::baselines::{print_comparison, QnnScore};
         let qnn_rows = [
-        QnnScore::new("before optimisation")
-            .mae([report.pre_qng_mae_logp, report.pre_qng_mae_qed, report.pre_qng_mae_sas])
-            .r2([report.pre_qng_r2_logp, report.pre_qng_r2_qed, report.pre_qng_r2_sas]),
-        QnnScore::new("Euclidean Adam")
-            .mae([report.euclidean_mae_logp, report.euclidean_mae_qed, report.euclidean_mae_sas])
-            .r2([report.euclidean_r2_logp, report.euclidean_r2_qed, report.euclidean_r2_sas]),
-        QnnScore::new("quantum natural gradient")
-            .mae([report.qng_mae_logp, report.qng_mae_qed, report.qng_mae_sas])
-            .r2([report.qng_r2_logp, report.qng_r2_qed, report.qng_r2_sas]),
+            QnnScore::new("before optimisation")
+                .mae([
+                    report.pre_qng_mae_logp,
+                    report.pre_qng_mae_qed,
+                    report.pre_qng_mae_sas,
+                ])
+                .r2([
+                    report.pre_qng_r2_logp,
+                    report.pre_qng_r2_qed,
+                    report.pre_qng_r2_sas,
+                ]),
+            QnnScore::new("Euclidean Adam")
+                .mae([
+                    report.euclidean_mae_logp,
+                    report.euclidean_mae_qed,
+                    report.euclidean_mae_sas,
+                ])
+                .r2([
+                    report.euclidean_r2_logp,
+                    report.euclidean_r2_qed,
+                    report.euclidean_r2_sas,
+                ]),
+            QnnScore::new("quantum natural gradient")
+                .mae([report.qng_mae_logp, report.qng_mae_qed, report.qng_mae_sas])
+                .r2([report.qng_r2_logp, report.qng_r2_qed, report.qng_r2_sas]),
         ];
         print_comparison(&qnn_rows, &classical_baselines);
     }
 
     let report_json = serde_json::to_string_pretty(&report).expect("Serialize report");
     fs::write(&report_save_path, report_json).expect("Write report");
-    println!("  [OK] Saved Machine-Readable Report: {}", report_save_path.display());
+    println!(
+        "  [OK] Saved Machine-Readable Report: {}",
+        report_save_path.display()
+    );
     println!("\n=========================================================================");
     println!(" MECHANISM #4 QUANTUM NATURAL GRADIENT AUDIT COMPLETE                     ");
     println!("=========================================================================");

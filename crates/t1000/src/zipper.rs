@@ -346,7 +346,7 @@ mod tests {
     #[test]
     fn test_zipper_100_qubit_chain_in_l1_cache() {
         let config = ZipperConfig {
-            window_size: 4,    // 16 amplitudes = 256 bytes
+            window_size: 4,     // 16 amplitudes = 256 bytes
             initial_angle: 0.0, // Seed Q0 in state |0>
             ..Default::default()
         };
@@ -398,7 +398,10 @@ mod tests {
         assert_eq!(report.total_qubits, 25);
         assert_eq!(report.steps.len(), 25);
         assert!(report.steps[0].local_entropy > 0.9);
-        println!("superposition fid: {}", report.mean_anti_correlation_fidelity);
+        println!(
+            "superposition fid: {}",
+            report.mean_anti_correlation_fidelity
+        );
         assert!(report.mean_anti_correlation_fidelity >= 0.5);
     }
 }

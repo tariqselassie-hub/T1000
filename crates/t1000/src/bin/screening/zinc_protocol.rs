@@ -10,21 +10,26 @@
 //! summarised per split kind as mean +/- standard deviation over the three seeds and written to
 //! `tests/benchmarks/zinc_molecular/reports/zinc_protocol_baselines.json`.
 
-use t1000::protocol::{
-    aggregate, baseline_on_split, compute_feature_set, dedupe_by_smiles, load_zinc_csv, make_split,
-    murcko_scaffold_key, AggregateResult, BaselineModel, DataSplit, SplitFractions, SplitMethod, SplitResult,
-};
-use std::time::Instant;
 use serde::Serialize;
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::PathBuf;
+use std::time::Instant;
+use t1000::protocol::{
+    aggregate, baseline_on_split, compute_feature_set, dedupe_by_smiles, load_zinc_csv, make_split,
+    murcko_scaffold_key, AggregateResult, BaselineModel, DataSplit, SplitFractions, SplitMethod,
+    SplitResult,
+};
 
 const SEEDS: [u64; 3] = [0, 1, 2];
 
 fn workspace(rel: &str) -> PathBuf {
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    manifest_dir.ancestors().nth(3).unwrap_or(&manifest_dir).join(rel)
+    manifest_dir
+        .ancestors()
+        .nth(3)
+        .unwrap_or(&manifest_dir)
+        .join(rel)
 }
 
 #[derive(Serialize)]
@@ -55,7 +60,10 @@ struct ProtocolReport {
 fn main() {
     let regenerate = std::env::args().any(|a| a == "--regenerate");
 
-    let sources = ["tests/benchmarks/zinc_molecular/data/zinc_train_10k.csv", "tests/benchmarks/zinc_molecular/data/zinc_test_2k.csv"];
+    let sources = [
+        "tests/benchmarks/zinc_molecular/data/zinc_train_10k.csv",
+        "tests/benchmarks/zinc_molecular/data/zinc_test_2k.csv",
+    ];
     let mut pool = Vec::new();
     for src in sources {
         match load_zinc_csv(&workspace(src)) {
@@ -81,13 +89,20 @@ fn main() {
             })
         })
         .collect();
-    let distinct: HashSet<&str> = keys.iter().map(String::as_str).filter(|k| !k.is_empty()).collect();
+    let distinct: HashSet<&str> = keys
+        .iter()
+        .map(String::as_str)
+        .filter(|k| !k.is_empty())
+        .collect();
     let acyclic = keys.iter().filter(|k| k.is_empty()).count();
     println!("=========================================================================");
     println!(" ZINC EVALUATION PROTOCOL");
     println!("=========================================================================");
     println!("  pool: {} molecules (checksum {checksum})", pool.len());
-    println!("  scaffolds: {} distinct, {acyclic} acyclic molecules, {unparsed} unparsed SMILES", distinct.len());
+    println!(
+        "  scaffolds: {} distinct, {acyclic} acyclic molecules, {unparsed} unparsed SMILES",
+        distinct.len()
+    );
 
     let split_dir = workspace("tests/benchmarks/zinc_molecular/splits");
     fs::create_dir_all(&split_dir).expect("create splits directory");
@@ -104,7 +119,9 @@ fn main() {
             let existing: Option<DataSplit> = if regenerate {
                 None
             } else {
-                fs::read_to_string(&path).ok().and_then(|t| serde_json::from_str(&t).ok())
+                fs::read_to_string(&path)
+                    .ok()
+                    .and_then(|t| serde_json::from_str(&t).ok())
             };
             let split = match existing {
                 Some(s) => {
@@ -116,7 +133,11 @@ fn main() {
                 }
                 None => {
                     let s = make_split(&name, &smiles, Some(&keys), method, seed, fractions);
-                    fs::write(&path, serde_json::to_string_pretty(&s).expect("serialize split")).expect("write split");
+                    fs::write(
+                        &path,
+                        serde_json::to_string_pretty(&s).expect("serialize split"),
+                    )
+                    .expect("write split");
                     println!("  [new] {}", path.display());
                     s
                 }
@@ -126,7 +147,11 @@ fn main() {
     }
 
     // Split statistics and baselines.
-    let key_of: HashMap<&str, &str> = smiles.iter().map(String::as_str).zip(keys.iter().map(String::as_str)).collect();
+    let key_of: HashMap<&str, &str> = smiles
+        .iter()
+        .map(String::as_str)
+        .zip(keys.iter().map(String::as_str))
+        .collect();
     let mut stats = Vec::new();
     // Feature sets, one row per pool molecule.
     let t0 = Instant::now();
@@ -136,7 +161,11 @@ fn main() {
     let ecfp = feature("ecfp4_2048");
     let desc_ecfp = feature("descriptors+ecfp4");
     let quad_desc_ecfp = feature("quad_descriptors+ecfp4");
-    println!("\n  features computed in {:.2} s (descriptors: {}, ECFP4 bits: 2048)", t0.elapsed().as_secs_f64(), desc[0].len());
+    println!(
+        "\n  features computed in {:.2} s (descriptors: {}, ECFP4 bits: 2048)",
+        t0.elapsed().as_secs_f64(),
+        desc[0].len()
+    );
     let runs: [(BaselineModel, &str, &Vec<Vec<f64>>); 9] = [
         (BaselineModel::Mean, "none", &csv19),
         (BaselineModel::RidgeLinear, "csv19_legacy", &csv19),
@@ -146,15 +175,30 @@ fn main() {
         (BaselineModel::RidgeLinear, "ecfp4_2048", &ecfp),
         (BaselineModel::KnnTanimoto, "ecfp4_2048", &ecfp),
         (BaselineModel::RidgeLinear, "descriptors+ecfp4", &desc_ecfp),
-        (BaselineModel::RidgeLinear, "quad_descriptors+ecfp4", &quad_desc_ecfp),
+        (
+            BaselineModel::RidgeLinear,
+            "quad_descriptors+ecfp4",
+            &quad_desc_ecfp,
+        ),
     ];
 
     let mut per_split = Vec::new();
     for split in &splits {
         let idx = split.indices(&pool).expect("checked above");
-        let train_keys: HashSet<&str> = idx.train.iter().map(|&i| key_of[smiles[i].as_str()]).collect();
-        let test_keys: Vec<&str> = idx.test.iter().map(|&i| key_of[smiles[i].as_str()]).collect();
-        let seen = test_keys.iter().filter(|k| !k.is_empty() && train_keys.contains(*k)).count();
+        let train_keys: HashSet<&str> = idx
+            .train
+            .iter()
+            .map(|&i| key_of[smiles[i].as_str()])
+            .collect();
+        let test_keys: Vec<&str> = idx
+            .test
+            .iter()
+            .map(|&i| key_of[smiles[i].as_str()])
+            .collect();
+        let seen = test_keys
+            .iter()
+            .filter(|k| !k.is_empty() && train_keys.contains(*k))
+            .count();
         stats.push(SplitStats {
             name: split.name.clone(),
             train: idx.train.len(),
@@ -166,11 +210,20 @@ fn main() {
         for (model, name, feats) in &runs {
             let t = Instant::now();
             per_split.push(baseline_on_split(*model, name, feats, &pool, split).expect("baseline"));
-            println!("  {:<24} {:<18} {:<20} {:>6.2} s", split.name, model.name(), name, t.elapsed().as_secs_f64());
+            println!(
+                "  {:<24} {:<18} {:<20} {:>6.2} s",
+                split.name,
+                model.name(),
+                name,
+                t.elapsed().as_secs_f64()
+            );
         }
     }
 
-    println!("\n  {:<26} {:>6} {:>6} {:>6} {:>18}", "split", "train", "valid", "test", "test scaffold seen");
+    println!(
+        "\n  {:<26} {:>6} {:>6} {:>6} {:>18}",
+        "split", "train", "valid", "test", "test scaffold seen"
+    );
     for s in &stats {
         println!(
             "  {:<26} {:>6} {:>6} {:>6} {:>17.1}%",
@@ -184,18 +237,38 @@ fn main() {
 
     let mut summary = Vec::new();
     for method in [SplitMethod::Random, SplitMethod::Scaffold] {
-        let names: HashSet<&str> = splits.iter().filter(|s| s.method == method).map(|s| s.name.as_str()).collect();
-        let results: Vec<SplitResult> = per_split.iter().filter(|r| names.contains(r.split.as_str())).cloned().collect();
+        let names: HashSet<&str> = splits
+            .iter()
+            .filter(|s| s.method == method)
+            .map(|s| s.name.as_str())
+            .collect();
+        let results: Vec<SplitResult> = per_split
+            .iter()
+            .filter(|r| names.contains(r.split.as_str()))
+            .cloned()
+            .collect();
         summary.extend(aggregate(method, &results));
     }
 
     for method in [SplitMethod::Random, SplitMethod::Scaffold] {
-        println!("\n  {method:?} split, test set, mean +/- std over {} seeds", SEEDS.len());
-        println!("    {:<40} {:>17} {:>17} {:>17}", "model [features]", "logP R2", "QED R2", "SAS R2");
+        println!(
+            "\n  {method:?} split, test set, mean +/- std over {} seeds",
+            SEEDS.len()
+        );
+        println!(
+            "    {:<40} {:>17} {:>17} {:>17}",
+            "model [features]", "logP R2", "QED R2", "SAS R2"
+        );
         for a in summary.iter().filter(|a| a.method == method) {
-            let cells: Vec<String> = a.r2.iter().map(|m| format!("{:.3} +/- {:.3}", m.mean, m.std)).collect();
+            let cells: Vec<String> =
+                a.r2.iter()
+                    .map(|m| format!("{:.3} +/- {:.3}", m.mean, m.std))
+                    .collect();
             let label = format!("{} [{}]", a.model, a.features);
-            println!("    {:<40} {:>17} {:>17} {:>17}", label, cells[0], cells[1], cells[2]);
+            println!(
+                "    {:<40} {:>17} {:>17} {:>17}",
+                label, cells[0], cells[1], cells[2]
+            );
         }
     }
 
@@ -212,6 +285,10 @@ fn main() {
         summary,
     };
     let out = workspace("tests/benchmarks/zinc_molecular/reports/zinc_protocol_baselines.json");
-    fs::write(&out, serde_json::to_string_pretty(&report).expect("serialize report")).expect("write report");
+    fs::write(
+        &out,
+        serde_json::to_string_pretty(&report).expect("serialize report"),
+    )
+    .expect("write report");
     println!("\n[OK] report written to {}", out.display());
 }

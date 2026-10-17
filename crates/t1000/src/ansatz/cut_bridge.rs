@@ -36,8 +36,8 @@ where
     // CZ = 0.5 * (I⊗I + I⊗Z + Z⊗I - Z⊗Z)
     // Index 0: Identity (no phase flip), Index 1: Pauli-Z insertion
     let c: [[f64; 2]; 2] = [
-        [0.5, 0.5],   // I⊗I (+0.5), I⊗Z (+0.5)
-        [0.5, -0.5],  // Z⊗I (+0.5), Z⊗Z (-0.5)
+        [0.5, 0.5],  // I⊗I (+0.5), I⊗Z (+0.5)
+        [0.5, -0.5], // Z⊗I (+0.5), Z⊗Z (-0.5)
     ];
 
     let mut exp_a = [0.0f64; 4];
@@ -203,7 +203,11 @@ mod tests {
         };
 
         let branch_b = |z_flags: &[bool], _re: &mut [f64], _im: &mut [f64]| -> f64 {
-            if !z_flags[0] { 0.0 } else { 0.0 }
+            if !z_flags[0] {
+                0.0
+            } else {
+                0.0
+            }
         };
 
         let res = eval_cut_bridge_general(1, branch_a, branch_b, &mut re, &mut im);

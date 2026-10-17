@@ -6,11 +6,11 @@
 //! and Heptal ($7^K$) Hilbert spaces.
 
 use rand::Rng;
-use rand_chacha::ChaCha8Rng;
 use rand::SeedableRng;
+use rand_chacha::ChaCha8Rng;
 
 /// Euler-Mascheroni constant gamma = 0.5772156649015329
-pub const EULER_MASCHERONI: f64 = 0.5772156649015328606;
+pub const EULER_MASCHERONI: f64 = 0.577_215_664_901_532_9;
 
 /// Asymptotic Haar entropy deficit: 1 - gamma ≈ 0.422784335 nats
 pub const ASYMPTOTIC_HAAR_ENTROPY_DEFICIT: f64 = 1.0 - EULER_MASCHERONI;
@@ -297,9 +297,9 @@ mod tests {
     #[test]
     fn exact_xeb_on_haar_expectation_is_one() {
         for dim in [4, 7, 16, 49, 128, 343, 1024] {
-            let expected_sum_sqr = 2.0 / (dim as f64 + 1.0);
+            let expected_sum_sqr = 2.0 / (f64::from(dim) + 1.0);
             // Construct a synthetic probability vector with exactly the Haar sum of squares
-            let d_f = dim as f64;
+            let d_f = f64::from(dim);
             let exact_xeb = (d_f * (d_f + 1.0) * expected_sum_sqr - (d_f + 1.0)) / (d_f - 1.0);
             assert!(
                 (exact_xeb - 1.0).abs() < 1e-12,
@@ -320,9 +320,7 @@ mod tests {
             assert!(
                 report.passes_ks_test,
                 "dim={}: KS test failed, stat={}, crit={}",
-                dim,
-                report.ks_statistic,
-                report.ks_critical_value
+                dim, report.ks_statistic, report.ks_critical_value
             );
             assert!(
                 (report.exact_xeb - 1.0).abs() < 0.15,
@@ -333,8 +331,7 @@ mod tests {
             assert!(
                 report.is_porter_thomas_conforming,
                 "dim={}: report failed conformance: {:?}",
-                dim,
-                report
+                dim, report
             );
 
             // Verify entropy deficit is close to 1 - gamma (~0.42)

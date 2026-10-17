@@ -51,7 +51,10 @@ impl ComplexMatrix {
     }
 
     pub fn matmul(&self, other: &Self) -> Self {
-        assert_eq!(self.cols, other.rows, "incompatible matrix dimensions for matmul");
+        assert_eq!(
+            self.cols, other.rows,
+            "incompatible matrix dimensions for matmul"
+        );
         let mut out = Self::new(self.rows, other.cols);
         for r in 0..self.rows {
             for k in 0..self.cols {
@@ -335,7 +338,10 @@ mod tests {
         for r in 0..3 {
             for c in 0..3 {
                 let diff = (a[(r, c)] - rec[(r, c)]).norm();
-                assert!(diff < 1e-10, "SVD reconstruction error at ({r}, {c}): {diff}");
+                assert!(
+                    diff < 1e-10,
+                    "SVD reconstruction error at ({r}, {c}): {diff}"
+                );
             }
         }
 

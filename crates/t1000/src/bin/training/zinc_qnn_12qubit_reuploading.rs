@@ -14,14 +14,12 @@
 //!   Mechanism #2 : Mid-Circuit Feed-Forward from Qubit 8 (θ̃_{y,q} = θ_{y,q} + α_q · ⟨Z_8⟩_L1)
 //!   Mechanism #3 : Inter-Layer Data Re-Uploading (s_q · x̃_q before Layer 1 CZ block)
 
-use t1000::{
-    CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState,
-};
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
+use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState};
 
 const N_QUBITS: usize = 12;
 const DIM: usize = 1 << N_QUBITS; // 4,096
@@ -65,13 +63,13 @@ pub struct ReuploadingCheckpoint {
     pub n_qubits: usize,
     pub depth: usize,
     pub source_qubit: usize,
-    pub circuit_params: Vec<f64>,         // 60 params
-    pub feedforward_alphas: Vec<f64>,     // 12 alphas
-    pub upload_scales_l0: Vec<f64>,       // 12 DRU scales
-    pub readout_weights_12: Vec<Vec<f64>>,// 12 x 3
-    pub readout_biases_12: Vec<f64>,      // 3
-    pub readout_weights_78: Vec<Vec<f64>>,// 78 x 3
-    pub readout_biases_78: Vec<f64>,      // 3
+    pub circuit_params: Vec<f64>,          // 60 params
+    pub feedforward_alphas: Vec<f64>,      // 12 alphas
+    pub upload_scales_l0: Vec<f64>,        // 12 DRU scales
+    pub readout_weights_12: Vec<Vec<f64>>, // 12 x 3
+    pub readout_biases_12: Vec<f64>,       // 3
+    pub readout_weights_78: Vec<Vec<f64>>, // 78 x 3
+    pub readout_biases_78: Vec<f64>,       // 3
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -280,7 +278,11 @@ fn compute_mae_and_r2(preds: &[Vec<f64>], targets: &[Vec<f64>]) -> ([f64; 3], [f
     let mut r2 = [0.0; 3];
     for k in 0..3 {
         mae[k] /= n;
-        r2[k] = if ss_tot[k] > 1e-12 { 1.0 - ss_res[k] / ss_tot[k] } else { 0.0 };
+        r2[k] = if ss_tot[k] > 1e-12 {
+            1.0 - ss_res[k] / ss_tot[k]
+        } else {
+            0.0
+        };
     }
 
     (mae, r2)
@@ -344,7 +346,12 @@ fn chrono_now() -> String {
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap_or_default()
         .as_secs();
-    format!("2026-10-13T{:02}:{:02}:{:02}Z", (now / 3600) % 24, (now / 60) % 60, now % 60)
+    format!(
+        "2026-10-13T{:02}:{:02}:{:02}Z",
+        (now / 3600) % 24,
+        (now / 60) % 60,
+        now % 60
+    )
 }
 
 fn main() {
@@ -354,15 +361,26 @@ fn main() {
     println!(" Mode               : Universal Multi-Frequency Harmonic Expansion");
     println!(" Inter-Layer Upload : Stage 1 DRU between Layer 0 and Layer 1 CZ Block");
     println!(" Re-upload Kernel   : R_y(s_q · x̃_q) per qubit q ∈ 0..11");
-    println!(" Feed-Forward Qubit : Qubit {} (⟨Z_{}⟩ Dynamic Terminal Modulation)", SOURCE_QUBIT, SOURCE_QUBIT);
-    println!(" Hilbert Space Dim  : {} (12 Qubits, 64 KB L2 Cache-Resident)", DIM);
+    println!(
+        " Feed-Forward Qubit : Qubit {} (⟨Z_{}⟩ Dynamic Terminal Modulation)",
+        SOURCE_QUBIT, SOURCE_QUBIT
+    );
+    println!(
+        " Hilbert Space Dim  : {} (12 Qubits, 64 KB L2 Cache-Resident)",
+        DIM
+    );
     println!(" Hardware Target    : Bare-Metal AVX2 + FMA Single-Pass Fused POVM");
     println!(" Palette            : Deen OS Sovereign (Quantum Green / Hardware Gold / Alert Red)");
     println!("-------------------------------------------------------------------------\n");
 
-    let pruned_ckpt_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/checkpoints/zinc_12qubit_checkpoint_pruned99.json");
-    let midcircuit_ckpt_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/checkpoints/zinc_12qubit_checkpoint_midcircuit.json");
-    let train_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/data/zinc_train_10k.csv");
+    let pruned_ckpt_path = resolve_workspace_path(
+        "tests/benchmarks/zinc_molecular/checkpoints/zinc_12qubit_checkpoint_pruned99.json",
+    );
+    let midcircuit_ckpt_path = resolve_workspace_path(
+        "tests/benchmarks/zinc_molecular/checkpoints/zinc_12qubit_checkpoint_midcircuit.json",
+    );
+    let train_path =
+        resolve_workspace_path("tests/benchmarks/zinc_molecular/data/zinc_train_10k.csv");
     let test_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/data/zinc_test_2k.csv");
 
     // Load datasets
@@ -370,7 +388,9 @@ fn main() {
     let train_samples = match parse_zinc_csv(&train_path, 10_000) {
         Ok(s) => s,
         Err(e) => {
-            let fallback = resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_train_10k.csv");
+            let fallback = resolve_workspace_path(
+                "tests/benchmarks/zinc_molecular/outputs/zinc_train_10k.csv",
+            );
             match parse_zinc_csv(&fallback, 10_000) {
                 Ok(s) => s,
                 Err(_) => {
@@ -386,7 +406,8 @@ fn main() {
     let test_samples = match parse_zinc_csv(&test_path, 2_000) {
         Ok(s) => s,
         Err(e) => {
-            let fallback = resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_test_2k.csv");
+            let fallback =
+                resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_test_2k.csv");
             match parse_zinc_csv(&fallback, 2_000) {
                 Ok(s) => s,
                 Err(_) => {
@@ -403,19 +424,25 @@ fn main() {
     let circuit_params: Vec<f64>;
     if pruned_ckpt_path.exists() {
         let content = fs::read_to_string(&pruned_ckpt_path).expect("Read pruned checkpoint");
-        let ckpt: PrunedCheckpoint = serde_json::from_str(&content).expect("Parse pruned checkpoint");
+        let ckpt: PrunedCheckpoint =
+            serde_json::from_str(&content).expect("Parse pruned checkpoint");
         circuit_params = ckpt.pruned_hybrid_params[..60].to_vec();
         println!("  -> Loaded 60 pruned circuit parameters.");
     } else {
-        eprintln!("[-] Pruned checkpoint not found at: {}", pruned_ckpt_path.display());
+        eprintln!(
+            "[-] Pruned checkpoint not found at: {}",
+            pruned_ckpt_path.display()
+        );
         return;
     }
 
     // Load feedforward alphas from Mechanism #2
     let feedforward_alphas: Vec<f64>;
     if midcircuit_ckpt_path.exists() {
-        let content = fs::read_to_string(&midcircuit_ckpt_path).expect("Read midcircuit checkpoint");
-        let ckpt: MidCircuitCheckpoint = serde_json::from_str(&content).expect("Parse midcircuit checkpoint");
+        let content =
+            fs::read_to_string(&midcircuit_ckpt_path).expect("Read midcircuit checkpoint");
+        let ckpt: MidCircuitCheckpoint =
+            serde_json::from_str(&content).expect("Parse midcircuit checkpoint");
         feedforward_alphas = ckpt.feedforward_alphas;
         println!("  -> Loaded 12 optimized feed-forward alphas from Mechanism #2.");
     } else {
@@ -428,8 +455,8 @@ fn main() {
     let mut l2_state = QuantumState::new(DIM);
 
     let feats_10640 = [
-        24.0, 408.279, 15.0, 5.0, 2.0, 1.0, 0.0, 0.0, 1.0, 1.0,
-        12.0, 0.5, 9.0, 0.375, 5.0, 0.0, 4.0, 3.0, 4.0
+        24.0, 408.279, 15.0, 5.0, 2.0, 1.0, 0.0, 0.0, 1.0, 1.0, 12.0, 0.5, 9.0, 0.375, 5.0, 0.0,
+        4.0, 3.0, 4.0,
     ];
     let true_lp_10640 = -6.7716;
 
@@ -449,7 +476,15 @@ fn main() {
     for s in &train_samples {
         encoding.encode_amplitude_into(&s.features, &mut l2_state);
         let mut z = [0.0; N_QUBITS];
-        ansatz.forward_reuploading_in_place(&mut l2_state, &circuit_params, &s.features, &zero_scales, SOURCE_QUBIT, &zero_alphas, &mut z);
+        ansatz.forward_reuploading_in_place(
+            &mut l2_state,
+            &circuit_params,
+            &s.features,
+            &zero_scales,
+            SOURCE_QUBIT,
+            &zero_alphas,
+            &mut z,
+        );
         x_train_b.push(z.to_vec());
         y_train.push(vec![s.log_p, s.qed, s.sas]);
     }
@@ -460,10 +495,22 @@ fn main() {
     for s in &test_samples {
         encoding.encode_amplitude_into(&s.features, &mut l2_state);
         let mut z = [0.0; N_QUBITS];
-        ansatz.forward_reuploading_in_place(&mut l2_state, &circuit_params, &s.features, &zero_scales, SOURCE_QUBIT, &zero_alphas, &mut z);
+        ansatz.forward_reuploading_in_place(
+            &mut l2_state,
+            &circuit_params,
+            &s.features,
+            &zero_scales,
+            SOURCE_QUBIT,
+            &zero_alphas,
+            &mut z,
+        );
         y_test.push(vec![s.log_p, s.qed, s.sas]);
         let mut p = [b_base[0], b_base[1], b_base[2]];
-        for q in 0..N_QUBITS { for k in 0..3 { p[k] += w_base[q][k] * z[q]; } }
+        for q in 0..N_QUBITS {
+            for k in 0..3 {
+                p[k] += w_base[q][k] * z[q];
+            }
+        }
         preds_base.push(p.to_vec());
     }
     let (mae_b, r2_b) = compute_mae_and_r2(&preds_base, &y_test);
@@ -473,7 +520,15 @@ fn main() {
     for s in &train_samples {
         encoding.encode_amplitude_into(&s.features, &mut l2_state);
         let mut z = [0.0; N_QUBITS];
-        ansatz.forward_reuploading_in_place(&mut l2_state, &circuit_params, &s.features, &zero_scales, SOURCE_QUBIT, &feedforward_alphas, &mut z);
+        ansatz.forward_reuploading_in_place(
+            &mut l2_state,
+            &circuit_params,
+            &s.features,
+            &zero_scales,
+            SOURCE_QUBIT,
+            &feedforward_alphas,
+            &mut z,
+        );
         x_train_ff.push(z.to_vec());
     }
     let (w_ff, b_ff) = solve_ridge_regression(&x_train_ff, &y_train, 1e-3);
@@ -482,17 +537,33 @@ fn main() {
     for s in &test_samples {
         encoding.encode_amplitude_into(&s.features, &mut l2_state);
         let mut z = [0.0; N_QUBITS];
-        ansatz.forward_reuploading_in_place(&mut l2_state, &circuit_params, &s.features, &zero_scales, SOURCE_QUBIT, &feedforward_alphas, &mut z);
+        ansatz.forward_reuploading_in_place(
+            &mut l2_state,
+            &circuit_params,
+            &s.features,
+            &zero_scales,
+            SOURCE_QUBIT,
+            &feedforward_alphas,
+            &mut z,
+        );
         let mut p = [b_ff[0], b_ff[1], b_ff[2]];
-        for q in 0..N_QUBITS { for k in 0..3 { p[k] += w_ff[q][k] * z[q]; } }
+        for q in 0..N_QUBITS {
+            for k in 0..3 {
+                p[k] += w_ff[q][k] * z[q];
+            }
+        }
         preds_ff.push(p.to_vec());
     }
     let (mae_ff, r2_ff) = compute_mae_and_r2(&preds_ff, &y_test);
 
-    println!("  Baseline MAE: logP = {:.4}, QED = {:.4}, SAS = {:.4} | logP R² = {:.4}",
-        mae_b[0], mae_b[1], mae_b[2], r2_b[0]);
-    println!("  Mech #2  MAE: logP = {:.4}, QED = {:.4}, SAS = {:.4} | logP R² = {:.4}",
-        mae_ff[0], mae_ff[1], mae_ff[2], r2_ff[0]);
+    println!(
+        "  Baseline MAE: logP = {:.4}, QED = {:.4}, SAS = {:.4} | logP R² = {:.4}",
+        mae_b[0], mae_b[1], mae_b[2], r2_b[0]
+    );
+    println!(
+        "  Mech #2  MAE: logP = {:.4}, QED = {:.4}, SAS = {:.4} | logP R² = {:.4}",
+        mae_ff[0], mae_ff[1], mae_ff[2], r2_ff[0]
+    );
 
     // =========================================================================
     // PHASE 2: OPTIMIZING DATA RE-UPLOADING SCALES (s_q)
@@ -527,23 +598,57 @@ fn main() {
     println!("───────┼────────────────┼─────────────────────┼───────────┼────────────────────────────────────");
 
     for epoch in 1..=n_epochs {
-        let (loss_curr, w_curr, b_curr) = eval_dru_loss(&ansatz, &encoding, &circuit_params, &dru_scales, &feedforward_alphas, &opt_subset, 1e-3);
+        let (loss_curr, w_curr, b_curr) = eval_dru_loss(
+            &ansatz,
+            &encoding,
+            &circuit_params,
+            &dru_scales,
+            &feedforward_alphas,
+            &opt_subset,
+            1e-3,
+        );
 
         encoding.encode_amplitude_into(&feats_10640, &mut l2_state);
         let mut z_10640_curr = [0.0; N_QUBITS];
-        ansatz.forward_reuploading_in_place(&mut l2_state, &circuit_params, &feats_10640, &dru_scales, SOURCE_QUBIT, &feedforward_alphas, &mut z_10640_curr);
+        ansatz.forward_reuploading_in_place(
+            &mut l2_state,
+            &circuit_params,
+            &feats_10640,
+            &dru_scales,
+            SOURCE_QUBIT,
+            &feedforward_alphas,
+            &mut z_10640_curr,
+        );
         let mut pred_lp_10640_epoch = b_curr[0];
-        for q in 0..N_QUBITS { pred_lp_10640_epoch += w_curr[q][0] * z_10640_curr[q]; }
+        for q in 0..N_QUBITS {
+            pred_lp_10640_epoch += w_curr[q][0] * z_10640_curr[q];
+        }
 
         let mut grad = vec![0.0; N_QUBITS];
         for q in 0..N_QUBITS {
             let mut s_plus = dru_scales.clone();
             s_plus[q] += eps;
-            let (l_plus, _, _) = eval_dru_loss(&ansatz, &encoding, &circuit_params, &s_plus, &feedforward_alphas, &opt_subset, 1e-3);
+            let (l_plus, _, _) = eval_dru_loss(
+                &ansatz,
+                &encoding,
+                &circuit_params,
+                &s_plus,
+                &feedforward_alphas,
+                &opt_subset,
+                1e-3,
+            );
 
             let mut s_minus = dru_scales.clone();
             s_minus[q] -= eps;
-            let (l_minus, _, _) = eval_dru_loss(&ansatz, &encoding, &circuit_params, &s_minus, &feedforward_alphas, &opt_subset, 1e-3);
+            let (l_minus, _, _) = eval_dru_loss(
+                &ansatz,
+                &encoding,
+                &circuit_params,
+                &s_minus,
+                &feedforward_alphas,
+                &opt_subset,
+                1e-3,
+            );
 
             grad[q] = (l_plus - l_minus) / (2.0 * eps);
         }
@@ -560,21 +665,30 @@ fn main() {
         let norm_s = dru_scales.iter().map(|&s| s * s).sum::<f64>().sqrt();
         let mut s_pairs: Vec<(usize, f64)> = dru_scales.iter().cloned().enumerate().collect();
         s_pairs.sort_by(|a, b| b.1.abs().partial_cmp(&a.1.abs()).unwrap());
-        let top_str = format!("q{}: {:>+5.2}, q{}: {:>+5.2}, q{}: {:>+5.2}",
-            s_pairs[0].0, s_pairs[0].1, s_pairs[1].0, s_pairs[1].1, s_pairs[2].0, s_pairs[2].1);
+        let top_str = format!(
+            "q{}: {:>+5.2}, q{}: {:>+5.2}, q{}: {:>+5.2}",
+            s_pairs[0].0, s_pairs[0].1, s_pairs[1].0, s_pairs[1].1, s_pairs[2].0, s_pairs[2].1
+        );
 
-        println!("  {:>3}  │   {:>10.6}   │      {:>+10.4}     │  {:>7.4}  │ {}",
-            epoch, loss_curr, pred_lp_10640_epoch, norm_s, top_str);
+        println!(
+            "  {:>3}  │   {:>10.6}   │      {:>+10.4}     │  {:>7.4}  │ {}",
+            epoch, loss_curr, pred_lp_10640_epoch, norm_s, top_str
+        );
     }
     let el_opt = t_opt.elapsed();
     println!("───────┴────────────────┴─────────────────────┴───────────┴────────────────────────────────────");
-    println!("  DRU Optimization completed in {:.2}s\n", el_opt.as_secs_f64());
+    println!(
+        "  DRU Optimization completed in {:.2}s\n",
+        el_opt.as_secs_f64()
+    );
 
     println!(" Final Data Re-Uploading Scales (s_q for q ∈ 0..11):");
     print!("   ");
     for q in 0..N_QUBITS {
         print!("q{:02}: {:>+6.3}  ", q, dru_scales[q]);
-        if (q + 1) % 6 == 0 { print!("\n   "); }
+        if (q + 1) % 6 == 0 {
+            print!("\n   ");
+        }
     }
     println!();
 
@@ -589,7 +703,15 @@ fn main() {
     for s in &train_samples {
         encoding.encode_amplitude_into(&s.features, &mut l2_state);
         let mut z = [0.0; N_QUBITS];
-        ansatz.forward_reuploading_in_place(&mut l2_state, &circuit_params, &s.features, &dru_scales, SOURCE_QUBIT, &feedforward_alphas, &mut z);
+        ansatz.forward_reuploading_in_place(
+            &mut l2_state,
+            &circuit_params,
+            &s.features,
+            &dru_scales,
+            SOURCE_QUBIT,
+            &feedforward_alphas,
+            &mut z,
+        );
         x_train_dru.push(z.to_vec());
     }
     let (w_dru, b_dru) = solve_ridge_regression(&x_train_dru, &y_train, 1e-3);
@@ -598,9 +720,21 @@ fn main() {
     for s in &test_samples {
         encoding.encode_amplitude_into(&s.features, &mut l2_state);
         let mut z = [0.0; N_QUBITS];
-        ansatz.forward_reuploading_in_place(&mut l2_state, &circuit_params, &s.features, &dru_scales, SOURCE_QUBIT, &feedforward_alphas, &mut z);
+        ansatz.forward_reuploading_in_place(
+            &mut l2_state,
+            &circuit_params,
+            &s.features,
+            &dru_scales,
+            SOURCE_QUBIT,
+            &feedforward_alphas,
+            &mut z,
+        );
         let mut p = [b_dru[0], b_dru[1], b_dru[2]];
-        for q in 0..N_QUBITS { for k in 0..3 { p[k] += w_dru[q][k] * z[q]; } }
+        for q in 0..N_QUBITS {
+            for k in 0..3 {
+                p[k] += w_dru[q][k] * z[q];
+            }
+        }
         preds_dru.push(p.to_vec());
     }
     let (mae_dru, r2_dru) = compute_mae_and_r2(&preds_dru, &y_test);
@@ -613,16 +747,34 @@ fn main() {
     println!("  ┌─────────────┬──────────────────┬──────────────────┬──────────────────┐");
     println!("  │  Property   │  Baseline MAE    │  Re-Upload MAE   │  Improvement     │");
     println!("  ├─────────────┼──────────────────┼──────────────────┼──────────────────┤");
-    println!("  │  logP       │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │", mae_b[0], mae_dru[0], imp_dru_lp);
-    println!("  │  QED        │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │", mae_b[1], mae_dru[1], imp_dru_qed);
-    println!("  │  SAS        │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │", mae_b[2], mae_dru[2], imp_dru_sas);
+    println!(
+        "  │  logP       │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │",
+        mae_b[0], mae_dru[0], imp_dru_lp
+    );
+    println!(
+        "  │  QED        │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │",
+        mae_b[1], mae_dru[1], imp_dru_qed
+    );
+    println!(
+        "  │  SAS        │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │",
+        mae_b[2], mae_dru[2], imp_dru_sas
+    );
     println!("  └─────────────┴──────────────────┴──────────────────┴──────────────────┘\n");
     println!("  ┌─────────────┬──────────────────┬──────────────────┐");
     println!("  │  Property   │  Baseline R²     │  Re-Upload R²    │");
     println!("  ├─────────────┼──────────────────┼──────────────────┤");
-    println!("  │  logP       │ {:>16.6} │ {:>16.6} │", r2_b[0], r2_dru[0]);
-    println!("  │  QED        │ {:>16.6} │ {:>16.6} │", r2_b[1], r2_dru[1]);
-    println!("  │  SAS        │ {:>16.6} │ {:>16.6} │", r2_b[2], r2_dru[2]);
+    println!(
+        "  │  logP       │ {:>16.6} │ {:>16.6} │",
+        r2_b[0], r2_dru[0]
+    );
+    println!(
+        "  │  QED        │ {:>16.6} │ {:>16.6} │",
+        r2_b[1], r2_dru[1]
+    );
+    println!(
+        "  │  SAS        │ {:>16.6} │ {:>16.6} │",
+        r2_b[2], r2_dru[2]
+    );
     println!("  └─────────────┴──────────────────┴──────────────────┘\n");
 
     // =========================================================================
@@ -638,7 +790,16 @@ fn main() {
         encoding.encode_amplitude_into(&s.features, &mut l2_state);
         let mut z = [0.0; N_QUBITS];
         let mut zz = [0.0; N_PAIRS];
-        ansatz.forward_reuploading_full_readout_in_place(&mut l2_state, &circuit_params, &s.features, &dru_scales, SOURCE_QUBIT, &feedforward_alphas, &mut z, &mut zz);
+        ansatz.forward_reuploading_full_readout_in_place(
+            &mut l2_state,
+            &circuit_params,
+            &s.features,
+            &dru_scales,
+            SOURCE_QUBIT,
+            &feedforward_alphas,
+            &mut z,
+            &mut zz,
+        );
         let mut obs_78 = Vec::with_capacity(N_OBS_FULL);
         obs_78.extend_from_slice(&z);
         obs_78.extend_from_slice(&zz);
@@ -651,12 +812,25 @@ fn main() {
         encoding.encode_amplitude_into(&s.features, &mut l2_state);
         let mut z = [0.0; N_QUBITS];
         let mut zz = [0.0; N_PAIRS];
-        ansatz.forward_reuploading_full_readout_in_place(&mut l2_state, &circuit_params, &s.features, &dru_scales, SOURCE_QUBIT, &feedforward_alphas, &mut z, &mut zz);
+        ansatz.forward_reuploading_full_readout_in_place(
+            &mut l2_state,
+            &circuit_params,
+            &s.features,
+            &dru_scales,
+            SOURCE_QUBIT,
+            &feedforward_alphas,
+            &mut z,
+            &mut zz,
+        );
         let mut obs_78 = Vec::with_capacity(N_OBS_FULL);
         obs_78.extend_from_slice(&z);
         obs_78.extend_from_slice(&zz);
         let mut p = [b_uni[0], b_uni[1], b_uni[2]];
-        for q in 0..N_OBS_FULL { for k in 0..3 { p[k] += w_uni[q][k] * obs_78[q]; } }
+        for q in 0..N_OBS_FULL {
+            for k in 0..3 {
+                p[k] += w_uni[q][k] * obs_78[q];
+            }
+        }
         preds_uni.push(p.to_vec());
     }
     let (mae_uni, r2_uni) = compute_mae_and_r2(&preds_uni, &y_test);
@@ -669,13 +843,43 @@ fn main() {
     println!("  ┌─────────────┬──────────────────┬──────────────────┬──────────────────┬──────────────────┬──────────────────┐");
     println!("  │  Property   │  Baseline (12)   │  Mech #2 (FF)    │  Mech #3 (DRU)   │  Unified (78 Obs)│  Net Gain (%)    │");
     println!("  ├─────────────┼──────────────────┼──────────────────┼──────────────────┼──────────────────┼──────────────────┤");
-    println!("  │  logP MAE   │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │", mae_b[0], mae_ff[0], mae_dru[0], mae_uni[0], imp_uni_lp);
-    println!("  │  QED MAE    │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │", mae_b[1], mae_ff[1], mae_dru[1], mae_uni[1], imp_uni_qed);
-    println!("  │  SAS MAE    │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │", mae_b[2], mae_ff[2], mae_dru[2], mae_uni[2], imp_uni_sas);
+    println!(
+        "  │  logP MAE   │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │",
+        mae_b[0], mae_ff[0], mae_dru[0], mae_uni[0], imp_uni_lp
+    );
+    println!(
+        "  │  QED MAE    │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │",
+        mae_b[1], mae_ff[1], mae_dru[1], mae_uni[1], imp_uni_qed
+    );
+    println!(
+        "  │  SAS MAE    │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │",
+        mae_b[2], mae_ff[2], mae_dru[2], mae_uni[2], imp_uni_sas
+    );
     println!("  ├─────────────┼──────────────────┼──────────────────┼──────────────────┼──────────────────┼──────────────────┤");
-    println!("  │  logP R²    │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │", r2_b[0], r2_ff[0], r2_dru[0], r2_uni[0], (r2_uni[0] - r2_b[0]) / r2_b[0].abs() * 100.0);
-    println!("  │  QED R²     │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │", r2_b[1], r2_ff[1], r2_dru[1], r2_uni[1], (r2_uni[1] - r2_b[1]) / r2_b[1].abs() * 100.0);
-    println!("  │  SAS R²     │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │", r2_b[2], r2_ff[2], r2_dru[2], r2_uni[2], (r2_uni[2] - r2_b[2]) / r2_b[2].abs() * 100.0);
+    println!(
+        "  │  logP R²    │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │",
+        r2_b[0],
+        r2_ff[0],
+        r2_dru[0],
+        r2_uni[0],
+        (r2_uni[0] - r2_b[0]) / r2_b[0].abs() * 100.0
+    );
+    println!(
+        "  │  QED R²     │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │",
+        r2_b[1],
+        r2_ff[1],
+        r2_dru[1],
+        r2_uni[1],
+        (r2_uni[1] - r2_b[1]) / r2_b[1].abs() * 100.0
+    );
+    println!(
+        "  │  SAS R²     │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>16.6} │ {:>+14.2}%  │",
+        r2_b[2],
+        r2_ff[2],
+        r2_dru[2],
+        r2_uni[2],
+        (r2_uni[2] - r2_b[2]) / r2_b[2].abs() * 100.0
+    );
     println!("  └─────────────┴──────────────────┴──────────────────┴──────────────────┴──────────────────┴──────────────────┘\n");
 
     // =========================================================================
@@ -688,52 +892,111 @@ fn main() {
     // 1. Baseline pred
     encoding.encode_amplitude_into(&feats_10640, &mut l2_state);
     let mut z_10640_b = [0.0; N_QUBITS];
-    ansatz.forward_reuploading_in_place(&mut l2_state, &circuit_params, &feats_10640, &zero_scales, SOURCE_QUBIT, &zero_alphas, &mut z_10640_b);
+    ansatz.forward_reuploading_in_place(
+        &mut l2_state,
+        &circuit_params,
+        &feats_10640,
+        &zero_scales,
+        SOURCE_QUBIT,
+        &zero_alphas,
+        &mut z_10640_b,
+    );
     let mut p_lp_b = b_base[0];
-    for q in 0..N_QUBITS { p_lp_b += w_base[q][0] * z_10640_b[q]; }
+    for q in 0..N_QUBITS {
+        p_lp_b += w_base[q][0] * z_10640_b[q];
+    }
 
     // 2. FF pred
     encoding.encode_amplitude_into(&feats_10640, &mut l2_state);
     let mut z_10640_ff = [0.0; N_QUBITS];
-    ansatz.forward_reuploading_in_place(&mut l2_state, &circuit_params, &feats_10640, &zero_scales, SOURCE_QUBIT, &feedforward_alphas, &mut z_10640_ff);
+    ansatz.forward_reuploading_in_place(
+        &mut l2_state,
+        &circuit_params,
+        &feats_10640,
+        &zero_scales,
+        SOURCE_QUBIT,
+        &feedforward_alphas,
+        &mut z_10640_ff,
+    );
     let mut p_lp_ff = b_ff[0];
-    for q in 0..N_QUBITS { p_lp_ff += w_ff[q][0] * z_10640_ff[q]; }
+    for q in 0..N_QUBITS {
+        p_lp_ff += w_ff[q][0] * z_10640_ff[q];
+    }
 
     // 3. DRU pred (12-obs)
     encoding.encode_amplitude_into(&feats_10640, &mut l2_state);
     let mut z_10640_dru = [0.0; N_QUBITS];
-    ansatz.forward_reuploading_in_place(&mut l2_state, &circuit_params, &feats_10640, &dru_scales, SOURCE_QUBIT, &feedforward_alphas, &mut z_10640_dru);
+    ansatz.forward_reuploading_in_place(
+        &mut l2_state,
+        &circuit_params,
+        &feats_10640,
+        &dru_scales,
+        SOURCE_QUBIT,
+        &feedforward_alphas,
+        &mut z_10640_dru,
+    );
     let mut p_lp_dru = b_dru[0];
-    for q in 0..N_QUBITS { p_lp_dru += w_dru[q][0] * z_10640_dru[q]; }
+    for q in 0..N_QUBITS {
+        p_lp_dru += w_dru[q][0] * z_10640_dru[q];
+    }
 
     // 4. Unified pred (78-obs)
     encoding.encode_amplitude_into(&feats_10640, &mut l2_state);
     let mut z_10640_uni = [0.0; N_QUBITS];
     let mut zz_10640_uni = [0.0; N_PAIRS];
-    ansatz.forward_reuploading_full_readout_in_place(&mut l2_state, &circuit_params, &feats_10640, &dru_scales, SOURCE_QUBIT, &feedforward_alphas, &mut z_10640_uni, &mut zz_10640_uni);
+    ansatz.forward_reuploading_full_readout_in_place(
+        &mut l2_state,
+        &circuit_params,
+        &feats_10640,
+        &dru_scales,
+        SOURCE_QUBIT,
+        &feedforward_alphas,
+        &mut z_10640_uni,
+        &mut zz_10640_uni,
+    );
     let mut obs_10640_uni = Vec::with_capacity(N_OBS_FULL);
     obs_10640_uni.extend_from_slice(&z_10640_uni);
     obs_10640_uni.extend_from_slice(&zz_10640_uni);
     let mut p_lp_uni = b_uni[0];
-    for q in 0..N_OBS_FULL { p_lp_uni += w_uni[q][0] * obs_10640_uni[q]; }
+    for q in 0..N_OBS_FULL {
+        p_lp_uni += w_uni[q][0] * obs_10640_uni[q];
+    }
 
     let e_b = (p_lp_b - true_lp_10640).abs();
     let e_ff = (p_lp_ff - true_lp_10640).abs();
     let e_dru = (p_lp_dru - true_lp_10640).abs();
     let e_uni = (p_lp_uni - true_lp_10640).abs();
 
-    println!("  SMILES: O=[N+]([O-])c1ccc2c(c1)=[NH+][C@@H](CS[C@H]1[NH+]=c3ccc(Br)cc3=[NH+]1)[NH+]=2");
+    println!(
+        "  SMILES: O=[N+]([O-])c1ccc2c(c1)=[NH+][C@@H](CS[C@H]1[NH+]=c3ccc(Br)cc3=[NH+]1)[NH+]=2"
+    );
     println!("  Physical Target : True logP = {:>+10.4}\n", true_lp_10640);
     println!("  ┌────────────────────────────────┬──────────────────┬──────────────────┐");
     println!("  │  Architectural Stage           │  Predicted logP  │  Absolute Error  │");
     println!("  ├────────────────────────────────┼──────────────────┼──────────────────┤");
-    println!("  │  Baseline 12-Qubit QNN         │ {:>16.4} │ {:>16.4} │", p_lp_b, e_b);
-    println!("  │  + Mech #2 (Feed-Forward)      │ {:>16.4} │ {:>16.4} │", p_lp_ff, e_ff);
-    println!("  │  + Mech #3 (Data Re-Uploading) │ {:>16.4} │ {:>16.4} │", p_lp_dru, e_dru);
-    println!("  │  + Unified (M1 + M2 + M3: 78)  │ {:>16.4} │ {:>16.4} │", p_lp_uni, e_uni);
+    println!(
+        "  │  Baseline 12-Qubit QNN         │ {:>16.4} │ {:>16.4} │",
+        p_lp_b, e_b
+    );
+    println!(
+        "  │  + Mech #2 (Feed-Forward)      │ {:>16.4} │ {:>16.4} │",
+        p_lp_ff, e_ff
+    );
+    println!(
+        "  │  + Mech #3 (Data Re-Uploading) │ {:>16.4} │ {:>16.4} │",
+        p_lp_dru, e_dru
+    );
+    println!(
+        "  │  + Unified (M1 + M2 + M3: 78)  │ {:>16.4} │ {:>16.4} │",
+        p_lp_uni, e_uni
+    );
     println!("  └────────────────────────────────┴──────────────────┴──────────────────┘\n");
-    println!("  Born Solvation Error Reduction: {:.4} -> {:.4} (Gain = {:>+6.2}%)\n",
-        e_b, e_uni, (1.0 - e_uni / e_b) * 100.0);
+    println!(
+        "  Born Solvation Error Reduction: {:.4} -> {:.4} (Gain = {:>+6.2}%)\n",
+        e_b,
+        e_uni,
+        (1.0 - e_uni / e_b) * 100.0
+    );
 
     // =========================================================================
     // PHASE 6: TOP OUTLIER CORRECTIONS
@@ -752,13 +1015,30 @@ fn main() {
     corrections.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
 
     println!(" Top 10 logP Error Reductions across Holdout Set:");
-    println!(" ┌────────┬────────────────┬────────────────┬────────────────┬──────────────────────────┐");
-    println!(" │  Rank  │  Baseline |ε|  │  Unified |ε|   │  Δ Correction  │  SMILES (truncated)      │");
-    println!(" ├────────┼────────────────┼────────────────┼────────────────┼──────────────────────────┤");
-    for (rank, &(_idx, correction, err_b, err_u, smiles)) in corrections.iter().take(10).enumerate() {
-        let smi_short = if smiles.len() > 24 { &smiles[..24] } else { smiles };
-        println!(" │  {:>4}  │ {:>14.4} │ {:>14.4} │ {:>+14.4} │  {:<24} │",
-            rank + 1, err_b, err_u, correction, smi_short);
+    println!(
+        " ┌────────┬────────────────┬────────────────┬────────────────┬──────────────────────────┐"
+    );
+    println!(
+        " │  Rank  │  Baseline |ε|  │  Unified |ε|   │  Δ Correction  │  SMILES (truncated)      │"
+    );
+    println!(
+        " ├────────┼────────────────┼────────────────┼────────────────┼──────────────────────────┤"
+    );
+    for (rank, &(_idx, correction, err_b, err_u, smiles)) in corrections.iter().take(10).enumerate()
+    {
+        let smi_short = if smiles.len() > 24 {
+            &smiles[..24]
+        } else {
+            smiles
+        };
+        println!(
+            " │  {:>4}  │ {:>14.4} │ {:>14.4} │ {:>+14.4} │  {:<24} │",
+            rank + 1,
+            err_b,
+            err_u,
+            correction,
+            smi_short
+        );
     }
     println!(" └────────┴────────────────┴────────────────┴────────────────┴──────────────────────────┘\n");
 
@@ -776,7 +1056,12 @@ fn main() {
             encoding.encode_amplitude_into(&s.features, &mut l2_state);
             ansatz.forward_l2_in_place(&mut l2_state, &circuit_params[..48]);
             let mut z = [0.0; N_QUBITS];
-            t1000::simd::measure_fused_ry_z_readout(&l2_state.real, &l2_state.imag, &circuit_params[48..60], &mut z);
+            t1000::simd::measure_fused_ry_z_readout(
+                &l2_state.real,
+                &l2_state.imag,
+                &circuit_params[48..60],
+                &mut z,
+            );
         }
     }
     let tp_baseline = (test_samples.len() * repeats) as f64 / t_bb.elapsed().as_secs_f64();
@@ -786,7 +1071,15 @@ fn main() {
         for s in &test_samples {
             encoding.encode_amplitude_into(&s.features, &mut l2_state);
             let mut z = [0.0; N_QUBITS];
-            ansatz.forward_reuploading_in_place(&mut l2_state, &circuit_params, &s.features, &dru_scales, SOURCE_QUBIT, &feedforward_alphas, &mut z);
+            ansatz.forward_reuploading_in_place(
+                &mut l2_state,
+                &circuit_params,
+                &s.features,
+                &dru_scales,
+                SOURCE_QUBIT,
+                &feedforward_alphas,
+                &mut z,
+            );
         }
     }
     let tp_reupload = (test_samples.len() * repeats) as f64 / t_dd.elapsed().as_secs_f64();
@@ -797,15 +1090,33 @@ fn main() {
             encoding.encode_amplitude_into(&s.features, &mut l2_state);
             let mut z = [0.0; N_QUBITS];
             let mut zz = [0.0; N_PAIRS];
-            ansatz.forward_reuploading_full_readout_in_place(&mut l2_state, &circuit_params, &s.features, &dru_scales, SOURCE_QUBIT, &feedforward_alphas, &mut z, &mut zz);
+            ansatz.forward_reuploading_full_readout_in_place(
+                &mut l2_state,
+                &circuit_params,
+                &s.features,
+                &dru_scales,
+                SOURCE_QUBIT,
+                &feedforward_alphas,
+                &mut z,
+                &mut zz,
+            );
         }
     }
     let tp_unified = (test_samples.len() * repeats) as f64 / t_uu.elapsed().as_secs_f64();
 
-    println!("  Baseline Readout (12 obs) : {:>7.0} mols/sec", tp_baseline);
-    println!("  Re-Uploading     (12 obs) : {:>7.0} mols/sec (Overhead: {:>+.2}%)",
-        tp_reupload, (1.0 - tp_reupload / tp_baseline) * 100.0);
-    println!("  Unified Readout  (78 obs) : {:>7.0} mols/sec\n", tp_unified);
+    println!(
+        "  Baseline Readout (12 obs) : {:>7.0} mols/sec",
+        tp_baseline
+    );
+    println!(
+        "  Re-Uploading     (12 obs) : {:>7.0} mols/sec (Overhead: {:>+.2}%)",
+        tp_reupload,
+        (1.0 - tp_reupload / tp_baseline) * 100.0
+    );
+    println!(
+        "  Unified Readout  (78 obs) : {:>7.0} mols/sec\n",
+        tp_unified
+    );
 
     // =========================================================================
     // PHASE 8: PERSISTENCE (CHECKPOINT & REPORT)
@@ -828,16 +1139,27 @@ fn main() {
         readout_biases_78: b_uni,
     };
 
-    let ckpt_save_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/checkpoints/zinc_12qubit_checkpoint_reuploading.json");
-    if let Some(parent) = ckpt_save_path.parent() { fs::create_dir_all(parent).ok(); }
+    let ckpt_save_path = resolve_workspace_path(
+        "tests/benchmarks/zinc_molecular/checkpoints/zinc_12qubit_checkpoint_reuploading.json",
+    );
+    if let Some(parent) = ckpt_save_path.parent() {
+        fs::create_dir_all(parent).ok();
+    }
     let ckpt_json = serde_json::to_string_pretty(&checkpoint).expect("Serialize checkpoint");
     fs::write(&ckpt_save_path, ckpt_json).expect("Write checkpoint");
-    println!("  [✓] Saved Re-Uploading Checkpoint: {}", ckpt_save_path.display());
+    println!(
+        "  [✓] Saved Re-Uploading Checkpoint: {}",
+        ckpt_save_path.display()
+    );
 
     // Classical reference: ridge regression on the same raw features and train/test split.
     let classical_baselines = t1000::baselines::zinc_baselines(
-        train_samples.iter().map(|s| (s.features.as_slice(), [s.log_p, s.qed, s.sas])),
-        test_samples.iter().map(|s| (s.features.as_slice(), [s.log_p, s.qed, s.sas])),
+        train_samples
+            .iter()
+            .map(|s| (s.features.as_slice(), [s.log_p, s.qed, s.sas])),
+        test_samples
+            .iter()
+            .map(|s| (s.features.as_slice(), [s.log_p, s.qed, s.sas])),
     );
     let report = ReuploadingReport {
         classical_baselines: classical_baselines.clone(),
@@ -883,30 +1205,69 @@ fn main() {
         unified_throughput_mols_per_sec: tp_unified,
     };
 
-    let report_save_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/reports/zinc_12qubit_reuploading_report.json");
-    if let Some(parent) = report_save_path.parent() { fs::create_dir_all(parent).ok(); }
+    let report_save_path = resolve_workspace_path(
+        "tests/benchmarks/zinc_molecular/reports/zinc_12qubit_reuploading_report.json",
+    );
+    if let Some(parent) = report_save_path.parent() {
+        fs::create_dir_all(parent).ok();
+    }
     {
         use t1000::baselines::{print_comparison, QnnScore};
         let qnn_rows = [
-        QnnScore::new("circuit, no mechanisms")
-            .mae([report.baseline_mae_logp, report.baseline_mae_qed, report.baseline_mae_sas])
-            .r2([report.baseline_r2_logp, report.baseline_r2_qed, report.baseline_r2_sas]),
-        QnnScore::new("mid-circuit feed-forward")
-            .mae([report.feedforward_mae_logp, report.feedforward_mae_qed, report.feedforward_mae_sas])
-            .r2([report.feedforward_r2_logp, report.feedforward_r2_qed, report.feedforward_r2_sas]),
-        QnnScore::new("data re-uploading")
-            .mae([report.reuploading_mae_logp, report.reuploading_mae_qed, report.reuploading_mae_sas])
-            .r2([report.reuploading_r2_logp, report.reuploading_r2_qed, report.reuploading_r2_sas]),
-        QnnScore::new("re-uploading + ZZ readout")
-            .mae([report.unified_mae_logp, report.unified_mae_qed, report.unified_mae_sas])
-            .r2([report.unified_r2_logp, report.unified_r2_qed, report.unified_r2_sas]),
+            QnnScore::new("circuit, no mechanisms")
+                .mae([
+                    report.baseline_mae_logp,
+                    report.baseline_mae_qed,
+                    report.baseline_mae_sas,
+                ])
+                .r2([
+                    report.baseline_r2_logp,
+                    report.baseline_r2_qed,
+                    report.baseline_r2_sas,
+                ]),
+            QnnScore::new("mid-circuit feed-forward")
+                .mae([
+                    report.feedforward_mae_logp,
+                    report.feedforward_mae_qed,
+                    report.feedforward_mae_sas,
+                ])
+                .r2([
+                    report.feedforward_r2_logp,
+                    report.feedforward_r2_qed,
+                    report.feedforward_r2_sas,
+                ]),
+            QnnScore::new("data re-uploading")
+                .mae([
+                    report.reuploading_mae_logp,
+                    report.reuploading_mae_qed,
+                    report.reuploading_mae_sas,
+                ])
+                .r2([
+                    report.reuploading_r2_logp,
+                    report.reuploading_r2_qed,
+                    report.reuploading_r2_sas,
+                ]),
+            QnnScore::new("re-uploading + ZZ readout")
+                .mae([
+                    report.unified_mae_logp,
+                    report.unified_mae_qed,
+                    report.unified_mae_sas,
+                ])
+                .r2([
+                    report.unified_r2_logp,
+                    report.unified_r2_qed,
+                    report.unified_r2_sas,
+                ]),
         ];
         print_comparison(&qnn_rows, &classical_baselines);
     }
 
     let report_json = serde_json::to_string_pretty(&report).expect("Serialize report");
     fs::write(&report_save_path, report_json).expect("Write report");
-    println!("  [✓] Saved Machine-Readable Report: {}", report_save_path.display());
+    println!(
+        "  [✓] Saved Machine-Readable Report: {}",
+        report_save_path.display()
+    );
     println!("\n=========================================================================");
     println!(" MECHANISM #3 DATA RE-UPLOADING VERIFICATION COMPLETE                     ");
     println!("=========================================================================");

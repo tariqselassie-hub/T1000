@@ -125,14 +125,14 @@ fn main() {
     println!("├──────┬──────────────┼────────────────────────┼──────────────────────────┼────────────────────────────┼─────────────────┤");
 
     let test_points: [(usize, usize); 8] = [
-        (18, 7),     // 18Q Kagome Star
-        (30, 14),    // 30Q (Desktop RAM limit for dense)
-        (46, 22),    // 46Q (Perlmutter limit)
-        (50, 24),    // 50Q (Frontier & Aurora 18 PB Crash Wall)
-        (101, 50),   // 101Q (Exceeds Earth's digital data)
-        (501, 250),  // 501Q (Exceeds atoms in galaxy)
-        (1001, 500), // 1,001Q (Exceeds atoms in universe)
-        (2001, 1000),// 2,001Q (Double-universe scale)
+        (18, 7),      // 18Q Kagome Star
+        (30, 14),     // 30Q (Desktop RAM limit for dense)
+        (46, 22),     // 46Q (Perlmutter limit)
+        (50, 24),     // 50Q (Frontier & Aurora 18 PB Crash Wall)
+        (101, 50),    // 101Q (Exceeds Earth's digital data)
+        (501, 250),   // 501Q (Exceeds atoms in galaxy)
+        (1001, 500),  // 1,001Q (Exceeds atoms in universe)
+        (2001, 1000), // 2,001Q (Double-universe scale)
     ];
 
     for &(n_qubits, m_plaq) in &test_points {
@@ -157,12 +157,7 @@ fn main() {
 
         println!(
             "│ {:>4} │ {:>12} │ {:<22} │ {:<24} │ {:>10} B (L1 Cache)  │ {:>15} │",
-            n_qubits,
-            m_plaq,
-            dense_ram_str,
-            frontier_stat,
-            rep.max_active_bytes,
-            elapsed_str
+            n_qubits, m_plaq, dense_ram_str, frontier_stat, rep.max_active_bytes, elapsed_str
         );
     }
     println!("└──────┴──────────────┴────────────────────────┴──────────────────────────┴────────────────────────────┴─────────────────┘");

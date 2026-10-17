@@ -9,7 +9,10 @@ use num_complex::Complex64;
 fn born_probs(reg: &QubitRegister) -> Vec<f64> {
     let total: f64 = reg.amplitudes.iter().map(|a| a.norm_sqr()).sum();
     if total > 0.0 {
-        reg.amplitudes.iter().map(|a| a.norm_sqr() / total).collect()
+        reg.amplitudes
+            .iter()
+            .map(|a| a.norm_sqr() / total)
+            .collect()
     } else {
         vec![0.0; reg.basis]
     }
@@ -36,11 +39,7 @@ fn rotate_amplitudes_toward_phases(reg: &mut QubitRegister, target_phases: &[f64
 }
 
 /// Blend amplitudes toward a target magnitude profile: low-E states grow, high-E states shrink.
-fn nudge_magnitudes_toward_energy(
-    reg: &mut QubitRegister,
-    norm_energies: &[f64],
-    strength: f64,
-) {
+fn nudge_magnitudes_toward_energy(reg: &mut QubitRegister, norm_energies: &[f64], strength: f64) {
     assert_eq!(reg.basis, norm_energies.len());
     let s = strength.clamp(0.0, 0.4);
     for (i, a) in reg.amplitudes.iter_mut().enumerate() {
@@ -114,10 +113,7 @@ pub struct BifurcationResult {
 ///
 /// # Panics
 /// Panics if `energies` is empty or `energies.len() != cfg.basis`.
-pub fn simulated_bifurcation(
-    energies: &[f64],
-    cfg: BifurcationConfig,
-) -> BifurcationResult {
+pub fn simulated_bifurcation(energies: &[f64], cfg: BifurcationConfig) -> BifurcationResult {
     assert!(!energies.is_empty(), "energies must be non-empty");
     assert_eq!(
         energies.len(),
@@ -200,7 +196,9 @@ pub fn simulated_bifurcation(
 
     // 4. Decoherence then collapse
     let ch = DecoherenceChannel::new(
-        ChannelKind::AmplitudeDamping { gamma: cfg.gamma.clamp(0.01, 0.5) },
+        ChannelKind::AmplitudeDamping {
+            gamma: cfg.gamma.clamp(0.01, 0.5),
+        },
         cfg.collapse_seed,
     );
     apply(&mut reg, &ch);
@@ -236,10 +234,7 @@ pub fn simulated_bifurcation(
 
 /// Compute net interference between the final winner register and the
 /// single-candidate register that encodes a candidate index.
-pub fn bifurcation_interference(
-    result: &BifurcationResult,
-    target_candidate: usize,
-) -> f64 {
+pub fn bifurcation_interference(result: &BifurcationResult, target_candidate: usize) -> f64 {
     let mut target = QubitRegister::new(result.final_register.basis, result.final_register.seed);
     target.amplitudes[target_candidate % target.basis] = Complex64::new(1.0, 0.0);
     net_interference(&result.final_register, &target)

@@ -17,7 +17,11 @@ fn joint_probability_positive(a: &QubitRegister, b: &QubitRegister) -> f64 {
     (0..min_basis)
         .map(|i| {
             let p = a.probability(i) * b.probability(i);
-            if (a.amplitudes[i] * b.amplitudes[i]).re.is_sign_positive() { p } else { 0.0 }
+            if (a.amplitudes[i] * b.amplitudes[i]).re.is_sign_positive() {
+                p
+            } else {
+                0.0
+            }
         })
         .sum::<f64>()
         .sqrt()
@@ -28,7 +32,11 @@ fn joint_probability_negative(a: &QubitRegister, b: &QubitRegister) -> f64 {
     (0..min_basis)
         .map(|i| {
             let p = a.probability(i) * b.probability(i);
-            if (a.amplitudes[i] * b.amplitudes[i]).re.is_sign_negative() { p } else { 0.0 }
+            if (a.amplitudes[i] * b.amplitudes[i]).re.is_sign_negative() {
+                p
+            } else {
+                0.0
+            }
         })
         .sum::<f64>()
         .sqrt()

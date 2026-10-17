@@ -15,9 +15,32 @@ use crate::smiles::{parse, BondKind, ParsedSmiles, SmilesError, SmilesFeaturizer
 
 /// Names of the [`descriptors`] vector entries, in order.
 pub const DESCRIPTOR_NAMES: [&str; 26] = [
-    "n_c", "n_arom_c", "n_n", "n_arom_n", "n_o", "n_arom_o", "n_f", "n_cl", "n_br", "n_i", "n_s", "n_p",
-    "n_double", "n_triple", "n_branches", "n_chiral", "n_rings", "heavy_atoms", "n_hydrogens", "formal_charge",
-    "mol_weight", "heteroatom_ratio", "hbd", "hba", "rotatable_bonds", "aromatic_fraction",
+    "n_c",
+    "n_arom_c",
+    "n_n",
+    "n_arom_n",
+    "n_o",
+    "n_arom_o",
+    "n_f",
+    "n_cl",
+    "n_br",
+    "n_i",
+    "n_s",
+    "n_p",
+    "n_double",
+    "n_triple",
+    "n_branches",
+    "n_chiral",
+    "n_rings",
+    "heavy_atoms",
+    "n_hydrogens",
+    "formal_charge",
+    "mol_weight",
+    "heteroatom_ratio",
+    "hbd",
+    "hba",
+    "rotatable_bonds",
+    "aromatic_fraction",
 ];
 
 fn bond_code(kind: BondKind) -> u8 {
@@ -93,7 +116,11 @@ pub fn descriptors(smiles: &str) -> Result<Vec<f64>, SmilesError> {
     let f = SmilesFeaturizer::featurize(smiles)?;
     let mol = parse(smiles)?;
     let ring = ring_bonds(&mol);
-    let heavy: Vec<bool> = mol.atoms.iter().map(|a| a.element != "H" && a.element != "*").collect();
+    let heavy: Vec<bool> = mol
+        .atoms
+        .iter()
+        .map(|a| a.element != "H" && a.element != "*")
+        .collect();
     let mut heavy_degree = vec![0usize; mol.atoms.len()];
     for &(a, b, _) in &mol.bonds {
         if heavy[b] {
@@ -114,7 +141,9 @@ pub fn descriptors(smiles: &str) -> Result<Vec<f64>, SmilesError> {
         }
     }
     let n_or_o = |i: usize| matches!(mol.atoms[i].element.as_str(), "N" | "O");
-    let hbd = (0..mol.atoms.len()).filter(|&i| n_or_o(i) && hydrogens[i] > 0).count();
+    let hbd = (0..mol.atoms.len())
+        .filter(|&i| n_or_o(i) && hydrogens[i] > 0)
+        .count();
     let hba = (0..mol.atoms.len()).filter(|&i| n_or_o(i)).count();
     let rotatable = mol
         .bonds
@@ -187,7 +216,11 @@ pub fn ecfp_identifiers(smiles: &str, radius: usize) -> Result<Vec<u64>, SmilesE
     let mol = parse(smiles)?;
     let ring = ring_bonds(&mol);
     let n = mol.atoms.len();
-    let heavy: Vec<bool> = mol.atoms.iter().map(|a| a.element != "H" && a.element != "*").collect();
+    let heavy: Vec<bool> = mol
+        .atoms
+        .iter()
+        .map(|a| a.element != "H" && a.element != "*")
+        .collect();
 
     let mut adj: Vec<Vec<(usize, u8)>> = vec![Vec::new(); n];
     let mut in_ring = vec![false; n];
@@ -236,7 +269,8 @@ pub fn ecfp_identifiers(smiles: &str, radius: usize) -> Result<Vec<u64>, SmilesE
                 if !heavy[i] {
                     return 0;
                 }
-                let mut neigh: Vec<(u8, u64)> = adj[i].iter().map(|&(j, code)| (code, ids[j])).collect();
+                let mut neigh: Vec<(u8, u64)> =
+                    adj[i].iter().map(|&(j, code)| (code, ids[j])).collect();
                 neigh.sort_unstable();
                 let mut words = vec![r as u64, ids[i]];
                 for (code, id) in neigh {
@@ -264,7 +298,11 @@ pub fn ecfp_counts(smiles: &str, radius: usize, n_bits: usize) -> Result<Vec<f64
 
 /// Sorted indices of the non-zero positions of a fingerprint.
 pub fn on_bits(fp: &[f64]) -> Vec<u32> {
-    fp.iter().enumerate().filter(|(_, &v)| v != 0.0).map(|(i, _)| i as u32).collect()
+    fp.iter()
+        .enumerate()
+        .filter(|(_, &v)| v != 0.0)
+        .map(|(i, _)| i as u32)
+        .collect()
 }
 
 /// Tanimoto (Jaccard) similarity of two sorted on-bit lists.
@@ -305,12 +343,23 @@ mod tests {
     fn ring_bonds_identify_bridges() {
         let toluene = parse("Cc1ccccc1").unwrap();
         let ring = ring_bonds(&toluene);
-        assert_eq!(ring.iter().filter(|&&r| r).count(), 6, "six aromatic ring bonds");
+        assert_eq!(
+            ring.iter().filter(|&&r| r).count(),
+            6,
+            "six aromatic ring bonds"
+        );
         assert!(!ring[0], "methyl bond is a bridge");
         let biphenyl = parse("c1ccc(-c2ccccc2)cc1").unwrap();
-        assert_eq!(ring_bonds(&biphenyl).iter().filter(|&&r| !r).count(), 1, "only the link bond is acyclic");
+        assert_eq!(
+            ring_bonds(&biphenyl).iter().filter(|&&r| !r).count(),
+            1,
+            "only the link bond is acyclic"
+        );
         let decalin = parse("C1CCC2CCCCC2C1").unwrap();
-        assert!(ring_bonds(&decalin).iter().all(|&r| r), "fused bicyclic: every bond is in a ring");
+        assert!(
+            ring_bonds(&decalin).iter().all(|&r| r),
+            "fused bicyclic: every bond is in a ring"
+        );
         assert!(ring_bonds(&parse("CCCC").unwrap()).iter().all(|&r| !r));
     }
 
@@ -341,8 +390,16 @@ mod tests {
 
     #[test]
     fn ecfp_is_invariant_to_smiles_writing_order() {
-        for (a, b) in [("CCO", "OCC"), ("Cc1ccccc1", "c1ccccc1C"), ("CC(=O)Oc1ccccc1C(=O)O", "OC(=O)c1ccccc1OC(C)=O")] {
-            assert_eq!(ecfp_counts(a, 2, 2048).unwrap(), ecfp_counts(b, 2, 2048).unwrap(), "{a} vs {b}");
+        for (a, b) in [
+            ("CCO", "OCC"),
+            ("Cc1ccccc1", "c1ccccc1C"),
+            ("CC(=O)Oc1ccccc1C(=O)O", "OC(=O)c1ccccc1OC(C)=O"),
+        ] {
+            assert_eq!(
+                ecfp_counts(a, 2, 2048).unwrap(),
+                ecfp_counts(b, 2, 2048).unwrap(),
+                "{a} vs {b}"
+            );
         }
     }
 
@@ -362,8 +419,14 @@ mod tests {
 
     #[test]
     fn ecfp_separates_molecules_and_tanimoto_ranks_similarity() {
-        assert_ne!(ecfp_counts("CCO", 2, 2048).unwrap(), ecfp_counts("CCCO", 2, 2048).unwrap());
-        assert_ne!(ecfp_counts("c1ccccc1", 2, 2048).unwrap(), ecfp_counts("c1ccncc1", 2, 2048).unwrap());
+        assert_ne!(
+            ecfp_counts("CCO", 2, 2048).unwrap(),
+            ecfp_counts("CCCO", 2, 2048).unwrap()
+        );
+        assert_ne!(
+            ecfp_counts("c1ccccc1", 2, 2048).unwrap(),
+            ecfp_counts("c1ccncc1", 2, 2048).unwrap()
+        );
         let bits = |s: &str| on_bits(&ecfp_counts(s, 2, 2048).unwrap());
         let toluene = bits("Cc1ccccc1");
         assert!((tanimoto(&toluene, &toluene) - 1.0).abs() < 1e-12);

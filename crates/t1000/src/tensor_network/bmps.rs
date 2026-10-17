@@ -1,7 +1,7 @@
-use num_complex::Complex64;
-use rand::Rng;
 use super::linalg::ComplexMatrix;
 use super::state::{LatticeTopology, PlanarTensorNetwork};
+use num_complex::Complex64;
+use rand::Rng;
 
 /// Configuration for Boundary Matrix Product State (BMPS) contraction.
 #[derive(Debug, Clone)]
@@ -108,15 +108,32 @@ fn contract_square_grid_amplitude(
             let site = tn.site(site_idx);
             let bit = bitstring[site_idx] as usize;
 
-            let west_dim = if c > 0 { site.neighbor_bond_dim(y * width + (c - 1)).unwrap_or(1) } else { 1 };
-            let east_dim = if c + 1 < width { site.neighbor_bond_dim(y * width + (c + 1)).unwrap_or(1) } else { 1 };
-            let north_dim = if y > 0 { site.neighbor_bond_dim((y - 1) * width + c).unwrap_or(1) } else { 1 };
-            let south_dim = if y + 1 < height { site.neighbor_bond_dim((y + 1) * width + c).unwrap_or(1) } else { 1 };
+            let west_dim = if c > 0 {
+                site.neighbor_bond_dim(y * width + (c - 1)).unwrap_or(1)
+            } else {
+                1
+            };
+            let east_dim = if c + 1 < width {
+                site.neighbor_bond_dim(y * width + (c + 1)).unwrap_or(1)
+            } else {
+                1
+            };
+            let north_dim = if y > 0 {
+                site.neighbor_bond_dim((y - 1) * width + c).unwrap_or(1)
+            } else {
+                1
+            };
+            let south_dim = if y + 1 < height {
+                site.neighbor_bond_dim((y + 1) * width + c).unwrap_or(1)
+            } else {
+                1
+            };
 
             next_wire_dims.push(east_dim);
 
             // Extract projected matrix: (West, North) x (East, South)
-            let mut node_data = vec![Complex64::new(0.0, 0.0); west_dim * north_dim * east_dim * south_dim];
+            let mut node_data =
+                vec![Complex64::new(0.0, 0.0); west_dim * north_dim * east_dim * south_dim];
 
             // Iterate over all neighbor indices of site
             let nbr_dims = &site.bond_dims;
@@ -344,7 +361,11 @@ pub fn sample_bitstring(
         let p1 = compute_probability(tn, &bitstring, config);
 
         let total = p0 + p1;
-        let prob_0 = if total > 1e-28 { (p0 / total).clamp(0.0, 1.0) } else { 0.5 };
+        let prob_0 = if total > 1e-28 {
+            (p0 / total).clamp(0.0, 1.0)
+        } else {
+            0.5
+        };
 
         let draw: f64 = rng.gen();
         if draw < prob_0 {
@@ -427,14 +448,20 @@ pub fn sample_batch(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::tensor_network::evolution::{
+        apply_single_qubit_gate, apply_two_qubit_gate, EvolutionTelemetry, SingleQubitGate,
+        TwoQubitGate,
+    };
+    use crate::tensor_network::state::LatticeTopology;
     use rand::SeedableRng;
     use rand_chacha::ChaCha8Rng;
-    use crate::tensor_network::state::LatticeTopology;
-    use crate::tensor_network::evolution::{SingleQubitGate, TwoQubitGate, apply_single_qubit_gate, apply_two_qubit_gate, EvolutionTelemetry};
 
     #[test]
     fn test_compute_amplitude_product_state_zero() {
-        let topo = LatticeTopology::SquareGrid { width: 2, height: 2 };
+        let topo = LatticeTopology::SquareGrid {
+            width: 2,
+            height: 2,
+        };
         let tn = PlanarTensorNetwork::new_product_state(topo, 8);
         let config = BoundaryMpsConfig::default();
 
@@ -448,7 +475,13 @@ mod tests {
 
     #[test]
     fn test_heavy_hex_product_state_amplitude() {
-        let tn = PlanarTensorNetwork::new_product_state(LatticeTopology::HeavyHex { width: 2, height: 1 }, 8);
+        let tn = PlanarTensorNetwork::new_product_state(
+            LatticeTopology::HeavyHex {
+                width: 2,
+                height: 1,
+            },
+            8,
+        );
         let n = tn.num_qubits();
         let config = BoundaryMpsConfig::default();
         assert!((compute_amplitude(&tn, &vec![0; n], &config).re - 1.0).abs() < 1e-12);
@@ -460,7 +493,10 @@ mod tests {
     #[test]
     #[should_panic(expected = "only implemented for product states")]
     fn test_heavy_hex_entangled_amplitude_refuses() {
-        let topo = LatticeTopology::HeavyHex { width: 2, height: 1 };
+        let topo = LatticeTopology::HeavyHex {
+            width: 2,
+            height: 1,
+        };
         let (u, v) = topo.edges()[0];
         let mut tn = PlanarTensorNetwork::new_product_state(topo, 8);
         let mut tel = EvolutionTelemetry::new();
@@ -472,7 +508,10 @@ mod tests {
 
     #[test]
     fn test_compute_amplitude_bell_state() {
-        let topo = LatticeTopology::SquareGrid { width: 2, height: 1 };
+        let topo = LatticeTopology::SquareGrid {
+            width: 2,
+            height: 1,
+        };
         let mut tn = PlanarTensorNetwork::new_product_state(topo, 8);
         let mut tel = EvolutionTelemetry::new();
 
@@ -495,7 +534,10 @@ mod tests {
 
     #[test]
     fn test_sample_batch_bell_state() {
-        let topo = LatticeTopology::SquareGrid { width: 2, height: 1 };
+        let topo = LatticeTopology::SquareGrid {
+            width: 2,
+            height: 1,
+        };
         let mut tn = PlanarTensorNetwork::new_product_state(topo, 8);
         let mut tel = EvolutionTelemetry::new();
 
@@ -509,7 +551,10 @@ mod tests {
         assert_eq!(batch.bitstrings.len(), 100);
 
         for bits in &batch.bitstrings {
-            assert!(bits == &[0, 0] || bits == &[1, 1], "Bell state samples must be |00> or |11>");
+            assert!(
+                bits == &[0, 0] || bits == &[1, 1],
+                "Bell state samples must be |00> or |11>"
+            );
         }
     }
 }

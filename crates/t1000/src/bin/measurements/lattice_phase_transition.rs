@@ -62,9 +62,23 @@ fn main() {
     println!("╔═══════════════════════════════════════════════════════════════════════════════╗");
     println!("║       T-1000 2D SOLID-STATE CRYSTAL LATTICE & PHASE TRANSITION ENGINE        ║");
     println!("╚═══════════════════════════════════════════════════════════════════════════════╝");
-    println!(" [LATTICE GEOMETRY] : {}x{} Grid (N = {} Qubits | Dim = {})", width, height, width * height, 1 << (width * height));
+    println!(
+        " [LATTICE GEOMETRY] : {}x{} Grid (N = {} Qubits | Dim = {})",
+        width,
+        height,
+        width * height,
+        1 << (width * height)
+    );
     println!(" [EXPERIMENT MODE]  : {}", experiment.to_uppercase());
-    println!(" [SPIN COUPLING]    : J = {:+.2} ({})", j_coupling, if j_coupling > 0.0 { "Ferromagnetic" } else { "Antiferromagnetic" });
+    println!(
+        " [SPIN COUPLING]    : J = {:+.2} ({})",
+        j_coupling,
+        if j_coupling > 0.0 {
+            "Ferromagnetic"
+        } else {
+            "Antiferromagnetic"
+        }
+    );
     println!(" [BOUNDARY TYPE]    : {:?}\n", boundary);
 
     match experiment {
@@ -161,28 +175,33 @@ fn run_phase_transition_sweep(
     println!("╚═════════════╩══════════════╩══════════════╩═════════════════╩═════════════════╝");
 
     println!("\n [DISCOVERY VERIFICATION] :");
-    println!("   Peak Bipartite Entanglement Entropy : {:.4} nats", peak_entropy);
-    println!("   Empirical Phase Boundary            : h_x / |J| ≈ {:.3}", critical_hx / j_coupling.abs());
+    println!(
+        "   Peak Bipartite Entanglement Entropy : {:.4} nats",
+        peak_entropy
+    );
+    println!(
+        "   Empirical Phase Boundary            : h_x / |J| ≈ {:.3}",
+        critical_hx / j_coupling.abs()
+    );
     println!("   Theoretical 2D Ising Transition     : h_c / |J| ≈ 3.044");
-    println!("   Sweep Runtime                       : {:.2} s ({:.1} ms / point)\n", elapsed, elapsed * 1000.0 / hx_values.len() as f64);
+    println!(
+        "   Sweep Runtime                       : {:.2} s ({:.1} ms / point)\n",
+        elapsed,
+        elapsed * 1000.0 / hx_values.len() as f64
+    );
 
     save_telemetry(&frames, "results/experiments/lattice_phase_transition.json");
 }
 
 /// EXPERIMENT 2: Ultrafast Magnon Quench & Spin-Wave Propagation.
-fn run_magnon_quench(
-    width: usize,
-    height: usize,
-    j_coupling: f64,
-    boundary: BoundaryCondition,
-) {
+fn run_magnon_quench(width: usize, height: usize, j_coupling: f64, boundary: BoundaryCondition) {
     println!("─────────────────────────────────────────────────────────────────────────────");
     println!(" EXPERIMENT 2: ULTRAFAST MAGNON QUENCH & SPIN-WAVE INTERFERENCE DYNAMICS");
     println!(" Localized defect excitation at lattice center; evolving under Trotter-Suzuki.");
     println!("─────────────────────────────────────────────────────────────────────────────\n");
 
     let h_x = 1.20; // Moderate transverse tunneling to facilitate spin-wave dispersion
-    let dt = 0.05;  // Fine physical time step
+    let dt = 0.05; // Fine physical time step
     let total_steps = 20;
 
     let mut config = LatticeConfig::new_2d(width, height, j_coupling, h_x, 0.0);
@@ -198,8 +217,14 @@ fn run_magnon_quench(
     let defect_basis = 1usize << defect_site;
     state.real[defect_basis] = 1.0;
 
-    println!(" [EXCITATION] : Flipped center site ({}, {}) [Index {}] to |1> (Local Magnon Defect)", center_x, center_y, defect_site);
-    println!(" [PROPAGATOR] : Trotter-Suzuki Time Step Δt = {:.3} s | Total Steps = {}\n", dt, total_steps);
+    println!(
+        " [EXCITATION] : Flipped center site ({}, {}) [Index {}] to |1> (Local Magnon Defect)",
+        center_x, center_y, defect_site
+    );
+    println!(
+        " [PROPAGATOR] : Trotter-Suzuki Time Step Δt = {:.3} s | Total Steps = {}\n",
+        dt, total_steps
+    );
 
     let evolver = LatticeTrotterEvolver::new(config.clone(), dt);
     let mut frames: Vec<LatticeFrame> = Vec::new();
@@ -216,7 +241,10 @@ fn run_magnon_quench(
         // Render at periodic wave-propagation intervals
         if step == 5 || step == 10 || step == 15 || step == 20 {
             let t_phys = step as f64 * dt;
-            println!("── SPIN-WAVE EVOLUTION FRAME (Step {:02} | t = {:.2} s) ──", step, t_phys);
+            println!(
+                "── SPIN-WAVE EVOLUTION FRAME (Step {:02} | t = {:.2} s) ──",
+                step, t_phys
+            );
             println!("{}", render_lattice_ascii(&frame));
         }
 
@@ -229,7 +257,11 @@ fn run_magnon_quench(
 
 fn save_telemetry(frames: &[LatticeFrame], relative_path: &str) {
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let ws_root = manifest_dir.ancestors().nth(2).unwrap_or(&manifest_dir).to_path_buf();
+    let ws_root = manifest_dir
+        .ancestors()
+        .nth(2)
+        .unwrap_or(&manifest_dir)
+        .to_path_buf();
     let out_path = ws_root.join(relative_path);
 
     if let Some(parent) = out_path.parent() {
@@ -238,7 +270,10 @@ fn save_telemetry(frames: &[LatticeFrame], relative_path: &str) {
 
     match serde_json::to_string_pretty(frames) {
         Ok(json) => match fs::write(&out_path, json) {
-            Ok(()) => println!(" [PERSISTENCE] Telemetry saved successfully to: {}", out_path.display()),
+            Ok(()) => println!(
+                " [PERSISTENCE] Telemetry saved successfully to: {}",
+                out_path.display()
+            ),
             Err(e) => eprintln!(" [-] Could not write telemetry {}: {e}", out_path.display()),
         },
         Err(e) => eprintln!(" [-] Could not serialize telemetry: {e}"),

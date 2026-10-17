@@ -1,14 +1,14 @@
-use t1000::tensor_network::{
-    BoundaryMpsConfig, BpConfig, LatticeTopology, PlanarTensorNetwork, SingleQubitGate,
-    TwoQubitGate, apply_single_qubit_gate, apply_two_qubit_gate, gauge_into_vidal,
-    run_belief_propagation, sample_batch, EvolutionTelemetry,
-};
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 use std::time::Instant;
+use t1000::tensor_network::{
+    apply_single_qubit_gate, apply_two_qubit_gate, gauge_into_vidal, run_belief_propagation,
+    sample_batch, BoundaryMpsConfig, BpConfig, EvolutionTelemetry, LatticeTopology,
+    PlanarTensorNetwork, SingleQubitGate, TwoQubitGate,
+};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct DepthScalePoint {
@@ -53,8 +53,14 @@ fn main() {
     println!("=========================================================================");
     println!(" Physical Lattice  : 6 x 6 Planar Square Grid (36 Qubits)                ");
     println!(" Theory Base       : Tindall-Fishman BP Gauging + Rudolph-Tindall BMPS  ");
-    println!(" Dense State RAM   : 2^36 * 16 bytes = {:.2} TB (Physically Prohibitive)  ", dense_ram_tb);
-    println!(" Max Bond Dim (chi): {} (Bounded Virtual Rank)                          ", max_bond_dim);
+    println!(
+        " Dense State RAM   : 2^36 * 16 bytes = {:.2} TB (Physically Prohibitive)  ",
+        dense_ram_tb
+    );
+    println!(
+        " Max Bond Dim (chi): {} (Bounded Virtual Rank)                          ",
+        max_bond_dim
+    );
     println!(" BMPS Dimension (R): 8 (Boundary Slicing Rank)                          ");
     println!(" Target Metric     : Google Standard Linear F_XEB = 2^N * (1/M sum P) - 1");
     println!("-------------------------------------------------------------------------");
@@ -68,7 +74,9 @@ fn main() {
         tol: 1e-5,
         damping: 0.1,
     };
-    let bmps_config = BoundaryMpsConfig { max_boundary_dim: 8 };
+    let bmps_config = BoundaryMpsConfig {
+        max_boundary_dim: 8,
+    };
 
     for &cycle_depth in &depths {
         let topo = LatticeTopology::SquareGrid { width, height };

@@ -10,10 +10,10 @@ pub use dispatch::*;
 pub use reupload::DualAxisEncoder;
 
 use crate::state::QuantumState;
-use t1000_core::{Hamiltonian, PhaseGate, QubitRegister};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use serde::{Deserialize, Serialize};
+use t1000_core::{Hamiltonian, PhaseGate, QubitRegister};
 
 /// Parameterized Variational Quantum Circuit (VQC) Layer.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -37,7 +37,12 @@ impl VariationalQuantumLayer {
 
     /// Deterministic layer initialised from `seed`.
     pub fn new_seeded(dim: usize, dt: f64, entangle_coupling: f64, seed: u64) -> Self {
-        Self::from_rng(dim, dt, entangle_coupling, &mut ChaCha8Rng::seed_from_u64(seed))
+        Self::from_rng(
+            dim,
+            dt,
+            entangle_coupling,
+            &mut ChaCha8Rng::seed_from_u64(seed),
+        )
     }
 
     /// Layer initialised from a caller-supplied RNG (lets stacked layers share one stream).
@@ -93,7 +98,11 @@ impl VariationalQuantumLayer {
                 - std::f64::consts::PI;
         }
 
-        for (e, &g) in self.hamiltonian_energies.iter_mut().zip(energy_grads.iter()) {
+        for (e, &g) in self
+            .hamiltonian_energies
+            .iter_mut()
+            .zip(energy_grads.iter())
+        {
             *e -= lr * g;
             *e = e.clamp(-10.0, 10.0);
         }
@@ -131,7 +140,13 @@ impl DeepQuantumNeuralNetwork {
 
     /// Deterministic network initialised from `seed`; layers draw from one shared stream,
     /// so they are distinct from each other.
-    pub fn new_seeded(dim: usize, depth: usize, dt: f64, entangle_coupling: f64, seed: u64) -> Self {
+    pub fn new_seeded(
+        dim: usize,
+        depth: usize,
+        dt: f64,
+        entangle_coupling: f64,
+        seed: u64,
+    ) -> Self {
         assert!(depth >= 1, "Depth must be at least 1");
         let mut rng = ChaCha8Rng::seed_from_u64(seed);
         let layers = (0..depth)
@@ -391,12 +406,23 @@ impl CircuitAnsatz {
     /// Skips all terminal Rz and Ring-CZ gates because [Rz, Z_j] = 0 and [CZ, Z_j] = 0,
     /// yielding exact mathematical invariance for Pauli-Z expectation measurements.
     /// Expected weights length: 2 * n_qubits * (depth - 1) + n_qubits (e.g. 24 + 24 + 12 = 60).
-    pub fn forward_pruned_into(&self, state: &QuantumState, pruned_weights: &[f64], out: &mut QuantumState) {
+    pub fn forward_pruned_into(
+        &self,
+        state: &QuantumState,
+        pruned_weights: &[f64],
+        out: &mut QuantumState,
+    ) {
         assert_eq!(self.dim, state.dim);
         assert_eq!(self.dim, out.dim);
         assert!(self.depth >= 1, "Ansatz depth must be at least 1");
         let expected_len = 2 * self.n_qubits * (self.depth - 1) + self.n_qubits;
-        assert_eq!(pruned_weights.len(), expected_len, "Pruned weights length mismatch: expected {}, got {}", expected_len, pruned_weights.len());
+        assert_eq!(
+            pruned_weights.len(),
+            expected_len,
+            "Pruned weights length mismatch: expected {}, got {}",
+            expected_len,
+            pruned_weights.len()
+        );
 
         out.copy_from(state);
 
@@ -420,7 +446,12 @@ impl CircuitAnsatz {
     /// In-place evolution stopping at the end of Layer (depth - 2).
     /// Used for Observable Rotation Fusion where terminal Ry gates are evaluated analytically
     /// during POVM / Pauli measurement without mutating the 64 KB statevector in Layer 3.
-    pub fn forward_l2_into(&self, state: &QuantumState, pruned_weights: &[f64], out: &mut QuantumState) {
+    pub fn forward_l2_into(
+        &self,
+        state: &QuantumState,
+        pruned_weights: &[f64],
+        out: &mut QuantumState,
+    ) {
         assert_eq!(self.dim, state.dim);
         assert_eq!(self.dim, out.dim);
         self.assert_full_layer_weights(pruned_weights);
@@ -482,7 +513,11 @@ impl CircuitAnsatz {
         let n_eval = z_final.len();
         let theta_y = &pruned_weights[p_start..p_start + n_eval];
         crate::simd::measure_fused_ry_full_readout(
-            &out_state.real, &out_state.imag, theta_y, z_final, zz_final,
+            &out_state.real,
+            &out_state.imag,
+            theta_y,
+            z_final,
+            zz_final,
         );
     }
 
@@ -504,10 +539,14 @@ impl CircuitAnsatz {
         let m_src = crate::simd::measure_single_qubit_z(&state.real, &state.imag, source_qubit);
 
         let n_eval = z_final.len();
-        let dynamic_thetas = self.feedforward_thetas(pruned_weights, feedforward_weights, m_src, n_eval);
+        let dynamic_thetas =
+            self.feedforward_thetas(pruned_weights, feedforward_weights, m_src, n_eval);
 
         crate::simd::measure_fused_ry_z_readout(
-            &state.real, &state.imag, &dynamic_thetas[..n_eval], z_final,
+            &state.real,
+            &state.imag,
+            &dynamic_thetas[..n_eval],
+            z_final,
         );
 
         m_src
@@ -531,10 +570,15 @@ impl CircuitAnsatz {
         let m_src = crate::simd::measure_single_qubit_z(&state.real, &state.imag, source_qubit);
 
         let n_eval = z_final.len();
-        let dynamic_thetas = self.feedforward_thetas(pruned_weights, feedforward_weights, m_src, n_eval);
+        let dynamic_thetas =
+            self.feedforward_thetas(pruned_weights, feedforward_weights, m_src, n_eval);
 
         crate::simd::measure_fused_ry_full_readout(
-            &state.real, &state.imag, &dynamic_thetas[..n_eval], z_final, zz_final,
+            &state.real,
+            &state.imag,
+            &dynamic_thetas[..n_eval],
+            z_final,
+            zz_final,
         );
 
         m_src
@@ -564,13 +608,18 @@ impl CircuitAnsatz {
         self.assert_pruned_weights(pruned_weights);
         self.assert_readout_width(z_final.len());
         self.forward_l2_into(state, pruned_weights, out_state);
-        let m_src = crate::simd::measure_single_qubit_z(&out_state.real, &out_state.imag, source_qubit);
+        let m_src =
+            crate::simd::measure_single_qubit_z(&out_state.real, &out_state.imag, source_qubit);
 
         let n_eval = z_final.len();
-        let dynamic_thetas = self.feedforward_thetas(pruned_weights, feedforward_weights, m_src, n_eval);
+        let dynamic_thetas =
+            self.feedforward_thetas(pruned_weights, feedforward_weights, m_src, n_eval);
 
         crate::simd::measure_fused_ry_z_readout(
-            &out_state.real, &out_state.imag, &dynamic_thetas[..n_eval], z_final,
+            &out_state.real,
+            &out_state.imag,
+            &dynamic_thetas[..n_eval],
+            z_final,
         );
 
         m_src
@@ -592,13 +641,19 @@ impl CircuitAnsatz {
         self.assert_pruned_weights(pruned_weights);
         self.assert_readout_width(z_final.len());
         self.forward_l2_into(state, pruned_weights, out_state);
-        let m_src = crate::simd::measure_single_qubit_z(&out_state.real, &out_state.imag, source_qubit);
+        let m_src =
+            crate::simd::measure_single_qubit_z(&out_state.real, &out_state.imag, source_qubit);
 
         let n_eval = z_final.len();
-        let dynamic_thetas = self.feedforward_thetas(pruned_weights, feedforward_weights, m_src, n_eval);
+        let dynamic_thetas =
+            self.feedforward_thetas(pruned_weights, feedforward_weights, m_src, n_eval);
 
         crate::simd::measure_fused_ry_full_readout(
-            &out_state.real, &out_state.imag, &dynamic_thetas[..n_eval], z_final, zz_final,
+            &out_state.real,
+            &out_state.imag,
+            &dynamic_thetas[..n_eval],
+            z_final,
+            zz_final,
         );
 
         m_src
@@ -632,7 +687,8 @@ impl CircuitAnsatz {
         self.forward_layer_into(0, pruned_weights, out_state);
 
         // Mid-circuit measurement at end of Layer 0
-        let m_src = crate::simd::measure_single_qubit_z(&out_state.real, &out_state.imag, source_qubit);
+        let m_src =
+            crate::simd::measure_single_qubit_z(&out_state.real, &out_state.imag, source_qubit);
 
         // Apply feed-forward rotations Ry(alpha_q * m_src) before Layer 1
         for q in 0..self.n_qubits.min(feedforward_weights.len()) {
@@ -652,9 +708,7 @@ impl CircuitAnsatz {
         let p_start = (self.depth - 1) * 2 * self.n_qubits;
         let n_eval = z_final.len();
         let theta_y = &pruned_weights[p_start..p_start + n_eval];
-        crate::simd::measure_fused_ry_z_readout(
-            &out_state.real, &out_state.imag, theta_y, z_final,
-        );
+        crate::simd::measure_fused_ry_z_readout(&out_state.real, &out_state.imag, theta_y, z_final);
 
         m_src
     }
@@ -693,8 +747,16 @@ impl CircuitAnsatz {
         let n_feats = features.len();
 
         for q in 0..self.n_qubits {
-            let feat_val = if q < n_feats { features[q] * inv_norm } else { 0.0 };
-            let scale = if q < upload_scales_l0.len() { upload_scales_l0[q] } else { 0.0 };
+            let feat_val = if q < n_feats {
+                features[q] * inv_norm
+            } else {
+                0.0
+            };
+            let scale = if q < upload_scales_l0.len() {
+                upload_scales_l0[q]
+            } else {
+                0.0
+            };
             if scale.abs() > 1e-12 {
                 apply_single_qubit_ry(state, q, scale * feat_val);
             }
@@ -710,11 +772,15 @@ impl CircuitAnsatz {
 
         // Dynamic terminal rotation angles
         let n_eval = z_final.len();
-        let dynamic_thetas = self.feedforward_thetas(pruned_weights, feedforward_alphas, m_src, n_eval);
+        let dynamic_thetas =
+            self.feedforward_thetas(pruned_weights, feedforward_alphas, m_src, n_eval);
 
         // Terminal fused readout
         crate::simd::measure_fused_ry_z_readout(
-            &state.real, &state.imag, &dynamic_thetas[..n_eval], z_final,
+            &state.real,
+            &state.imag,
+            &dynamic_thetas[..n_eval],
+            z_final,
         );
 
         m_src
@@ -747,8 +813,16 @@ impl CircuitAnsatz {
         let n_feats = features.len();
 
         for q in 0..self.n_qubits {
-            let feat_val = if q < n_feats { features[q] * inv_norm } else { 0.0 };
-            let scale = if q < upload_scales_l0.len() { upload_scales_l0[q] } else { 0.0 };
+            let feat_val = if q < n_feats {
+                features[q] * inv_norm
+            } else {
+                0.0
+            };
+            let scale = if q < upload_scales_l0.len() {
+                upload_scales_l0[q]
+            } else {
+                0.0
+            };
             if scale.abs() > 1e-12 {
                 apply_single_qubit_ry(state, q, scale * feat_val);
             }
@@ -764,11 +838,16 @@ impl CircuitAnsatz {
 
         // Dynamic terminal rotation angles
         let n_eval = z_final.len();
-        let dynamic_thetas = self.feedforward_thetas(pruned_weights, feedforward_alphas, m_src, n_eval);
+        let dynamic_thetas =
+            self.feedforward_thetas(pruned_weights, feedforward_alphas, m_src, n_eval);
 
         // Terminal fused readout (12 single-qubit + 66 two-body correlators)
         crate::simd::measure_fused_ry_full_readout(
-            &state.real, &state.imag, &dynamic_thetas[..n_eval], z_final, zz_final,
+            &state.real,
+            &state.imag,
+            &dynamic_thetas[..n_eval],
+            z_final,
+            zz_final,
         );
 
         m_src
@@ -857,12 +936,22 @@ impl CircuitAnsatz {
         if n <= 16 {
             // Qubit Threshold Guard: Sequential AVX2 path for <=16 qubits (reclaims threadpool dispatch overhead)
             for q in 0..n {
-                crate::simd::apply_ry_kernel(&mut out.real, &mut out.imag, q, weights[p_start + 2 * q]);
+                crate::simd::apply_ry_kernel(
+                    &mut out.real,
+                    &mut out.imag,
+                    q,
+                    weights[p_start + 2 * q],
+                );
             }
         } else {
             // Multithreaded AVX2 + Tiled Butterfly path for >=17 qubits
             for q in 0..n {
-                crate::parallel::apply_ry(&mut out.real, &mut out.imag, q, weights[p_start + 2 * q]);
+                crate::parallel::apply_ry(
+                    &mut out.real,
+                    &mut out.imag,
+                    q,
+                    weights[p_start + 2 * q],
+                );
             }
         }
 
@@ -948,7 +1037,10 @@ impl CircuitAnsatz {
 /// Each unordered pair is yielded exactly once. When `2 * stride == n` the naive ring visits
 /// every pair twice (e.g. `(0, 8)` and `(8, 0)` for 16 qubits) and the two CZs cancel, so only
 /// the first `stride` qubits emit a pair. A stride that wraps to 0 (n divides it) emits nothing.
-pub(crate) fn entangling_pairs(n_qubits: usize, layer_idx: usize) -> impl Iterator<Item = (usize, usize)> {
+pub(crate) fn entangling_pairs(
+    n_qubits: usize,
+    layer_idx: usize,
+) -> impl Iterator<Item = (usize, usize)> {
     let stride = (1usize << (layer_idx % 4)) % n_qubits.max(1);
     let count = match stride {
         0 => 0,
@@ -1147,4 +1239,3 @@ mod tests {
         );
     }
 }
-

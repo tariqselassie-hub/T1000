@@ -79,7 +79,9 @@ impl NoiseChannelParams {
                 seed.wrapping_add(1),
             ),
             t1000_core::DecoherenceChannel::new(
-                t1000_core::ChannelKind::Depolarizing { p: self.depolarizing_prob },
+                t1000_core::ChannelKind::Depolarizing {
+                    p: self.depolarizing_prob,
+                },
                 seed.wrapping_add(2),
             ),
         ]

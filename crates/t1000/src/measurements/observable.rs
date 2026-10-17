@@ -55,7 +55,9 @@ impl PauliObservable {
                 for &(q, _) in weights {
                     crate::simd::assert_qubit(q, n_qubits);
                 }
-                scale_by(&mut out, |idx| weights.iter().map(|&(q, w)| w * z(idx, q)).sum());
+                scale_by(&mut out, |idx| {
+                    weights.iter().map(|&(q, w)| w * z(idx, q)).sum()
+                });
             }
             PauliObservable::GlobalMeanZ => {
                 let n = n_qubits as f64;
@@ -119,7 +121,11 @@ impl PauliObservable {
                 for idx in 0..state.dim {
                     let mut sum_w = 0.0;
                     for &(q, w) in weights {
-                        let sign = if (idx & (1usize << q)) == 0 { 1.0 } else { -1.0 };
+                        let sign = if (idx & (1usize << q)) == 0 {
+                            1.0
+                        } else {
+                            -1.0
+                        };
                         sum_w += w * sign;
                     }
                     let s = coeff * sum_w;
@@ -151,19 +157,24 @@ impl PauliObservable {
                 let mask = 1 << qubit_idx;
                 let mut exp = 0.0;
                 for idx in 0..state.dim {
-                    let prob = state.real[idx] * state.real[idx] + state.imag[idx] * state.imag[idx];
+                    let prob =
+                        state.real[idx] * state.real[idx] + state.imag[idx] * state.imag[idx];
                     let sign = if (idx & mask) == 0 { 1.0 } else { -1.0 };
                     exp += sign * prob;
                 }
                 exp
             }
             PauliObservable::ZZ(q1, q2) => {
-                assert!(*q1 < n_qubits && *q2 < n_qubits, "Qubit index out of bounds");
+                assert!(
+                    *q1 < n_qubits && *q2 < n_qubits,
+                    "Qubit index out of bounds"
+                );
                 let mask1 = 1 << q1;
                 let mask2 = 1 << q2;
                 let mut exp = 0.0;
                 for idx in 0..state.dim {
-                    let prob = state.real[idx] * state.real[idx] + state.imag[idx] * state.imag[idx];
+                    let prob =
+                        state.real[idx] * state.real[idx] + state.imag[idx] * state.imag[idx];
                     let b1 = (idx & mask1) != 0;
                     let b2 = (idx & mask2) != 0;
                     let sign = if b1 == b2 { 1.0 } else { -1.0 };
@@ -188,17 +199,16 @@ impl PauliObservable {
                 }
                 exp
             }
-            PauliObservable::LinearZ(weights) => {
-                weights
-                    .iter()
-                    .map(|&(q, w)| w * PauliObservable::Z(q).expectation_value(state))
-                    .sum()
-            }
+            PauliObservable::LinearZ(weights) => weights
+                .iter()
+                .map(|&(q, w)| w * PauliObservable::Z(q).expectation_value(state))
+                .sum(),
             PauliObservable::GlobalMeanZ => {
                 let mut exp = 0.0;
                 let inv_n = 1.0 / (n_qubits as f64);
                 for idx in 0..state.dim {
-                    let prob = state.real[idx] * state.real[idx] + state.imag[idx] * state.imag[idx];
+                    let prob =
+                        state.real[idx] * state.real[idx] + state.imag[idx] * state.imag[idx];
                     let ones = idx.count_ones() as usize;
                     let zeros = n_qubits.saturating_sub(ones);
                     let net_z = (zeros as f64 - ones as f64) * inv_n;

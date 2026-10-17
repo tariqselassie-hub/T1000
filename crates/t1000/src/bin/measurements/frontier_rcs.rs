@@ -19,16 +19,16 @@
 //! `scripts/aer_rcs_benchmark.py` runs the identical circuit on Qiskit Aer. (The previous "Classical FFT RCS" baseline was not a circuit simulator:
 //! it applied FFTs and pointwise sin/cos to random amplitudes, so its timing was meaningless.)
 
-use t1000::compiler::CircuitOp;
-use t1000::{
-    AdamOptimizer, CircuitAnsatz, DataEncodingLayer, EncodingKind, ParameterShiftEngine,
-    PauliObservable, QuantumState,
-};
 use num_complex::Complex64;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 use std::time::Instant;
+use t1000::compiler::CircuitOp;
+use t1000::{
+    AdamOptimizer, CircuitAnsatz, DataEncodingLayer, EncodingKind, ParameterShiftEngine,
+    PauliObservable, QuantumState,
+};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct LayerTelemetry {
@@ -132,8 +132,14 @@ fn benchmark_gradients(full_qubits: usize, full_depth: usize) -> GradientBenchma
     let x: Vec<f64> = (0..cq).map(|q| 0.1 * q as f64).collect();
     let w = engine.ansatz.weights.clone();
     let (g_adj, t_adj) = best_of(3, &mut || engine.compute_circuit_gradients(&x, &w));
-    let (g_ps, t_ps) = best_of(1, &mut || engine.compute_circuit_gradients_parameter_shift(&x, &w));
-    let max_diff = g_adj.iter().zip(&g_ps).map(|(a, b)| (a - b).abs()).fold(0.0, f64::max);
+    let (g_ps, t_ps) = best_of(1, &mut || {
+        engine.compute_circuit_gradients_parameter_shift(&x, &w)
+    });
+    let max_diff = g_adj
+        .iter()
+        .zip(&g_ps)
+        .map(|(a, b)| (a - b).abs())
+        .fold(0.0, f64::max);
 
     let full = engine_for(full_qubits, full_depth);
     let xf: Vec<f64> = (0..full_qubits).map(|q| 0.1 * q as f64).collect();
@@ -157,11 +163,20 @@ fn benchmark_gradients(full_qubits: usize, full_depth: usize) -> GradientBenchma
 fn run_variational_epochs(qubits: usize, depth: usize, epochs: usize) -> VariationalTrainingReport {
     let threads = t1000::parallel::num_threads();
     let (scheduler_mode, active_threads) = if qubits < t1000::parallel::PARALLEL_MIN_QUBITS {
-        ("Sequential AVX2 Fast-Path (L3 Cache Bound, 1 Thread)".to_string(), 1)
+        (
+            "Sequential AVX2 Fast-Path (L3 Cache Bound, 1 Thread)".to_string(),
+            1,
+        )
     } else if qubits < 22 {
-        (format!("Parallel Work-Stealing Pool ({threads} Threads)"), threads)
+        (
+            format!("Parallel Work-Stealing Pool ({threads} Threads)"),
+            threads,
+        )
     } else {
-        (format!("Parallel Streaming Pool + Non-Temporal Stores ({threads} Threads)"), threads)
+        (
+            format!("Parallel Streaming Pool + Non-Temporal Stores ({threads} Threads)"),
+            threads,
+        )
     };
 
     println!("\n=======================================================");
@@ -250,12 +265,18 @@ fn ref_apply_1q(psi: &mut [Complex64], q: usize, m: [[Complex64; 2]; 2]) {
 
 fn ref_ry(theta: f64) -> [[Complex64; 2]; 2] {
     let (s, c) = (theta / 2.0).sin_cos();
-    [[Complex64::new(c, 0.0), Complex64::new(-s, 0.0)], [Complex64::new(s, 0.0), Complex64::new(c, 0.0)]]
+    [
+        [Complex64::new(c, 0.0), Complex64::new(-s, 0.0)],
+        [Complex64::new(s, 0.0), Complex64::new(c, 0.0)],
+    ]
 }
 
 fn ref_rz(theta: f64) -> [[Complex64; 2]; 2] {
     let zero = Complex64::new(0.0, 0.0);
-    [[Complex64::from_polar(1.0, -theta / 2.0), zero], [zero, Complex64::from_polar(1.0, theta / 2.0)]]
+    [
+        [Complex64::from_polar(1.0, -theta / 2.0), zero],
+        [zero, Complex64::from_polar(1.0, theta / 2.0)],
+    ]
 }
 
 fn ref_cz(psi: &mut [Complex64], q1: usize, q2: usize) {
@@ -318,17 +339,18 @@ fn run_reference(ops: &[CircuitOp], init: &[Complex64]) -> (Vec<Complex64>, f64)
             CircuitOp::Ry { qubit, theta } => ref_apply_1q(&mut psi, *qubit, ref_ry(*theta)),
             CircuitOp::Rz { qubit, theta } => ref_apply_1q(&mut psi, *qubit, ref_rz(*theta)),
             CircuitOp::Unitary1Q { qubit, matrix } => {
-                let m = [
-                    [matrix.u00(), matrix.u01()],
-                    [matrix.u10(), matrix.u11()],
-                ];
+                let m = [[matrix.u00(), matrix.u01()], [matrix.u10(), matrix.u11()]];
                 ref_apply_1q(&mut psi, *qubit, m);
             }
             CircuitOp::CZ { q1, q2 } => ref_cz(&mut psi, *q1, *q2),
             CircuitOp::CNOT { control, target } => ref_cnot(&mut psi, *control, *target),
             CircuitOp::AntiCNOT { control, target } => ref_anticnot(&mut psi, *control, *target),
             CircuitOp::SWAP { q1, q2 } => ref_swap(&mut psi, *q1, *q2),
-            CircuitOp::ControlledPhase { control, target, theta } => ref_cp(&mut psi, *control, *target, *theta),
+            CircuitOp::ControlledPhase {
+                control,
+                target,
+                theta,
+            } => ref_cp(&mut psi, *control, *target, *theta),
             CircuitOp::RademacherPhase { signs } => {
                 for (q, s) in signs.iter().enumerate() {
                     ref_apply_1q(&mut psi, q, ref_rz(s * std::f64::consts::PI));
@@ -343,7 +365,10 @@ fn run_reference(ops: &[CircuitOp], init: &[Complex64]) -> (Vec<Complex64>, f64)
 // Optimized engine: the crate's SIMD + tiled path
 // =========================================================================
 
-fn run_optimized(ansatz: &CircuitAnsatz, init: &QuantumState) -> (QuantumState, Vec<LayerTelemetry>, f64) {
+fn run_optimized(
+    ansatz: &CircuitAnsatz,
+    init: &QuantumState,
+) -> (QuantumState, Vec<LayerTelemetry>, f64) {
     let mut state = init.clone();
     let t0 = Instant::now();
     ansatz.apply_pre_init(&mut state);
@@ -367,7 +392,13 @@ fn run_optimized(ansatz: &CircuitAnsatz, init: &QuantumState) -> (QuantumState, 
 /// Writes the circuit (`circuit.json`) and the optimized engine's final state (`state.bin`,
 /// little-endian f64 pairs re, im in index order) so external simulators can run the identical
 /// circuit and be checked against it (see `scripts/aer_rcs_benchmark.py`).
-fn export_circuit(dir: &std::path::Path, qubits: usize, depth: usize, ops: &[CircuitOp], state: &QuantumState) {
+fn export_circuit(
+    dir: &std::path::Path,
+    qubits: usize,
+    depth: usize,
+    ops: &[CircuitOp],
+    state: &QuantumState,
+) {
     let gates: Vec<serde_json::Value> = ops
         .iter()
         .map(|op| match op {
@@ -390,15 +421,21 @@ fn export_circuit(dir: &std::path::Path, qubits: usize, depth: usize, ops: &[Cir
         "gates": gates,
     });
     fs::create_dir_all(dir).expect("create export directory");
-    fs::write(dir.join("circuit.json"), serde_json::to_string(&circuit).expect("serialize circuit"))
-        .expect("write circuit.json");
+    fs::write(
+        dir.join("circuit.json"),
+        serde_json::to_string(&circuit).expect("serialize circuit"),
+    )
+    .expect("write circuit.json");
     let mut bytes = Vec::with_capacity(state.dim * 16);
     for i in 0..state.dim {
         bytes.extend_from_slice(&state.real[i].to_le_bytes());
         bytes.extend_from_slice(&state.imag[i].to_le_bytes());
     }
     fs::write(dir.join("state.bin"), bytes).expect("write state.bin");
-    println!("[EXPORT] circuit.json and state.bin written to {}", dir.display());
+    println!(
+        "[EXPORT] circuit.json and state.bin written to {}",
+        dir.display()
+    );
 }
 
 fn main() {
@@ -456,8 +493,16 @@ fn main() {
     println!("=========================================================================");
 
     let ansatz = CircuitAnsatz::new(qubits, depth).with_pre_init(pre_init);
-    let ops: Vec<CircuitOp> = ansatz.to_dag(&ansatz.weights).nodes.into_iter().map(|n| n.op).collect();
-    println!("[CONFIG] {qubits} qubits | depth {depth} | {} gates | dim {dim}", ops.len());
+    let ops: Vec<CircuitOp> = ansatz
+        .to_dag(&ansatz.weights)
+        .nodes
+        .into_iter()
+        .map(|n| n.op)
+        .collect();
+    println!(
+        "[CONFIG] {qubits} qubits | depth {depth} | {} gates | dim {dim}",
+        ops.len()
+    );
 
     // |+>^n initial state
     let amp = 1.0 / (dim as f64).sqrt();
@@ -495,7 +540,11 @@ fn main() {
     let (opt_state, layers, opt_time) = if qubits >= 25 {
         println!("[RUN] Optimized engine, {threads} thread(s) (1 measured run, N={qubits})...");
         let res = run_optimized(&ansatz, &init);
-        println!("  time: {:.4} s ({:.4} s/layer)", res.2, res.2 / depth as f64);
+        println!(
+            "  time: {:.4} s ({:.4} s/layer)",
+            res.2,
+            res.2 / depth as f64
+        );
         res
     } else {
         println!("[RUN] Optimized engine, {threads} thread(s) (warm-up + best of {opt_runs})...");
@@ -504,7 +553,11 @@ fn main() {
             .map(|_| run_optimized(&ansatz, &init))
             .min_by(|a, b| a.2.total_cmp(&b.2))
             .expect("RUNS > 0");
-        println!("  best: {:.4} s ({:.4} s/layer)", res.2, res.2 / depth as f64);
+        println!(
+            "  best: {:.4} s ({:.4} s/layer)",
+            res.2,
+            res.2 / depth as f64
+        );
         res
     };
     drop(init); // Free initial statevector immediately
@@ -561,21 +614,41 @@ fn main() {
     println!("  Speedup vs reference       : {speedup:.2}x (optimized: {threads} thread(s); reference: 1)");
     println!("-------------------------------------------------------------------------");
     println!("  Engine agreement");
-    println!("    max |amplitude error|    : {:.3e}", agreement.max_amplitude_error);
-    println!("    state fidelity           : {:.12}", agreement.state_fidelity);
-    println!("    total variation distance : {:.3e}", agreement.total_variation_distance);
+    println!(
+        "    max |amplitude error|    : {:.3e}",
+        agreement.max_amplitude_error
+    );
+    println!(
+        "    state fidelity           : {:.12}",
+        agreement.state_fidelity
+    );
+    println!(
+        "    total variation distance : {:.3e}",
+        agreement.total_variation_distance
+    );
     println!("-------------------------------------------------------------------------");
     println!("  Porter-Thomas statistics (ideal chaotic circuit)");
-    println!("    linear XEB (self)        : {:.4} (ideal 1.0)", pt.exact_xeb);
-    println!("    entropy deficit          : {:.4} nats (ideal {:.4})", pt.entropy_deficit, pt.expected_entropy_deficit);
-    println!("    participation ratio      : {:.0} (ideal {:.0})", pt.effective_participation_ratio, pt.expected_participation_ratio);
+    println!(
+        "    linear XEB (self)        : {:.4} (ideal 1.0)",
+        pt.exact_xeb
+    );
+    println!(
+        "    entropy deficit          : {:.4} nats (ideal {:.4})",
+        pt.entropy_deficit, pt.expected_entropy_deficit
+    );
+    println!(
+        "    participation ratio      : {:.0} (ideal {:.0})",
+        pt.effective_participation_ratio, pt.expected_participation_ratio
+    );
     println!(
         "    K-S test                 : {} (D = {:.4}, critical {:.4})",
         if pt.passes_ks_test { "pass" } else { "fail" },
         pt.ks_statistic,
         pt.ks_critical_value
     );
-    println!("  External baseline: run with --export <dir>, then scripts/aer_rcs_benchmark.py <dir>.");
+    println!(
+        "  External baseline: run with --export <dir>, then scripts/aer_rcs_benchmark.py <dir>."
+    );
 
     profile_rademacher_phase_layer(qubits);
 
@@ -605,7 +678,11 @@ fn main() {
 
     let variational_training = if epochs > 0 {
         let v_qubits = qubits;
-        let v_depth = if qubits >= 25 { depth.min(4) } else { depth.min(8) };
+        let v_depth = if qubits >= 25 {
+            depth.min(4)
+        } else {
+            depth.min(8)
+        };
         Some(run_variational_epochs(v_qubits, v_depth, epochs))
     } else {
         None
@@ -638,7 +715,11 @@ fn main() {
 
     // Always write to <workspace>/results/experiments, whatever the current directory is.
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let ws_root = manifest_dir.ancestors().nth(2).unwrap_or(&manifest_dir).to_path_buf();
+    let ws_root = manifest_dir
+        .ancestors()
+        .nth(2)
+        .unwrap_or(&manifest_dir)
+        .to_path_buf();
     let out_path = ws_root.join("results/experiments/frontier_rcs_results.json");
     if let Some(parent) = out_path.parent() {
         let _ = fs::create_dir_all(parent);
@@ -663,7 +744,10 @@ fn profile_rademacher_phase_layer(qubits: usize) {
 
     println!("\n=======================================================");
     println!("[PROFILE] RADEMACHER PHASE LAYER: fused kernel vs per-qubit Rz");
-    println!("[CONFIG] {} Qubits | State Size: {} Complex Amplitudes ({})", qubits, num_states, size_str);
+    println!(
+        "[CONFIG] {} Qubits | State Size: {} Complex Amplitudes ({})",
+        qubits, num_states, size_str
+    );
     println!("-------------------------------------------------------");
 
     let base_state = QuantumState::new(num_states);
@@ -694,8 +778,14 @@ fn profile_rademacher_phase_layer(qubits: usize) {
     }
     let fused_dur_ms = (t1.elapsed().as_secs_f64() * 1000.0) / (iters_avx as f64);
 
-    println!("  Per-qubit Rz loop  : {:.3} ms ({} passes, includes {} clone)", seq_dur_ms, qubits, size_str);
-    println!("  Fused kernel       : {:.3} ms (1 pass, includes {} clone)", fused_dur_ms, size_str);
+    println!(
+        "  Per-qubit Rz loop  : {:.3} ms ({} passes, includes {} clone)",
+        seq_dur_ms, qubits, size_str
+    );
+    println!(
+        "  Fused kernel       : {:.3} ms (1 pass, includes {} clone)",
+        fused_dur_ms, size_str
+    );
     println!("  Speedup            : {:.2}x", seq_dur_ms / fused_dur_ms);
     println!("=======================================================");
 }

@@ -17,13 +17,13 @@ pub mod linalg;
 pub mod state;
 
 pub use bmps::{
-    BoundaryMps, BoundaryMpsConfig, SampleBatch, compute_amplitude, compute_probability,
-    sample_batch, sample_bitstring,
+    compute_amplitude, compute_probability, sample_batch, sample_bitstring, BoundaryMps,
+    BoundaryMpsConfig, SampleBatch,
 };
-pub use bp_gauge::{BpConfig, BpMessageSet, gauge_into_vidal, run_belief_propagation};
+pub use bp_gauge::{gauge_into_vidal, run_belief_propagation, BpConfig, BpMessageSet};
 pub use evolution::{
-    EvolutionTelemetry, SingleQubitGate, TwoQubitGate, apply_single_qubit_gate,
-    apply_two_qubit_gate,
+    apply_single_qubit_gate, apply_two_qubit_gate, EvolutionTelemetry, SingleQubitGate,
+    TwoQubitGate,
 };
-pub use linalg::{ComplexMatrix, SvdResult, qr, svd};
+pub use linalg::{qr, svd, ComplexMatrix, SvdResult};
 pub use state::{BondTensor, LatticeTopology, PlanarTensorNetwork, SiteTensor};

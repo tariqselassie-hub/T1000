@@ -43,19 +43,70 @@ pub const CL_TRUE: ClUint = 1;
 #[allow(non_snake_case, missing_debug_implementations)]
 pub struct OpenClDispatch {
     _handle: *mut c_void,
-    pub clGetPlatformIDs: unsafe extern "system" fn(ClUint, *mut ClPlatformId, *mut ClUint) -> ClInt,
-    pub clGetPlatformInfo: unsafe extern "system" fn(ClPlatformId, ClUint, usize, *mut c_void, *mut usize) -> ClInt,
-    pub clGetDeviceIDs: unsafe extern "system" fn(ClPlatformId, ClUlong, ClUint, *mut ClDeviceId, *mut ClUint) -> ClInt,
-    pub clGetDeviceInfo: unsafe extern "system" fn(ClDeviceId, ClUint, usize, *mut c_void, *mut usize) -> ClInt,
-    pub clCreateContext: unsafe extern "system" fn(*const isize, ClUint, *const ClDeviceId, Option<extern "C" fn()>, *mut c_void, *mut ClInt) -> ClContext,
-    pub clCreateCommandQueue: unsafe extern "system" fn(ClContext, ClDeviceId, ClUlong, *mut ClInt) -> ClCommandQueue,
-    pub clCreateProgramWithSource: unsafe extern "system" fn(ClContext, ClUint, *const *const c_char, *const usize, *mut ClInt) -> ClProgram,
-    pub clBuildProgram: unsafe extern "system" fn(ClProgram, ClUint, *const ClDeviceId, *const c_char, Option<extern "C" fn()>, *mut c_void) -> ClInt,
+    pub clGetPlatformIDs:
+        unsafe extern "system" fn(ClUint, *mut ClPlatformId, *mut ClUint) -> ClInt,
+    pub clGetPlatformInfo:
+        unsafe extern "system" fn(ClPlatformId, ClUint, usize, *mut c_void, *mut usize) -> ClInt,
+    pub clGetDeviceIDs: unsafe extern "system" fn(
+        ClPlatformId,
+        ClUlong,
+        ClUint,
+        *mut ClDeviceId,
+        *mut ClUint,
+    ) -> ClInt,
+    pub clGetDeviceInfo:
+        unsafe extern "system" fn(ClDeviceId, ClUint, usize, *mut c_void, *mut usize) -> ClInt,
+    pub clCreateContext: unsafe extern "system" fn(
+        *const isize,
+        ClUint,
+        *const ClDeviceId,
+        Option<extern "C" fn()>,
+        *mut c_void,
+        *mut ClInt,
+    ) -> ClContext,
+    pub clCreateCommandQueue:
+        unsafe extern "system" fn(ClContext, ClDeviceId, ClUlong, *mut ClInt) -> ClCommandQueue,
+    pub clCreateProgramWithSource: unsafe extern "system" fn(
+        ClContext,
+        ClUint,
+        *const *const c_char,
+        *const usize,
+        *mut ClInt,
+    ) -> ClProgram,
+    pub clBuildProgram: unsafe extern "system" fn(
+        ClProgram,
+        ClUint,
+        *const ClDeviceId,
+        *const c_char,
+        Option<extern "C" fn()>,
+        *mut c_void,
+    ) -> ClInt,
     pub clCreateKernel: unsafe extern "system" fn(ClProgram, *const c_char, *mut ClInt) -> ClKernel,
-    pub clCreateBuffer: unsafe extern "system" fn(ClContext, ClUlong, usize, *mut c_void, *mut ClInt) -> ClMem,
+    pub clCreateBuffer:
+        unsafe extern "system" fn(ClContext, ClUlong, usize, *mut c_void, *mut ClInt) -> ClMem,
     pub clSetKernelArg: unsafe extern "system" fn(ClKernel, ClUint, usize, *const c_void) -> ClInt,
-    pub clEnqueueNDRangeKernel: unsafe extern "system" fn(ClCommandQueue, ClKernel, ClUint, *const usize, *const usize, *const usize, ClUint, *const c_void, *mut c_void) -> ClInt,
-    pub clEnqueueReadBuffer: unsafe extern "system" fn(ClCommandQueue, ClMem, ClUint, usize, usize, *mut c_void, ClUint, *const c_void, *mut c_void) -> ClInt,
+    pub clEnqueueNDRangeKernel: unsafe extern "system" fn(
+        ClCommandQueue,
+        ClKernel,
+        ClUint,
+        *const usize,
+        *const usize,
+        *const usize,
+        ClUint,
+        *const c_void,
+        *mut c_void,
+    ) -> ClInt,
+    pub clEnqueueReadBuffer: unsafe extern "system" fn(
+        ClCommandQueue,
+        ClMem,
+        ClUint,
+        usize,
+        usize,
+        *mut c_void,
+        ClUint,
+        *const c_void,
+        *mut c_void,
+    ) -> ClInt,
     pub clFinish: unsafe extern "system" fn(ClCommandQueue) -> ClInt,
     pub clReleaseMemObject: unsafe extern "system" fn(ClMem) -> ClInt,
     pub clReleaseKernel: unsafe extern "system" fn(ClKernel) -> ClInt,
@@ -229,21 +280,49 @@ impl OpenClGpuContext {
 
             for &p in &platforms {
                 let mut buf = [0u8; 256];
-                (dispatch.clGetPlatformInfo)(p, CL_PLATFORM_NAME, 256, buf.as_mut_ptr() as *mut c_void, ptr::null_mut());
-                let p_name = CStr::from_ptr(buf.as_ptr() as *const c_char).to_string_lossy().to_string();
+                (dispatch.clGetPlatformInfo)(
+                    p,
+                    CL_PLATFORM_NAME,
+                    256,
+                    buf.as_mut_ptr() as *mut c_void,
+                    ptr::null_mut(),
+                );
+                let p_name = CStr::from_ptr(buf.as_ptr() as *const c_char)
+                    .to_string_lossy()
+                    .to_string();
 
                 let mut num_devices = 0u32;
-                let d_res = (dispatch.clGetDeviceIDs)(p, CL_DEVICE_TYPE_GPU, 0, ptr::null_mut(), &mut num_devices);
+                let d_res = (dispatch.clGetDeviceIDs)(
+                    p,
+                    CL_DEVICE_TYPE_GPU,
+                    0,
+                    ptr::null_mut(),
+                    &mut num_devices,
+                );
                 if d_res == CL_SUCCESS && num_devices > 0 {
                     let mut devices = vec![ptr::null_mut(); num_devices as usize];
-                    (dispatch.clGetDeviceIDs)(p, CL_DEVICE_TYPE_GPU, num_devices, devices.as_mut_ptr(), ptr::null_mut());
+                    (dispatch.clGetDeviceIDs)(
+                        p,
+                        CL_DEVICE_TYPE_GPU,
+                        num_devices,
+                        devices.as_mut_ptr(),
+                        ptr::null_mut(),
+                    );
                     _selected_platform = p;
                     selected_device = devices[0];
                     platform_name_str = p_name;
 
                     let mut d_buf = [0u8; 256];
-                    (dispatch.clGetDeviceInfo)(selected_device, CL_DEVICE_NAME, 256, d_buf.as_mut_ptr() as *mut c_void, ptr::null_mut());
-                    device_name_str = CStr::from_ptr(d_buf.as_ptr() as *const c_char).to_string_lossy().to_string();
+                    (dispatch.clGetDeviceInfo)(
+                        selected_device,
+                        CL_DEVICE_NAME,
+                        256,
+                        d_buf.as_mut_ptr() as *mut c_void,
+                        ptr::null_mut(),
+                    );
+                    device_name_str = CStr::from_ptr(d_buf.as_ptr() as *const c_char)
+                        .to_string_lossy()
+                        .to_string();
                     break;
                 }
             }
@@ -253,7 +332,14 @@ impl OpenClGpuContext {
             }
 
             let mut err = 0i32;
-            let context = (dispatch.clCreateContext)(ptr::null(), 1, &selected_device, None, ptr::null_mut(), &mut err);
+            let context = (dispatch.clCreateContext)(
+                ptr::null(),
+                1,
+                &selected_device,
+                None,
+                ptr::null_mut(),
+                &mut err,
+            );
             if err != CL_SUCCESS || context.is_null() {
                 return None;
             }
@@ -266,14 +352,22 @@ impl OpenClGpuContext {
 
             let src_cstr = CString::new(OPENCL_QUANTUM_SOURCE).ok()?;
             let src_ptr = src_cstr.as_ptr();
-            let program = (dispatch.clCreateProgramWithSource)(context, 1, &src_ptr, ptr::null(), &mut err);
+            let program =
+                (dispatch.clCreateProgramWithSource)(context, 1, &src_ptr, ptr::null(), &mut err);
             if err != CL_SUCCESS || program.is_null() {
                 (dispatch.clReleaseCommandQueue)(queue);
                 (dispatch.clReleaseContext)(context);
                 return None;
             }
 
-            let build_res = (dispatch.clBuildProgram)(program, 1, &selected_device, ptr::null(), None, ptr::null_mut());
+            let build_res = (dispatch.clBuildProgram)(
+                program,
+                1,
+                &selected_device,
+                ptr::null(),
+                None,
+                ptr::null_mut(),
+            );
             if build_res != CL_SUCCESS {
                 (dispatch.clReleaseProgram)(program);
                 (dispatch.clReleaseCommandQueue)(queue);
@@ -325,7 +419,9 @@ impl OpenClGpuContext {
                 real.as_mut_ptr() as *mut c_void,
                 &mut err,
             );
-            if err != CL_SUCCESS { return Err(err); }
+            if err != CL_SUCCESS {
+                return Err(err);
+            }
 
             let cl_imag = (self.dispatch.clCreateBuffer)(
                 self.context,
@@ -339,11 +435,36 @@ impl OpenClGpuContext {
                 return Err(err);
             }
 
-            (self.dispatch.clSetKernelArg)(self.ry_kernel, 0, std::mem::size_of::<ClMem>(), &cl_real as *const _ as *const c_void);
-            (self.dispatch.clSetKernelArg)(self.ry_kernel, 1, std::mem::size_of::<ClMem>(), &cl_imag as *const _ as *const c_void);
-            (self.dispatch.clSetKernelArg)(self.ry_kernel, 2, std::mem::size_of::<ClUlong>(), &stride as *const _ as *const c_void);
-            (self.dispatch.clSetKernelArg)(self.ry_kernel, 3, std::mem::size_of::<f64>(), &c as *const _ as *const c_void);
-            (self.dispatch.clSetKernelArg)(self.ry_kernel, 4, std::mem::size_of::<f64>(), &s as *const _ as *const c_void);
+            (self.dispatch.clSetKernelArg)(
+                self.ry_kernel,
+                0,
+                std::mem::size_of::<ClMem>(),
+                &cl_real as *const _ as *const c_void,
+            );
+            (self.dispatch.clSetKernelArg)(
+                self.ry_kernel,
+                1,
+                std::mem::size_of::<ClMem>(),
+                &cl_imag as *const _ as *const c_void,
+            );
+            (self.dispatch.clSetKernelArg)(
+                self.ry_kernel,
+                2,
+                std::mem::size_of::<ClUlong>(),
+                &stride as *const _ as *const c_void,
+            );
+            (self.dispatch.clSetKernelArg)(
+                self.ry_kernel,
+                3,
+                std::mem::size_of::<f64>(),
+                &c as *const _ as *const c_void,
+            );
+            (self.dispatch.clSetKernelArg)(
+                self.ry_kernel,
+                4,
+                std::mem::size_of::<f64>(),
+                &s as *const _ as *const c_void,
+            );
 
             (self.dispatch.clEnqueueNDRangeKernel)(
                 self.queue,

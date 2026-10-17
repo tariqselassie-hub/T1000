@@ -6,9 +6,9 @@
 //! Replaces 1D statevector/MPS routing with localized spoke involution cancellation
 //! ($Z_e^2 = I$) along dual hypergraph trees in pure L1 data cache (< 1 KB).
 
+use super::geometry::PlaquetteLattice;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
-use super::geometry::PlaquetteLattice;
 
 /// Telemetry recorded for each step along the 2D plaquette contraction tree.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

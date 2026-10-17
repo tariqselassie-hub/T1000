@@ -1,12 +1,12 @@
-use t1000::{
-    AdamOptimizer, CircuitAnsatz, DataEncodingLayer, EncodingKind, ParameterShiftEngine,
-    PauliObservable, QuantumState,
-};
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
+use t1000::{
+    AdamOptimizer, CircuitAnsatz, DataEncodingLayer, EncodingKind, ParameterShiftEngine,
+    PauliObservable, QuantumState,
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GridBusRecord {
@@ -150,17 +150,29 @@ fn main() {
     println!("=========================================================================");
     println!("     GUDDANETWORKS QNN BENCHMARK: POWER GRID PHYSICAL BASELINES          ");
     println!("=========================================================================");
-    println!(" Hardware Specs   : {} ({} Cores) | {:.1} GB Host RAM", hardware.host_cpu_model, hardware.host_cpu_cores, hardware.host_ram_gb);
-    println!(" Hardware Engine  : {} Complex State Evolution", hardware.instruction_set);
+    println!(
+        " Hardware Specs   : {} ({} Cores) | {:.1} GB Host RAM",
+        hardware.host_cpu_model, hardware.host_cpu_cores, hardware.host_ram_gb
+    );
+    println!(
+        " Hardware Engine  : {} Complex State Evolution",
+        hardware.instruction_set
+    );
     println!(" Hilbert Space    : dim >= 1024 Invariant (10 to 14 Qubits)");
     println!(" Scope            : IEEE 14-Bus, IEEE 118-Bus & PEGASE 1354-Bus Cases");
     println!("=========================================================================");
 
-    let csv14_path = resolve_workspace_path("tests/benchmarks/grid_baselines/outputs/ieee14_features.csv");
-    let csv118_path = resolve_workspace_path("tests/benchmarks/grid_baselines/outputs/ieee118_features.csv");
-    let csv1354_path = resolve_workspace_path("tests/benchmarks/grid_baselines/outputs/pegase1354_features.csv");
+    let csv14_path =
+        resolve_workspace_path("tests/benchmarks/grid_baselines/outputs/ieee14_features.csv");
+    let csv118_path =
+        resolve_workspace_path("tests/benchmarks/grid_baselines/outputs/ieee118_features.csv");
+    let csv1354_path =
+        resolve_workspace_path("tests/benchmarks/grid_baselines/outputs/pegase1354_features.csv");
 
-    println!("[INIT] Loading IEEE 14 baseline from : {}", csv14_path.display());
+    println!(
+        "[INIT] Loading IEEE 14 baseline from : {}",
+        csv14_path.display()
+    );
     let records14 = match load_bus_records(&csv14_path) {
         Ok(r) => r,
         Err(e) => {
@@ -170,7 +182,10 @@ fn main() {
     };
     println!("  -> Successfully parsed {} bus records.", records14.len());
 
-    println!("[INIT] Loading IEEE 118 baseline from: {}", csv118_path.display());
+    println!(
+        "[INIT] Loading IEEE 118 baseline from: {}",
+        csv118_path.display()
+    );
     let records118 = match load_bus_records(&csv118_path) {
         Ok(r) => r,
         Err(e) => {
@@ -180,7 +195,10 @@ fn main() {
     };
     println!("  -> Successfully parsed {} bus records.", records118.len());
 
-    println!("[INIT] Loading PEGASE 1354 baseline from: {}", csv1354_path.display());
+    println!(
+        "[INIT] Loading PEGASE 1354 baseline from: {}",
+        csv1354_path.display()
+    );
     let records1354 = match load_bus_records(&csv1354_path) {
         Ok(r) => r,
         Err(e) => {
@@ -188,7 +206,10 @@ fn main() {
             return;
         }
     };
-    println!("  -> Successfully parsed {} bus records.\n", records1354.len());
+    println!(
+        "  -> Successfully parsed {} bus records.\n",
+        records1354.len()
+    );
 
     let mut telemetry_results: Vec<CaseBenchTelemetry> = Vec::new();
 
@@ -273,9 +294,16 @@ fn main() {
     let classical_nr_14_ms = 19.47;
     let speedup_14_dense = (classical_nr_14_ms * 1000.0) / total_14_us;
 
-    println!("  Execution Latency    : {:>8.2} μs ({:.4} ms/forward)", total_14_us, total_14_us / 1000.0);
+    println!(
+        "  Execution Latency    : {:>8.2} μs ({:.4} ms/forward)",
+        total_14_us,
+        total_14_us / 1000.0
+    );
     println!("  Per-Layer AVX2 Speed : {:>8.2} μs/layer", per_layer_14_us);
-    println!("  Statevector Norm     : {:>8.6} (Strict Unitary Preservation)", norm_14);
+    println!(
+        "  Statevector Norm     : {:>8.6} (Strict Unitary Preservation)",
+        norm_14
+    );
     println!("  Initial Voltage MSE  : {:>8.6}", initial_mse_14);
     println!("  5-Step Tuned MSE     : {:>8.6}", opt_mse_14);
     println!("  Grad Time (5 steps)  : {:>8.2} ms", grad_time_14_ms);
@@ -328,8 +356,15 @@ fn main() {
     let norm_amp14 = compute_state_norm(&out_state_amp14);
     let speedup_amp14 = (classical_nr_14_ms * 1000.0) / total_amp14_us;
 
-    println!("  Execution Latency    : {:>8.3} μs ({:.4} ms/forward)", total_amp14_us, total_amp14_us / 1000.0);
-    println!("  Per-Layer Latency    : {:>8.3} μs/layer", total_amp14_us / (depth_amp14 as f64));
+    println!(
+        "  Execution Latency    : {:>8.3} μs ({:.4} ms/forward)",
+        total_amp14_us,
+        total_amp14_us / 1000.0
+    );
+    println!(
+        "  Per-Layer Latency    : {:>8.3} μs/layer",
+        total_amp14_us / (depth_amp14 as f64)
+    );
     println!("  Statevector Norm     : {:>8.6}", norm_amp14);
     println!("  Speedup vs Classical : {:.1}x", speedup_amp14);
 
@@ -390,9 +425,20 @@ fn main() {
     let classical_nr_118_ms = 19.04;
     let speedup_118_amp = (classical_nr_118_ms * 1000.0) / total_118_us;
 
-    println!("  Execution Latency    : {:>8.3} μs ({:.4} ms/forward)", total_118_us, total_118_us / 1000.0);
-    println!("  Per-Layer AVX2 Speed : {:>8.3} μs/layer", per_layer_118_us);
-    println!("  Gradient Parameters  : {} analytic gradients calculated in {:.3} ms", grads_118.len(), grad_time_118_ms);
+    println!(
+        "  Execution Latency    : {:>8.3} μs ({:.4} ms/forward)",
+        total_118_us,
+        total_118_us / 1000.0
+    );
+    println!(
+        "  Per-Layer AVX2 Speed : {:>8.3} μs/layer",
+        per_layer_118_us
+    );
+    println!(
+        "  Gradient Parameters  : {} analytic gradients calculated in {:.3} ms",
+        grads_118.len(),
+        grad_time_118_ms
+    );
     println!("  Unitary Norm Fidelity: {:>8.6}", norm_118);
     println!("  Speedup vs Classical : {:.1}x", speedup_118_amp);
 
@@ -449,9 +495,16 @@ fn main() {
     let avg_zone_us = total_12zones_us / (num_zones as f64);
     let speedup_118_zone = (classical_nr_118_ms * 1000.0) / total_12zones_us;
 
-    println!("  Total 12-Zone Latency : {:>8.2} μs ({:.4} ms across all 118 buses)", total_12zones_us, total_12zones_us / 1000.0);
+    println!(
+        "  Total 12-Zone Latency : {:>8.2} μs ({:.4} ms across all 118 buses)",
+        total_12zones_us,
+        total_12zones_us / 1000.0
+    );
     println!("  Per-Zone 10Q Latency  : {:>8.2} μs/zone", avg_zone_us);
-    println!("  Classical Newton-Raph : {:.3} ms (QNN Multi-Zone is {:.1}x FASTER)", classical_nr_118_ms, speedup_118_zone);
+    println!(
+        "  Classical Newton-Raph : {:.3} ms (QNN Multi-Zone is {:.1}x FASTER)",
+        classical_nr_118_ms, speedup_118_zone
+    );
 
     let case4_res = CaseBenchTelemetry {
         case_name: "IEEE 118-Bus (12x 10-Qubit Partitioned Zones)".to_string(),
@@ -516,12 +569,26 @@ fn main() {
     let classical_nr_1354_ms = 37.25;
     let speedup_amp1354 = (classical_nr_1354_ms * 1000.0) / total_1354_us;
 
-    println!("  Execution Latency    : {:>8.3} μs ({:.4} ms/forward)", total_1354_us, total_1354_us / 1000.0);
-    println!("  Per-Layer AVX2 Speed : {:>8.3} μs/layer", per_layer_1354_us);
+    println!(
+        "  Execution Latency    : {:>8.3} μs ({:.4} ms/forward)",
+        total_1354_us,
+        total_1354_us / 1000.0
+    );
+    println!(
+        "  Per-Layer AVX2 Speed : {:>8.3} μs/layer",
+        per_layer_1354_us
+    );
     println!("  Statevector Memory   : 32 KB (L1/L2 Cache Resident — 0 Choke)");
     println!("  Unitary Norm Fidelity: {:>8.6}", norm_1354);
-    println!("  Analytic Gradients   : {} exact parameters computed in {:.3} ms", grads_1354.len(), grad_time_1354_ms);
-    println!("  Classical Newton-Raph: {:.2} ms (QNN Log-Amplitude is {:.1}x FASTER)", classical_nr_1354_ms, speedup_amp1354);
+    println!(
+        "  Analytic Gradients   : {} exact parameters computed in {:.3} ms",
+        grads_1354.len(),
+        grad_time_1354_ms
+    );
+    println!(
+        "  Classical Newton-Raph: {:.2} ms (QNN Log-Amplitude is {:.1}x FASTER)",
+        classical_nr_1354_ms, speedup_amp1354
+    );
 
     let case5_res = CaseBenchTelemetry {
         case_name: "PEGASE 1354-Bus (11-Qubit Log-Amplitude)".to_string(),
@@ -582,10 +649,17 @@ fn main() {
     let avg_zone1354_us = total_136zones_us / (num_zones_1354 as f64);
     let speedup_zoned1354 = (classical_nr_1354_ms * 1000.0) / total_136zones_us;
 
-    println!("  Total 136-Zone Latency: {:>8.2} μs ({:.4} ms across all 1,354 buses)", total_136zones_us, total_136zones_us / 1000.0);
+    println!(
+        "  Total 136-Zone Latency: {:>8.2} μs ({:.4} ms across all 1,354 buses)",
+        total_136zones_us,
+        total_136zones_us / 1000.0
+    );
     println!("  Per-Zone 10Q Latency  : {:>8.2} μs/zone", avg_zone1354_us);
     println!("  Aggregate State RAM   : 2,176 KB (~2.13 MB — Fits in L3 Cache, 0 Choke)");
-    println!("  Classical Newton-Raph : {:.2} ms (QNN Multi-Zone is {:.1}x FASTER)", classical_nr_1354_ms, speedup_zoned1354);
+    println!(
+        "  Classical Newton-Raph : {:.2} ms (QNN Multi-Zone is {:.1}x FASTER)",
+        classical_nr_1354_ms, speedup_zoned1354
+    );
 
     let case6_res = CaseBenchTelemetry {
         case_name: "PEGASE 1354-Bus (136x 10-Qubit Partitioned Zones)".to_string(),
@@ -646,7 +720,10 @@ fn main() {
     }
     if let Ok(json_str) = serde_json::to_string_pretty(&suite_report) {
         let _ = fs::write(&suite_json_path, json_str);
-        println!("\n[SAVED] Suite telemetry exported to: {}", suite_json_path.display());
+        println!(
+            "\n[SAVED] Suite telemetry exported to: {}",
+            suite_json_path.display()
+        );
     }
 
     // Write PEGASE 1354 dedicated JSON report
@@ -660,9 +737,13 @@ fn main() {
         partitioned_136zone_evaluation: case6_res,
     };
 
-    let pegase_json_path = resolve_workspace_path("results/experiments/pegase1354_qnn_telemetry.json");
+    let pegase_json_path =
+        resolve_workspace_path("results/experiments/pegase1354_qnn_telemetry.json");
     if let Ok(json_str) = serde_json::to_string_pretty(&pegase_report) {
         let _ = fs::write(&pegase_json_path, json_str);
-        println!("[SAVED] PEGASE 1354 dedicated telemetry exported to: {}", pegase_json_path.display());
+        println!(
+            "[SAVED] PEGASE 1354 dedicated telemetry exported to: {}",
+            pegase_json_path.display()
+        );
     }
 }

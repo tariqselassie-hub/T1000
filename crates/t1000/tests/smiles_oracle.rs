@@ -49,7 +49,9 @@ struct Case {
 fn formula(f: &str) -> BTreeMap<String, usize> {
     f.split_whitespace()
         .map(|part| {
-            let split = part.find(|c: char| c.is_ascii_digit()).expect("count in formula");
+            let split = part
+                .find(|c: char| c.is_ascii_digit())
+                .expect("count in formula");
             (part[..split].to_string(), part[split..].parse().unwrap())
         })
         .collect()
@@ -108,7 +110,11 @@ fn featurizer_matches_hand_derived_formulas() {
         assert_eq!(f.n_br, n("Br"), "{ctx}: Br");
         assert_eq!(f.n_i, n("I"), "{ctx}: I");
         assert_eq!(f.n_hydrogens, n("H"), "{ctx}: H");
-        let heavy: usize = want.iter().filter(|(el, _)| el.as_str() != "H").map(|(_, c)| c).sum();
+        let heavy: usize = want
+            .iter()
+            .filter(|(el, _)| el.as_str() != "H")
+            .map(|(_, c)| c)
+            .sum();
         assert_eq!(f.heavy_atoms, heavy, "{ctx}: heavy atoms");
 
         assert_eq!(f.n_arom_c, case.arom_c, "{ctx}: aromatic C");
@@ -121,9 +127,20 @@ fn featurizer_matches_hand_derived_formulas() {
         assert_eq!(f.formal_charge, case.charge, "{ctx}: formal charge");
 
         let mw: f64 = want.iter().map(|(el, c)| mass(el) * *c as f64).sum();
-        assert!((f.estimated_mw - mw).abs() < 1e-6, "{ctx}: MW {} vs formula {mw}", f.estimated_mw);
-        let hetero = if heavy == 0 { 0.0 } else { (heavy - n("C")) as f64 / heavy as f64 };
-        assert!((f.heteroatom_ratio - hetero).abs() < 1e-12, "{ctx}: heteroatom ratio");
+        assert!(
+            (f.estimated_mw - mw).abs() < 1e-6,
+            "{ctx}: MW {} vs formula {mw}",
+            f.estimated_mw
+        );
+        let hetero = if heavy == 0 {
+            0.0
+        } else {
+            (heavy - n("C")) as f64 / heavy as f64
+        };
+        assert!(
+            (f.heteroatom_ratio - hetero).abs() < 1e-12,
+            "{ctx}: heteroatom ratio"
+        );
     }
 }
 
@@ -137,7 +154,10 @@ fn molecular_weights_match_literature() {
         ("CN1CCC[C@H]1c1cccnc1", 162.23),
     ] {
         let mw = SmilesFeaturizer::featurize(smiles).unwrap().estimated_mw;
-        assert!((mw - lit).abs() < 0.02, "{smiles}: MW {mw} vs literature {lit}");
+        assert!(
+            (mw - lit).abs() < 0.02,
+            "{smiles}: MW {mw} vs literature {lit}"
+        );
     }
 }
 
@@ -147,8 +167,25 @@ fn normalized_vector_keeps_layout() {
     let v = f.to_normalized_vector();
     let ha = 13.0;
     let want = [
-        9.0 / ha, 6.0 / ha, 0.0, 0.0, 4.0 / ha, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-        2.0 / ha, 0.0, 2.0 / ha, 0.0, 0.1, ha / 50.0, f.estimated_mw / 500.0, 4.0 / ha,
+        9.0 / ha,
+        6.0 / ha,
+        0.0,
+        0.0,
+        4.0 / ha,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        2.0 / ha,
+        0.0,
+        2.0 / ha,
+        0.0,
+        0.1,
+        ha / 50.0,
+        f.estimated_mw / 500.0,
+        4.0 / ha,
     ];
     for (k, (g, w)) in v.iter().zip(want).enumerate() {
         assert!((g - w).abs() < 1e-12, "feature {k}: {g} vs {w}");
@@ -185,11 +222,17 @@ fn bracket_atoms_parse_all_fields() {
         other => panic!("{s}: expected a single atom, got {other:?}"),
     };
     let a = one("[13CH4]");
-    assert_eq!((a.element.as_str(), a.isotope, a.h_count, a.charge), ("C", Some(13), Some(4), 0));
+    assert_eq!(
+        (a.element.as_str(), a.isotope, a.h_count, a.charge),
+        ("C", Some(13), Some(4), 0)
+    );
     let a = one("[NH4+]");
     assert_eq!((a.element.as_str(), a.h_count, a.charge), ("N", Some(4), 1));
     let a = one("[O-]");
-    assert_eq!((a.element.as_str(), a.h_count, a.charge), ("O", Some(0), -1));
+    assert_eq!(
+        (a.element.as_str(), a.h_count, a.charge),
+        ("O", Some(0), -1)
+    );
     let a = one("[Fe+++]");
     assert_eq!((a.element.as_str(), a.charge), ("Fe", 3));
     let a = one("[Fe-2]");
@@ -217,7 +260,10 @@ fn parse_reports_bond_graph() {
     let mol = parse("c1ccccc1").unwrap();
     assert!(mol.bonds.iter().all(|b| b.2 == BondKind::Aromatic));
     let mol = parse("c1ccccc1-c1ccccc1").unwrap();
-    assert_eq!(mol.bonds.iter().filter(|b| b.2 == BondKind::Single).count(), 1);
+    assert_eq!(
+        mol.bonds.iter().filter(|b| b.2 == BondKind::Single).count(),
+        1
+    );
     assert_eq!(mol.ring_closures, 2);
 }
 
@@ -234,7 +280,9 @@ fn invalid_smiles_are_rejected_with_reason() {
         ("C1CC", |e| matches!(e, E::UnclosedRing { label: 1 })),
         ("C11", |e| matches!(e, E::InvalidRingBond { .. })),
         ("C12CC12", |e| matches!(e, E::InvalidRingBond { .. })),
-        ("C=1CCCCC#1", |e| matches!(e, E::ConflictingRingBond { label: 1 })),
+        ("C=1CCCCC#1", |e| {
+            matches!(e, E::ConflictingRingBond { label: 1 })
+        }),
         ("1CC", |e| matches!(e, E::RingWithoutAtom { .. })),
         ("C%1", |e| matches!(e, E::InvalidRingLabel { .. })),
         ("C=", |e| matches!(e, E::DanglingBond { .. })),
@@ -249,7 +297,9 @@ fn invalid_smiles_are_rejected_with_reason() {
         ("[é]", |e| matches!(e, E::UnknownElement { .. })),
         ("Xx", |e| matches!(e, E::UnexpectedChar { pos: 0, ch: 'X' })),
         ("cl", |e| matches!(e, E::UnexpectedChar { pos: 1, ch: 'l' })),
-        ("Cé", |e| matches!(e, E::UnexpectedChar { pos: 1, ch: 'é' })),
+        ("Cé", |e| {
+            matches!(e, E::UnexpectedChar { pos: 1, ch: 'é' })
+        }),
     ];
     for (smiles, check) in cases {
         match SmilesFeaturizer::featurize(smiles) {

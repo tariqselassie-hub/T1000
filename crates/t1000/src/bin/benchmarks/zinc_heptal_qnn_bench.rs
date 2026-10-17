@@ -201,7 +201,10 @@ fn benchmark_binary_vqc(
     for r in train_records {
         let mut state = encoding.encode(&r.features);
         ansatz.forward_in_place(&mut state, &weights);
-        let exps: Vec<f64> = observables.iter().map(|o| o.expectation_value(&state)).collect();
+        let exps: Vec<f64> = observables
+            .iter()
+            .map(|o| o.expectation_value(&state))
+            .collect();
         x_train_exp.push(exps);
     }
 
@@ -313,7 +316,8 @@ fn main() {
     println!(" Targets : Multi-Task logP (Lipophilicity), QED (Drug-Likeness), SAS            ");
     println!("================================================================================");
 
-    let test_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_test_1k.csv");
+    let test_path =
+        resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_test_1k.csv");
     let all_records = match parse_zinc_csv(&test_path, 600) {
         Ok(r) => r,
         Err(e) => {
@@ -323,19 +327,41 @@ fn main() {
     };
 
     let (train_records, test_records) = all_records.split_at(400);
-    println!("\n[INIT] Dataset Split: {} train molecules | {} test molecules", train_records.len(), test_records.len());
+    println!(
+        "\n[INIT] Dataset Split: {} train molecules | {} test molecules",
+        train_records.len(),
+        test_records.len()
+    );
 
     println!("\n[EVAL 1] Evaluating Model A: 19-Qudit Heptal Zipper QNN (Z_7 Galois)...");
     let m_heptal = benchmark_heptal_zipper(train_records, test_records);
-    println!("  -> Throughput : {:.1} mols/sec ({:.2} us/mol)", m_heptal.throughput_mols_per_sec, m_heptal.latency_us_per_mol);
-    println!("  -> Total MSE  : {:.4} (logP: {:.4}, QED: {:.4}, SAS: {:.4})", m_heptal.total_mse, m_heptal.logp_mse, m_heptal.qed_mse, m_heptal.sas_mse);
-    println!("  -> Memory     : {} bytes ({})", m_heptal.active_state_bytes, m_heptal.cache_residence);
+    println!(
+        "  -> Throughput : {:.1} mols/sec ({:.2} us/mol)",
+        m_heptal.throughput_mols_per_sec, m_heptal.latency_us_per_mol
+    );
+    println!(
+        "  -> Total MSE  : {:.4} (logP: {:.4}, QED: {:.4}, SAS: {:.4})",
+        m_heptal.total_mse, m_heptal.logp_mse, m_heptal.qed_mse, m_heptal.sas_mse
+    );
+    println!(
+        "  -> Memory     : {} bytes ({})",
+        m_heptal.active_state_bytes, m_heptal.cache_residence
+    );
 
     println!("\n[EVAL 2] Evaluating Model B: 12-Qubit Binary Dense VQC Baseline...");
     let m_binary = benchmark_binary_vqc(train_records, test_records);
-    println!("  -> Throughput : {:.1} mols/sec ({:.2} us/mol)", m_binary.throughput_mols_per_sec, m_binary.latency_us_per_mol);
-    println!("  -> Total MSE  : {:.4} (logP: {:.4}, QED: {:.4}, SAS: {:.4})", m_binary.total_mse, m_binary.logp_mse, m_binary.qed_mse, m_binary.sas_mse);
-    println!("  -> Memory     : {} bytes ({})", m_binary.active_state_bytes, m_binary.cache_residence);
+    println!(
+        "  -> Throughput : {:.1} mols/sec ({:.2} us/mol)",
+        m_binary.throughput_mols_per_sec, m_binary.latency_us_per_mol
+    );
+    println!(
+        "  -> Total MSE  : {:.4} (logP: {:.4}, QED: {:.4}, SAS: {:.4})",
+        m_binary.total_mse, m_binary.logp_mse, m_binary.qed_mse, m_binary.sas_mse
+    );
+    println!(
+        "  -> Memory     : {} bytes ({})",
+        m_binary.active_state_bytes, m_binary.cache_residence
+    );
 
     println!("\n┌──────────────────────────────────────────────────────────────────────────────┐");
     println!("│             SOVEREIGN HEPTAL QUDIT VS BINARY QUBIT BENCHMARK MATRIX          │");
@@ -344,23 +370,53 @@ fn main() {
     println!("├──────────────────────────┼──────────────────────┼────────────────────────────┤");
     println!("│ Physical / Virtual Wires │ 19 Qudits (d = 7)    │ 12 Qubits (d = 2)          │");
     println!("│ Hilbert Space Dimension  │ D = 7^19 (Effective) │ D = 2^12 = 4,096           │");
-    println!("│ Active Working Memory    │ {:>5} Bytes (L1)    │ {:>6} Bytes (64 KB)       │", m_heptal.active_state_bytes, m_binary.active_state_bytes);
-    println!("│ Memory Footprint Ratio   │ 1.0x (Reference)     │ {:>6.1}x Larger Footprint   │", m_binary.active_state_bytes as f64 / m_heptal.active_state_bytes as f64);
-    println!("│ Inference Throughput     │ {:>8.1} mols/sec  │ {:>8.1} mols/sec        │", m_heptal.throughput_mols_per_sec, m_binary.throughput_mols_per_sec);
-    println!("│ logP Mean Squared Error  │ {:>10.4}           │ {:>10.4}                 │", m_heptal.logp_mse, m_binary.logp_mse);
-    println!("│ QED Drug-Likeness MSE    │ {:>10.4}           │ {:>10.4}                 │", m_heptal.qed_mse, m_binary.qed_mse);
-    println!("│ SAS Synthesizability MSE │ {:>10.4}           │ {:>10.4}                 │", m_heptal.sas_mse, m_binary.sas_mse);
-    println!("│ Total Multi-Task MSE     │ {:>10.4}           │ {:>10.4}                 │", m_heptal.total_mse, m_binary.total_mse);
+    println!(
+        "│ Active Working Memory    │ {:>5} Bytes (L1)    │ {:>6} Bytes (64 KB)       │",
+        m_heptal.active_state_bytes, m_binary.active_state_bytes
+    );
+    println!(
+        "│ Memory Footprint Ratio   │ 1.0x (Reference)     │ {:>6.1}x Larger Footprint   │",
+        m_binary.active_state_bytes as f64 / m_heptal.active_state_bytes as f64
+    );
+    println!(
+        "│ Inference Throughput     │ {:>8.1} mols/sec  │ {:>8.1} mols/sec        │",
+        m_heptal.throughput_mols_per_sec, m_binary.throughput_mols_per_sec
+    );
+    println!(
+        "│ logP Mean Squared Error  │ {:>10.4}           │ {:>10.4}                 │",
+        m_heptal.logp_mse, m_binary.logp_mse
+    );
+    println!(
+        "│ QED Drug-Likeness MSE    │ {:>10.4}           │ {:>10.4}                 │",
+        m_heptal.qed_mse, m_binary.qed_mse
+    );
+    println!(
+        "│ SAS Synthesizability MSE │ {:>10.4}           │ {:>10.4}                 │",
+        m_heptal.sas_mse, m_binary.sas_mse
+    );
+    println!(
+        "│ Total Multi-Task MSE     │ {:>10.4}           │ {:>10.4}                 │",
+        m_heptal.total_mse, m_binary.total_mse
+    );
     println!("└──────────────────────────┴──────────────────────┴────────────────────────────┘");
 
     let err_reduction = (m_binary.total_mse - m_heptal.total_mse) / m_binary.total_mse * 100.0;
     println!("\n[ARCHITECTURAL VERDICT]");
     if err_reduction > 0.0 {
-        println!("  Heptal Galois QNN Accuracy Gain     : +{:.2}% Error Reduction over Binary VQC", err_reduction);
+        println!(
+            "  Heptal Galois QNN Accuracy Gain     : +{:.2}% Error Reduction over Binary VQC",
+            err_reduction
+        );
     } else {
-        println!("  Heptal Galois QNN Error Differential: {:.2}% vs Binary VQC", err_reduction);
+        println!(
+            "  Heptal Galois QNN Error Differential: {:.2}% vs Binary VQC",
+            err_reduction
+        );
     }
-    println!("  L1 Cache Memory Compression Ratio   : {:.1}x smaller working set than 12Q statevector", m_binary.active_state_bytes as f64 / m_heptal.active_state_bytes as f64);
+    println!(
+        "  L1 Cache Memory Compression Ratio   : {:.1}x smaller working set than 12Q statevector",
+        m_binary.active_state_bytes as f64 / m_heptal.active_state_bytes as f64
+    );
     println!("  All 19 Molecular Descriptors Mapped : 1-to-1 Discrete Galois Invariant Injection");
 
     println!("\n================================================================================");

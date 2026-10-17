@@ -2,12 +2,12 @@
 //! Applies scheduled stages to QuantumState with cache-blocked traversals
 //! and SIMD acceleration.
 
-use serde::{Deserialize, Serialize};
-use crate::state::QuantumState;
 use super::dag::CircuitDag;
 use super::fusion::optimize_dag_fusion;
 use super::op::{CircuitOp, Unitary2x2};
 use super::scheduler::{schedule_circuit_dag, ScheduledStage};
+use crate::state::QuantumState;
+use serde::{Deserialize, Serialize};
 
 /// Telemetry metrics produced during circuit compilation.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -101,8 +101,18 @@ impl CompiledCircuit {
             CircuitOp::SWAP { q1, q2 } => {
                 apply_swap_op(&mut state.real, &mut state.imag, *q1, *q2);
             }
-            CircuitOp::ControlledPhase { control, target, theta } => {
-                apply_controlled_phase_op(&mut state.real, &mut state.imag, *control, *target, *theta);
+            CircuitOp::ControlledPhase {
+                control,
+                target,
+                theta,
+            } => {
+                apply_controlled_phase_op(
+                    &mut state.real,
+                    &mut state.imag,
+                    *control,
+                    *target,
+                    *theta,
+                );
             }
             CircuitOp::RademacherPhase { signs } => {
                 crate::simd::apply_rademacher_phase_kernel(&mut state.real, &mut state.imag, signs);

@@ -12,11 +12,19 @@ use super::guards::assert_statevector;
 #[inline(always)]
 pub fn normalize_kernel(real: &mut [f64], imag: &mut [f64]) {
     assert_eq!(real.len(), imag.len(), "real/imag length mismatch");
-    #[cfg(all(target_arch = "x86_64", target_feature = "avx2", target_feature = "fma"))]
+    #[cfg(all(
+        target_arch = "x86_64",
+        target_feature = "avx2",
+        target_feature = "fma"
+    ))]
     unsafe {
         normalize_avx2(real, imag);
     }
-    #[cfg(not(all(target_arch = "x86_64", target_feature = "avx2", target_feature = "fma")))]
+    #[cfg(not(all(
+        target_arch = "x86_64",
+        target_feature = "avx2",
+        target_feature = "fma"
+    )))]
     {
         #[cfg(target_arch = "x86_64")]
         if is_x86_feature_detected!("avx2") && is_x86_feature_detected!("fma") {
@@ -31,12 +39,7 @@ pub fn normalize_kernel(real: &mut [f64], imag: &mut [f64]) {
 
 /// Vectorized Complex Inner Product <state_a | state_b>.
 #[inline(always)]
-pub fn inner_product_kernel(
-    r1: &[f64],
-    i1: &[f64],
-    r2: &[f64],
-    i2: &[f64],
-) -> (f64, f64) {
+pub fn inner_product_kernel(r1: &[f64], i1: &[f64], r2: &[f64], i2: &[f64]) -> (f64, f64) {
     let dim = r1.len();
     assert!(
         i1.len() == dim && r2.len() == dim && i2.len() == dim,
@@ -46,11 +49,19 @@ pub fn inner_product_kernel(
         r2.len(),
         i2.len()
     );
-    #[cfg(all(target_arch = "x86_64", target_feature = "avx2", target_feature = "fma"))]
+    #[cfg(all(
+        target_arch = "x86_64",
+        target_feature = "avx2",
+        target_feature = "fma"
+    ))]
     unsafe {
         return inner_product_avx2(r1, i1, r2, i2);
     }
-    #[cfg(not(all(target_arch = "x86_64", target_feature = "avx2", target_feature = "fma")))]
+    #[cfg(not(all(
+        target_arch = "x86_64",
+        target_feature = "avx2",
+        target_feature = "fma"
+    )))]
     {
         #[cfg(target_arch = "x86_64")]
         if is_x86_feature_detected!("avx2") && is_x86_feature_detected!("fma") {
@@ -154,12 +165,7 @@ unsafe fn normalize_avx2(real: &mut [f64], imag: &mut [f64]) {
 
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx2", enable = "fma")]
-unsafe fn inner_product_avx2(
-    r1: &[f64],
-    i1: &[f64],
-    r2: &[f64],
-    i2: &[f64],
-) -> (f64, f64) {
+unsafe fn inner_product_avx2(r1: &[f64], i1: &[f64], r2: &[f64], i2: &[f64]) -> (f64, f64) {
     let dim = r1.len();
     let mut re_sum = _mm256_setzero_pd();
     let mut im_sum = _mm256_setzero_pd();
@@ -333,12 +339,7 @@ pub(crate) fn normalize_scalar(real: &mut [f64], imag: &mut [f64]) {
 }
 
 #[allow(dead_code)]
-pub(crate) fn inner_product_scalar(
-    r1: &[f64],
-    i1: &[f64],
-    r2: &[f64],
-    i2: &[f64],
-) -> (f64, f64) {
+pub(crate) fn inner_product_scalar(r1: &[f64], i1: &[f64], r2: &[f64], i2: &[f64]) -> (f64, f64) {
     let mut re = 0.0;
     let mut im = 0.0;
     for idx in 0..r1.len() {

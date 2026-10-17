@@ -1,6 +1,6 @@
-use rand_chacha::ChaCha8Rng;
 use rand::Rng;
 use rand::SeedableRng;
+use rand_chacha::ChaCha8Rng;
 
 use crate::QubitRegister;
 

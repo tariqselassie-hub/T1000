@@ -18,7 +18,11 @@ impl PartialTrace {
         rho_a
     }
 
-    pub fn partial_trace_b(tensor_state: &[Complex64], dim_a: usize, dim_b: usize) -> Vec<Complex64> {
+    pub fn partial_trace_b(
+        tensor_state: &[Complex64],
+        dim_a: usize,
+        dim_b: usize,
+    ) -> Vec<Complex64> {
         Self::trace_out_b(tensor_state, dim_a, dim_b)
     }
 }

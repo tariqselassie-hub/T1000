@@ -97,7 +97,11 @@ impl DiagonalPlan {
             .fold(0usize, |acc, &(_, lm)| acc ^ lm);
 
         for j in 0..re.len() {
-            let flip = if (j & cross_mask).count_ones() & 1 == 1 { -1.0 } else { 1.0 };
+            let flip = if (j & cross_mask).count_ones() & 1 == 1 {
+                -1.0
+            } else {
+                1.0
+            };
             let (tr, ti) = (self.lo_re[j], self.lo_im[j]);
             let (dr, di) = (flip * (tr * fr - ti * fi), flip * (tr * fi + ti * fr));
             let (ar, ai) = (re[j], im[j]);
@@ -109,7 +113,12 @@ impl DiagonalPlan {
 
 /// Applies `Rz(theta_rz[q])` to every qubit `q < theta_rz.len()` and then CZ on every pair in
 /// `cz_pairs`, in a single pass over the statevector. Equivalent to applying the gates one by one.
-pub fn apply_rz_cz_layer(real: &mut [f64], imag: &mut [f64], theta_rz: &[f64], cz_pairs: &[(usize, usize)]) {
+pub fn apply_rz_cz_layer(
+    real: &mut [f64],
+    imag: &mut [f64],
+    theta_rz: &[f64],
+    cz_pairs: &[(usize, usize)],
+) {
     let n_qubits = crate::simd::assert_statevector(real, imag);
     assert!(
         theta_rz.len() <= n_qubits,
@@ -124,7 +133,11 @@ pub fn apply_rz_cz_layer(real: &mut [f64], imag: &mut [f64], theta_rz: &[f64], c
     let block = 1usize << plan.lo_bits;
     debug_assert_eq!(plan.n_qubits, n_qubits);
     if n_qubits <= 16 {
-        for (h, (re, im)) in real.chunks_mut(block).zip(imag.chunks_mut(block)).enumerate() {
+        for (h, (re, im)) in real
+            .chunks_mut(block)
+            .zip(imag.chunks_mut(block))
+            .enumerate()
+        {
             plan.apply_block(h, re, im);
         }
     } else {

@@ -32,19 +32,71 @@ use serde::{Deserialize, Serialize};
 /// (symbol, standard atomic weight). Covers the organic subset plus elements commonly found in
 /// screening libraries, salts and organometallics.
 const ELEMENTS: &[(&str, f64)] = &[
-    ("H", 1.008), ("He", 4.0026), ("Li", 6.94), ("Be", 9.0122), ("B", 10.81),
-    ("C", 12.011), ("N", 14.007), ("O", 15.999), ("F", 18.998), ("Ne", 20.180),
-    ("Na", 22.990), ("Mg", 24.305), ("Al", 26.982), ("Si", 28.085), ("P", 30.974),
-    ("S", 32.06), ("Cl", 35.45), ("Ar", 39.948), ("K", 39.098), ("Ca", 40.078),
-    ("Sc", 44.956), ("Ti", 47.867), ("V", 50.942), ("Cr", 51.996), ("Mn", 54.938),
-    ("Fe", 55.845), ("Co", 58.933), ("Ni", 58.693), ("Cu", 63.546), ("Zn", 65.38),
-    ("Ga", 69.723), ("Ge", 72.630), ("As", 74.922), ("Se", 78.971), ("Br", 79.904),
-    ("Kr", 83.798), ("Rb", 85.468), ("Sr", 87.62), ("Y", 88.906), ("Zr", 91.224),
-    ("Mo", 95.95), ("Ru", 101.07), ("Rh", 102.906), ("Pd", 106.42), ("Ag", 107.868),
-    ("Cd", 112.414), ("In", 114.818), ("Sn", 118.710), ("Sb", 121.760), ("Te", 127.60),
-    ("I", 126.904), ("Xe", 131.293), ("Cs", 132.905), ("Ba", 137.327), ("La", 138.905),
-    ("Gd", 157.25), ("W", 183.84), ("Os", 190.23), ("Ir", 192.217), ("Pt", 195.084),
-    ("Au", 196.967), ("Hg", 200.592), ("Tl", 204.38), ("Pb", 207.2), ("Bi", 208.980),
+    ("H", 1.008),
+    ("He", 4.0026),
+    ("Li", 6.94),
+    ("Be", 9.0122),
+    ("B", 10.81),
+    ("C", 12.011),
+    ("N", 14.007),
+    ("O", 15.999),
+    ("F", 18.998),
+    ("Ne", 20.180),
+    ("Na", 22.990),
+    ("Mg", 24.305),
+    ("Al", 26.982),
+    ("Si", 28.085),
+    ("P", 30.974),
+    ("S", 32.06),
+    ("Cl", 35.45),
+    ("Ar", 39.948),
+    ("K", 39.098),
+    ("Ca", 40.078),
+    ("Sc", 44.956),
+    ("Ti", 47.867),
+    ("V", 50.942),
+    ("Cr", 51.996),
+    ("Mn", 54.938),
+    ("Fe", 55.845),
+    ("Co", 58.933),
+    ("Ni", 58.693),
+    ("Cu", 63.546),
+    ("Zn", 65.38),
+    ("Ga", 69.723),
+    ("Ge", 72.630),
+    ("As", 74.922),
+    ("Se", 78.971),
+    ("Br", 79.904),
+    ("Kr", 83.798),
+    ("Rb", 85.468),
+    ("Sr", 87.62),
+    ("Y", 88.906),
+    ("Zr", 91.224),
+    ("Mo", 95.95),
+    ("Ru", 101.07),
+    ("Rh", 102.906),
+    ("Pd", 106.42),
+    ("Ag", 107.868),
+    ("Cd", 112.414),
+    ("In", 114.818),
+    ("Sn", 118.710),
+    ("Sb", 121.760),
+    ("Te", 127.60),
+    ("I", 126.904),
+    ("Xe", 131.293),
+    ("Cs", 132.905),
+    ("Ba", 137.327),
+    ("La", 138.905),
+    ("Gd", 157.25),
+    ("W", 183.84),
+    ("Os", 190.23),
+    ("Ir", 192.217),
+    ("Pt", 195.084),
+    ("Au", 196.967),
+    ("Hg", 200.592),
+    ("Tl", 204.38),
+    ("Pb", 207.2),
+    ("Bi", 208.980),
 ];
 
 fn lookup_element(symbol: &str) -> Option<(&'static str, f64)> {
@@ -176,7 +228,10 @@ pub enum SmilesError {
 
 /// Tokenizes a SMILES string into atoms, bonds, branches, ring closures and fragment dots.
 pub fn tokenize(smiles: &str) -> Result<Vec<SmilesToken>, SmilesError> {
-    Ok(tokenize_spanned(smiles)?.into_iter().map(|(_, t)| t).collect())
+    Ok(tokenize_spanned(smiles)?
+        .into_iter()
+        .map(|(_, t)| t)
+        .collect())
 }
 
 fn tokenize_spanned(smiles: &str) -> Result<Vec<(usize, SmilesToken)>, SmilesError> {
@@ -231,9 +286,9 @@ fn tokenize_spanned(smiles: &str) -> Result<Vec<(usize, SmilesToken)>, SmilesErr
             c @ (b'B' | b'C' | b'N' | b'O' | b'P' | b'S' | b'F' | b'I') => {
                 SmilesToken::Atom(SmilesAtom::organic(&(c as char).to_string(), false))
             }
-            c @ (b'b' | b'c' | b'n' | b'o' | b'p' | b's') => {
-                SmilesToken::Atom(SmilesAtom::organic(&(c.to_ascii_uppercase() as char).to_string(), true))
-            }
+            c @ (b'b' | b'c' | b'n' | b'o' | b'p' | b's') => SmilesToken::Atom(
+                SmilesAtom::organic(&(c.to_ascii_uppercase() as char).to_string(), true),
+            ),
             _ => return Err(unexpected(start)),
         };
         out.push((start, token));
@@ -274,12 +329,11 @@ fn parse_bracket_atom(smiles: &str, start: usize) -> Result<(SmilesAtom, usize),
     if i >= end {
         return Err(bad);
     }
-    let (element, aromatic, len) = parse_bracket_symbol(&smiles[i..end]).ok_or_else(|| {
-        SmilesError::UnknownElement {
+    let (element, aromatic, len) =
+        parse_bracket_symbol(&smiles[i..end]).ok_or_else(|| SmilesError::UnknownElement {
             pos: i,
             symbol: smiles[i..end].chars().take(2).collect(),
-        }
-    })?;
+        })?;
     i += len;
 
     // chirality: @, @@, or @ followed by a class (TH, AL, SP, TB, OH) and digits
@@ -289,7 +343,11 @@ fn parse_bracket_atom(smiles: &str, start: usize) -> Result<(SmilesAtom, usize),
         i += 1;
         if i < end && b[i] == b'@' {
             i += 1;
-        } else if i + 1 < end && b[i].is_ascii_uppercase() && b[i] != b'H' && b[i + 1].is_ascii_uppercase() {
+        } else if i + 1 < end
+            && b[i].is_ascii_uppercase()
+            && b[i] != b'H'
+            && b[i + 1].is_ascii_uppercase()
+        {
             i += 2;
             i = digits_from(i).1;
         }
@@ -300,7 +358,11 @@ fn parse_bracket_atom(smiles: &str, start: usize) -> Result<(SmilesAtom, usize),
     if i < end && b[i] == b'H' {
         i += 1;
         let (ds, de) = digits_from(i);
-        h_count = if de > ds { smiles[ds..de].parse().map_err(|_| bad.clone())? } else { 1 };
+        h_count = if de > ds {
+            smiles[ds..de].parse().map_err(|_| bad.clone())?
+        } else {
+            1
+        };
         i = de;
     }
 
@@ -441,7 +503,10 @@ pub fn parse(smiles: &str) -> Result<ParsedSmiles, SmilesError> {
                 atoms.push(atom);
                 order_sum.push(0);
                 if let Some(p) = prev {
-                    let kind = pending.take().map(|(_, k)| k).unwrap_or_else(|| implicit(&atoms, p, idx));
+                    let kind = pending
+                        .take()
+                        .map(|(_, k)| k)
+                        .unwrap_or_else(|| implicit(&atoms, p, idx));
                     add_bond(p, idx, kind, &mut order_sum);
                 }
                 prev = Some(idx);
@@ -463,8 +528,9 @@ pub fn parse(smiles: &str) -> Result<ParsedSmiles, SmilesError> {
                 branches += 1;
             }
             SmilesToken::BranchClose => {
-                let (_, saved_prev, count) =
-                    branch_stack.pop().ok_or(SmilesError::UnbalancedParenthesis { pos })?;
+                let (_, saved_prev, count) = branch_stack
+                    .pop()
+                    .ok_or(SmilesError::UnbalancedParenthesis { pos })?;
                 if let Some((bpos, _)) = pending {
                     return Err(SmilesError::DanglingBond { pos: bpos });
                 }
@@ -478,7 +544,9 @@ pub fn parse(smiles: &str) -> Result<ParsedSmiles, SmilesError> {
                 let here = pending.take().map(|(_, k)| k);
                 if let Some((other, there)) = open_rings.remove(&label) {
                     let kind = match (there, here) {
-                        (Some(x), Some(y)) if x != y && !(x.is_directional() && y.is_directional()) => {
+                        (Some(x), Some(y))
+                            if x != y && !(x.is_directional() && y.is_directional()) =>
+                        {
                             return Err(SmilesError::ConflictingRingBond { label });
                         }
                         (Some(x), _) | (None, Some(x)) => x,
@@ -542,10 +610,7 @@ fn implicit_hydrogens(atom: &SmilesAtom, sum: u32) -> u32 {
         // One valence unit is taken by the aromatic pi system.
         return valences[0].saturating_sub(sum + 1);
     }
-    valences
-        .iter()
-        .find(|&&v| v >= sum)
-        .map_or(0, |&v| v - sum)
+    valences.iter().find(|&&v| v >= sum).map_or(0, |&v| v - sum)
 }
 
 /// High-dimensional physical chemistry feature set extracted from a SMILES string.
@@ -631,10 +696,19 @@ impl SmilesFeaturizer {
 
     fn features_from_parsed(smiles: &str, mol: &ParsedSmiles) -> SmilesFeatures {
         let count = |el: &str| mol.atoms.iter().filter(|a| a.element == el).count();
-        let count_arom = |el: &str| mol.atoms.iter().filter(|a| a.element == el && a.aromatic).count();
+        let count_arom = |el: &str| {
+            mol.atoms
+                .iter()
+                .filter(|a| a.element == el && a.aromatic)
+                .count()
+        };
 
         let n_c = count("C");
-        let heavy_atoms = mol.atoms.iter().filter(|a| a.element != "H" && a.element != "*").count();
+        let heavy_atoms = mol
+            .atoms
+            .iter()
+            .filter(|a| a.element != "H" && a.element != "*")
+            .count();
         let explicit_h_atoms = count("H");
         let n_hydrogens = mol.hydrogens.iter().sum::<u32>() as usize + explicit_h_atoms;
 
@@ -757,7 +831,8 @@ impl SmilesExplorer {
     /// Predict the quantum property profile of a single SMILES string.
     pub fn evaluate_smiles(&self, smiles: &str) -> Result<SmilesPropertyProfile, SmilesError> {
         let mut state = self.encoder.encode_smiles(smiles)?;
-        self.ansatz.forward_in_place(&mut state, &self.ansatz.weights);
+        self.ansatz
+            .forward_in_place(&mut state, &self.ansatz.weights);
 
         let exp0 = self.observables[0].expectation_value(&state);
         let exp1 = self.observables[1].expectation_value(&state);
@@ -791,12 +866,20 @@ impl SmilesExplorer {
                 Err(e) => rejected.push((s.to_string(), e)),
             }
         }
-        results.sort_by(|a, b| b.qed.partial_cmp(&a.qed).unwrap_or(std::cmp::Ordering::Equal));
+        results.sort_by(|a, b| {
+            b.qed
+                .partial_cmp(&a.qed)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
         (results, rejected)
     }
 
     /// Compute the quantum Hilbert space fidelity (Fubini-Study distance proxy) between two SMILES strings.
-    pub fn quantum_smiles_similarity(&self, smiles_a: &str, smiles_b: &str) -> Result<f64, SmilesError> {
+    pub fn quantum_smiles_similarity(
+        &self,
+        smiles_a: &str,
+        smiles_b: &str,
+    ) -> Result<f64, SmilesError> {
         let s_a = self.encoder.encode_smiles(smiles_a)?;
         let s_b = self.encoder.encode_smiles(smiles_b)?;
         Ok(s_a.fidelity(&s_b))
@@ -835,7 +918,9 @@ mod tests {
         let fid_self = explorer.quantum_smiles_similarity("CCO", "CCO").unwrap();
         assert!((fid_self - 1.0).abs() < 1e-6);
 
-        let fid_diff = explorer.quantum_smiles_similarity("CCO", "c1ccccc1").unwrap();
+        let fid_diff = explorer
+            .quantum_smiles_similarity("CCO", "c1ccccc1")
+            .unwrap();
         assert!((0.0..1.0).contains(&fid_diff));
         assert!(explorer.quantum_smiles_similarity("CCO", "C1CC").is_err());
     }

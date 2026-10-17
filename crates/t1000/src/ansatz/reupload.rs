@@ -30,11 +30,7 @@ impl DualAxisEncoder {
     }
 
     /// Creates an encoder with explicit weight vectors.
-    pub fn with_weights(
-        weights_rx: Vec<f64>,
-        weights_ry: Vec<f64>,
-        biases_rz: Vec<f64>,
-    ) -> Self {
+    pub fn with_weights(weights_rx: Vec<f64>, weights_ry: Vec<f64>, biases_rz: Vec<f64>) -> Self {
         assert_eq!(weights_rx.len(), weights_ry.len());
         assert_eq!(weights_rx.len(), biases_rz.len());
         Self {
@@ -58,13 +54,7 @@ impl DualAxisEncoder {
 
     /// Encodes and applies the full SU(2) rotation tuple to qubit `q` in-place.
     #[inline(always)]
-    pub fn apply_to_qubit(
-        &self,
-        re: &mut [f64],
-        im: &mut [f64],
-        q: usize,
-        raw_feature: f64,
-    ) {
+    pub fn apply_to_qubit(&self, re: &mut [f64], im: &mut [f64], q: usize, raw_feature: f64) {
         let (tx, ty, pz) = self.encode_qubit_angles(q, raw_feature);
         if tx.abs() > 1e-14 {
             apply_rx_op(re, im, q, tx);
@@ -78,12 +68,7 @@ impl DualAxisEncoder {
     }
 
     /// Encodes and applies a feature vector across all registered qubits.
-    pub fn apply_all_features(
-        &self,
-        re: &mut [f64],
-        im: &mut [f64],
-        features: &[f64],
-    ) {
+    pub fn apply_all_features(&self, re: &mut [f64], im: &mut [f64], features: &[f64]) {
         let n = self.weights_rx.len();
         for q in 0..n {
             let feat = if !features.is_empty() {

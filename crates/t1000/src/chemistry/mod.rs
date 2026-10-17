@@ -6,11 +6,11 @@
 //! Provides second-quantized spin-orbital mappings, Jordan-Wigner Hamiltonians,
 //! ground-state preparation, and orbital entanglement entropy diagnostics.
 
-pub mod molecules;
 pub mod hamiltonian;
+pub mod molecules;
 
-pub use molecules::{Period12Molecule, Period12MoleculeMetadata};
 pub use hamiltonian::{JordanWignerHamiltonian, PauliOp, PauliTerm};
+pub use molecules::{Period12Molecule, Period12MoleculeMetadata};
 
 use serde::{Deserialize, Serialize};
 
@@ -61,7 +61,11 @@ pub fn simulate_period_molecule(mol: Period12Molecule) -> MolecularQuantumReport
         equilibrium_distance_angstrom: meta.equilibrium_distance_angstrom,
         dipole_moment_debye: meta.dipole_moment_debye,
         symmetry_group: meta.symmetry_group.to_string(),
-        spin_orbital_labels: meta.spin_orbital_labels.into_iter().map(|s| s.to_string()).collect(),
+        spin_orbital_labels: meta
+            .spin_orbital_labels
+            .into_iter()
+            .map(|s| s.to_string())
+            .collect(),
         orbital_occupations: occupations,
         orbital_entanglement_entropies: entropies,
         total_orbital_entropy: total_entropy,

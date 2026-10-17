@@ -14,15 +14,14 @@ use t1000::qssm::{QssmConfig, QuantumStateSpaceAutoencoder};
 /// Generates synthetic 4-channel telemetry sequences for 2 physical classes:
 /// - Class 0: Coherent Harmonic Flux (sinusoidal orbital dynamics with low noise).
 /// - Class 1: Decohered Stochastic Burst (high-frequency chaos with abrupt phase flips).
-fn generate_synthetic_dataset(
-    num_samples: usize,
-    seq_len: usize,
-) -> Vec<(Vec<Vec<f64>>, usize)> {
+fn generate_synthetic_dataset(num_samples: usize, seq_len: usize) -> Vec<(Vec<Vec<f64>>, usize)> {
     let mut dataset = Vec::with_capacity(num_samples);
     let mut rng_state = 0x1000_AEC0_5EEDu64;
 
     let next_float = |state: &mut u64| -> f64 {
-        *state = state.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+        *state = state
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
         ((*state >> 33) as f64) / (u32::MAX as f64)
     };
 
@@ -58,10 +57,18 @@ fn generate_synthetic_dataset(
 }
 
 fn main() {
-    println!("╔═══════════════════════════════════════════════════════════════════════════════════╗");
-    println!("║       T-1000 QUANTUM STATE-SPACE AUTOENCODER & SEQUENCE CLASSIFIER (Q-SSM)        ║");
-    println!("║       1D MPS Sliding Window • Latent Bottleneck Readout • Unzipping Reconstruction║");
-    println!("╚═══════════════════════════════════════════════════════════════════════════════════╝");
+    println!(
+        "╔═══════════════════════════════════════════════════════════════════════════════════╗"
+    );
+    println!(
+        "║       T-1000 QUANTUM STATE-SPACE AUTOENCODER & SEQUENCE CLASSIFIER (Q-SSM)        ║"
+    );
+    println!(
+        "║       1D MPS Sliding Window • Latent Bottleneck Readout • Unzipping Reconstruction║"
+    );
+    println!(
+        "╚═══════════════════════════════════════════════════════════════════════════════════╝"
+    );
     println!();
 
     let train_seq_len = 20;
@@ -78,11 +85,21 @@ fn main() {
     let train_set = generate_synthetic_dataset(120, train_seq_len);
     let test_set = generate_synthetic_dataset(40, train_seq_len);
 
-    println!("┌───────────────────────────────────────────────────────────────────────────────────┐");
-    println!("│ 1. JOINT CLASSIFICATION & AUTOENCODING TRAINING TRAJECTORY                        │");
-    println!("├───────┬──────────────────┬──────────────────┬──────────────────┬──────────────────┤");
-    println!("│ Epoch │ Train Class Loss │ Train Recon MSE  │ Test Accuracy %  │ Latent Fidelity  │");
-    println!("├───────┼──────────────────┼──────────────────┼──────────────────┼──────────────────┤");
+    println!(
+        "┌───────────────────────────────────────────────────────────────────────────────────┐"
+    );
+    println!(
+        "│ 1. JOINT CLASSIFICATION & AUTOENCODING TRAINING TRAJECTORY                        │"
+    );
+    println!(
+        "├───────┬──────────────────┬──────────────────┬──────────────────┬──────────────────┤"
+    );
+    println!(
+        "│ Epoch │ Train Class Loss │ Train Recon MSE  │ Test Accuracy %  │ Latent Fidelity  │"
+    );
+    println!(
+        "├───────┼──────────────────┼──────────────────┼──────────────────┼──────────────────┤"
+    );
 
     let num_epochs = 12;
     for epoch in 1..=num_epochs {
@@ -106,7 +123,12 @@ fn main() {
             if report.predicted_class == *label {
                 correct += 1;
             }
-            let l_norm: f64 = report.latent_vector.iter().map(|&z| z * z).sum::<f64>().sqrt();
+            let l_norm: f64 = report
+                .latent_vector
+                .iter()
+                .map(|&z| z * z)
+                .sum::<f64>()
+                .sqrt();
             test_latent_coherence += l_norm;
         }
         let test_acc = (correct as f64 / test_set.len() as f64) * 100.0;
@@ -119,15 +141,27 @@ fn main() {
             );
         }
     }
-    println!("└───────┴──────────────────┴──────────────────┴──────────────────┴──────────────────┘");
+    println!(
+        "└───────┴──────────────────┴──────────────────┴──────────────────┴──────────────────┘"
+    );
     println!();
 
     // 2. Throughput & Scaling Benchmark across sequence lengths
-    println!("┌───────────────────────────────────────────────────────────────────────────────────┐");
-    println!("│ 2. INFERENCE THROUGHPUT & STREAMING LATENCY BENCHMARK (L1 CACHE RESIDENT)        │");
-    println!("├──────────┬──────────────┬──────────────┬──────────────┬──────────────┬────────────┤");
-    println!("│ Seq Len  │ Total Time   │ Latency/Step │ Throughput   │ Recon MSE    │ Confidence │");
-    println!("├──────────┼──────────────┼──────────────┼──────────────┼──────────────┼────────────┤");
+    println!(
+        "┌───────────────────────────────────────────────────────────────────────────────────┐"
+    );
+    println!(
+        "│ 2. INFERENCE THROUGHPUT & STREAMING LATENCY BENCHMARK (L1 CACHE RESIDENT)        │"
+    );
+    println!(
+        "├──────────┬──────────────┬──────────────┬──────────────┬──────────────┬────────────┤"
+    );
+    println!(
+        "│ Seq Len  │ Total Time   │ Latency/Step │ Throughput   │ Recon MSE    │ Confidence │"
+    );
+    println!(
+        "├──────────┼──────────────┼──────────────┼──────────────┼──────────────┼────────────┤"
+    );
 
     let lengths = [10, 25, 50, 100, 200, 500];
     for &t_len in &lengths {
@@ -158,12 +192,16 @@ fn main() {
             last_report.classification_confidence * 100.0
         );
     }
-    println!("└──────────┴──────────────┴──────────────┴──────────────┴──────────────┴────────────┘");
+    println!(
+        "└──────────┴──────────────┴──────────────┴──────────────┴──────────────┴────────────┘"
+    );
     println!();
 
     println!("[SOVEREIGN VERIFICATION]");
     println!("- Dual-Head Topology : Joint Latent Classification & Autoregressive Unzipping.");
-    println!("- Cache Invariant    : 3-Qubit Window (8 amplitudes = 128 bytes) fits in L1 cache line.");
+    println!(
+        "- Cache Invariant    : 3-Qubit Window (8 amplitudes = 128 bytes) fits in L1 cache line."
+    );
     println!("- Scaling Law        : Strictly linear O(T) latency with zero DRAM allocation in inner loop.");
     println!("- Classification Acc : 100% test separation on coherent vs chaotic burst dynamics.");
 }

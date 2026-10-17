@@ -13,9 +13,9 @@
 //!    correlators $C_{ij} = \langle Z_i Z_j \rangle - \langle Z_i \rangle \langle Z_j \rangle$, and
 //!    bipartite half-cut mutual information $I(A:B)$.
 
+use crate::state::QuantumState;
 use num_complex::Complex64;
 use serde::{Deserialize, Serialize};
-use crate::state::QuantumState;
 
 /// Boundary conditions for lattice connectivity.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -170,7 +170,9 @@ pub fn extract_lattice_frame(
 
         // Eigenvalues of 2x2 reduced density matrix rho_i:
         // lambda_+- = 0.5 * (1 +- sqrt((p0 - p1)^2 + 4 * |rho_01|^2))
-        let bloch_r = ((p0 - p1).powi(2) + 4.0 * rho_01.norm_sqr()).sqrt().min(1.0);
+        let bloch_r = ((p0 - p1).powi(2) + 4.0 * rho_01.norm_sqr())
+            .sqrt()
+            .min(1.0);
         let l1 = 0.5 * (1.0 + bloch_r);
         let l2 = 0.5 * (1.0 - bloch_r).max(0.0);
 
@@ -318,8 +320,12 @@ fn compute_bipartite_entropy(state: &QuantumState, dim_a: usize, dim_b: usize) -
             let l1 = 0.5 * (1.0 + bloch);
             let l2 = 0.5 * (1.0 - bloch).max(0.0);
             let mut s = 0.0;
-            if l1 > 1e-14 { s -= l1 * l1.ln(); }
-            if l2 > 1e-14 { s -= l2 * l2.ln(); }
+            if l1 > 1e-14 {
+                s -= l1 * l1.ln();
+            }
+            if l2 > 1e-14 {
+                s -= l2 * l2.ln();
+            }
             return s;
         }
 
@@ -496,7 +502,11 @@ impl LatticeVqeEngine {
                     for basis in 0..state.dim {
                         let bit_i = (basis >> i) & 1;
                         let bit_j = (basis >> j) & 1;
-                        let (s, c) = if bit_i == bit_j { (sin_p, cos_p) } else { (sin_m, cos_m) };
+                        let (s, c) = if bit_i == bit_j {
+                            (sin_p, cos_p)
+                        } else {
+                            (sin_m, cos_m)
+                        };
                         let r = state.real[basis];
                         let im = state.imag[basis];
                         state.real[basis] = r * c - im * s;
@@ -598,12 +608,19 @@ pub fn render_lattice_ascii(frame: &LatticeFrame) -> String {
     let w = frame.width;
     let h = frame.height;
 
-    out.push_str("╔═══════════════════════════════════════════════════════════════════════════════╗\n");
+    out.push_str(
+        "╔═══════════════════════════════════════════════════════════════════════════════╗\n",
+    );
     out.push_str(&format!(
         "║  2D QUANTUM SPIN LATTICE: {}x{} (N = {} Qubits) | Step: {:04}                  ║\n",
-        w, h, w * h, frame.step
+        w,
+        h,
+        w * h,
+        frame.step
     ));
-    out.push_str("╚═══════════════════════════════════════════════════════════════════════════════╝\n");
+    out.push_str(
+        "╚═══════════════════════════════════════════════════════════════════════════════╝\n",
+    );
 
     // Phase identification based on order parameters:
     let phase_str = if frame.h_x / frame.j_coupling.abs().max(1e-6) > 3.0 {
@@ -616,13 +633,12 @@ pub fn render_lattice_ascii(frame: &LatticeFrame) -> String {
         "QUANTUM CRITICAL POINT (Maximum Entanglement Fluctuations)"
     };
 
-    out.push_str(&format!(
-        " [PHASE CLASSIFICATION] : {}\n",
-        phase_str
-    ));
+    out.push_str(&format!(" [PHASE CLASSIFICATION] : {}\n", phase_str));
     out.push_str(&format!(
         " [HAMILTONIAN COUPLING] : J = {:+.2} | h_x = {:.3} | h_x/|J| = {:.3} (h_c ≈ 3.044)\n",
-        frame.j_coupling, frame.h_x, frame.h_x / frame.j_coupling.abs().max(1e-6)
+        frame.j_coupling,
+        frame.h_x,
+        frame.h_x / frame.j_coupling.abs().max(1e-6)
     ));
     out.push_str(&format!(
         " [GLOBAL OBSERVABLES]  : Energy = {:+.4} | <M_z> = {:+.4} | M_stagg = {:+.4}\n",
@@ -634,7 +650,9 @@ pub fn render_lattice_ascii(frame: &LatticeFrame) -> String {
     ));
 
     out.push_str(" 2D Crystal Grid (Spin Direction ▲/▼/·, <Z_i>, Entropy S_i, Bond C_ij):\n");
-    out.push_str(" ─────────────────────────────────────────────────────────────────────────────\n");
+    out.push_str(
+        " ─────────────────────────────────────────────────────────────────────────────\n",
+    );
 
     let mut h_bond_idx = 0;
     let mut v_bond_idx = 0;
@@ -659,7 +677,11 @@ pub fn render_lattice_ascii(frame: &LatticeFrame) -> String {
 
             // Horizontal bond connector:
             if x + 1 < w {
-                let c_h = frame.horizontal_bonds.get(h_bond_idx).copied().unwrap_or(0.0);
+                let c_h = frame
+                    .horizontal_bonds
+                    .get(h_bond_idx)
+                    .copied()
+                    .unwrap_or(0.0);
                 h_bond_idx += 1;
                 let bond_str = if c_h > 0.15 {
                     "═══"
@@ -697,9 +719,13 @@ pub fn render_lattice_ascii(frame: &LatticeFrame) -> String {
         }
     }
 
-    out.push_str(" ─────────────────────────────────────────────────────────────────────────────\n");
+    out.push_str(
+        " ─────────────────────────────────────────────────────────────────────────────\n",
+    );
     out.push_str(" Legend: ▲ = Spin Up (<Z>>0.25) | ▼ = Spin Down (<Z><-0.25) | · = Critical / Fluctuating\n");
-    out.push_str(" Bonds : ═══ / ║ = Ferromagnetic Correlation | ╌╌╌ / ┆ = Antiferromagnetic Néel Bond\n");
+    out.push_str(
+        " Bonds : ═══ / ║ = Ferromagnetic Correlation | ╌╌╌ / ┆ = Antiferromagnetic Néel Bond\n",
+    );
 
     out
 }
@@ -765,7 +791,10 @@ mod tests {
 
         for _ in 0..20 {
             evolver.step(&mut state);
-            let norm_sq: f64 = state.real.iter().zip(state.imag.iter())
+            let norm_sq: f64 = state
+                .real
+                .iter()
+                .zip(state.imag.iter())
                 .map(|(r, im)| r * r + im * im)
                 .sum();
             assert!(

@@ -73,7 +73,12 @@ pub fn apply_phase_rotation(re: &mut [f64], im: &mut [f64], qubit: usize, phi: f
     }
 }
 
-pub fn apply_discrete_gate_inverse(re: &mut [f64], im: &mut [f64], qubit: usize, gate: DiscreteGate) {
+pub fn apply_discrete_gate_inverse(
+    re: &mut [f64],
+    im: &mut [f64],
+    qubit: usize,
+    gate: DiscreteGate,
+) {
     match gate {
         DiscreteGate::H => apply_discrete_gate(re, im, qubit, DiscreteGate::H),
         DiscreteGate::T => apply_discrete_gate(re, im, qubit, DiscreteGate::Tdg),
@@ -255,10 +260,10 @@ pub fn decode_protected_payload(measured_r1_bits: u16) -> u8 {
 
         // Correct single-qubit phase flip crossed over the 0.8383 rad boundary
         let corrected_bit = match (s0, s1) {
-            (0, 0) => b0,      // No error
-            (1, 0) => b1,      // Qubit 0 flipped -> trust b1/b2
-            (1, 1) => b0,      // Qubit 1 flipped -> trust b0/b2
-            (0, 1) => b0,      // Qubit 2 flipped -> trust b0/b1
+            (0, 0) => b0, // No error
+            (1, 0) => b1, // Qubit 0 flipped -> trust b1/b2
+            (1, 1) => b0, // Qubit 1 flipped -> trust b0/b2
+            (0, 1) => b0, // Qubit 2 flipped -> trust b0/b1
             _ => unreachable!(),
         };
 
@@ -268,10 +273,7 @@ pub fn decode_protected_payload(measured_r1_bits: u16) -> u8 {
     logical_out
 }
 
-fn test_qec_phase_noise_injection(
-    logical_payload: u8,
-    sigma: f64,
-) -> (u16, u8, bool, bool) {
+fn test_qec_phase_noise_injection(logical_payload: u8, sigma: f64) -> (u16, u8, bool, bool) {
     let mut physical_payload = 0u16;
     for block in 0..3 {
         let bit = (logical_payload >> block) & 1;
@@ -317,7 +319,10 @@ pub fn run_adversarial_stego_benchmark() {
 
     println!("\n=== 1. PREPARING PAYLOAD & STEGO-CARRIER (N=18) ===");
     let secret_payload: u16 = 0b1_1010_0101;
-    println!("Target Payload: 0x{:03X} ({:09b})", secret_payload, secret_payload);
+    println!(
+        "Target Payload: 0x{:03X} ({:09b})",
+        secret_payload, secret_payload
+    );
 
     let mut state_re = vec![0.0f64; DIM];
     let mut state_im = vec![0.0f64; DIM];
@@ -371,12 +376,21 @@ pub fn run_adversarial_stego_benchmark() {
     }
 
     let sim_duration = start_sim.elapsed();
-    println!("Circuit Execution Completed in: {:.2?} (Target: < 35 ms)", sim_duration);
+    println!(
+        "Circuit Execution Completed in: {:.2?} (Target: < 35 ms)",
+        sim_duration
+    );
 
     println!("\n=== 4. STATISTICAL & CHAOS VERIFICATION ===");
     let (f_xeb, ks_stat, p_val) = compute_statistical_invariants(&state_re, &state_im);
-    println!("Porter-Thomas Fidelity (F_XEB) : {:.4} (Ideal: 1.0000 ± 0.016)", f_xeb);
-    println!("Kolmogorov-Smirnov Statistic   : {:.4} (p-value: {:.4})", ks_stat, p_val);
+    println!(
+        "Porter-Thomas Fidelity (F_XEB) : {:.4} (Ideal: 1.0000 ± 0.016)",
+        f_xeb
+    );
+    println!(
+        "Kolmogorov-Smirnov Statistic   : {:.4} (p-value: {:.4})",
+        ks_stat, p_val
+    );
 
     assert!(f_xeb >= 0.98 && f_xeb <= 1.02);
     println!("-> PASS: Quantum speckle is statistically indistinguishable from pure noise.");
@@ -392,13 +406,20 @@ pub fn run_adversarial_stego_benchmark() {
     let std_null = (1.0 / (DIM as f64)).sqrt();
     let z_score = (tvd_null - 0.42).abs() / (std_null * 0.01);
     println!("Speckle TVD vs Uniform Null    : {:.6}", tvd_null);
-    println!("Anomaly Detection Significance : {:.2} sigma (Threshold: > 6.00 sigma)", z_score);
+    println!(
+        "Anomaly Detection Significance : {:.2} sigma (Threshold: > 6.00 sigma)",
+        z_score
+    );
     assert!(z_score > 6.0);
     println!("-> PASS: Anomaly radar isolates hidden payload at > 6 sigma significance.");
 
     println!("\n=== 6. FORENSIC DECRYPTION & EXTRACTOR TEST ===");
-    let recovered_bits = forensic_unwind_and_measure(&mut state_re, &mut state_im, &continuous_gates, target_eps);
-    println!("Decrypted Payload: 0x{:03X} ({:09b})", recovered_bits, recovered_bits);
+    let recovered_bits =
+        forensic_unwind_and_measure(&mut state_re, &mut state_im, &continuous_gates, target_eps);
+    println!(
+        "Decrypted Payload: 0x{:03X} ({:09b})",
+        recovered_bits, recovered_bits
+    );
     assert_eq!(secret_payload, recovered_bits);
     println!("-> PASS: 100% exact bit reconstruction achieved across discrete Clifford+T layers.");
 
@@ -411,8 +432,13 @@ pub fn run_adversarial_stego_benchmark() {
     let mut critical_threshold = None;
 
     for &sigma in &noise_levels {
-        let (p_vac, recovered, passed) = test_phase_noise_injection(secret_payload, &continuous_gates, target_eps, sigma);
-        let status_str = if passed { "RECOVERED (PASS)" } else { "DRIFT / FLIP (FAIL)" };
+        let (p_vac, recovered, passed) =
+            test_phase_noise_injection(secret_payload, &continuous_gates, target_eps, sigma);
+        let status_str = if passed {
+            "RECOVERED (PASS)"
+        } else {
+            "DRIFT / FLIP (FAIL)"
+        };
         println!(
             "│   {:.3} rad  │     {:.6}     │    0x{:03X}      │ {:<23} │",
             sigma, p_vac, recovered, status_str
@@ -422,16 +448,37 @@ pub fn run_adversarial_stego_benchmark() {
         }
     }
     println!("└──────────────┴──────────────────┴─────────────────┴─────────────────────────┘");
-    println!("-> Unencoded Baseline Threshold: sigma_crit = {:.3} rad (Bit flip boundary)", critical_threshold.unwrap_or(0.850));
+    println!(
+        "-> Unencoded Baseline Threshold: sigma_crit = {:.3} rad (Bit flip boundary)",
+        critical_threshold.unwrap_or(0.850)
+    );
 
     println!("\n=== 8. ACTIVE QEC SYNDROME UPGRADE (R1 DATA <-> R2 ANCILLAE) ===");
     let _syndromes = [
-        AncillaRole::ParitySyndrome { ancilla_qubit: 9, data_qubits: [0, 1] },
-        AncillaRole::ParitySyndrome { ancilla_qubit: 10, data_qubits: [1, 2] },
-        AncillaRole::ParitySyndrome { ancilla_qubit: 11, data_qubits: [3, 4] },
-        AncillaRole::ParitySyndrome { ancilla_qubit: 12, data_qubits: [4, 5] },
-        AncillaRole::ParitySyndrome { ancilla_qubit: 13, data_qubits: [6, 7] },
-        AncillaRole::ParitySyndrome { ancilla_qubit: 14, data_qubits: [7, 8] },
+        AncillaRole::ParitySyndrome {
+            ancilla_qubit: 9,
+            data_qubits: [0, 1],
+        },
+        AncillaRole::ParitySyndrome {
+            ancilla_qubit: 10,
+            data_qubits: [1, 2],
+        },
+        AncillaRole::ParitySyndrome {
+            ancilla_qubit: 11,
+            data_qubits: [3, 4],
+        },
+        AncillaRole::ParitySyndrome {
+            ancilla_qubit: 12,
+            data_qubits: [4, 5],
+        },
+        AncillaRole::ParitySyndrome {
+            ancilla_qubit: 13,
+            data_qubits: [6, 7],
+        },
+        AncillaRole::ParitySyndrome {
+            ancilla_qubit: 14,
+            data_qubits: [7, 8],
+        },
     ];
 
     println!("Register Partitioning:");
@@ -441,14 +488,31 @@ pub fn run_adversarial_stego_benchmark() {
 
     let logical_payload: u8 = 0b101; // 0x5
     println!("\nDual-Curve Telemetry at Critical Noise (sigma = 0.850 rad):");
-    let (raw_bits, logical_out, raw_pass, qec_pass) = test_qec_phase_noise_injection(logical_payload, 0.850);
-    println!("  Target Logical Payload : 0x{:X} ({:03b}) [Physical Codeword: 0x1C7]", logical_payload, logical_payload);
-    println!("  Unencoded Raw Measured : 0x{:03X} (Q0 & Q5 flipped) -> Status: {}", raw_bits, if raw_pass { "PASS" } else { "FAIL (BREAKDOWN)" });
+    let (raw_bits, logical_out, raw_pass, qec_pass) =
+        test_qec_phase_noise_injection(logical_payload, 0.850);
+    println!(
+        "  Target Logical Payload : 0x{:X} ({:03b}) [Physical Codeword: 0x1C7]",
+        logical_payload, logical_payload
+    );
+    println!(
+        "  Unencoded Raw Measured : 0x{:03X} (Q0 & Q5 flipped) -> Status: {}",
+        raw_bits,
+        if raw_pass { "PASS" } else { "FAIL (BREAKDOWN)" }
+    );
     println!("  Syndrome Diagnostics  :");
     println!("    Block 0 (Q0..Q2): s0=1, s1=0 -> Isolated error on Qubit 0 -> Corrected to 1");
     println!("    Block 1 (Q3..Q5): s0=0, s1=1 -> Isolated error on Qubit 5 -> Corrected to 0");
     println!("    Block 2 (Q6..Q8): s0=0, s1=0 -> Clean syndrome -> Preserved: 1");
-    println!("  QEC Logical Recovered  : 0x{:X} ({:03b}) -> Status: {}", logical_out, logical_out, if qec_pass { "100% RECOVERED (PASS)" } else { "FAIL" });
+    println!(
+        "  QEC Logical Recovered  : 0x{:X} ({:03b}) -> Status: {}",
+        logical_out,
+        logical_out,
+        if qec_pass {
+            "100% RECOVERED (PASS)"
+        } else {
+            "FAIL"
+        }
+    );
 
     println!("\nDual-Curve Noise Sweep (Unencoded Baseline vs Protected QEC):");
     println!("┌──────────────┬──────────────────┬─────────────────┬─────────────────────────┐");
@@ -460,8 +524,16 @@ pub fn run_adversarial_stego_benchmark() {
 
     for &s in &ft_sweep {
         let (raw, dec, unenc, qec) = test_qec_phase_noise_injection(logical_payload, s);
-        let unenc_str = if unenc { format!("PASS (0x{:03X})", raw) } else { format!("FAIL (0x{:03X})", raw) };
-        let qec_str = if qec { format!("PASS (0x{:X})", dec) } else { format!("FAIL (0x{:X})", dec) };
+        let unenc_str = if unenc {
+            format!("PASS (0x{:03X})", raw)
+        } else {
+            format!("FAIL (0x{:03X})", raw)
+        };
+        let qec_str = if qec {
+            format!("PASS (0x{:X})", dec)
+        } else {
+            format!("FAIL (0x{:X})", dec)
+        };
         let remark = if !unenc && qec {
             "ACTIVE RECOVERY"
         } else if unenc && qec {
@@ -481,12 +553,13 @@ pub fn run_adversarial_stego_benchmark() {
     }
     println!("└──────────────┴──────────────────┴─────────────────┴─────────────────────────┘");
     println!("-> Unencoded Breakdown Limit : sigma_crit     = 0.850 rad");
-    println!("-> Fault-Tolerant QEC Limit  : sigma_crit_qec = {:.3} rad (+58.8% Expansion)", qec_crit.unwrap_or(1.350));
+    println!(
+        "-> Fault-Tolerant QEC Limit  : sigma_crit_qec = {:.3} rad (+58.8% Expansion)",
+        qec_crit.unwrap_or(1.350)
+    );
 }
 
 #[allow(dead_code)]
 fn main() {
     run_adversarial_stego_benchmark();
 }
-
-

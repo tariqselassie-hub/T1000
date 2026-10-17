@@ -1,5 +1,5 @@
-use t1000::{CircuitAnsatz, QuantumState};
 use std::time::Instant;
+use t1000::{CircuitAnsatz, QuantumState};
 
 /// Standardized Cross-Entropy Benchmarking (XEB) between ideal and noisy statevectors:
 /// F_XEB = 2^N * sum_x (P_ideal(x) * P_noisy(x)) - 1.0
@@ -59,7 +59,9 @@ fn main() {
             );
         }
         if n == 12 {
-            println!("├────┼───────┼──────────────┼──────────────┼───────────────────────────────┤");
+            println!(
+                "├────┼───────┼──────────────┼──────────────┼───────────────────────────────┤"
+            );
         }
     }
     println!("└────┴───────┴──────────────┴──────────────┴───────────────────────────────┘");

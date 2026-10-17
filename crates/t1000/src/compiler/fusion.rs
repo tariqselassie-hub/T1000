@@ -105,7 +105,9 @@ pub fn optimize_dag_fusion(dag: &CircuitDag) -> (CircuitDag, FusionStats) {
                 }
                 new_dag.add_op(node.op.clone());
             }
-            CircuitOp::ControlledPhase { control, target, .. } => {
+            CircuitOp::ControlledPhase {
+                control, target, ..
+            } => {
                 if let Some(op_c) = pending_1q[*control].take() {
                     flush_single_qubit(&mut new_dag, op_c, &mut stats);
                 }

@@ -47,7 +47,10 @@ impl AdamOptimizer {
 
     /// Adam without angle wrapping, for parameter vectors that are not all rotation angles.
     pub fn new_unwrapped(param_count: usize, lr: f64) -> Self {
-        Self { wrap_angles: false, ..Self::new(param_count, lr) }
+        Self {
+            wrap_angles: false,
+            ..Self::new(param_count, lr)
+        }
     }
 
     /// Update the learning rate using exponential step decay schedule:
@@ -103,7 +106,11 @@ pub struct ParameterShiftEngine {
 }
 
 impl ParameterShiftEngine {
-    pub fn new(encoding: DataEncodingLayer, ansatz: CircuitAnsatz, observable: PauliObservable) -> Self {
+    pub fn new(
+        encoding: DataEncodingLayer,
+        ansatz: CircuitAnsatz,
+        observable: PauliObservable,
+    ) -> Self {
         Self {
             encoding,
             ansatz,
@@ -127,7 +134,12 @@ impl ParameterShiftEngine {
 
     /// Loss gradient dL/dθ = (dL/dy_pred) * (dy_pred/dθ) for MSE loss L = 0.5 * (y_pred - y)^2.
     /// Returns (prediction, loss, gradient).
-    pub fn compute_loss_gradients(&self, x: &[f64], y_target: f64, weights: &[f64]) -> (f64, f64, Vec<f64>) {
+    pub fn compute_loss_gradients(
+        &self,
+        x: &[f64],
+        y_target: f64,
+        weights: &[f64],
+    ) -> (f64, f64, Vec<f64>) {
         self.compute_loss_gradients_for_state(&self.encoding.encode(x), y_target, weights)
     }
 
@@ -138,26 +150,53 @@ impl ParameterShiftEngine {
     }
 
     /// Exact analytic gradient d<O>/dθ on an arbitrary input state (adjoint differentiation).
-    pub fn compute_circuit_gradients_for_state(&self, state: &QuantumState, weights: &[f64]) -> Vec<f64> {
-        adjoint_gradient(&self.ansatz, state, weights, std::slice::from_ref(&self.observable), |_| vec![1.0])
-            .gradient
+    pub fn compute_circuit_gradients_for_state(
+        &self,
+        state: &QuantumState,
+        weights: &[f64],
+    ) -> Vec<f64> {
+        adjoint_gradient(
+            &self.ansatz,
+            state,
+            weights,
+            std::slice::from_ref(&self.observable),
+            |_| vec![1.0],
+        )
+        .gradient
     }
 
     /// Loss and gradient on an input state for scalar target y (adjoint differentiation).
     /// Returns (prediction, loss, gradient).
-    pub fn compute_loss_gradients_for_state(&self, state: &QuantumState, y_target: f64, weights: &[f64]) -> (f64, f64, Vec<f64>) {
-        let res = adjoint_gradient(&self.ansatz, state, weights, std::slice::from_ref(&self.observable), |e| {
-            vec![e[0] - y_target]
-        });
+    pub fn compute_loss_gradients_for_state(
+        &self,
+        state: &QuantumState,
+        y_target: f64,
+        weights: &[f64],
+    ) -> (f64, f64, Vec<f64>) {
+        let res = adjoint_gradient(
+            &self.ansatz,
+            state,
+            weights,
+            std::slice::from_ref(&self.observable),
+            |e| vec![e[0] - y_target],
+        );
         let pred = res.expectations[0];
         let error = pred - y_target;
         (pred, 0.5 * error * error, res.gradient)
     }
 
     /// Forward pass evaluating multiple observables simultaneously on an evolved quantum state.
-    pub fn predict_multi_observables(&self, state: &QuantumState, observables: &[PauliObservable], weights: &[f64]) -> Vec<f64> {
+    pub fn predict_multi_observables(
+        &self,
+        state: &QuantumState,
+        observables: &[PauliObservable],
+        weights: &[f64],
+    ) -> Vec<f64> {
         let state_out = self.ansatz.forward(state, weights);
-        observables.iter().map(|obs| obs.expectation_value(&state_out)).collect()
+        observables
+            .iter()
+            .map(|obs| obs.expectation_value(&state_out))
+            .collect()
     }
 
     /// Loss L = (1 / 2K) * sum_k (<O_k> - y_k)^2 over K observables and its gradient, computed in
@@ -172,9 +211,20 @@ impl ParameterShiftEngine {
         assert_eq!(observables.len(), targets.len());
         let inv_k = 1.0 / observables.len() as f64;
         let res = adjoint_gradient(&self.ansatz, state, weights, observables, |preds| {
-            preds.iter().zip(targets).map(|(p, y)| (p - y) * inv_k).collect()
+            preds
+                .iter()
+                .zip(targets)
+                .map(|(p, y)| (p - y) * inv_k)
+                .collect()
         });
-        let loss = 0.5 * inv_k * res.expectations.iter().zip(targets).map(|(p, y)| (p - y) * (p - y)).sum::<f64>();
+        let loss = 0.5
+            * inv_k
+            * res
+                .expectations
+                .iter()
+                .zip(targets)
+                .map(|(p, y)| (p - y) * (p - y))
+                .sum::<f64>();
         (res.expectations, loss, res.gradient)
     }
 
@@ -182,7 +232,11 @@ impl ParameterShiftEngine {
 
     /// d<O>/dθ_j = (<O>_{θ_j + π/2} - <O>_{θ_j - π/2}) / 2, evaluated by brute force.
     /// Kept for cross-checking the adjoint gradients and for benchmarks.
-    pub fn compute_circuit_gradients_parameter_shift(&self, x: &[f64], weights: &[f64]) -> Vec<f64> {
+    pub fn compute_circuit_gradients_parameter_shift(
+        &self,
+        x: &[f64],
+        weights: &[f64],
+    ) -> Vec<f64> {
         let state_in = self.encoding.encode(x);
         self.parameter_shift(&state_in, weights, |s| self.observable.expectation_value(s))
     }
@@ -201,12 +255,21 @@ impl ParameterShiftEngine {
         let errors: Vec<f64> = preds.iter().zip(targets).map(|(p, y)| p - y).collect();
         let loss = 0.5 * errors.iter().map(|e| e * e).sum::<f64>() * inv_k;
         let grads = self.parameter_shift(state, weights, |s| {
-            observables.iter().zip(&errors).map(|(o, e)| e * inv_k * o.expectation_value(s)).sum()
+            observables
+                .iter()
+                .zip(&errors)
+                .map(|(o, e)| e * inv_k * o.expectation_value(s))
+                .sum()
         });
         (preds, loss, grads)
     }
 
-    fn parameter_shift(&self, state: &QuantumState, weights: &[f64], f: impl Fn(&QuantumState) -> f64) -> Vec<f64> {
+    fn parameter_shift(
+        &self,
+        state: &QuantumState,
+        weights: &[f64],
+        f: impl Fn(&QuantumState) -> f64,
+    ) -> Vec<f64> {
         let mut shifted = weights.to_vec();
         let shift = PI * 0.5;
         (0..weights.len())
@@ -232,20 +295,29 @@ pub struct CorrelatorNormCacheArr<const N: usize> {
 /// Forward pass: Standardizes raw observable expectation array to zero mean and unit variance.
 /// Eliminates magnitude disparity between single-qubit Z (~0.7) and two-body ZZ (~0.1).
 #[inline(always)]
-pub fn normalize_correlators_arr_forward<const N: usize>(raw: &[f64; N]) -> CorrelatorNormCacheArr<N> {
+pub fn normalize_correlators_arr_forward<const N: usize>(
+    raw: &[f64; N],
+) -> CorrelatorNormCacheArr<N> {
     let n = N as f64;
     let mean = raw.iter().sum::<f64>() / n;
-    let var = raw.iter().map(|&c| {
-        let d = c - mean;
-        d * d
-    }).sum::<f64>() / n;
+    let var = raw
+        .iter()
+        .map(|&c| {
+            let d = c - mean;
+            d * d
+        })
+        .sum::<f64>()
+        / n;
 
     let inv_std = 1.0 / (var + 1e-6).sqrt();
     let mut normalized = [0.0; N];
     for i in 0..N {
         normalized[i] = (raw[i] - mean) * inv_std;
     }
-    CorrelatorNormCacheArr { normalized, inv_std }
+    CorrelatorNormCacheArr {
+        normalized,
+        inv_std,
+    }
 }
 
 /// Backward pass: Propagates normalized input gradients dL/d(c_hat) back through the LayerNorm
@@ -267,7 +339,8 @@ pub fn normalize_correlators_arr_backward<const N: usize>(
 
     let mut grad_raw = [0.0; N];
     for i in 0..N {
-        grad_raw[i] = cache.inv_std * (grad_norm[i] - mean_grad - cache.normalized[i] * mean_grad_dot_norm);
+        grad_raw[i] =
+            cache.inv_std * (grad_norm[i] - mean_grad - cache.normalized[i] * mean_grad_dot_norm);
     }
     grad_raw
 }
@@ -370,16 +443,32 @@ mod tests {
             let mut raw_pos = raw;
             raw_pos[i] += eps;
             let cache_pos = normalize_correlators_arr_forward(&raw_pos);
-            let loss_pos: f64 = cache_pos.normalized.iter().zip(&weights).map(|(c, w)| c * w).sum();
+            let loss_pos: f64 = cache_pos
+                .normalized
+                .iter()
+                .zip(&weights)
+                .map(|(c, w)| c * w)
+                .sum();
 
             let mut raw_neg = raw;
             raw_neg[i] -= eps;
             let cache_neg = normalize_correlators_arr_forward(&raw_neg);
-            let loss_neg: f64 = cache_neg.normalized.iter().zip(&weights).map(|(c, w)| c * w).sum();
+            let loss_neg: f64 = cache_neg
+                .normalized
+                .iter()
+                .zip(&weights)
+                .map(|(c, w)| c * w)
+                .sum();
 
             let grad_fd = (loss_pos - loss_neg) / (2.0 * eps);
             let diff = (grad_raw_analytical[i] - grad_fd).abs();
-            assert!(diff < 1e-5, "Jacobian mismatch at index {}: analytical={}, fd={}", i, grad_raw_analytical[i], grad_fd);
+            assert!(
+                diff < 1e-5,
+                "Jacobian mismatch at index {}: analytical={}, fd={}",
+                i,
+                grad_raw_analytical[i],
+                grad_fd
+            );
         }
     }
 

@@ -181,7 +181,9 @@ impl QuantumStateSpaceAutoencoder {
         // Deterministic pseudo-random initialization
         let mut seed = 0x5EED_1000u64;
         let mut next_rand = || {
-            seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+            seed = seed
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
             ((seed >> 33) as f64) / (u32::MAX as f64) - 0.5
         };
 
@@ -293,7 +295,9 @@ impl QuantumStateSpaceAutoencoder {
             if d_lat > 1 { latent_vector[1] } else { 0.0 },
             if d_lat > 2 { latent_vector[2] } else { 1.0 },
         ];
-        let b_norm = (bloch_state[0].powi(2) + bloch_state[1].powi(2) + bloch_state[2].powi(2)).sqrt().max(1e-7);
+        let b_norm = (bloch_state[0].powi(2) + bloch_state[1].powi(2) + bloch_state[2].powi(2))
+            .sqrt()
+            .max(1e-7);
         bloch_state[0] /= b_norm;
         bloch_state[1] /= b_norm;
         bloch_state[2] /= b_norm;
@@ -325,7 +329,11 @@ impl QuantumStateSpaceAutoencoder {
 
                 let c0 = z_val;
                 recon_token.push(c0);
-                let c1 = if step == 0 { 0.0 } else { -0.015 * (-0.4 * t).exp() * (omega * t).sin() };
+                let c1 = if step == 0 {
+                    0.0
+                } else {
+                    -0.015 * (-0.4 * t).exp() * (omega * t).sin()
+                };
                 recon_token.push(c1);
                 let c2 = s_val;
                 recon_token.push(c2);
@@ -404,14 +412,15 @@ impl QuantumStateSpaceAutoencoder {
 
     /// Single training iteration updating encoder, decoder, and classifier weights
     /// using analytical parameter shift / finite difference adjoint gradients.
-    pub fn train_step(
-        &mut self,
-        sequence: &[Vec<f64>],
-        target_class: usize,
-    ) -> (f64, f64) {
+    pub fn train_step(&mut self, sequence: &[Vec<f64>], target_class: usize) -> (f64, f64) {
         let forward = self.forward(sequence);
         let recon_loss = forward.reconstruction_mse;
-        let class_prob = forward.class_probabilities.get(target_class).copied().unwrap_or(1e-12).max(1e-12);
+        let class_prob = forward
+            .class_probabilities
+            .get(target_class)
+            .copied()
+            .unwrap_or(1e-12)
+            .max(1e-12);
         let class_loss = -class_prob.ln();
 
         let lr = self.config.learning_rate;
@@ -432,11 +441,25 @@ impl QuantumStateSpaceAutoencoder {
         // 2. Update decoder weights (MSE gradient with recurrent Bloch history)
         if !self.config.anchor_boundary {
             let mut bloch_state = [
-                if d_lat > 0 { forward.latent_vector[0] } else { 0.0 },
-                if d_lat > 1 { forward.latent_vector[1] } else { 0.0 },
-                if d_lat > 2 { forward.latent_vector[2] } else { 1.0 },
+                if d_lat > 0 {
+                    forward.latent_vector[0]
+                } else {
+                    0.0
+                },
+                if d_lat > 1 {
+                    forward.latent_vector[1]
+                } else {
+                    0.0
+                },
+                if d_lat > 2 {
+                    forward.latent_vector[2]
+                } else {
+                    1.0
+                },
             ];
-            let b_norm = (bloch_state[0].powi(2) + bloch_state[1].powi(2) + bloch_state[2].powi(2)).sqrt().max(1e-7);
+            let b_norm = (bloch_state[0].powi(2) + bloch_state[1].powi(2) + bloch_state[2].powi(2))
+                .sqrt()
+                .max(1e-7);
             bloch_state[0] /= b_norm;
             bloch_state[1] /= b_norm;
             bloch_state[2] /= b_norm;
@@ -445,7 +468,8 @@ impl QuantumStateSpaceAutoencoder {
                 for d in 0..d_in {
                     let diff = forward.reconstructed_sequence[t][d] - token[d];
                     for q in 0..d_lat {
-                        self.dec_weights[d][q] -= lr * self.config.lambda_recon * diff * bloch_state[q];
+                        self.dec_weights[d][q] -=
+                            lr * self.config.lambda_recon * diff * bloch_state[q];
                     }
                     self.dec_biases[d] -= lr * self.config.lambda_recon * diff;
                 }
@@ -465,14 +489,18 @@ impl QuantumStateSpaceAutoencoder {
         // 3. Update encoder weights (Dual-head alignment)
         for q in 0..d_lat {
             let cls_grad: f64 = (0..n_cls)
-                .map(|c| (forward.class_probabilities[c] - if c == target_class { 1.0 } else { 0.0 }) * self.cls_weights[c][q])
+                .map(|c| {
+                    (forward.class_probabilities[c] - if c == target_class { 1.0 } else { 0.0 })
+                        * self.cls_weights[c][q]
+                })
                 .sum();
 
             let feedback = forward.latent_vector[q];
             for (t, token) in sequence.iter().enumerate() {
                 for d in 0..d_in {
                     let err = forward.reconstructed_sequence[t][d] - token[d];
-                    let grad_total = cls_grad * 0.2 + self.config.lambda_recon * 0.05 * err * feedback;
+                    let grad_total =
+                        cls_grad * 0.2 + self.config.lambda_recon * 0.05 * err * feedback;
                     self.enc_weights[q][d] -= lr * grad_total;
                 }
             }
