@@ -106,7 +106,10 @@ pub use lattice::{
 };
 pub use measurements::{POVMClassifier, PauliObservable};
 pub use memory::{MemoryEntry, QuantumAssociativeMemory};
-pub use optimizer::{AdamOptimizer, ParameterShiftEngine};
+pub use optimizer::{
+    normalize_correlators_arr_backward, normalize_correlators_arr_forward, AdamOptimizer,
+    CorrelatorNormCacheArr, ParameterShiftEngine, TwoSpeedHybridOptimizer,
+};
 pub use parallel::{
     DEFAULT_SYSTEM_QUBITS, PARALLEL_CUTOFF_QUBITS, PARALLEL_MIN_DIM, PARALLEL_MIN_QUBITS,
 };

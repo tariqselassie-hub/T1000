@@ -221,3 +221,189 @@ impl ParameterShiftEngine {
             .collect()
     }
 }
+
+/// Cache holding normalized correlator expectations and reciprocal standard deviation.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct CorrelatorNormCacheArr<const N: usize> {
+    pub normalized: [f64; N],
+    pub inv_std: f64,
+}
+
+/// Forward pass: Standardizes raw observable expectation array to zero mean and unit variance.
+/// Eliminates magnitude disparity between single-qubit Z (~0.7) and two-body ZZ (~0.1).
+#[inline(always)]
+pub fn normalize_correlators_arr_forward<const N: usize>(raw: &[f64; N]) -> CorrelatorNormCacheArr<N> {
+    let n = N as f64;
+    let mean = raw.iter().sum::<f64>() / n;
+    let var = raw.iter().map(|&c| {
+        let d = c - mean;
+        d * d
+    }).sum::<f64>() / n;
+
+    let inv_std = 1.0 / (var + 1e-6).sqrt();
+    let mut normalized = [0.0; N];
+    for i in 0..N {
+        normalized[i] = (raw[i] - mean) * inv_std;
+    }
+    CorrelatorNormCacheArr { normalized, inv_std }
+}
+
+/// Backward pass: Propagates normalized input gradients dL/d(c_hat) back through the LayerNorm
+/// Jacobian to raw observable gradients dL/d(c_raw) for adjoint circuit differentiation:
+/// dL/dc_i = (1/sigma) * [ g_i - mean(g) - c_hat_i * mean(g . c_hat) ]
+#[inline(always)]
+pub fn normalize_correlators_arr_backward<const N: usize>(
+    grad_norm: &[f64; N],
+    cache: &CorrelatorNormCacheArr<N>,
+) -> [f64; N] {
+    let n = N as f64;
+    let mean_grad = grad_norm.iter().sum::<f64>() / n;
+    let mean_grad_dot_norm = grad_norm
+        .iter()
+        .zip(cache.normalized.iter())
+        .map(|(&g, &c_hat)| g * c_hat)
+        .sum::<f64>()
+        / n;
+
+    let mut grad_raw = [0.0; N];
+    for i in 0..N {
+        grad_raw[i] = cache.inv_std * (grad_norm[i] - mean_grad - cache.normalized[i] * mean_grad_dot_norm);
+    }
+    grad_raw
+}
+
+/// Two-Speed AdamW Optimizer partitioning periodic quantum angles from Euclidean classical weights.
+///
+/// 1. VQC Angles: Driven with higher learning rate (default 0.012) and zero weight decay.
+/// 2. Classical Head: Driven with damped learning rate (default 0.0015) and decoupled L2 weight decay (0.01).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TwoSpeedHybridOptimizer {
+    pub lr_vqc: f64,
+    pub lr_head: f64,
+    pub wd_head: f64,
+    pub beta1: f64,
+    pub beta2: f64,
+    pub eps: f64,
+    pub step_t: usize,
+    m_vqc: Vec<f64>,
+    v_vqc: Vec<f64>,
+    m_head: Vec<f64>,
+    v_head: Vec<f64>,
+}
+
+impl TwoSpeedHybridOptimizer {
+    pub fn new(n_vqc: usize, n_head: usize) -> Self {
+        Self {
+            lr_vqc: 0.012,
+            lr_head: 0.0015,
+            wd_head: 0.01,
+            beta1: 0.9,
+            beta2: 0.999,
+            eps: 1e-8,
+            step_t: 0,
+            m_vqc: vec![0.0; n_vqc],
+            v_vqc: vec![0.0; n_vqc],
+            m_head: vec![0.0; n_head],
+            v_head: vec![0.0; n_head],
+        }
+    }
+
+    pub fn with_learning_rates(mut self, lr_vqc: f64, lr_head: f64, wd_head: f64) -> Self {
+        self.lr_vqc = lr_vqc;
+        self.lr_head = lr_head;
+        self.wd_head = wd_head;
+        self
+    }
+
+    pub fn step(
+        &mut self,
+        vqc_params: &mut [f64],
+        vqc_grads: &[f64],
+        head_params: &mut [f64],
+        head_grads: &[f64],
+    ) {
+        self.step_t += 1;
+        let t = self.step_t as i32;
+        let bias_corr1 = (1.0 - self.beta1.powi(t)).max(1e-12);
+        let bias_corr2 = (1.0 - self.beta2.powi(t)).max(1e-12);
+
+        // 1. Quantum parameters (periodic mod 2pi, zero weight decay)
+        let eff_lr_vqc = self.lr_vqc * bias_corr2.sqrt() / bias_corr1;
+        for (i, w) in vqc_params.iter_mut().enumerate() {
+            let g = vqc_grads[i].clamp(-1.0, 1.0);
+            self.m_vqc[i] = self.beta1 * self.m_vqc[i] + (1.0 - self.beta1) * g;
+            self.v_vqc[i] = self.beta2 * self.v_vqc[i] + (1.0 - self.beta2) * (g * g);
+            *w -= eff_lr_vqc * self.m_vqc[i] / (self.v_vqc[i].sqrt() + self.eps);
+        }
+
+        // 2. Classical parameters (decoupled weight decay, skipping final 2 bias terms if present)
+        let eff_lr_head = self.lr_head * bias_corr2.sqrt() / bias_corr1;
+        let head_len = head_params.len();
+        for (i, w) in head_params.iter_mut().enumerate() {
+            let g = head_grads[i].clamp(-1.0, 1.0);
+            self.m_head[i] = self.beta1 * self.m_head[i] + (1.0 - self.beta1) * g;
+            self.v_head[i] = self.beta2 * self.v_head[i] + (1.0 - self.beta2) * (g * g);
+            if i + 2 < head_len {
+                *w *= 1.0 - self.lr_head * self.wd_head;
+            }
+            *w -= eff_lr_head * self.m_head[i] / (self.v_head[i].sqrt() + self.eps);
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_correlator_layernorm_finite_difference_exactness() {
+        // Test with 8 correlators representing a small register
+        let raw: [f64; 8] = [0.82, -0.45, 0.12, 0.05, -0.08, 0.73, -0.22, 0.19];
+        let weights: [f64; 8] = [1.2, -0.7, 0.5, 2.1, -1.4, 0.9, -0.3, 0.8];
+
+        let cache = normalize_correlators_arr_forward(&raw);
+        let grad_raw_analytical = normalize_correlators_arr_backward(&weights, &cache);
+
+        // Finite differences verification: L(c) = sum_k w_k * c_hat_k
+        let eps = 1e-6;
+        for i in 0..8 {
+            let mut raw_pos = raw;
+            raw_pos[i] += eps;
+            let cache_pos = normalize_correlators_arr_forward(&raw_pos);
+            let loss_pos: f64 = cache_pos.normalized.iter().zip(&weights).map(|(c, w)| c * w).sum();
+
+            let mut raw_neg = raw;
+            raw_neg[i] -= eps;
+            let cache_neg = normalize_correlators_arr_forward(&raw_neg);
+            let loss_neg: f64 = cache_neg.normalized.iter().zip(&weights).map(|(c, w)| c * w).sum();
+
+            let grad_fd = (loss_pos - loss_neg) / (2.0 * eps);
+            let diff = (grad_raw_analytical[i] - grad_fd).abs();
+            assert!(diff < 1e-5, "Jacobian mismatch at index {}: analytical={}, fd={}", i, grad_raw_analytical[i], grad_fd);
+        }
+    }
+
+    #[test]
+    fn test_two_speed_optimizer_partitioning() {
+        let mut vqc = vec![0.5, -0.5];
+        let mut head = vec![1.0, 1.0, 0.0, 0.0];
+        let mut opt = TwoSpeedHybridOptimizer::new(2, 4);
+
+        let vqc_grads = vec![0.1, -0.1];
+        let head_grads = vec![0.2, 0.2, 0.1, 0.1];
+
+        let vqc_before = vqc.clone();
+        let head_before = head.clone();
+
+        opt.step(&mut vqc, &vqc_grads, &mut head, &head_grads);
+
+        // Both sets of parameters should be updated
+        assert_ne!(vqc, vqc_before);
+        assert_ne!(head, head_before);
+
+        // VQC update delta should reflect the 8x higher learning rate
+        let vqc_delta = (vqc[0] - vqc_before[0]).abs();
+        let head_delta = (head[0] - head_before[0]).abs();
+        assert!(vqc_delta > head_delta);
+    }
+}

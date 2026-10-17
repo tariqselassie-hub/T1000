@@ -14,6 +14,10 @@ use std::path::{Path, PathBuf};
 use std::time::Instant;
 
 use t1000::engine::T1000Engine;
+use t1000::optimizer::{
+    normalize_correlators_arr_backward, normalize_correlators_arr_forward, CorrelatorNormCacheArr,
+    TwoSpeedHybridOptimizer,
+};
 use t1000::{adjoint_gradient, CircuitAnsatz, PauliObservable, QuantumState};
 
 const N_QUBITS: usize = 10;
@@ -60,23 +64,12 @@ pub struct BirdsQnnReport {
     pub training_time_sec: f64, pub per_sample_latency_us: f64, pub history: Vec<EpochHistoryItem>,
 }
 
-#[derive(Clone, Copy, Debug)]
-pub struct CorrelatorNormCache {
-    pub normalized: [f64; NUM_CORRELATORS],
-    pub inv_std: f64,
-}
+pub type CorrelatorNormCache = CorrelatorNormCacheArr<NUM_CORRELATORS>;
 
 /// Standardizes raw expectations to N(0, 1) so ZZ terms aren't drowned out.
 #[inline(always)]
 pub fn normalize_correlators_forward(raw: &[f64; NUM_CORRELATORS]) -> CorrelatorNormCache {
-    let mean = raw.iter().sum::<f64>() / (NUM_CORRELATORS as f64);
-    let var = raw.iter().map(|&c| { let d = c - mean; d * d }).sum::<f64>() / (NUM_CORRELATORS as f64);
-    let inv_std = 1.0 / (var + 1e-6).sqrt();
-    let mut normalized = [0.0f64; NUM_CORRELATORS];
-    for i in 0..NUM_CORRELATORS {
-        normalized[i] = (raw[i] - mean) * inv_std;
-    }
-    CorrelatorNormCache { normalized, inv_std }
+    normalize_correlators_arr_forward(raw)
 }
 
 /// Projects readout input gradients dL/d(c_hat) back to raw observable gradients dL/d(c_raw).
@@ -85,65 +78,7 @@ pub fn normalize_correlators_backward(
     grad_norm: &[f64; NUM_CORRELATORS],
     cache: &CorrelatorNormCache,
 ) -> [f64; NUM_CORRELATORS] {
-    let n = NUM_CORRELATORS as f64;
-    let mean_grad = grad_norm.iter().sum::<f64>() / n;
-    let mean_grad_dot_norm = grad_norm.iter().zip(cache.normalized.iter()).map(|(&g, &c_hat)| g * c_hat).sum::<f64>() / n;
-    let mut grad_raw = [0.0f64; NUM_CORRELATORS];
-    for i in 0..NUM_CORRELATORS {
-        grad_raw[i] = cache.inv_std * (grad_norm[i] - mean_grad - cache.normalized[i] * mean_grad_dot_norm);
-    }
-    grad_raw
-}
-
-/// Two-Speed AdamW Optimizer for Hybrid VQC (60 params) + Readout Head (112 params).
-#[derive(Debug)]
-pub struct TwoSpeedHybridOptimizer {
-    pub lr_vqc: f64, pub lr_head: f64, pub wd_head: f64,
-    pub beta1: f64, pub beta2: f64, pub eps: f64, pub step_t: usize,
-    m_vqc: Vec<f64>, v_vqc: Vec<f64>, m_head: Vec<f64>, v_head: Vec<f64>,
-}
-
-impl TwoSpeedHybridOptimizer {
-    pub fn new(n_vqc: usize, n_head: usize) -> Self {
-        Self {
-            lr_vqc: 0.012, lr_head: 0.0015, wd_head: 0.01,
-            beta1: 0.9, beta2: 0.999, eps: 1e-8, step_t: 0,
-            m_vqc: vec![0.0; n_vqc], v_vqc: vec![0.0; n_vqc],
-            m_head: vec![0.0; n_head], v_head: vec![0.0; n_head],
-        }
-    }
-
-    pub fn step(
-        &mut self,
-        vqc_params: &mut [f64],
-        vqc_grads: &[f64],
-        head_params: &mut [f64],
-        head_grads: &[f64],
-    ) {
-        self.step_t += 1;
-        let t = self.step_t as i32;
-        let bias_corr1 = 1.0 - self.beta1.powi(t);
-        let bias_corr2 = 1.0 - self.beta2.powi(t);
-
-        let eff_lr_vqc = self.lr_vqc * bias_corr2.sqrt() / bias_corr1;
-        for i in 0..vqc_params.len() {
-            let g = vqc_grads[i].clamp(-1.0, 1.0);
-            self.m_vqc[i] = self.beta1 * self.m_vqc[i] + (1.0 - self.beta1) * g;
-            self.v_vqc[i] = self.beta2 * self.v_vqc[i] + (1.0 - self.beta2) * (g * g);
-            vqc_params[i] -= eff_lr_vqc * self.m_vqc[i] / (self.v_vqc[i].sqrt() + self.eps);
-        }
-
-        let eff_lr_head = self.lr_head * bias_corr2.sqrt() / bias_corr1;
-        for i in 0..head_params.len() {
-            let g = head_grads[i].clamp(-1.0, 1.0);
-            self.m_head[i] = self.beta1 * self.m_head[i] + (1.0 - self.beta1) * g;
-            self.v_head[i] = self.beta2 * self.v_head[i] + (1.0 - self.beta2) * (g * g);
-            if i + 2 < head_params.len() {
-                head_params[i] *= 1.0 - self.lr_head * self.wd_head;
-            }
-            head_params[i] -= eff_lr_head * self.m_head[i] / (self.v_head[i].sqrt() + self.eps);
-        }
-    }
+    normalize_correlators_arr_backward(grad_norm, cache)
 }
 
 /// WGA Checkpoint State Tracker in the Epoch Loop.
@@ -379,7 +314,7 @@ fn main() {
 
                 let adj = adjoint_gradient(&ansatz, input_state, &ansatz_weights, &observables, |raw_exps| {
                     let mut raw_arr = [0.0; NUM_CORRELATORS];
-                    for i in 0..NUM_CORRELATORS { raw_arr[i] = raw_exps[i]; }
+                    raw_arr.copy_from_slice(&raw_exps[..NUM_CORRELATORS]);
                     let norm_cache = normalize_correlators_forward(&raw_arr);
                     let logits = head.forward(&norm_cache.normalized);
                     let (loss, d_logits, pred) = softmax_cross_entropy(&logits, *label);
