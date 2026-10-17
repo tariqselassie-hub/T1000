@@ -25,6 +25,7 @@ pub mod compiler;
 pub mod diagonal;
 pub mod engine;
 pub mod feature_map;
+pub mod gpu;
 pub mod heptal_wave;
 pub mod ingest;
 pub mod lattice;
@@ -57,6 +58,7 @@ pub use clifford_t::{
     SynthesisSolution, ZOmega,
 };
 pub use engine::{FpgaDeviceInfo, SystemManifestReport, T1000Engine};
+pub use gpu::{IGpuBridge, IGpuBridgeConfig, IGpuExecutionReport};
 pub use simd::{SimdBackend, SimdStateView, SimdStateViewMut};
 pub use simd_bloch::{
     compute_all_bloch_vectors, compute_bloch_restoring_weights, compute_qubit_bloch, BlochVector,

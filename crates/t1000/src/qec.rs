@@ -14,6 +14,8 @@
 use serde::{Deserialize, Serialize};
 use crate::state::QuantumState;
 
+pub mod vnni;
+
 /// Supported quantum error correction code families.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum QecCodeKind {
