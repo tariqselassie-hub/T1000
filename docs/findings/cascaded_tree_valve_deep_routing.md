@@ -100,7 +100,37 @@ Hierarchical tree depth adds linearly to arrival time, whereas classical random 
 
 ---
 
-## 5. Verification Command & Reproducibility
+## 5. SIMD Vectorization & Sparse Hamiltonian Acceleration Architecture
+
+To achieve peak computational throughput during deep multi-tier continuous walks, the simulation engine incorporates three low-level hardware vectorization and memory hierarchy optimizations:
+
+### 1. Static Sparse Coupling Edge List ($O(E)$ vs $O(D^2)$)
+Instead of allocating and traversing a dense $D \times D$ matrix with pointer chasing and branch testing on zero couplings, the symmetric subspace Hamiltonian is represented as a static, contiguous list of undirected couplings (`SparseCoupling`):
+```rust
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct SparseCoupling {
+    pub u: usize,
+    pub v: usize,
+    pub weight: Complex64,
+}
+```
+For a $(4, 4)$ multi-tier tree ($D = 63$), this replaces 3,969 dense matrix element evaluations with exactly **76 linear edge updates** (~2.4 KB, fitting entirely in L1 data cache).
+
+### 2. Structure-of-Arrays (SoA) AVX2 + FMA Vectorization
+Statevectors are partitioned into separate double-precision buffers (`QuantumWalkStateSoA`):
+$$\psi_k = r_k + i \cdot m_k$$
+Continuous Schrödinger evolution $|\psi(t + dt)\rangle = |\psi(t)\rangle - i \, dt \, (H |\psi(t)\rangle)$ is vectorized in 4-wide lanes using AVX2 and FMA instructions:
+$$\text{next\_r} = r + dt \cdot \text{acc\_i} \implies \texttt{\_mm256\_fmadd\_pd}(\Delta t, \text{acc\_i}, r)$$
+$$\text{next\_i} = m - dt \cdot \text{acc\_r} \implies \texttt{\_mm256\_fnmadd\_pd}(\Delta t, \text{acc\_r}, m)$$
+Unitarity re-normalization is performed directly on the SoA buffers via `t1000::simd::normalize_kernel` with zero scalar unpacking.
+
+### 3. Pre-Allocated Scratch Buffers & Telemetry Pruning
+- All temporary workspace statevectors (`state`, `next`, `scratch`) are pre-allocated once before the propagation loop, adhering to the workspace zero-allocation hot-loop discipline.
+- Non-target leakage summations and contrast calculations are guarded to execute strictly on recorded trajectory steps (`step % 20 == 0 || step == steps`), eliminating 95% of inner-loop telemetry overhead.
+
+---
+
+## 6. Verification Command & Reproducibility
 
 To re-run the benchmark and generate the complete telemetry report:
 ```bash

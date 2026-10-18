@@ -10,9 +10,9 @@
   ],
   "couplers_cut": 16,
   "total_couplers": 48,
-  "ideal_patches_latency_secs": 0.0000261,
-  "sampling_latency_secs": 0.0007953,
-  "xeb_proxy": 0.9989459983900217,
+  "ideal_patches_latency_secs": 0.0000218,
+  "sampling_latency_secs": 0.0007434,
+  "xeb_proxy": 0.9989459983900211,
   "hog_proxy": 0.974609375,
-  "speedup_vs_qrack": 13462.137813489166
+  "speedup_vs_qrack": 14450.862519602719
 }

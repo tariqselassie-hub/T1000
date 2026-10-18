@@ -68,7 +68,8 @@ pub use clifford_t::{
 pub use engine::{FpgaDeviceInfo, SystemManifestReport, T1000Engine};
 pub use cascaded_tree_valve::{
     simulate_cascaded_classical_walk, simulate_cascaded_quantum_walk, CascadedBenchmarkResult,
-    CascadedTrajectoryPoint, CascadedValveConfig, CascadedValveHamiltonian,
+    CascadedTrajectoryPoint, CascadedValveConfig, CascadedValveHamiltonian, QuantumWalkStateSoA,
+    SparseCoupling, SparseSymmetricHamiltonian,
 };
 pub use glued_tree_valve::{
     ClassicalKWayGluedWalker, ContinuousTreeValveWalk, GluedTreeValveConfig,

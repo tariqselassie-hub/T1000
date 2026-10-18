@@ -15,8 +15,8 @@
       "joint_accuracy_pct": 0.0,
       "mean_target_exit_prob": 0.252,
       "mean_routing_contrast": 1.05,
-      "latency_us_per_sample": 11.0635,
-      "throughput_samples_sec": 90387.3096217291
+      "latency_us_per_sample": 11.1495,
+      "throughput_samples_sec": 89690.12063321225
     },
     {
       "model_name": "Discrete Gate Ultrametric Sorter (Circuit QMUX)",
@@ -26,8 +26,8 @@
       "joint_accuracy_pct": 24.5,
       "mean_target_exit_prob": 0.384,
       "mean_routing_contrast": 2.85,
-      "latency_us_per_sample": 0.62,
-      "throughput_samples_sec": 1612903.2258064516
+      "latency_us_per_sample": 0.5855,
+      "throughput_samples_sec": 1707941.9299743809
     },
     {
       "model_name": "Naked Continuous Walk Sorter",
@@ -37,8 +37,8 @@
       "joint_accuracy_pct": 82.0,
       "mean_target_exit_prob": 0.49918161173677,
       "mean_routing_contrast": 2050.0000321129987,
-      "latency_us_per_sample": 266.87750000000005,
-      "throughput_samples_sec": 3747.0374984777654
+      "latency_us_per_sample": 67.58350000000006,
+      "throughput_samples_sec": 14796.510982710264
     },
     {
       "model_name": "Stabilized Continuous Topological Walk Sorter",
@@ -48,8 +48,8 @@
       "joint_accuracy_pct": 82.0,
       "mean_target_exit_prob": 0.5088918831001433,
       "mean_routing_contrast": 2050.0000321129965,
-      "latency_us_per_sample": 271.7179999999998,
-      "throughput_samples_sec": 3680.286179053286
+      "latency_us_per_sample": 67.45900000000002,
+      "throughput_samples_sec": 14823.818912228164
     }
   ],
   "conclusion": "Continuous Topological Walk Sorter with Weld Zeno sentry achieves superior ballistic target exit probability (>50%) and 100% coarse accuracy over classical and discrete gate baselines under physical noise."

@@ -15,6 +15,9 @@ use num_complex::Complex64;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
+#[cfg(target_arch = "x86_64")]
+use std::arch::x86_64::*;
+
 /// Configuration for the Cascaded Multi-Tier Tree Valve.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CascadedValveConfig {
@@ -118,6 +121,137 @@ pub struct CascadedValveHamiltonian {
     pub weld2_phases: Vec<f64>,
 }
 
+/// Static undirected coupling edge in the symmetric subspace Hamiltonian.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct SparseCoupling {
+    pub u: usize,
+    pub v: usize,
+    pub weight: Complex64,
+}
+
+impl SparseCoupling {
+    #[inline(always)]
+    pub fn new(u: usize, v: usize, weight: Complex64) -> Self {
+        Self { u, v, weight }
+    }
+}
+
+/// Static sparse edge list representing the tridiagonal block Hamiltonian.
+#[derive(Debug, Clone, PartialEq)]
+pub struct SparseSymmetricHamiltonian {
+    pub dim: usize,
+    pub edges: Vec<SparseCoupling>,
+}
+
+impl SparseSymmetricHamiltonian {
+    pub fn new(dim: usize, edges: Vec<SparseCoupling>) -> Self {
+        Self { dim, edges }
+    }
+
+    /// Returns the Hilbert space dimension of the symmetric subspace.
+    #[inline(always)]
+    pub fn dim(&self) -> usize {
+        self.dim
+    }
+
+    /// Returns the number of undirected couplings.
+    #[inline(always)]
+    pub fn len(&self) -> usize {
+        self.edges.len()
+    }
+
+    /// Returns true if there are no edges.
+    #[inline(always)]
+    pub fn is_empty(&self) -> bool {
+        self.edges.is_empty()
+    }
+
+    /// Computes H |psi> -> out via linear O(E) sparse edge accumulation.
+    #[inline(always)]
+    pub fn apply(&self, state: &[Complex64], out: &mut [Complex64]) {
+        for elem in out[..self.dim].iter_mut() {
+            *elem = Complex64::default();
+        }
+        for edge in &self.edges {
+            let u = edge.u;
+            let v = edge.v;
+            let w = edge.weight;
+            out[u] += w * state[v];
+            out[v] += w.conj() * state[u];
+        }
+    }
+
+    /// Evaluates H |psi> -> (out_real, out_imag) in Structure-of-Arrays (SoA) layout.
+    #[inline(always)]
+    pub fn apply_soa(
+        &self,
+        r_in: &[f64],
+        i_in: &[f64],
+        r_out: &mut [f64],
+        i_out: &mut [f64],
+    ) {
+        r_out[..self.dim].fill(0.0);
+        i_out[..self.dim].fill(0.0);
+
+        for edge in &self.edges {
+            let u = edge.u;
+            let v = edge.v;
+            let wr = edge.weight.re;
+            let wi = edge.weight.im;
+
+            let rv = r_in[v];
+            let mv = i_in[v];
+            let ru = r_in[u];
+            let mu = i_in[u];
+
+            // H_uv * psi_v = (wr + i wi) * (rv + i mv)
+            r_out[u] += wr * rv - wi * mv;
+            i_out[u] += wr * mv + wi * rv;
+
+            // H_vu * psi_u = (wr - i wi) * (ru + i mu)
+            r_out[v] += wr * ru + wi * mu;
+            i_out[v] += wr * mu - wi * ru;
+        }
+    }
+
+    /// Single Trotter step on statevector: |psi> <- |psi> - i * dt * H |psi>.
+    #[inline(always)]
+    pub fn step_state(&self, state: &[Complex64], next: &mut [Complex64], dt: f64) {
+        self.apply(state, next);
+        let i_dt = Complex64::new(0.0, dt);
+        for r in 0..self.dim {
+            next[r] = state[r] - i_dt * next[r];
+        }
+
+        // Re-normalize to enforce unitarity:
+        let norm_sqr: f64 = next[..self.dim].iter().map(|z| z.norm_sqr()).sum();
+        if norm_sqr > 1e-18 {
+            let inv_norm = 1.0 / norm_sqr.sqrt();
+            for val in next[..self.dim].iter_mut() {
+                *val *= inv_norm;
+            }
+        }
+    }
+
+    /// Single Trotter step on statevector in SoA layout with AVX2 vectorization:
+    /// |psi> <- |psi> - i * dt * H |psi>.
+    #[inline(always)]
+    pub fn step_state_soa(
+        &self,
+        r_in: &[f64],
+        i_in: &[f64],
+        r_out: &mut [f64],
+        i_out: &mut [f64],
+        r_scratch: &mut [f64],
+        i_scratch: &mut [f64],
+        dt: f64,
+    ) {
+        self.apply_soa(r_in, i_in, r_scratch, i_scratch);
+        step_soa_avx2(self.dim, dt, r_in, i_in, r_scratch, i_scratch, r_out, i_out);
+        crate::simd::normalize_kernel(&mut r_out[..self.dim], &mut i_out[..self.dim]);
+    }
+}
+
 impl CascadedValveHamiltonian {
     pub fn new(cfg: CascadedValveConfig, gamma: f64) -> Self {
         let k1 = cfg.k1;
@@ -163,19 +297,18 @@ impl CascadedValveHamiltonian {
         }
     }
 
-    /// Constructs the dense tridiagonal block Hamiltonian in the symmetric subspace.
-    pub fn build_symmetric_matrix(&self) -> Vec<Vec<Complex64>> {
+    /// Constructs the static sparse edge list Hamiltonian in the symmetric subspace.
+    pub fn build_symmetric_matrix(&self) -> SparseSymmetricHamiltonian {
         let dim = self.cfg.symmetric_dim();
-        let mut mat = vec![vec![Complex64::new(0.0, 0.0); dim]; dim];
         let g = self.gamma;
         let sqrt2 = std::f64::consts::SQRT_2;
+        let mut edges = Vec::with_capacity(dim * 2);
 
         // 1. Tier 1 Entrance tree:
         for col in 0..self.cfg.depth1 {
             let u = self.cfg.t1_in_idx(col);
             let v = self.cfg.t1_in_idx(col + 1);
-            mat[u][v] = Complex64::new(-g * sqrt2, 0.0);
-            mat[v][u] = Complex64::new(-g * sqrt2, 0.0);
+            edges.push(SparseCoupling::new(u, v, Complex64::new(-g * sqrt2, 0.0)));
         }
 
         // 2. Weld 1 boundary: between Entrance leaf and Intermediate leaf 0:
@@ -185,8 +318,7 @@ impl CascadedValveHamiltonian {
             let w = self.weld1_couplings[y];
             let phi = self.weld1_phases[y];
             let hop = Complex64::from_polar(-g * w, phi);
-            mat[in_leaf][mid_leaf] += hop;
-            mat[mid_leaf][in_leaf] += hop.conj();
+            edges.push(SparseCoupling::new(in_leaf, mid_leaf, hop));
         }
 
         // 3. Tier 1 Intermediate tree internal edges:
@@ -194,29 +326,25 @@ impl CascadedValveHamiltonian {
             for col in 0..(self.cfg.depth1.saturating_sub(1)) {
                 let u = self.cfg.t1_mid_idx(y, col);
                 let v = self.cfg.t1_mid_idx(y, col + 1);
-                mat[u][v] = Complex64::new(-g * sqrt2, 0.0);
-                mat[v][u] = Complex64::new(-g * sqrt2, 0.0);
+                edges.push(SparseCoupling::new(u, v, Complex64::new(-g * sqrt2, 0.0)));
             }
             // Edge into intermediate root:
             let last_mid = self.cfg.t1_mid_idx(y, self.cfg.depth1 - 1);
             let mid_root = self.cfg.mid_root_idx(y);
-            mat[last_mid][mid_root] = Complex64::new(-g * sqrt2, 0.0);
-            mat[mid_root][last_mid] = Complex64::new(-g * sqrt2, 0.0);
+            edges.push(SparseCoupling::new(last_mid, mid_root, Complex64::new(-g * sqrt2, 0.0)));
         }
 
         // 4. Edge from Intermediate root into Tier 2 Entrance column 0:
         for y in 0..self.cfg.k1 {
             let mid_root = self.cfg.mid_root_idx(y);
             let t2_in_0 = self.cfg.t2_in_idx(y, 0);
-            mat[mid_root][t2_in_0] = Complex64::new(-g * sqrt2, 0.0);
-            mat[t2_in_0][mid_root] = Complex64::new(-g * sqrt2, 0.0);
+            edges.push(SparseCoupling::new(mid_root, t2_in_0, Complex64::new(-g * sqrt2, 0.0)));
 
             // Tier 2 Entrance internal edges:
             for col in 0..(self.cfg.depth2.saturating_sub(1)) {
                 let u = self.cfg.t2_in_idx(y, col);
                 let v = self.cfg.t2_in_idx(y, col + 1);
-                mat[u][v] = Complex64::new(-g * sqrt2, 0.0);
-                mat[v][u] = Complex64::new(-g * sqrt2, 0.0);
+                edges.push(SparseCoupling::new(u, v, Complex64::new(-g * sqrt2, 0.0)));
             }
         }
 
@@ -229,53 +357,166 @@ impl CascadedValveHamiltonian {
                 let w = self.weld2_couplings[idx];
                 let phi = self.weld2_phases[idx];
                 let hop = Complex64::from_polar(-g * w, phi);
-                mat[t2_leaf][exit_leaf] += hop;
-                mat[exit_leaf][t2_leaf] += hop.conj();
+                edges.push(SparseCoupling::new(t2_leaf, exit_leaf, hop));
 
                 // Tier 2 Exit tree internal edges:
                 for col in 0..self.cfg.depth2 {
                     let u = self.cfg.t2_exit_idx(y, z, col);
                     let v = self.cfg.t2_exit_idx(y, z, col + 1);
-                    mat[u][v] = Complex64::new(-g * sqrt2, 0.0);
-                    mat[v][u] = Complex64::new(-g * sqrt2, 0.0);
+                    edges.push(SparseCoupling::new(u, v, Complex64::new(-g * sqrt2, 0.0)));
                 }
             }
         }
 
-        mat
+        SparseSymmetricHamiltonian::new(dim, edges)
     }
 
-    /// Single Trotter step on statevector: |psi> <- |psi> - i * dt * H |psi>.
+    /// Single Trotter step on statevector: delegates to the sparse matrix representation.
     #[inline(always)]
     pub fn step_state(
         &self,
-        mat: &[Vec<Complex64>],
+        mat: &SparseSymmetricHamiltonian,
         state: &[Complex64],
         next: &mut [Complex64],
         dt: f64,
     ) {
-        let dim = mat.len();
-        let i_dt = Complex64::new(0.0, dt);
+        mat.step_state(state, next, dt);
+    }
 
-        for r in 0..dim {
-            let mut acc = Complex64::new(0.0, 0.0);
-            for c in 0..dim {
-                let val = mat[r][c];
-                if val.norm_sqr() > 1e-18 {
-                    acc += val * state[c];
-                }
-            }
-            next[r] = state[r] - i_dt * acc;
-        }
+    /// Single Trotter step on SoA statevector with AVX2 acceleration.
+    #[inline(always)]
+    pub fn step_state_soa(
+        &self,
+        mat: &SparseSymmetricHamiltonian,
+        r_in: &[f64],
+        i_in: &[f64],
+        r_out: &mut [f64],
+        i_out: &mut [f64],
+        r_scratch: &mut [f64],
+        i_scratch: &mut [f64],
+        dt: f64,
+    ) {
+        mat.step_state_soa(r_in, i_in, r_out, i_out, r_scratch, i_scratch, dt);
+    }
+}
 
-        // Re-normalize to enforce unitarity:
-        let norm_sqr: f64 = next.iter().map(|z| z.norm_sqr()).sum();
-        if norm_sqr > 1e-18 {
-            let inv_norm = 1.0 / norm_sqr.sqrt();
-            for val in next.iter_mut() {
-                *val *= inv_norm;
+/// Structure-of-Arrays (SoA) double-precision statevector for AVX2 accelerated propagation.
+#[derive(Debug, Clone, PartialEq)]
+pub struct QuantumWalkStateSoA {
+    pub dim: usize,
+    pub real: Vec<f64>,
+    pub imag: Vec<f64>,
+}
+
+impl QuantumWalkStateSoA {
+    pub fn new(dim: usize) -> Self {
+        Self {
+            dim,
+            real: vec![0.0; dim],
+            imag: vec![0.0; dim],
+        }
+    }
+
+    #[inline(always)]
+    pub fn norm_sqr(&self, idx: usize) -> f64 {
+        let r = self.real[idx];
+        let i = self.imag[idx];
+        r * r + i * i
+    }
+
+    #[inline(always)]
+    pub fn inject_root(&mut self, root_idx: usize) {
+        self.real.fill(0.0);
+        self.imag.fill(0.0);
+        self.real[root_idx] = 1.0;
+    }
+
+    #[inline(always)]
+    pub fn copy_from(&mut self, other: &Self) {
+        self.real[..self.dim].copy_from_slice(&other.real[..self.dim]);
+        self.imag[..self.dim].copy_from_slice(&other.imag[..self.dim]);
+    }
+}
+
+/// Vectorized SoA state update: next_r = r + dt * acc_i, next_i = i - dt * acc_r.
+#[inline(always)]
+pub fn step_soa_avx2(
+    dim: usize,
+    dt: f64,
+    r_in: &[f64],
+    i_in: &[f64],
+    acc_r: &[f64],
+    acc_i: &[f64],
+    r_out: &mut [f64],
+    i_out: &mut [f64],
+) {
+    #[cfg(all(target_arch = "x86_64", target_feature = "avx2", target_feature = "fma"))]
+    unsafe {
+        step_soa_avx2_inner(dim, dt, r_in, i_in, acc_r, acc_i, r_out, i_out);
+    }
+    #[cfg(not(all(target_arch = "x86_64", target_feature = "avx2", target_feature = "fma")))]
+    {
+        #[cfg(target_arch = "x86_64")]
+        if is_x86_feature_detected!("avx2") && is_x86_feature_detected!("fma") {
+            unsafe {
+                step_soa_avx2_inner(dim, dt, r_in, i_in, acc_r, acc_i, r_out, i_out);
+                return;
             }
         }
+        step_soa_scalar(dim, dt, r_in, i_in, acc_r, acc_i, r_out, i_out);
+    }
+}
+
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2", enable = "fma")]
+unsafe fn step_soa_avx2_inner(
+    dim: usize,
+    dt: f64,
+    r_in: &[f64],
+    i_in: &[f64],
+    acc_r: &[f64],
+    acc_i: &[f64],
+    r_out: &mut [f64],
+    i_out: &mut [f64],
+) {
+    let dt_vec = _mm256_set1_pd(dt);
+    let mut k = 0;
+    while k + 4 <= dim {
+        let r = _mm256_loadu_pd(r_in.as_ptr().add(k));
+        let i = _mm256_loadu_pd(i_in.as_ptr().add(k));
+        let ar = _mm256_loadu_pd(acc_r.as_ptr().add(k));
+        let ai = _mm256_loadu_pd(acc_i.as_ptr().add(k));
+
+        let nr = _mm256_fmadd_pd(dt_vec, ai, r);
+        let ni = _mm256_fnmadd_pd(dt_vec, ar, i);
+
+        _mm256_storeu_pd(r_out.as_mut_ptr().add(k), nr);
+        _mm256_storeu_pd(i_out.as_mut_ptr().add(k), ni);
+
+        k += 4;
+    }
+
+    while k < dim {
+        r_out[k] = r_in[k] + dt * acc_i[k];
+        i_out[k] = i_in[k] - dt * acc_r[k];
+        k += 1;
+    }
+}
+
+#[inline(always)]
+fn step_soa_scalar(
+    dim: usize,
+    dt: f64,
+    r_in: &[f64],
+    i_in: &[f64],
+    acc_r: &[f64],
+    acc_i: &[f64],
+    r_out: &mut [f64],
+    i_out: &mut [f64],
+) {
+    for k in 0..dim {
+        r_out[k] = r_in[k] + dt * acc_i[k];
+        i_out[k] = i_in[k] - dt * acc_r[k];
     }
 }
 
@@ -310,7 +551,7 @@ pub struct CascadedBenchmarkResult {
     pub quantum_routing_contrast: f64,
 }
 
-/// Runs continuous-time quantum walk simulation on the cascaded valve.
+/// Runs continuous-time quantum walk simulation on the cascaded valve with SoA AVX2 acceleration.
 pub fn simulate_cascaded_quantum_walk(
     ham: &CascadedValveHamiltonian,
     target_y: usize,
@@ -321,12 +562,13 @@ pub fn simulate_cascaded_quantum_walk(
     let dim = ham.cfg.symmetric_dim();
     let mat = ham.build_symmetric_matrix();
 
-    let mut state = vec![Complex64::new(0.0, 0.0); dim];
-    let mut next = vec![Complex64::new(0.0, 0.0); dim];
-    state[0] = Complex64::new(1.0, 0.0); // Injected at ROOT_IN
+    let mut state = QuantumWalkStateSoA::new(dim);
+    let mut next = QuantumWalkStateSoA::new(dim);
+    let mut scratch = QuantumWalkStateSoA::new(dim);
+    state.inject_root(0); // Injected at ROOT_IN
 
     let steps = (t_max / dt).round() as usize;
-    let mut trajectory = Vec::with_capacity(steps + 1);
+    let mut trajectory = Vec::with_capacity(steps / 20 + 2);
 
     let target_mid = ham.cfg.mid_root_idx(target_y);
     let target_exit = ham.cfg.final_exit_root_idx(target_y, target_z);
@@ -336,43 +578,41 @@ pub fn simulate_cascaded_quantum_walk(
 
     for step in 0..=steps {
         let current_time = step as f64 * dt;
-        let p_in = state[0].norm_sqr();
-        let p_mid = state[target_mid].norm_sqr();
-        let p_target = state[target_exit].norm_sqr();
+        let p_in = state.norm_sqr(0);
+        let p_mid = state.norm_sqr(target_mid);
+        let p_target = state.norm_sqr(target_exit);
 
         if p_target > peak_prob {
             peak_prob = p_target;
             time_at_peak = current_time;
         }
 
-        // Sibling exits: same coarse y, different fine z:
-        let mut p_sib = 0.0;
-        for z in 0..ham.cfg.k2 {
-            if z != target_z {
-                let idx = ham.cfg.final_exit_root_idx(target_y, z);
-                p_sib += state[idx].norm_sqr();
-            }
-        }
-
-        // Cross-class exits: different coarse y:
-        let mut p_cross = 0.0;
-        for y in 0..ham.cfg.k1 {
-            if y != target_y {
-                for z in 0..ham.cfg.k2 {
-                    let idx = ham.cfg.final_exit_root_idx(y, z);
-                    p_cross += state[idx].norm_sqr();
+        if step % 20 == 0 || step == steps {
+            let mut p_sib = 0.0;
+            for z in 0..ham.cfg.k2 {
+                if z != target_z {
+                    let idx = ham.cfg.final_exit_root_idx(target_y, z);
+                    p_sib += state.norm_sqr(idx);
                 }
             }
-        }
 
-        let non_target_total = p_sib + p_cross;
-        let contrast = if non_target_total > 1e-12 {
-            p_target / non_target_total
-        } else {
-            p_target * 1e12
-        };
+            let mut p_cross = 0.0;
+            for y in 0..ham.cfg.k1 {
+                if y != target_y {
+                    for z in 0..ham.cfg.k2 {
+                        let idx = ham.cfg.final_exit_root_idx(y, z);
+                        p_cross += state.norm_sqr(idx);
+                    }
+                }
+            }
 
-        if step % 20 == 0 || step == steps {
+            let non_target_total = p_sib + p_cross;
+            let contrast = if non_target_total > 1e-12 {
+                p_target / non_target_total
+            } else {
+                p_target * 1e12
+            };
+
             trajectory.push(CascadedTrajectoryPoint {
                 time: current_time,
                 p_entrance: p_in,
@@ -384,8 +624,16 @@ pub fn simulate_cascaded_quantum_walk(
             });
         }
 
-        ham.step_state(&mat, &state, &mut next, dt);
-        state.copy_from_slice(&next);
+        mat.step_state_soa(
+            &state.real,
+            &state.imag,
+            &mut next.real,
+            &mut next.imag,
+            &mut scratch.real,
+            &mut scratch.imag,
+            dt,
+        );
+        state.copy_from(&next);
     }
 
     (trajectory, peak_prob, time_at_peak)

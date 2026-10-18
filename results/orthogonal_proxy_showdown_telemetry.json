@@ -5,14 +5,14 @@
   "qrack": {
     "engine": "PyQrack QrackAceBackend (Dan Strano & Claude)",
     "substrate": "Intel OpenCL Graphics (Tensor Network Replicas)",
-    "wall_time_secs": 21.386636800016277,
-    "raw_stdout": "circuit_seconds: 0.0003  (grid 3 x 4; 2 proxy patches of 4 + 8 qubits; 16 of 48 couplers cut)\nDevice #0, Building JIT.\nace_proxy_seconds: 9.3546\n  pyqrack: 2.27.0\n  is_error_detection: True\n  is_torus: True\n  use_crossbars: True\n  ace_column_seams: [1, 3]\n  ace_patch_qubits: None\nideal_patches_seconds: 0.0028\nace_full_seconds: 9.7170\nideal_full_seconds: 0.0618\n  width: 12\n  depth: 8\n  long_range_columns: 1\n  long_range_rows: 4\n  proxy_patches: ace_patch_qubits\n  proxy_patch_qubits: [4, 8]\n  couplers_cut: 16\n  xeb_ace_proxy: -0.07649879168301474\n  hog_ace_proxy_approx: 0.4176025390625\n  xeb_ace_full: 0.08224131174001695\n  hog_ace_full: 0.580078125\nDefault platform: Intel(R) OpenCL Graphics\nDefault device: #0, Intel(R) Graphics\nOpenCL device #0: Intel(R) Graphics\n",
-    "ace_proxy_seconds": 9.3546,
-    "ideal_patches_seconds": 0.0028,
-    "ace_full_seconds": 9.717,
-    "xeb_proxy": -0.07649879168301474,
-    "hog_proxy": 0.4176025390625,
-    "xeb_full": 0.08224131174001695
+    "wall_time_secs": 19.291554199997336,
+    "raw_stdout": "circuit_seconds: 0.0001  (grid 3 x 4; 2 proxy patches of 4 + 8 qubits; 16 of 48 couplers cut)\nDevice #0, Building JIT.\nace_proxy_seconds: 9.0266\n  pyqrack: 2.27.0\n  is_error_detection: True\n  is_torus: True\n  use_crossbars: True\n  ace_column_seams: [1, 3]\n  ace_patch_qubits: None\nideal_patches_seconds: 0.0025\nace_full_seconds: 8.2434\nideal_full_seconds: 0.0511\n  width: 12\n  depth: 8\n  long_range_columns: 1\n  long_range_rows: 4\n  proxy_patches: ace_patch_qubits\n  proxy_patch_qubits: [4, 8]\n  couplers_cut: 16\n  xeb_ace_proxy: 0.5016109679487694\n  hog_ace_proxy_approx: 0.75390625\n  xeb_ace_full: 0.19616154969403948\n  hog_ace_full: 0.631103515625\nDefault platform: Intel(R) OpenCL Graphics\nDefault device: #0, Intel(R) Graphics\nOpenCL device #0: Intel(R) Graphics\n",
+    "ace_proxy_seconds": 9.0266,
+    "ideal_patches_seconds": 0.0025,
+    "ace_full_seconds": 8.2434,
+    "xeb_proxy": 0.5016109679487694,
+    "hog_proxy": 0.75390625,
+    "xeb_full": 0.19616154969403948
   },
   "t1000": {
     "width": 12,
@@ -26,24 +26,24 @@
     ],
     "couplers_cut": 16,
     "total_couplers": 48,
-    "ideal_patches_latency_secs": 2.61e-05,
-    "sampling_latency_secs": 0.0007953,
-    "xeb_proxy": 0.9989459983900217,
+    "ideal_patches_latency_secs": 2.18e-05,
+    "sampling_latency_secs": 0.0007434,
+    "xeb_proxy": 0.9989459983900211,
     "hog_proxy": 0.974609375,
-    "speedup_vs_qrack": 13462.137813489166,
+    "speedup_vs_qrack": 14450.862519602719,
     "engine": "T-1000 Bare-Metal AVX2 (Deen Sovereign Engine)",
     "substrate": "CPU L1/L2 Cache Resident SOA Butterfly",
-    "wall_time_secs": 0.016358099994249642
+    "wall_time_secs": 0.014935599989257753
   },
   "comparative": {
-    "proxy_speedup_x": 11762.35382874387,
-    "ideal_speedup_x": 107.27969348659003,
+    "proxy_speedup_x": 12142.319074522466,
+    "ideal_speedup_x": 114.6788990825688,
     "xeb_qrack_vs_t1000": {
-      "qrack_ace_proxy": -0.07649879168301474,
-      "t1000_proxy": 0.9989459983900217
+      "qrack_ace_proxy": 0.5016109679487694,
+      "t1000_proxy": 0.9989459983900211
     },
     "hog_qrack_vs_t1000": {
-      "qrack_ace_proxy": 0.4176025390625,
+      "qrack_ace_proxy": 0.75390625,
       "t1000_proxy": 0.974609375
     }
   }
