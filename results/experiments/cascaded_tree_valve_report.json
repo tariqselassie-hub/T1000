@@ -1,0 +1,574 @@
+{
+  "timestamp_rfc3339": "2026-10-17T20:30:00Z",
+  "architecture": "T-1000 Cascaded Multi-Tier Glued-Tree Valve / Deep Router",
+  "benchmarks_2x2": [
+    {
+      "depth1": 2,
+      "depth2": 2,
+      "k1": 2,
+      "k2": 2,
+      "total_vertices": 61,
+      "symmetric_dim": 25,
+      "classical_mean_steps": 20.73,
+      "classical_target_hit_pct": 21.5,
+      "classical_any_exit_pct": 100.0,
+      "quantum_target_peak_prob": 0.6031183372449161,
+      "quantum_time_to_peak": 8.775,
+      "quantum_sibling_leakage": 0.00024124733489796628,
+      "quantum_cross_class_leakage": 9.80773077857734e-7,
+      "quantum_routing_contrast": 2489.877588050646
+    },
+    {
+      "depth1": 3,
+      "depth2": 2,
+      "k1": 2,
+      "k2": 2,
+      "total_vertices": 85,
+      "symmetric_dim": 28,
+      "classical_mean_steps": 26.76,
+      "classical_target_hit_pct": 25.75,
+      "classical_any_exit_pct": 100.0,
+      "quantum_target_peak_prob": 0.5653991209454968,
+      "quantum_time_to_peak": 10.325000000000001,
+      "quantum_sibling_leakage": 0.0002261596483781985,
+      "quantum_cross_class_leakage": 9.780627079424088e-7,
+      "quantum_routing_contrast": 2489.2349149854376
+    },
+    {
+      "depth1": 3,
+      "depth2": 3,
+      "k1": 2,
+      "k2": 2,
+      "total_vertices": 133,
+      "symmetric_dim": 34,
+      "classical_mean_steps": 32.185,
+      "classical_target_hit_pct": 27.500000000000004,
+      "classical_any_exit_pct": 100.0,
+      "quantum_target_peak_prob": 0.5397871763969874,
+      "quantum_time_to_peak": 11.875,
+      "quantum_sibling_leakage": 0.00021591487055879508,
+      "quantum_cross_class_leakage": 9.532560708090187e-7,
+      "quantum_routing_contrast": 2489.011109128576
+    },
+    {
+      "depth1": 4,
+      "depth2": 3,
+      "k1": 2,
+      "k2": 2,
+      "total_vertices": 181,
+      "symmetric_dim": 37,
+      "classical_mean_steps": 38.51,
+      "classical_target_hit_pct": 25.0,
+      "classical_any_exit_pct": 100.0,
+      "quantum_target_peak_prob": 0.5050730917274963,
+      "quantum_time_to_peak": 13.375,
+      "quantum_sibling_leakage": 0.00020202923669099845,
+      "quantum_cross_class_leakage": 9.155398151543184e-7,
+      "quantum_routing_contrast": 2488.721811039979
+    },
+    {
+      "depth1": 4,
+      "depth2": 4,
+      "k1": 2,
+      "k2": 2,
+      "total_vertices": 277,
+      "symmetric_dim": 43,
+      "classical_mean_steps": 43.77,
+      "classical_target_hit_pct": 24.5,
+      "classical_any_exit_pct": 100.0,
+      "quantum_target_peak_prob": 0.47234160047320517,
+      "quantum_time_to_peak": 14.850000000000001,
+      "quantum_sibling_leakage": 0.00018893664018928235,
+      "quantum_cross_class_leakage": 8.777731086134562e-7,
+      "quantum_routing_contrast": 2488.4390614315976
+    },
+    {
+      "depth1": 5,
+      "depth2": 4,
+      "k1": 2,
+      "k2": 2,
+      "total_vertices": 373,
+      "symmetric_dim": 46,
+      "classical_mean_steps": 50.11,
+      "classical_target_hit_pct": 24.5,
+      "classical_any_exit_pct": 100.0,
+      "quantum_target_peak_prob": 0.4461173930194967,
+      "quantum_time_to_peak": 16.35,
+      "quantum_sibling_leakage": 0.00017844695720779872,
+      "quantum_cross_class_leakage": 8.509969420976782e-7,
+      "quantum_routing_contrast": 2488.134318847466
+    }
+  ],
+  "benchmarks_2x4": [
+    {
+      "depth1": 2,
+      "depth2": 2,
+      "k1": 2,
+      "k2": 4,
+      "total_vertices": 89,
+      "symmetric_dim": 37,
+      "classical_mean_steps": 20.58,
+      "classical_target_hit_pct": 14.000000000000002,
+      "classical_any_exit_pct": 100.0,
+      "quantum_target_peak_prob": 0.6024503212458302,
+      "quantum_time_to_peak": 8.775,
+      "quantum_sibling_leakage": 0.0007229403854949961,
+      "quantum_cross_class_leakage": 1.958648157950229e-6,
+      "quantum_routing_contrast": 831.0817000402571
+    },
+    {
+      "depth1": 3,
+      "depth2": 2,
+      "k1": 2,
+      "k2": 4,
+      "total_vertices": 113,
+      "symmetric_dim": 40,
+      "classical_mean_steps": 26.545,
+      "classical_target_hit_pct": 11.75,
+      "classical_any_exit_pct": 100.0,
+      "quantum_target_peak_prob": 0.5647672283469009,
+      "quantum_time_to_peak": 10.325000000000001,
+      "quantum_sibling_leakage": 0.0006777206740162807,
+      "quantum_cross_class_leakage": 1.95304121643148e-6,
+      "quantum_routing_contrast": 830.9387514765542
+    },
+    {
+      "depth1": 3,
+      "depth2": 3,
+      "k1": 2,
+      "k2": 4,
+      "total_vertices": 193,
+      "symmetric_dim": 50,
+      "classical_mean_steps": 32.38,
+      "classical_target_hit_pct": 15.75,
+      "classical_any_exit_pct": 100.0,
+      "quantum_target_peak_prob": 0.5391987434999757,
+      "quantum_time_to_peak": 11.875,
+      "quantum_sibling_leakage": 0.0006470384921999715,
+      "quantum_cross_class_leakage": 1.9033640364320646e-6,
+      "quantum_routing_contrast": 830.8891441016103
+    },
+    {
+      "depth1": 4,
+      "depth2": 3,
+      "k1": 2,
+      "k2": 4,
+      "total_vertices": 241,
+      "symmetric_dim": 53,
+      "classical_mean_steps": 38.54,
+      "classical_target_hit_pct": 11.0,
+      "classical_any_exit_pct": 100.0,
+      "quantum_target_peak_prob": 0.5045244807584313,
+      "quantum_time_to_peak": 13.375,
+      "quantum_sibling_leakage": 0.000605429376910117,
+      "quantum_cross_class_leakage": 1.8279476003623374e-6,
+      "quantum_routing_contrast": 830.8248585805649
+    },
+    {
+      "depth1": 4,
+      "depth2": 4,
+      "k1": 2,
+      "k2": 4,
+      "total_vertices": 401,
+      "symmetric_dim": 63,
+      "classical_mean_steps": 44.555,
+      "classical_target_hit_pct": 14.499999999999998,
+      "classical_any_exit_pct": 100.0,
+      "quantum_target_peak_prob": 0.47182641843412915,
+      "quantum_time_to_peak": 14.850000000000001,
+      "quantum_sibling_leakage": 0.0005661917021209543,
+      "quantum_cross_class_leakage": 1.7524598245913257e-6,
+      "quantum_routing_contrast": 830.7619833925994
+    }
+  ],
+  "routing_trajectory": [
+    {
+      "time": 0.0,
+      "p_entrance": 1.0,
+      "p_target_intermediate": 0.0,
+      "p_target_final_exit": 0.0,
+      "p_sibling_exits": 0.0,
+      "p_cross_class_exits": 0.0,
+      "routing_contrast": 0.0
+    },
+    {
+      "time": 0.5,
+      "p_entrance": 0.8810062522891963,
+      "p_target_intermediate": 3.4338902401800526e-15,
+      "p_target_final_exit": 5.051993920028032e-40,
+      "p_sibling_exits": 2.0207975680112143e-43,
+      "p_cross_class_exits": 1.6168906650977542e-46,
+      "routing_contrast": 5.051993920028032e-28
+    },
+    {
+      "time": 1.0,
+      "p_entrance": 0.5908638900756283,
+      "p_target_intermediate": 1.8390483894756134e-10,
+      "p_target_final_exit": 1.7537023618040284e-28,
+      "p_sibling_exits": 7.014809447216112e-32,
+      "p_cross_class_exits": 5.630919285297554e-35,
+      "routing_contrast": 1.7537023618040283e-16
+    },
+    {
+      "time": 1.5,
+      "p_entrance": 0.2806835844960754,
+      "p_target_intermediate": 6.855712383650756e-8,
+      "p_target_final_exit": 9.174193541735428e-23,
+      "p_sibling_exits": 3.669677416694173e-26,
+      "p_cross_class_exits": 2.967733397656519e-29,
+      "routing_contrast": 9.174193541735427e-11
+    },
+    {
+      "time": 2.0,
+      "p_entrance": 0.07614201162607023,
+      "p_target_intermediate": 3.7746285027123828e-6,
+      "p_target_final_exit": 6.278356878590928e-19,
+      "p_sibling_exits": 2.5113427514363716e-22,
+      "p_cross_class_exits": 2.0549010817309166e-25,
+      "routing_contrast": 6.278356878590928e-7
+    },
+    {
+      "time": 2.5,
+      "p_entrance": 0.003630784278713929,
+      "p_target_intermediate": 0.00007289742014541686,
+      "p_target_final_exit": 4.7153282207017235e-16,
+      "p_sibling_exits": 1.886131288280688e-19,
+      "p_cross_class_exits": 1.568327125960776e-22,
+      "routing_contrast": 0.00047153282207017234
+    },
+    {
+      "time": 3.0,
+      "p_entrance": 0.0061884989236148545,
+      "p_target_intermediate": 0.0007133934786860536,
+      "p_target_final_exit": 9.147155673661848e-14,
+      "p_sibling_exits": 3.6588622694647406e-17,
+      "p_cross_class_exits": 3.105503362346726e-20,
+      "routing_contrast": 0.09147155673661848
+    },
+    {
+      "time": 3.5,
+      "p_entrance": 0.015612790256081066,
+      "p_target_intermediate": 0.004274529976174591,
+      "p_target_final_exit": 7.059226131388989e-12,
+      "p_sibling_exits": 2.8236904525555925e-15,
+      "p_cross_class_exits": 2.4576976108272335e-18,
+      "routing_contrast": 7.059226131388989
+    },
+    {
+      "time": 4.0,
+      "p_entrance": 0.0074128614319858895,
+      "p_target_intermediate": 0.01747055911009529,
+      "p_target_final_exit": 2.7791878593494366e-10,
+      "p_sibling_exits": 1.1116751437397733e-13,
+      "p_cross_class_exits": 9.970033504801359e-17,
+      "routing_contrast": 277.9187859349437
+    },
+    {
+      "time": 4.5,
+      "p_entrance": 0.00016426028993907424,
+      "p_target_intermediate": 0.05196766716685099,
+      "p_target_final_exit": 6.525247754607042e-9,
+      "p_sibling_exits": 2.610099101842816e-12,
+      "p_cross_class_exits": 2.4241519179753197e-15,
+      "routing_contrast": 2497.6802580470003
+    },
+    {
+      "time": 5.0,
+      "p_entrance": 0.01915187323329291,
+      "p_target_intermediate": 0.11690258185892827,
+      "p_target_final_exit": 1.0141722466909681e-7,
+      "p_sibling_exits": 4.056688986763873e-11,
+      "p_cross_class_exits": 3.922384266544592e-14,
+      "routing_contrast": 2497.585102397062
+    },
+    {
+      "time": 5.5,
+      "p_entrance": 0.06656957196184439,
+      "p_target_intermediate": 0.20274153119107574,
+      "p_target_final_exit": 1.1224137020229186e-6,
+      "p_sibling_exits": 4.4896548080916734e-10,
+      "p_cross_class_exits": 4.5446117392146416e-13,
+      "routing_contrast": 2497.471957007982
+    },
+    {
+      "time": 6.0,
+      "p_entrance": 0.11987905360208946,
+      "p_target_intermediate": 0.271583270397586,
+      "p_target_final_exit": 9.325154475479556e-6,
+      "p_sibling_exits": 3.730061790191821e-9,
+      "p_cross_class_exits": 3.976508804178118e-12,
+      "routing_contrast": 2497.3376620124345
+    },
+    {
+      "time": 6.5,
+      "p_entrance": 0.15026140668599203,
+      "p_target_intermediate": 0.2754912401568262,
+      "p_target_final_exit": 0.000060485306822308846,
+      "p_sibling_exits": 2.419412272892351e-8,
+      "p_cross_class_exits": 2.7339870826044036e-11,
+      "routing_contrast": 2497.1781358461094
+    },
+    {
+      "time": 7.0,
+      "p_entrance": 0.14206020433486943,
+      "p_target_intermediate": 0.19961084804529713,
+      "p_target_final_exit": 0.00031550692117447764,
+      "p_sibling_exits": 1.262027684697911e-7,
+      "p_cross_class_exits": 1.522300596917978e-10,
+      "routing_contrast": 2496.988048326867
+    },
+    {
+      "time": 7.5,
+      "p_entrance": 0.10096732932580751,
+      "p_target_intermediate": 0.0880003719738959,
+      "p_target_final_exit": 0.0013538505731825927,
+      "p_sibling_exits": 5.415402292730373e-7,
+      "p_cross_class_exits": 7.026728286045545e-10,
+      "routing_contrast": 2496.7603410488114
+    },
+    {
+      "time": 8.0,
+      "p_entrance": 0.0491059900283818,
+      "p_target_intermediate": 0.0121255421533216,
+      "p_target_final_exit": 0.004862584709259088,
+      "p_sibling_exits": 1.945033883703637e-6,
+      "p_cross_class_exits": 2.7381729493783733e-9,
+      "routing_contrast": 2496.485506427681
+    },
+    {
+      "time": 8.5,
+      "p_entrance": 0.011293631089406588,
+      "p_target_intermediate": 0.0036436425129365247,
+      "p_target_final_exit": 0.014811690251692653,
+      "p_sibling_exits": 5.924676100677066e-6,
+      "p_cross_class_exits": 9.136949853594445e-9,
+      "routing_contrast": 2496.150472817482
+    },
+    {
+      "time": 9.0,
+      "p_entrance": 0.00003763232400322259,
+      "p_target_intermediate": 0.026444511645375122,
+      "p_target_final_exit": 0.03863414844761819,
+      "p_sibling_exits": 0.00001545365937904731,
+      "p_cross_class_exits": 2.6397691353356728e-8,
+      "routing_contrast": 2495.7368226691065
+    },
+    {
+      "time": 9.5,
+      "p_entrance": 0.008642539520885286,
+      "p_target_intermediate": 0.026824307878245315,
+      "p_target_final_exit": 0.08685848075924735,
+      "p_sibling_exits": 0.00003474339230369899,
+      "p_cross_class_exits": 6.65868599985996e-8,
+      "routing_contrast": 2495.2178325297523
+    },
+    {
+      "time": 10.0,
+      "p_entrance": 0.0185513732327097,
+      "p_target_intermediate": 0.004033708707266265,
+      "p_target_final_exit": 0.1689217244550129,
+      "p_sibling_exits": 0.00006756868978200516,
+      "p_cross_class_exits": 1.4753128630896512e-7,
+      "routing_contrast": 2494.55332548164
+    },
+    {
+      "time": 10.5,
+      "p_entrance": 0.016342695208418478,
+      "p_target_intermediate": 0.010899581225883404,
+      "p_target_final_exit": 0.28430913469067437,
+      "p_sibling_exits": 0.00011372365387626978,
+      "p_cross_class_exits": 2.882123032177092e-7,
+      "routing_contrast": 2493.6802125762065
+    },
+    {
+      "time": 11.0,
+      "p_entrance": 0.005368810664885224,
+      "p_target_intermediate": 0.0802410971908385,
+      "p_target_final_exit": 0.41278298692651916,
+      "p_sibling_exits": 0.0001651131947706079,
+      "p_cross_class_exits": 4.97235419849919e-7,
+      "routing_contrast": 2492.493899398753
+    },
+    {
+      "time": 11.5,
+      "p_entrance": 0.00008369051059109773,
+      "p_target_intermediate": 0.17093414691217917,
+      "p_target_final_exit": 0.5127759162013253,
+      "p_sibling_exits": 0.00020511036648053027,
+      "p_cross_class_exits": 7.568914438173371e-7,
+      "routing_contrast": 2490.808501416777
+    },
+    {
+      "time": 12.0,
+      "p_entrance": 0.008652536132435376,
+      "p_target_intermediate": 0.20529927986386518,
+      "p_target_final_exit": 0.5365459894668895,
+      "p_sibling_exits": 0.000214618395786756,
+      "p_cross_class_exits": 1.0124458909791121e-6,
+      "routing_contrast": 2488.2618149251994
+    },
+    {
+      "time": 12.5,
+      "p_entrance": 0.023056733572270602,
+      "p_target_intermediate": 0.15344279032946762,
+      "p_target_final_exit": 0.45952866974266504,
+      "p_sibling_exits": 0.0001838114678970662,
+      "p_cross_class_exits": 1.1801145067593128e-6,
+      "routing_contrast": 2484.0517810131573
+    },
+    {
+      "time": 13.0,
+      "p_entrance": 0.027963922296149225,
+      "p_target_intermediate": 0.06312725423584589,
+      "p_target_final_exit": 0.3048262917452654,
+      "p_sibling_exits": 0.00012193051669810635,
+      "p_cross_class_exits": 1.1804321297420542e-6,
+      "routing_contrast": 2476.0290993412596
+    },
+    {
+      "time": 13.5,
+      "p_entrance": 0.01799013562527843,
+      "p_target_intermediate": 0.005675454052418799,
+      "p_target_final_exit": 0.13836944887112518,
+      "p_sibling_exits": 0.00005534777954845006,
+      "p_cross_class_exits": 9.854971495574875e-7,
+      "routing_contrast": 2456.2648754287566
+    },
+    {
+      "time": 14.0,
+      "p_entrance": 0.0037559718505888818,
+      "p_target_intermediate": 0.007793497064000969,
+      "p_target_final_exit": 0.02892971690122842,
+      "p_sibling_exits": 0.000011571886760491362,
+      "p_cross_class_exits": 6.503137421255958e-7,
+      "routing_contrast": 2366.9810436372836
+    },
+    {
+      "time": 14.5,
+      "p_entrance": 0.0010987226614151066,
+      "p_target_intermediate": 0.041813762540572556,
+      "p_target_final_exit": 0.00013010631854790765,
+      "p_sibling_exits": 5.204252741916587e-8,
+      "p_cross_class_exits": 2.986834978408663e-7,
+      "routing_contrast": 370.96282903855047
+    },
+    {
+      "time": 15.0,
+      "p_entrance": 0.01651037132476292,
+      "p_target_intermediate": 0.06772514797681592,
+      "p_target_final_exit": 0.017134663044520708,
+      "p_sibling_exits": 6.853865217808323e-6,
+      "p_cross_class_exits": 6.131781506581225e-8,
+      "routing_contrast": 2477.8321792878246
+    },
+    {
+      "time": 15.5,
+      "p_entrance": 0.04320335894879428,
+      "p_target_intermediate": 0.06973410599664336,
+      "p_target_final_exit": 0.025193277455616756,
+      "p_sibling_exits": 0.000010077310982246758,
+      "p_cross_class_exits": 2.1496455175465023e-9,
+      "routing_contrast": 2499.46682526055
+    },
+    {
+      "time": 16.0,
+      "p_entrance": 0.06827559174354872,
+      "p_target_intermediate": 0.05639636585373814,
+      "p_target_final_exit": 0.00744456354751756,
+      "p_sibling_exits": 2.9778254190070533e-6,
+      "p_cross_class_exits": 8.516212751230774e-8,
+      "routing_contrast": 2430.4909616681994
+    },
+    {
+      "time": 16.5,
+      "p_entrance": 0.08132360690272236,
+      "p_target_intermediate": 0.041363126752064085,
+      "p_target_final_exit": 0.004924668804211074,
+      "p_sibling_exits": 1.9698675216844083e-6,
+      "p_cross_class_exits": 2.077453761677495e-7,
+      "routing_contrast": 2261.498730590922
+    },
+    {
+      "time": 17.0,
+      "p_entrance": 0.07781796796494968,
+      "p_target_intermediate": 0.03134956241319027,
+      "p_target_final_exit": 0.0743815942951593,
+      "p_sibling_exits": 0.000029752637718063655,
+      "p_cross_class_exits": 2.7469534263538317e-7,
+      "routing_contrast": 2477.1295587523514
+    },
+    {
+      "time": 17.5,
+      "p_entrance": 0.0586343736573344,
+      "p_target_intermediate": 0.026553232445353386,
+      "p_target_final_exit": 0.22214577589969053,
+      "p_sibling_exits": 0.00008885831035987613,
+      "p_cross_class_exits": 2.547926715661886e-7,
+      "routing_contrast": 2492.8519863269657
+    },
+    {
+      "time": 18.0,
+      "p_entrance": 0.030102956326759845,
+      "p_target_intermediate": 0.024714114069463066,
+      "p_target_final_exit": 0.38060854389431703,
+      "p_sibling_exits": 0.00015224341755772655,
+      "p_cross_class_exits": 1.8052615252633368e-7,
+      "routing_contrast": 2497.0390781767655
+    },
+    {
+      "time": 18.5,
+      "p_entrance": 0.0053810245005799645,
+      "p_target_intermediate": 0.023481889491756162,
+      "p_target_final_exit": 0.4548747381041616,
+      "p_sibling_exits": 0.00018194989524166426,
+      "p_cross_class_exits": 1.0364705095962905e-7,
+      "routing_contrast": 2498.5766954922437
+    },
+    {
+      "time": 19.0,
+      "p_entrance": 0.0027574373018991578,
+      "p_target_intermediate": 0.021515759431251193,
+      "p_target_final_exit": 0.3986322423907478,
+      "p_sibling_exits": 0.00015945289695629874,
+      "p_cross_class_exits": 5.362174991992679e-8,
+      "routing_contrast": 2499.1595680484647
+    },
+    {
+      "time": 19.5,
+      "p_entrance": 0.03612864336940334,
+      "p_target_intermediate": 0.01888317139631792,
+      "p_target_final_exit": 0.25009251908191826,
+      "p_sibling_exits": 0.00010003700763276704,
+      "p_cross_class_exits": 3.079436296715455e-8,
+      "routing_contrast": 2499.2306625519714
+    },
+    {
+      "time": 20.0,
+      "p_entrance": 0.10107510258485698,
+      "p_target_intermediate": 0.016517098087636888,
+      "p_target_final_exit": 0.09811966223205379,
+      "p_sibling_exits": 0.00003924786489282133,
+      "p_cross_class_exits": 2.3609534959044427e-8,
+      "routing_contrast": 2498.4970302679703
+    },
+    {
+      "time": 20.5,
+      "p_entrance": 0.17015283921440813,
+      "p_target_intermediate": 0.015356220526218843,
+      "p_target_final_exit": 0.013041476798374214,
+      "p_sibling_exits": 5.216590719349615e-6,
+      "p_cross_class_exits": 2.0534851513188285e-8,
+      "routing_contrast": 2490.197460784899
+    },
+    {
+      "time": 21.0,
+      "p_entrance": 0.20799671804489034,
+      "p_target_intermediate": 0.016071359770604036,
+      "p_target_final_exit": 0.0029448993852019753,
+      "p_sibling_exits": 1.1779597540808138e-6,
+      "p_cross_class_exits": 1.118215049540262e-8,
+      "routing_contrast": 2476.4911352202926
+    }
+  ],
+  "conclusion": "Cascaded dual-weld quantum walk achieves deterministic hierarchical routing across multiple sequential welds with invariant group velocity and dark-subspace extinction."
+}

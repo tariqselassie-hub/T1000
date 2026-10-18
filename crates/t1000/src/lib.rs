@@ -18,6 +18,7 @@ pub mod adjoint;
 pub mod ansatz;
 pub mod baselines;
 pub mod canonical;
+pub mod cascaded_tree_valve;
 pub mod chemistry;
 pub mod clifford_t;
 pub mod coherence;
@@ -63,6 +64,10 @@ pub use clifford_t::{
     SynthesisSolution, ZOmega,
 };
 pub use engine::{FpgaDeviceInfo, SystemManifestReport, T1000Engine};
+pub use cascaded_tree_valve::{
+    simulate_cascaded_classical_walk, simulate_cascaded_quantum_walk, CascadedBenchmarkResult,
+    CascadedTrajectoryPoint, CascadedValveConfig, CascadedValveHamiltonian,
+};
 pub use glued_tree_valve::{
     ClassicalKWayGluedWalker, ContinuousTreeValveWalk, GluedTreeValveConfig,
     MultiExitValveHamiltonian, ValveStepTelemetry,

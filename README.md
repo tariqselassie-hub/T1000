@@ -168,6 +168,13 @@
 * **Invariant Linear Group Velocity:** Longitudinal propagation speed $v_g \approx 1.33$ columns/unit time is strictly invariant under multi-branch fanout ($t_{\text{peak}} = 6.70 \to 14.15$ for $n=3 \to 8$).
 * Detailed Documentation: [`docs/findings/glued_tree_topological_valve.md`](docs/findings/glued_tree_topological_valve.md).
 
+### 19. Cascaded Multi-Tier Glued-Tree Valve & Deep Quantum Routing (`cascaded_tree_valve_bench`)
+* **Multi-Stage Sequential Ballistic Routing:** Cascades coarse entrance trees through intermediate roots into fine subpopulation exit trees across dual sequential welds without intermediate measurement collapse.
+* **Dual-Barrier Dark Subspace Extinction:** Cross-class and sibling non-target branches are extinguished in sequence ($< 0.04\%$ leakage), achieving contrast ratios of **$2,489 : 1$** ($2\times 2$, 4 exits) and **$831 : 1$** ($2\times 4$, 8 exits).
+* **Quantum Peak vs Classical Trapping:** Quantum walker hits target exit with **$60.31\% \to 44.61\%$** peak probability, while classical random walk hits the $25.0\%$ ($2\times 2$) or $12.5\%$ ($2\times 4$) floor.
+* **Linear Latency Scaling:** Multi-tier propagation latency scales linearly as $t_{\text{peak}} \approx \sqrt{2}\sum n_i$ with zero group velocity degradation across sequential welds.
+* Detailed Documentation: [`docs/findings/cascaded_tree_valve_deep_routing.md`](docs/findings/cascaded_tree_valve_deep_routing.md).
+
 ---
 
 ## Quick Start for Developers
@@ -180,6 +187,9 @@ cd T1000
 
 # Run all unit, integration, and oracle verification tests
 cargo test --workspace
+
+# Run Cascaded Multi-Tier Tree Valve Benchmark (Dual-Weld Deep Quantum Routing)
+cargo run --release -p t1000 --bin cascaded_tree_valve_bench
 
 # Run Multi-Exit Glued-Tree Valve & Quantum Router Benchmark (K-Way Topological Routing)
 cargo run --release -p t1000 --bin glued_tree_valve_bench
@@ -245,6 +255,7 @@ python scripts/fpga/test_chaos_streaming.py
 python web/serve.py
 ```
 
+* **Cascaded Multi-Tier Glued-Tree Valve Findings:** [`docs/findings/cascaded_tree_valve_deep_routing.md`](docs/findings/cascaded_tree_valve_deep_routing.md).
 * **Multi-Exit Topological Glued-Tree Valve & Router Findings:** [`docs/findings/glued_tree_topological_valve.md`](docs/findings/glued_tree_topological_valve.md).
 * **Childs et al. Glued-Trees Exponential Speedup Findings:** [`docs/findings/glued_trees_exponential_speedup.md`](docs/findings/glued_trees_exponential_speedup.md).
 * **Ultrametric Tree Sorter & QMUX Architecture Findings:** [`docs/findings/ultrametric_tree_sorter_qmux.md`](docs/findings/ultrametric_tree_sorter_qmux.md).

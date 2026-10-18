@@ -216,6 +216,16 @@ def run_all_charts() -> None:
         generated.append(("Glued-Tree Valve & Router", png.name, f"{size_kb:.1f} KB"))
         print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
 
+    # 19. Cascaded Multi-Tier Topological Glued-Tree Valve Telemetry
+    cascaded_report = exp_dir / "cascaded_tree_valve_report.json"
+    if cascaded_report.exists():
+        import chart_cascaded_tree_valve
+        chart_cascaded_tree_valve.generate_telemetry_chart()
+        png = chart_dir / "cascaded_tree_valve_telemetry.png"
+        size_kb = png.stat().st_size / 1024.0
+        generated.append(("Cascaded Multi-Tier Valve", png.name, f"{size_kb:.1f} KB"))
+        print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
+
     print("\n╔═══════════════════════════════════════════════════════════════════════════════╗")
     print("║                        RENDERED ARTIFACT MANIFEST                             ║")
     print("╠═════════════════════════════════════╦══════════════════════════════════╦══════════╣")

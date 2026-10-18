@@ -8,7 +8,7 @@ This directory stores reproducible experiment reports, benchmark telemetry JSON/
 
 ```
 results/
-├── charts/         # 18 High-resolution scientific figures (Obsidian & Laser Green)
+├── charts/         # 19 High-resolution scientific figures (Obsidian & Laser Green)
 ├── experiments/    # Hardware and simulation JSON/CSV telemetry reports
 └── data/           # Intermediate screening metrics and latent coordinate tables
 ```
@@ -37,11 +37,13 @@ results/
 | **16** | **`ultrametric_tree_sorter_telemetry.png`** | Multi-register QMUX Ultrametric Tree Sorter architecture and runtime telemetry. | ~464 KB |
 | **17** | **`glued_trees_speedup_telemetry.png`** | Childs et al. Glued Trees exponential quantum walk speedup & wavepacket trajectory. | ~645 KB |
 | **18** | **`glued_tree_valve_telemetry.png`** | Multi-Exit Topological Glued-Tree Valve ($K$-way router) ballistic sorting telemetry. | ~672 KB |
+| **19** | **`cascaded_tree_valve_telemetry.png`** | Cascaded Multi-Tier Glued-Tree Valve & Deep Router dual-weld telemetry. | ~684 KB |
 
 ---
 
 ## Experiment Reports Manifest (`results/experiments/`)
 
+* **`cascaded_tree_valve_report.json`**: Cascaded Multi-Tier Glued-Tree Valve benchmark across $2\times 2$ and $2\times 4$ dual-weld hierarchies ($n_1, n_2 \in [2, 5]$, contrast $> 2,480:1$).
 * **`glued_tree_valve_report.json`**: Multi-Exit Topological Glued-Tree Valve & Quantum Router benchmark across $K=2$ and $K=4$ exit trees ($n=3\dots 8$, contrast $> 1,700:1$).
 * **`glued_trees_report.json`**: Childs et al. Continuous-Time Quantum Walk vs classical random walk traversal across depths $n=2\dots 10$ (exponential speedup verified; $100.0\%$ defect recovery fidelity).
 * **`ultrametric_tree_sorter_report.json`**: Multi-register hierarchical QMUX benchmark on Waterbirds ($4.14\,\mu\text{s/sample}$, $70.69\%$ coarse accuracy, strong triangle inequality verified).
@@ -55,7 +57,7 @@ results/
 
 ## Reproducibility Command
 
-To regenerate all 18 scientific figures from current disk telemetry:
+To regenerate all 19 scientific figures from current disk telemetry:
 ```bash
 python scripts/charting/chart_all.py
 ```
