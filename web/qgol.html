@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
+<!-- Copyright (c) 2026 Terrence A. Jones SR. All rights reserved. -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>T-1000 Sovereign Quantum Conway's Game of Life Visualizer</title>
+    <link rel="stylesheet" href="qgol.css">
+</head>
+<body>
+    <!-- Top Sovereign Header -->
+    <header>
+        <div class="brand-section">
+            <div class="brand-logo">
+                <span>T-1000</span>
+                <span class="reticle-tag">QUANTUM CELLULAR AUTOMATA</span>
+            </div>
+            <span style="color:var(--text-muted); font-size:12px; font-family:var(--font-mono);">|</span>
+            <span class="sub-title">FRACTIONAL FERMI SEAS // INTERACTION HOLONOMY DECK</span>
+        </div>
+
+        <!-- Sovereign Dashboard View Switcher: ONLY ONE VIEW AT A TIME -->
+        <nav class="dashboard-switcher" id="dashboard-nav">
+            <button class="view-tab active" data-view="panel-iso">
+                <span class="tab-idx">[1]</span> 3D ISOMETRIC COLUMNS &bull; REAL-SPACE LATTICE
+            </button>
+            <button class="view-tab" data-view="panel-wave">
+                <span class="tab-idx">[2]</span> DUAL-DOMAIN WAVEFIELD &bull; MOMENTUM SEA
+            </button>
+            <button class="view-tab" data-view="panel-hilbert">
+                <span class="tab-idx">[3]</span> CONFINED HILBERT CHAMBER &bull; CP² SIMPLEX
+            </button>
+        </nav>
+
+        <nav class="nav-links">
+            <a href="index.html" class="nav-btn">[ESC] MAIN DECK</a>
+            <button class="nav-btn" id="btn-reload-deck">[R] SYNC</button>
+        </nav>
+    </header>
+
+    <!-- Main Container: ONLY ONE Dashboard Panel Visible At Once -->
+    <main class="dashboard-container">
+        <!-- Panel 1: 3D Isometric Columns on Obsidian Substrate -->
+        <section class="panel-card active-view" id="panel-iso">
+            <div class="panel-header">
+                <span class="title">
+                    <span>[1] ISOMETRIC QUANTUM COLUMNS &bull; REAL-SPACE LATTICE</span>
+                </span>
+                <span class="tag-emerald">PHASE RETICLE NEEDLES</span>
+            </div>
+            <div class="canvas-container">
+                <canvas id="canvas-iso"></canvas>
+                <div class="canvas-overlay-hint">DRAG TO ROTATE &bull; SCROLL TO ZOOM &bull; GREEN = LIVING |1⟩ &bull; AMBER = FFS |2⟩</div>
+            </div>
+        </section>
+
+        <!-- Panel 2: Dual-Domain Wave & Momentum Heatmap -->
+        <section class="panel-card" id="panel-wave">
+            <div class="panel-header">
+                <span class="title">
+                    <span>[2] DUAL-DOMAIN WAVEFIELD &bull; MOMENTUM SEA</span>
+                </span>
+                <span class="tag-amber">n(k) = 0.5000 PLATEAU</span>
+            </div>
+            <div class="dual-split-container">
+                <div class="canvas-container split-canvas-cell">
+                    <canvas id="canvas-wave"></canvas>
+                    <div class="canvas-overlay-hint">FRIEDEL RIPPLES IN FERMI SEA</div>
+                </div>
+                <div class="canvas-container split-canvas-cell">
+                    <canvas id="canvas-momentum"></canvas>
+                    <div class="canvas-overlay-hint">RECIPROCAL MOMENTUM DISTRIBUTION n(k)</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Panel 3: Confined Hilbert Space Chamber (CP^2 Simplex) -->
+        <section class="panel-card" id="panel-hilbert">
+            <div class="panel-header">
+                <span class="title">
+                    <span>[3] CONFINED HILBERT CHAMBER &bull; CIR HOLONOMY</span>
+                </span>
+                <span class="tag-emerald">γ = π/2 GEODESIC LOOPS</span>
+            </div>
+            <div class="canvas-container">
+                <canvas id="canvas-hilbert"></canvas>
+                <div class="canvas-overlay-hint">ORBITS BETWEEN |0⟩ VACUUM, |1⟩ LIVING, AND |2⟩ FFS APEX</div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Bottom Playback & Telemetry HUD Deck -->
+    <footer class="control-deck">
+        <!-- Playback Buttons -->
+        <div class="control-group">
+            <button class="btn-ctrl primary" id="btn-play">PAUSE</button>
+            <button class="btn-ctrl" id="btn-step">STEP TICK</button>
+            <button class="btn-ctrl" id="btn-reset">RESET</button>
+            <button class="btn-ctrl probe" id="btn-born-probe" title="Trigger projective measurement collapse across lattice">BORN PROBE</button>
+        </div>
+
+        <!-- Pattern Presets & Speed Slider -->
+        <div class="control-group">
+            <select class="select-ctrl" id="select-pattern">
+                <option value="glider">Bethe-String Glider Soliton</option>
+                <option value="ffs_bubble">Fractional Fermi Sea Bubble (l=2)</option>
+                <option value="cat_blinker">Schr&ouml;dinger Cat Blinker</option>
+                <option value="block">Quantum Block (Still-Life)</option>
+                <option value="soup">Coherent Quantum Soup</option>
+            </select>
+
+            <div class="slider-group">
+                <span>SPEED:</span>
+                <input type="range" id="slider-speed" min="1" max="20" value="4">
+                <span id="speed-val" class="val-green">4 TPS</span>
+            </div>
+        </div>
+
+        <!-- Live Telemetry Strip -->
+        <div class="telemetry-bar">
+            <div class="telemetry-chip">
+                <span class="label">STEP:</span>
+                <span class="val-polar" id="hud-step">0000</span>
+            </div>
+            <div class="telemetry-chip">
+                <span class="label">N_TOT:</span>
+                <span class="val-green" id="hud-tot-pop">0.00</span>
+            </div>
+            <div class="telemetry-chip">
+                <span class="label">LIVING |1⟩:</span>
+                <span class="val-green" id="hud-live-pop">0.00</span>
+            </div>
+            <div class="telemetry-chip">
+                <span class="label">FFS |2⟩:</span>
+                <span class="val-amber" id="hud-ffs-pop">0.00</span>
+            </div>
+            <div class="telemetry-chip">
+                <span class="label">NORM ERR:</span>
+                <span class="val-polar" id="hud-norm-err">0.00e+00</span>
+            </div>
+            <div class="telemetry-chip">
+                <span class="label">ENTROPY S:</span>
+                <span class="val-green" id="hud-entropy">0.0000 nats</span>
+            </div>
+            <div class="telemetry-chip">
+                <span class="label">n(k) PLATEAU:</span>
+                <span class="val-amber" id="hud-momentum">0.0000</span>
+            </div>
+        </div>
+    </footer>
+
+    <script src="qgol.js"></script>
+</body>
+</html>

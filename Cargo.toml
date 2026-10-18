@@ -2,6 +2,7 @@
 members = [
     "crates/t1000_core",
     "crates/t1000",
+    "crates/t1000_conway",
 ]
 resolver = "2"
 

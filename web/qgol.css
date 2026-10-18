@@ -1,0 +1,377 @@
+/* SPDX-License-Identifier: MIT OR Apache-2.0 */
+/* Copyright (c) 2026 Terrence A. Jones SR. All rights reserved. */
+
+:root {
+    --bg-root: #05080d;
+    --bg-card: #0f172a;
+    --bg-card-hover: #131d35;
+    --bg-header: #080c14;
+    --border-grid: #1e293b;
+    --border-reticle: #334155;
+    
+    --quantum-emerald: #00e676;
+    --quantum-emerald-dim: rgba(0, 230, 118, 0.25);
+    --quantum-emerald-glow: rgba(0, 230, 118, 0.45);
+    
+    --ffs-amber: #ffb300;
+    --ffs-amber-dim: rgba(255, 179, 0, 0.25);
+    --ffs-amber-glow: rgba(255, 179, 0, 0.45);
+    
+    --alert-crimson: #ef4444;
+    --text-polar: #f8fafc;
+    --text-slate: #94a3b8;
+    --text-muted: #475569;
+    
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg-root);
+    color: var(--text-polar);
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header & Reticle Bar */
+header {
+    background-color: var(--bg-header);
+    border-bottom: 1px solid var(--border-grid);
+    padding: 10px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.brand-section {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-weight: 800;
+    font-size: 16px;
+    letter-spacing: 1px;
+}
+
+.brand-logo .reticle-tag {
+    font-size: 11px;
+    padding: 2px 6px;
+    background: var(--quantum-emerald-dim);
+    color: var(--quantum-emerald);
+    border: 1px solid var(--quantum-emerald);
+    border-radius: 2px;
+}
+
+.sub-title {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-slate);
+    letter-spacing: 0.5px;
+}
+
+.nav-links {
+    display: flex;
+    gap: 12px;
+}
+
+.nav-btn {
+    background: transparent;
+    border: 1px solid var(--border-reticle);
+    color: var(--text-slate);
+    padding: 5px 12px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    border-radius: 2px;
+}
+
+.nav-btn:hover, .nav-btn.active {
+    background: var(--bg-card);
+    border-color: var(--quantum-emerald);
+    color: var(--quantum-emerald);
+}
+
+/* Dashboard Switcher Tabs (Header) */
+.dashboard-switcher {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.view-tab {
+    background: transparent;
+    border: 1px solid var(--border-reticle);
+    color: var(--text-slate);
+    padding: 6px 14px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 2px;
+}
+
+.view-tab:hover {
+    background: var(--bg-card);
+    border-color: var(--quantum-emerald);
+    color: var(--text-polar);
+}
+
+.view-tab.active {
+    background: var(--quantum-emerald-dim);
+    border-color: var(--quantum-emerald);
+    color: var(--quantum-emerald);
+    box-shadow: 0 0 10px var(--quantum-emerald-glow);
+}
+
+/* Main Dashboard Container: Shows ONLY ONE Panel */
+.dashboard-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 12px 18px;
+    height: calc(100vh - 128px);
+    overflow: hidden;
+}
+
+.panel-card {
+    display: none; /* Hidden by default */
+    flex: 1;
+    height: 100%;
+    width: 100%;
+    background: var(--bg-card);
+    border: 1px solid var(--border-grid);
+    border-radius: 4px;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+}
+
+.panel-card.active-view {
+    display: flex !important; /* ONLY active view shows */
+}
+
+.panel-header {
+    background: rgba(15, 23, 42, 0.85);
+    border-bottom: 1px solid var(--border-grid);
+    padding: 8px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.panel-header .title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-polar);
+}
+
+.panel-header .tag-emerald {
+    color: var(--quantum-emerald);
+    background: var(--quantum-emerald-dim);
+    border: 1px solid var(--quantum-emerald);
+    padding: 1px 6px;
+    border-radius: 2px;
+    font-size: 9px;
+}
+
+.panel-header .tag-amber {
+    color: var(--ffs-amber);
+    background: var(--ffs-amber-dim);
+    border: 1px solid var(--ffs-amber);
+    padding: 1px 6px;
+    border-radius: 2px;
+    font-size: 9px;
+}
+
+.canvas-container {
+    flex: 1;
+    position: relative;
+    width: 100%;
+    min-height: 380px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.canvas-overlay-hint {
+    position: absolute;
+    bottom: 8px;
+    left: 12px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
+/* Control & Telemetry Deck */
+.control-deck {
+    background: var(--bg-header);
+    border-top: 1px solid var(--border-grid);
+    padding: 10px 18px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+}
+
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-ctrl {
+    background: var(--bg-card);
+    border: 1px solid var(--border-reticle);
+    color: var(--text-polar);
+    padding: 6px 14px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s ease;
+}
+
+.btn-ctrl:hover {
+    border-color: var(--quantum-emerald);
+    color: var(--quantum-emerald);
+    box-shadow: 0 0 8px var(--quantum-emerald-glow);
+}
+
+.btn-ctrl.primary {
+    background: var(--quantum-emerald-dim);
+    border-color: var(--quantum-emerald);
+    color: var(--quantum-emerald);
+}
+
+.btn-ctrl.primary:hover {
+    background: var(--quantum-emerald);
+    color: var(--bg-root);
+}
+
+.btn-ctrl.probe {
+    border-color: var(--ffs-amber);
+    color: var(--ffs-amber);
+}
+
+.btn-ctrl.probe:hover {
+    background: var(--ffs-amber);
+    color: var(--bg-root);
+    box-shadow: 0 0 8px var(--ffs-amber-glow);
+}
+
+.select-ctrl {
+    background: var(--bg-card);
+    border: 1px solid var(--border-reticle);
+    color: var(--text-polar);
+    padding: 6px 10px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    border-radius: 2px;
+    outline: none;
+}
+
+.select-ctrl:focus {
+    border-color: var(--quantum-emerald);
+}
+
+.slider-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-slate);
+}
+
+input[type="range"] {
+    accent-color: var(--quantum-emerald);
+    width: 80px;
+}
+
+/* Telemetry Readout Strip */
+.telemetry-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+}
+
+.telemetry-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-card);
+    padding: 4px 10px;
+    border: 1px solid var(--border-grid);
+    border-radius: 2px;
+}
+
+.telemetry-chip .label {
+    color: var(--text-slate);
+}
+
+.telemetry-chip .val-green {
+    color: var(--quantum-emerald);
+    font-weight: 700;
+}
+
+.telemetry-chip .val-amber {
+    color: var(--ffs-amber);
+    font-weight: 700;
+}
+
+.telemetry-chip .val-polar {
+    color: var(--text-polar);
+    font-weight: 700;
+}
+
+/* Sub-split containers for panel 2 */
+.dual-split-container {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    height: 100%;
+}
+
+.split-canvas-cell {
+    position: relative;
+    border-right: 1px solid var(--border-grid);
+}
+
+.split-canvas-cell:last-child {
+    border-right: none;
+}

@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
+# Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
+[package]
+name = "t1000_conway"
+version = "0.1.0"
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "T-1000 Quantum Conway Game of Life: Unitary quantum cellular automata via Fractional Fermi Seas, interaction holonomy cycles, and generalized exclusion statistics."
+
+[lints]
+workspace = true
+
+[dependencies]
+t1000_core = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+num-complex = { workspace = true }
+rand = { workspace = true }
+rand_chacha = { workspace = true }
+rayon = { workspace = true }
+thiserror = { workspace = true }
+
+[[bin]]
+name = "qgol_sim"
+path = "src/bin/qgol_sim.rs"

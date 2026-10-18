@@ -33,6 +33,7 @@
 | :--- | :--- |
 | **[`t1000_core`](crates/t1000_core)** | Pure mathematical substrate: state registers, partial trace, POVM projections, Hamiltonian evolution, Porter-Thomas chaos metrics. |
 | **[`t1000`](crates/t1000)** | The high-performance QNN engine: SIMD AVX2 kernels, circuit DAG compiler, SMILES molecular encoder, parameter-shift optimizers, and benchmarks. |
+| **[`t1000_conway`](crates/t1000_conway)** | Sovereign Unitary Quantum Cellular Automata (QCA) engine: Fractional Fermi Seas, interaction holonomy cycles across Confinement-Induced Resonances (CIR), and 3D web telemetry visualizer. |
 
 ---
 
