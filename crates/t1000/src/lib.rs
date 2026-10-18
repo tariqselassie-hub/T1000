@@ -51,6 +51,7 @@ pub mod telemetry;
 pub mod tensor_network;
 pub mod tiled_butterfly;
 pub mod trainer;
+pub mod topological_sorter;
 pub mod ultrametric_tree;
 pub mod zipper;
 
@@ -156,6 +157,9 @@ pub use smiles::{
 };
 pub use state::{QuantumFeatureMap, QuantumState};
 pub use tiled_butterfly::{apply_layer_fused, tiled_apply_cz, tiled_apply_ry, tiled_apply_rz};
+pub use topological_sorter::{
+    BatchSorterReport, ContinuousWalkSorter, TopologicalSorterConfig, TopologicalSorterTelemetry,
+};
 pub use ultrametric_tree::{
     apply_cooling_bridge, apply_qmux_single_qubit_gate, compute_ultrametric_branch_distribution,
     ultrametric_gram_pair, ultrametric_tree_distance, UltrametricLossReport, UltrametricTreeConfig,

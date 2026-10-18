@@ -188,6 +188,10 @@ name = "cascaded_tree_valve_bench"
 path = "src/bin/benchmarks/cascaded_tree_valve_bench.rs"
 
 [[bin]]
+name = "topological_walk_sorter_bench"
+path = "src/bin/benchmarks/topological_walk_sorter_bench.rs"
+
+[[bin]]
 name = "dag_compiler_bench"
 path = "src/bin/benchmarks/dag_compiler_bench.rs"
 

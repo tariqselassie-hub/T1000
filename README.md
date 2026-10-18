@@ -176,6 +176,13 @@
 * **Linear Latency Scaling:** Multi-tier propagation latency scales linearly as $t_{\text{peak}} \approx \sqrt{2}\sum n_i$ with zero group velocity degradation across sequential welds.
 * Detailed Documentation: [`docs/findings/cascaded_tree_valve_deep_routing.md`](docs/findings/cascaded_tree_valve_deep_routing.md).
 
+### 20. Continuous Topological Walk Sorter with Weld Zeno Sentry (`topological_walk_sorter_bench`)
+* **Continuous Hamiltonian Routing vs Discrete Gate Circuits:** Replaces discrete variational gate layers ($R_y, CZ$) with continuous-time Hamiltonian traversal ($e^{-i H_{\text{valve}} t}$) through a multi-tier cascaded glued-tree valve.
+* **Immunity to Discrete Gate Noise Accumulation:** Under physical open-system dephasing ($T_1 = 45\,\mu\text{s}, T_2^* = 60\,\mu\text{s}, p_{\text{depol}} = 0.0020$), joint subpopulation classification accuracy jumps from **$24.50\%$** (discrete circuit QMUX) to **$82.00\%$** (continuous topological walk), with **$90.00\%$ coarse accuracy** and **$92.00\%$ fine accuracy**.
+* **$719\times$ Contrast Explosion:** Extinction of incorrect branches increases from $2.85:1$ (discrete QMUX) to **$2,050.00:1$**.
+* **Intermediate Weld Zeno Sentry:** Intersperse high-frequency projective monitoring at the intermediate weld roots, increasing target ballistic exit hitting probability from $0.4992 \to 0.5089$ and escaping the classical random walk dispersion trap ($25.20\%$).
+* Detailed Documentation: [`docs/findings/continuous_topological_walk_sorter.md`](docs/findings/continuous_topological_walk_sorter.md).
+
 ---
 
 ## Quick Start for Developers

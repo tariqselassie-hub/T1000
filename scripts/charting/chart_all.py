@@ -237,6 +237,17 @@ def run_all_charts() -> None:
             generated.append(("RCS Physical Noise Chaos", png.name, f"{size_kb:.1f} KB"))
             print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
 
+    # 21. Continuous Topological Walk Sorter Showdown Telemetry
+    sorter_json = ws_root / "results" / "topological_walk_sorter_telemetry.json"
+    if sorter_json.exists():
+        import chart_topological_walk_sorter
+        chart_topological_walk_sorter.main()
+        png = ws_root / "assets" / "topological_walk_sorter_showdown.png"
+        if png.exists():
+            size_kb = png.stat().st_size / 1024.0
+            generated.append(("Topological Walk Sorter Showdown", png.name, f"{size_kb:.1f} KB"))
+            print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
+
     print("\n╔═══════════════════════════════════════════════════════════════════════════════╗")
     print("║                        RENDERED ARTIFACT MANIFEST                             ║")
     print("╠═════════════════════════════════════╦══════════════════════════════════╦══════════╣")
