@@ -40,7 +40,7 @@ impl Default for HolonomyParams {
 /// Unitary 3x3 local transition matrix derived from the interaction holonomy.
 #[derive(Debug, Clone, PartialEq)]
 pub struct HolonomyTransferMatrix {
-    /// Matrix elements U[row][col] mapping (c0, c1, c2) -> (c0', c1', c2').
+    /// Matrix elements `U[row][col]` mapping `(c0, c1, c2) -> (c0', c1', c2')`.
     pub elements: [[Complex64; 3]; 3],
 }
 
