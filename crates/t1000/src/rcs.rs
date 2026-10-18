@@ -41,6 +41,67 @@ pub struct DistributionMetrics {
     pub total_variation_distance: f64,
 }
 
+/// Layer-by-layer telemetry tracking coherence, purity, and chaos evolution.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RcsLayerTrajectory {
+    pub layer: usize,
+    pub latency_secs: f64,
+    pub purity: f64,
+    pub l1_coherence_norm: f64,
+    pub fidelity_vs_ideal: f64,
+    pub instant_xeb: f64,
+}
+
+/// Coherence stabilization protocol applied during noisy RCS circuit passes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum StabilizationStrategy {
+    /// No stabilization: naked circuit subject to environmental decoherence.
+    None,
+    /// Periodic Dynamical Decoupling (CPMG / XY4 / UDD) refocusing pulses.
+    DynamicalDecoupling(crate::coherence::DynamicalDecouplingKind),
+    /// Symplectic manifold re-projection preventing numerical and phase drift.
+    ManifoldReprojection,
+    /// Combined DD refocusing and manifold re-projection.
+    Combined(crate::coherence::DynamicalDecouplingKind),
+}
+
+/// Configuration for an open-system physical noisy RCS simulation.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NoisyRcsConfig {
+    pub base: RcsConfig,
+    pub noise: crate::coherence::NoiseChannelParams,
+    pub gate_time_us: f64,
+    pub stabilization: StabilizationStrategy,
+}
+
+impl Default for NoisyRcsConfig {
+    fn default() -> Self {
+        Self {
+            base: RcsConfig::default(),
+            noise: crate::coherence::NoiseChannelParams::default(),
+            gate_time_us: 0.20,
+            stabilization: StabilizationStrategy::None,
+        }
+    }
+}
+
+/// Telemetry emitted from a noisy open-system RCS simulation pass.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NoisyRcsRunReport {
+    pub qubits: usize,
+    pub depth: usize,
+    pub dimension: usize,
+    pub total_latency_secs: f64,
+    pub trajectory: Vec<RcsLayerTrajectory>,
+    pub final_fidelity_vs_ideal: f64,
+    pub ideal_self_xeb: f64,
+    pub noisy_self_xeb: f64,
+    pub cross_xeb_with_ideal: f64,
+    pub pt_report: PorterThomasReport,
+    pub distribution_metrics: DistributionMetrics,
+    pub top_bitstrings: Vec<(String, f64)>,
+}
+
 /// Full execution report and telemetry for an RCS simulation.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RcsRunReport {
@@ -66,23 +127,9 @@ impl RcsSimulator {
         Self { config }
     }
 
-    /// Execute an advanced RCS circuit pass, returning the final state and execution telemetry.
-    pub fn execute(&self) -> (QuantumState, RcsRunReport) {
-        let n_qubits = self.config.qubits;
-        let depth = self.config.depth;
-        let dim = 1 << n_qubits;
-
-        // Initialize state |0...0>
-        let mut state = QuantumState::zero(dim);
-        state.real[0] = 1.0;
-        state.imag[0] = 0.0;
-
-        // Construct parameterized ansatz
-        let mut ansatz = CircuitAnsatz::new(n_qubits, depth);
-        let n_params = ansatz.param_count();
-
-        // Pseudo-random deterministic parameter population from seed
-        let mut rng_state = self.config.seed;
+    /// Generate deterministic ansatz parameters from random seed.
+    fn generate_params(seed: u64, count: usize) -> Vec<f64> {
+        let mut rng_state = seed;
         let mut next_f64 = || {
             rng_state = rng_state
                 .wrapping_mul(6364136223846793005)
@@ -90,8 +137,22 @@ impl RcsSimulator {
             let val = (rng_state >> 11) as f64 / (1u64 << 53) as f64;
             val * std::f64::consts::TAU - std::f64::consts::PI
         };
+        (0..count).map(|_| next_f64()).collect()
+    }
 
-        let params: Vec<f64> = (0..n_params).map(|_| next_f64()).collect();
+    /// Execute an advanced RCS circuit pass, returning the final state and execution telemetry.
+    pub fn execute(&self) -> (QuantumState, RcsRunReport) {
+        let n_qubits = self.config.qubits;
+        let depth = self.config.depth;
+        let dim = 1 << n_qubits;
+
+        // Initialize state |0...0>
+        let mut state = QuantumState::ground(dim);
+
+        // Construct parameterized ansatz
+        let mut ansatz = CircuitAnsatz::new(n_qubits, depth);
+        let n_params = ansatz.param_count();
+        let params = Self::generate_params(self.config.seed, n_params);
         ansatz.update_params(&params);
 
         let start_time = Instant::now();
@@ -103,7 +164,6 @@ impl RcsSimulator {
             ansatz.forward_layer_into(layer_idx, &ansatz.weights, &mut state);
             layer_latencies.push(l_start.elapsed().as_secs_f64());
 
-            // Periodic L2 norm verification to verify numerical stability under deep randomized benchmarking passes
             if (layer_idx + 1) % 4 == 0 || layer_idx + 1 == depth {
                 state.assert_normalized(1e-10);
             }
@@ -117,13 +177,9 @@ impl RcsSimulator {
             0.0
         };
 
-        // Compute probabilities
         let probs = state.probabilities();
-
-        // Porter-Thomas analysis
         let pt_report = verify_porter_thomas(&probs);
 
-        // Extract top bitstrings
         let mut indexed: Vec<(usize, f64)> = probs.iter().copied().enumerate().collect();
         indexed.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
         let top_bitstrings: Vec<(String, f64)> = indexed
@@ -140,6 +196,183 @@ impl RcsSimulator {
             avg_layer_latency_secs: avg_layer,
             layer_latencies,
             pt_report,
+            top_bitstrings,
+        };
+
+        (state, report)
+    }
+
+    /// Execute a noisy physical RCS pass under Lindbladian open-system decoherence and optional stabilization.
+    pub fn execute_noisy(
+        &self,
+        noisy_cfg: &NoisyRcsConfig,
+        ideal_state: Option<&QuantumState>,
+    ) -> (QuantumState, NoisyRcsRunReport) {
+        use rand::SeedableRng;
+        let n_qubits = noisy_cfg.base.qubits;
+        let depth = noisy_cfg.base.depth;
+        let dim = 1 << n_qubits;
+
+        // Ground state |0...0>
+        let mut state = QuantumState::ground(dim);
+
+        let mut ansatz = CircuitAnsatz::new(n_qubits, depth);
+        let n_params = ansatz.param_count();
+        let params = Self::generate_params(noisy_cfg.base.seed, n_params);
+        ansatz.update_params(&params);
+
+        let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(noisy_cfg.base.seed.wrapping_add(0xCAFE_BABE));
+        let start_time = Instant::now();
+        let mut trajectory = Vec::with_capacity(depth);
+
+        // Precompute ideal state if not supplied
+        let owned_ideal = if ideal_state.is_none() {
+            let sim_ideal = RcsSimulator::new(noisy_cfg.base.clone());
+            Some(sim_ideal.execute().0)
+        } else {
+            None
+        };
+        let ref_ideal = ideal_state.or(owned_ideal.as_ref());
+
+        for layer_idx in 0..depth {
+            let l_start = Instant::now();
+            ansatz.forward_layer_into(layer_idx, &ansatz.weights, &mut state);
+
+            // Noise & Stabilization Evolution
+            let half_dt = noisy_cfg.gate_time_us * 0.5;
+            let uses_dd = matches!(
+                noisy_cfg.stabilization,
+                StabilizationStrategy::DynamicalDecoupling(_)
+                    | StabilizationStrategy::Combined(_)
+            );
+
+            if uses_dd && half_dt > 0.0 {
+                // First half-step noise pass
+                for q in 0..n_qubits {
+                    crate::coherence::apply_open_system_decoherence_qubit(
+                        &mut state,
+                        q,
+                        &noisy_cfg.noise,
+                        half_dt,
+                        &mut rng,
+                    );
+                }
+                // Refocusing pulse to invert environmental dephasing phase
+                for q in 0..n_qubits {
+                    crate::coherence::apply_dynamical_decoupling(
+                        &mut state,
+                        q,
+                        crate::coherence::DynamicalDecouplingKind::Cpmg,
+                    );
+                }
+                // Second half-step noise pass (cancels first-half dephasing drift)
+                for q in 0..n_qubits {
+                    crate::coherence::apply_open_system_decoherence_qubit(
+                        &mut state,
+                        q,
+                        &noisy_cfg.noise,
+                        half_dt,
+                        &mut rng,
+                    );
+                }
+                // Restoring pulse
+                for q in 0..n_qubits {
+                    crate::coherence::apply_dynamical_decoupling(
+                        &mut state,
+                        q,
+                        crate::coherence::DynamicalDecouplingKind::Cpmg,
+                    );
+                }
+            } else if noisy_cfg.gate_time_us > 0.0 {
+                // Unprotected naked noise pass
+                for q in 0..n_qubits {
+                    crate::coherence::apply_open_system_decoherence_qubit(
+                        &mut state,
+                        q,
+                        &noisy_cfg.noise,
+                        noisy_cfg.gate_time_us,
+                        &mut rng,
+                    );
+                }
+            }
+
+            if matches!(
+                noisy_cfg.stabilization,
+                StabilizationStrategy::ManifoldReprojection | StabilizationStrategy::Combined(_)
+            ) {
+                crate::coherence::reproject_coherence_manifold(&mut state);
+            }
+
+            let l_time = l_start.elapsed().as_secs_f64();
+            let coh = crate::coherence::compute_coherence_metrics(&state, n_qubits);
+            let fid = if let Some(ideal) = ref_ideal {
+                state.fidelity(ideal)
+            } else {
+                0.0
+            };
+            let probs = state.probabilities();
+            let inst_xeb = t1000_core::porter_thomas::exact_linear_xeb(&probs);
+
+            trajectory.push(RcsLayerTrajectory {
+                layer: layer_idx,
+                latency_secs: l_time,
+                purity: coh.purity,
+                l1_coherence_norm: coh.l1_normalized,
+                fidelity_vs_ideal: fid,
+                instant_xeb: inst_xeb,
+            });
+        }
+
+        state.normalize();
+        let total_time = start_time.elapsed().as_secs_f64();
+        let noisy_probs = state.probabilities();
+        let pt_report = verify_porter_thomas(&noisy_probs);
+
+        let final_fid = if let Some(ideal) = ref_ideal {
+            state.fidelity(ideal)
+        } else {
+            0.0
+        };
+
+        let ideal_probs = ref_ideal.map(|s| s.probabilities());
+        let dist_metrics = if let Some(ref ip) = ideal_probs {
+            Self::compare_distributions(ip, &noisy_probs)
+        } else {
+            DistributionMetrics {
+                hellinger_distance: 0.0,
+                squared_hellinger_distance: 0.0,
+                bhattacharyya_coefficient: 1.0,
+                cross_linear_xeb: 1.0,
+                total_variation_distance: 0.0,
+            }
+        };
+
+        let ideal_self_xeb = ideal_probs
+            .as_ref()
+            .map(|ip| t1000_core::porter_thomas::exact_linear_xeb(ip))
+            .unwrap_or(1.0);
+        let noisy_self_xeb = t1000_core::porter_thomas::exact_linear_xeb(&noisy_probs);
+
+        let mut indexed: Vec<(usize, f64)> = noisy_probs.iter().copied().enumerate().collect();
+        indexed.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+        let top_bitstrings: Vec<(String, f64)> = indexed
+            .iter()
+            .take(5)
+            .map(|(idx, prob)| (format!("|{:0width$b}>", idx, width = n_qubits), *prob))
+            .collect();
+
+        let report = NoisyRcsRunReport {
+            qubits: n_qubits,
+            depth,
+            dimension: dim,
+            total_latency_secs: total_time,
+            trajectory,
+            final_fidelity_vs_ideal: final_fid,
+            ideal_self_xeb,
+            noisy_self_xeb,
+            cross_xeb_with_ideal: dist_metrics.cross_linear_xeb,
+            pt_report,
+            distribution_metrics: dist_metrics,
             top_bitstrings,
         };
 
@@ -214,5 +447,37 @@ mod tests {
         assert!(metrics.hellinger_distance < 1e-6);
         assert!((metrics.bhattacharyya_coefficient - 1.0).abs() < 1e-6);
         assert!(metrics.total_variation_distance < 1e-6);
+    }
+
+    #[test]
+    fn test_noisy_rcs_simulation_and_stabilization() {
+        let base_cfg = RcsConfig {
+            qubits: 8,
+            depth: 4,
+            seed: 777,
+        };
+        let sim = RcsSimulator::new(base_cfg.clone());
+        let (ideal_state, ideal_report) = sim.execute();
+
+        let noisy_cfg = NoisyRcsConfig {
+            base: base_cfg,
+            noise: crate::coherence::NoiseChannelParams {
+                t1_us: 20.0,
+                t2_us: 15.0,
+                depolarizing_prob: 0.005,
+            },
+            gate_time_us: 0.20,
+            stabilization: StabilizationStrategy::Combined(
+                crate::coherence::DynamicalDecouplingKind::Xy4,
+            ),
+        };
+
+        let (_noisy_state, noisy_report) = sim.execute_noisy(&noisy_cfg, Some(&ideal_state));
+
+        assert_eq!(noisy_report.qubits, 8);
+        assert_eq!(noisy_report.trajectory.len(), 4);
+        assert!(noisy_report.final_fidelity_vs_ideal > 0.0);
+        assert!(noisy_report.final_fidelity_vs_ideal <= 1.0);
+        assert!(ideal_report.pt_report.exact_xeb > 0.0);
     }
 }

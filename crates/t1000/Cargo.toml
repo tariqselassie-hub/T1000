@@ -83,6 +83,10 @@ path = "src/bin/measurements/exascale_showdown.rs"
 name = "nighthawk_r2_bench"
 path = "src/bin/measurements/nighthawk_r2_bench.rs"
 
+[[bin]]
+name = "rcs_coherence_chaos_bench"
+path = "src/bin/measurements/rcs_coherence_chaos_bench.rs"
+
 # =========================================================================
 # Executable Binaries: Quantum Neural Network Training
 # =========================================================================

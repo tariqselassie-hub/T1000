@@ -226,6 +226,17 @@ def run_all_charts() -> None:
         generated.append(("Cascaded Multi-Tier Valve", png.name, f"{size_kb:.1f} KB"))
         print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
 
+    # 20. RCS Physical Noise Chaos & Coherence Transition Telemetry
+    rcs_noise_json = ws_root / "results" / "rcs_physical_noise_chaos.json"
+    if rcs_noise_json.exists():
+        import chart_rcs_coherence_chaos
+        chart_rcs_coherence_chaos.main()
+        png = ws_root / "assets" / "rcs_physical_noise_chaos.png"
+        if png.exists():
+            size_kb = png.stat().st_size / 1024.0
+            generated.append(("RCS Physical Noise Chaos", png.name, f"{size_kb:.1f} KB"))
+            print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
+
     print("\n╔═══════════════════════════════════════════════════════════════════════════════╗")
     print("║                        RENDERED ARTIFACT MANIFEST                             ║")
     print("╠═════════════════════════════════════╦══════════════════════════════════╦══════════╣")

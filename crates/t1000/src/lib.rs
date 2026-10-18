@@ -146,7 +146,10 @@ pub use qec::{
     QecCodeKind, QecRecoveryResult, SyndromeReport,
 };
 pub use qssm::{QssmConfig, QssmForwardReport, QuantumStateSpaceAutoencoder};
-pub use rcs::{DistributionMetrics, RcsConfig, RcsRunReport, RcsSimulator};
+pub use rcs::{
+    DistributionMetrics, NoisyRcsConfig, NoisyRcsRunReport, RcsConfig, RcsLayerTrajectory,
+    RcsRunReport, RcsSimulator, StabilizationStrategy,
+};
 pub use smiles::{
     BondKind, ParsedSmiles, SmilesAtom, SmilesError, SmilesExplorer, SmilesFeatures,
     SmilesFeaturizer, SmilesPropertyProfile, SmilesQuantumEncoder, SmilesToken,
