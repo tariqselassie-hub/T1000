@@ -174,7 +174,8 @@ impl QuantumConwaySimulator {
                     for x in 0..w {
                         let idx = self.lattice.coord_to_idx(x, y);
                         let amp = Complex64::new(self.state.re1[idx], self.state.im1[idx]);
-                        let phase = 2.0 * PI * ((kx * x) as f64 / w as f64 + (ky * y) as f64 / h as f64);
+                        let phase =
+                            2.0 * PI * ((kx * x) as f64 / w as f64 + (ky * y) as f64 / h as f64);
                         fourier_amp += amp * Complex64::from_polar(1.0, -phase);
                     }
                 }
@@ -184,6 +185,10 @@ impl QuantumConwaySimulator {
             }
         }
 
-        if count > 0 { sum_density / (count as f64) } else { 0.0 }
+        if count > 0 {
+            sum_density / (count as f64)
+        } else {
+            0.0
+        }
     }
 }

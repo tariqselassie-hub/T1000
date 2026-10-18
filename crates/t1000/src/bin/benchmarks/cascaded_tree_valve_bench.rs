@@ -191,5 +191,8 @@ fn main() {
     let json_bytes = serde_json::to_string_pretty(&report).expect("Serialization failed");
     fs::write(&out_path, json_bytes).expect("Failed to write report");
 
-    println!("\n[SUCCESS] Telemetry report written to: {}", out_path.display());
+    println!(
+        "\n[SUCCESS] Telemetry report written to: {}",
+        out_path.display()
+    );
 }

@@ -316,7 +316,7 @@ pub fn apply_two_qubit_gate(
     let mut new_u_site = super::state::SiteTensor {
         site_idx: u,
         physical_dim: 2,
-        neighbors: site_u.neighbors.clone(),
+        neighbors: site_u.neighbors,
         bond_dims: new_bond_dims_u,
         strides: Vec::new(),
         data: Vec::new(),
@@ -342,7 +342,7 @@ pub fn apply_two_qubit_gate(
     let mut new_v_site = super::state::SiteTensor {
         site_idx: v,
         physical_dim: 2,
-        neighbors: site_v.neighbors.clone(),
+        neighbors: site_v.neighbors,
         bond_dims: new_bond_dims_v,
         strides: Vec::new(),
         data: Vec::new(),

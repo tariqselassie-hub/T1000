@@ -10,21 +10,23 @@
 //! grid rules, Margolus partition operators, and soliton trackers separate from
 //! the VQC and chemical screening engines.
 
-pub mod lattice;
-pub mod state;
 pub mod holonomy;
-pub mod rules;
+pub mod lattice;
 pub mod patterns;
+pub mod rules;
 pub mod simulator;
+pub mod state;
 pub mod telemetry;
 
-pub use lattice::{BoundaryCondition, Lattice2D};
-pub use state::{CellBasis, QuantumCellStateSoA};
 pub use holonomy::{
-    build_holonomy_unitary, ffs_momentum_plateau, geometric_holonomy_phase,
-    HolonomyParams, HolonomyTransferMatrix,
+    build_holonomy_unitary, ffs_momentum_plateau, geometric_holonomy_phase, HolonomyParams,
+    HolonomyTransferMatrix,
 };
-pub use rules::{compute_hamming_distance, compute_neighborhood_occupations, ClassicalConwayEngine};
+pub use lattice::{BoundaryCondition, Lattice2D};
 pub use patterns::{PatternFactory, PatternType};
+pub use rules::{
+    compute_hamming_distance, compute_neighborhood_occupations, ClassicalConwayEngine,
+};
 pub use simulator::{QuantumConwaySimulator, StepTelemetry};
+pub use state::{CellBasis, QuantumCellStateSoA};
 pub use telemetry::{colors, TelemetryVisualizer};

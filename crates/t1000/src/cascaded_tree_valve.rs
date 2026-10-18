@@ -37,7 +37,12 @@ impl CascadedValveConfig {
         assert!(depth2 >= 1, "Tier 2 depth must be >= 1");
         assert!(k1 >= 2, "K1 must be >= 2");
         assert!(k2 >= 2, "K2 must be >= 2");
-        Self { depth1, depth2, k1, k2 }
+        Self {
+            depth1,
+            depth2,
+            k1,
+            k2,
+        }
     }
 
     /// Total number of final terminal exit roots: K1 * K2.
@@ -183,13 +188,7 @@ impl SparseSymmetricHamiltonian {
 
     /// Evaluates H |psi> -> (out_real, out_imag) in Structure-of-Arrays (SoA) layout.
     #[inline(always)]
-    pub fn apply_soa(
-        &self,
-        r_in: &[f64],
-        i_in: &[f64],
-        r_out: &mut [f64],
-        i_out: &mut [f64],
-    ) {
+    pub fn apply_soa(&self, r_in: &[f64], i_in: &[f64], r_out: &mut [f64], i_out: &mut [f64]) {
         r_out[..self.dim].fill(0.0);
         i_out[..self.dim].fill(0.0);
 
@@ -331,14 +330,22 @@ impl CascadedValveHamiltonian {
             // Edge into intermediate root:
             let last_mid = self.cfg.t1_mid_idx(y, self.cfg.depth1 - 1);
             let mid_root = self.cfg.mid_root_idx(y);
-            edges.push(SparseCoupling::new(last_mid, mid_root, Complex64::new(-g * sqrt2, 0.0)));
+            edges.push(SparseCoupling::new(
+                last_mid,
+                mid_root,
+                Complex64::new(-g * sqrt2, 0.0),
+            ));
         }
 
         // 4. Edge from Intermediate root into Tier 2 Entrance column 0:
         for y in 0..self.cfg.k1 {
             let mid_root = self.cfg.mid_root_idx(y);
             let t2_in_0 = self.cfg.t2_in_idx(y, 0);
-            edges.push(SparseCoupling::new(mid_root, t2_in_0, Complex64::new(-g * sqrt2, 0.0)));
+            edges.push(SparseCoupling::new(
+                mid_root,
+                t2_in_0,
+                Complex64::new(-g * sqrt2, 0.0),
+            ));
 
             // Tier 2 Entrance internal edges:
             for col in 0..(self.cfg.depth2.saturating_sub(1)) {
@@ -450,11 +457,19 @@ pub fn step_soa_avx2(
     r_out: &mut [f64],
     i_out: &mut [f64],
 ) {
-    #[cfg(all(target_arch = "x86_64", target_feature = "avx2", target_feature = "fma"))]
+    #[cfg(all(
+        target_arch = "x86_64",
+        target_feature = "avx2",
+        target_feature = "fma"
+    ))]
     unsafe {
         step_soa_avx2_inner(dim, dt, r_in, i_in, acc_r, acc_i, r_out, i_out);
     }
-    #[cfg(not(all(target_arch = "x86_64", target_feature = "avx2", target_feature = "fma")))]
+    #[cfg(not(all(
+        target_arch = "x86_64",
+        target_feature = "avx2",
+        target_feature = "fma"
+    )))]
     {
         #[cfg(target_arch = "x86_64")]
         if is_x86_feature_detected!("avx2") && is_x86_feature_detected!("fma") {

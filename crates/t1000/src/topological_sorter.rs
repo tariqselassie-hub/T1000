@@ -91,12 +91,8 @@ pub struct ContinuousWalkSorter {
 impl ContinuousWalkSorter {
     /// Constructs a new Continuous Topological Walk Sorter.
     pub fn new(config: TopologicalSorterConfig) -> Self {
-        let valve_cfg = CascadedValveConfig::new(
-            config.depth1,
-            config.depth2,
-            config.k1,
-            config.k2,
-        );
+        let valve_cfg =
+            CascadedValveConfig::new(config.depth1, config.depth2, config.k1, config.k2);
         Self { config, valve_cfg }
     }
 
@@ -115,8 +111,10 @@ impl ContinuousWalkSorter {
 
         // Feature modulation: use feature projection if available, else canonical target route
         if features.len() >= 2 {
-            let feat_y = (features[0].abs() * (self.config.k1 as f64)).floor() as usize % self.config.k1;
-            let feat_z = (features[1].abs() * (self.config.k2 as f64)).floor() as usize % self.config.k2;
+            let feat_y =
+                (features[0].abs() * (self.config.k1 as f64)).floor() as usize % self.config.k1;
+            let feat_z =
+                (features[1].abs() * (self.config.k2 as f64)).floor() as usize % self.config.k2;
             ham.configure_target_route(feat_y, feat_z, self.config.detuning);
         } else {
             ham.configure_target_route(target_y, target_z, self.config.detuning);
@@ -145,7 +143,8 @@ impl ContinuousWalkSorter {
 
             // Optional Physical Open-System Noise Injection
             if let Some(n_params) = noise {
-                let p_depol = (n_params.depolarizing_prob * (self.config.dt / 0.20)).clamp(0.0, 1.0);
+                let p_depol =
+                    (n_params.depolarizing_prob * (self.config.dt / 0.20)).clamp(0.0, 1.0);
                 if p_depol > 0.0 && rand::Rng::gen_bool(&mut rng, p_depol) {
                     // Stochastic phase-kick perturbation on random column
                     let target_col = rand::Rng::gen_range(&mut rng, 0..dim);

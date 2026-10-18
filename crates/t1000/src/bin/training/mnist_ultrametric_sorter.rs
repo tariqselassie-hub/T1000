@@ -20,8 +20,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 use t1000::ultrametric_tree::{
-    compute_ultrametric_branch_distribution, ultrametric_gram_pair,
-    ultrametric_tree_distance, UltrametricTreeConfig, UltrametricTreeSorter,
+    compute_ultrametric_branch_distribution, ultrametric_gram_pair, ultrametric_tree_distance,
+    UltrametricTreeConfig, UltrametricTreeSorter,
 };
 
 const N_QUBITS: usize = 10;
@@ -89,7 +89,9 @@ fn parse_mnist_images(path: &Path, max_samples: Option<usize>) -> Vec<Vec<f64>> 
     let data = fs::read(path).expect("Read MNIST image file");
     assert!(data.len() >= 16, "IDX image header too small");
     let total_images = u32::from_be_bytes([data[4], data[5], data[6], data[7]]) as usize;
-    let count = max_samples.map(|m| m.min(total_images)).unwrap_or(total_images);
+    let count = max_samples
+        .map(|m| m.min(total_images))
+        .unwrap_or(total_images);
     let mut images = Vec::with_capacity(count);
 
     let offset = 16;
@@ -108,7 +110,9 @@ fn parse_mnist_labels(path: &Path, max_samples: Option<usize>) -> Vec<u8> {
     let data = fs::read(path).expect("Read MNIST label file");
     assert!(data.len() >= 8, "IDX label header too small");
     let total_labels = u32::from_be_bytes([data[4], data[5], data[6], data[7]]) as usize;
-    let count = max_samples.map(|m| m.min(total_labels)).unwrap_or(total_labels);
+    let count = max_samples
+        .map(|m| m.min(total_labels))
+        .unwrap_or(total_labels);
     data[8..8 + count].to_vec()
 }
 
@@ -180,31 +184,72 @@ fn main() {
     let test_pixels = parse_mnist_images(&test_img_path, Some(n_test));
     let test_labels = parse_mnist_labels(&test_lbl_path, Some(n_test));
 
-    println!("Dataset Ingest: {} Train | {} Test Samples", train_pixels.len(), test_pixels.len());
+    println!(
+        "Dataset Ingest: {} Train | {} Test Samples",
+        train_pixels.len(),
+        test_pixels.len()
+    );
 
-    let train_feats: Vec<[f64; N_QUBITS]> = train_pixels.par_iter().map(|p| encode_mnist_features(p)).collect();
-    let test_feats: Vec<[f64; N_QUBITS]> = test_pixels.par_iter().map(|p| encode_mnist_features(p)).collect();
+    let train_feats: Vec<[f64; N_QUBITS]> = train_pixels
+        .par_iter()
+        .map(|p| encode_mnist_features(p))
+        .collect();
+    let test_feats: Vec<[f64; N_QUBITS]> = test_pixels
+        .par_iter()
+        .map(|p| encode_mnist_features(p))
+        .collect();
 
     // Configure 3-register hierarchy: H = H_C(1Q) (x) H_F(3Q) (x) H_E(6Q)
     let cfg = UltrametricTreeConfig::new(1, 3, 6);
     println!("\nHilbert Register Topology:");
-    println!("  Coarse Register H_C : {} Qubit  (Parity Router: Even vs Odd)", cfg.n_coarse);
-    println!("  Fine Register H_F   : {} Qubits (Sub-digit leaves: s in 0..4)", cfg.n_fine);
-    println!("  Entropy Sink H_E    : {} Qubits (Stroke cooling & background padding)", cfg.n_env);
-    println!("  Total State Space   : {} Qubits (dim = 2^{} = 1,024 amplitudes)", cfg.total_qubits(), cfg.total_qubits());
+    println!(
+        "  Coarse Register H_C : {} Qubit  (Parity Router: Even vs Odd)",
+        cfg.n_coarse
+    );
+    println!(
+        "  Fine Register H_F   : {} Qubits (Sub-digit leaves: s in 0..4)",
+        cfg.n_fine
+    );
+    println!(
+        "  Entropy Sink H_E    : {} Qubits (Stroke cooling & background padding)",
+        cfg.n_env
+    );
+    println!(
+        "  Total State Space   : {} Qubits (dim = 2^{} = 1,024 amplitudes)",
+        cfg.total_qubits(),
+        cfg.total_qubits()
+    );
 
     let mut sorter = UltrametricTreeSorter::new(cfg, 2);
     sorter.init_seeded(0x5EED_0042);
-    println!("Trainable Parameters : {} (Zero Classical Readout Weights)", sorter.total_parameters());
+    println!(
+        "Trainable Parameters : {} (Zero Classical Readout Weights)",
+        sorter.total_parameters()
+    );
 
     // 1. Ultrametric Tree Overlap & Triangle Inequality Invariant Check
     println!("\n[1/3] Verifying Ultrametric Tree Geometry on MNIST Manifold...");
     let gamma1 = 0.5;
     let gamma2 = 1.0;
 
-    let s0 = train_feats.iter().zip(train_labels.iter()).find(|(_, &l)| l == 0).unwrap().0;
-    let s2 = train_feats.iter().zip(train_labels.iter()).find(|(_, &l)| l == 2).unwrap().0;
-    let s1 = train_feats.iter().zip(train_labels.iter()).find(|(_, &l)| l == 1).unwrap().0;
+    let s0 = train_feats
+        .iter()
+        .zip(train_labels.iter())
+        .find(|(_, &l)| l == 0)
+        .unwrap()
+        .0;
+    let s2 = train_feats
+        .iter()
+        .zip(train_labels.iter())
+        .find(|(_, &l)| l == 2)
+        .unwrap()
+        .0;
+    let s1 = train_feats
+        .iter()
+        .zip(train_labels.iter())
+        .find(|(_, &l)| l == 1)
+        .unwrap()
+        .0;
 
     let p0 = compute_ultrametric_branch_distribution(&sorter.forward(s0), &cfg);
     let p2 = compute_ultrametric_branch_distribution(&sorter.forward(s2), &cfg);
@@ -219,10 +264,26 @@ fn main() {
     let d_21 = ultrametric_tree_distance(0, 1, 1, 0, gamma1, gamma2); // Disjoint => gamma2
     let triangle_holds = d_02 <= d_01.max(d_21) && d_01 <= d_02.max(d_21) && d_21 <= d_02.max(d_01);
 
-    println!("  Identical Leaf Overlap (0 vs 0): Coarse={:.4}, Fine={:.4}", c_ident, f_ident);
-    println!("  Sibling Parity Overlap (0 vs 2): Coarse={:.4}, Fine={:.4}", c_sib, f_sib);
-    println!("  Disjoint Parity Overlap (0 vs 1): Coarse={:.4}, Fine={:.4}", c_disj, f_disj);
-    println!("  Strong Triangle Inequality     : {}", if triangle_holds { "PASS (Ultra-Metric Conserved)" } else { "FAIL" });
+    println!(
+        "  Identical Leaf Overlap (0 vs 0): Coarse={:.4}, Fine={:.4}",
+        c_ident, f_ident
+    );
+    println!(
+        "  Sibling Parity Overlap (0 vs 2): Coarse={:.4}, Fine={:.4}",
+        c_sib, f_sib
+    );
+    println!(
+        "  Disjoint Parity Overlap (0 vs 1): Coarse={:.4}, Fine={:.4}",
+        c_disj, f_disj
+    );
+    println!(
+        "  Strong Triangle Inequality     : {}",
+        if triangle_holds {
+            "PASS (Ultra-Metric Conserved)"
+        } else {
+            "FAIL"
+        }
+    );
 
     // 2. Training Stage
     println!("\n[2/3] Training MNIST Ultrametric Tree Sorter (4 Epochs)...");
@@ -248,8 +309,10 @@ fn main() {
                 let (target_y, target_s) = digit_to_leaf(true_digit);
 
                 for f_off in 0..cfg.n_fine {
-                    let g_ry = sorter.parameter_shift_branch_grad(feat, f_off, false, target_y, target_s);
-                    let g_rz = sorter.parameter_shift_branch_grad(feat, f_off, true, target_y, target_s);
+                    let g_ry =
+                        sorter.parameter_shift_branch_grad(feat, f_off, false, target_y, target_s);
+                    let g_rz =
+                        sorter.parameter_shift_branch_grad(feat, f_off, true, target_y, target_s);
                     for y in 0..cfg.d_coarse() {
                         let weight = if y == target_y { -1.0 } else { 0.15 };
                         grad_branch[y][f_off * 2] += weight * g_ry[y];
@@ -260,7 +323,10 @@ fn main() {
 
             let b_scale = lr / (batch_size as f64);
             for y in 0..cfg.d_coarse() {
-                for (p, g) in sorter.branch_params[y].iter_mut().zip(grad_branch[y].iter()) {
+                for (p, g) in sorter.branch_params[y]
+                    .iter_mut()
+                    .zip(grad_branch[y].iter())
+                {
                     *p -= b_scale * g;
                 }
             }
@@ -320,7 +386,11 @@ fn main() {
     for d in 0..N_CLASSES {
         let tot = per_digit_total[d];
         let cor = per_digit_correct[d];
-        let acc = if tot > 0 { (cor as f64) / (tot as f64) * 100.0 } else { 0.0 };
+        let acc = if tot > 0 {
+            (cor as f64) / (tot as f64) * 100.0
+        } else {
+            0.0
+        };
         println!("  Digit {}: {:>5.2}% ({:>3}/{:>3})", d, acc, cor, tot);
         per_digit_metrics.push(DigitMetrics {
             digit: d,
@@ -332,17 +402,29 @@ fn main() {
 
     println!("--------------------------------------------------------------------------------");
     println!("OVERALL ACCURACY RESULTS:");
-    println!("  Parity Router (Even vs Odd) Accuracy : {:.2}%", parity_acc);
-    println!("  Fine Sub-digit (s in 0..4) Accuracy : {:.2}%", subdigit_acc);
+    println!(
+        "  Parity Router (Even vs Odd) Accuracy : {:.2}%",
+        parity_acc
+    );
+    println!(
+        "  Fine Sub-digit (s in 0..4) Accuracy : {:.2}%",
+        subdigit_acc
+    );
     println!("  Joint 10-Class Digit Accuracy       : {:.2}%", digit_acc);
     println!("  Baseline Legacy QNN (with 560 Head) : 84.50%");
-    println!("  Inference Latency                   : {:.2} us/sample", per_sample_us);
+    println!(
+        "  Inference Latency                   : {:.2} us/sample",
+        per_sample_us
+    );
     println!("--------------------------------------------------------------------------------");
 
     let report = MnistUltrametricReport {
         timestamp_rfc3339: "2026-10-17T20:00:00Z".to_string(),
         architecture: "T-1000 3-Register Ultrametric Tree Sorter (QMUX)".to_string(),
-        registers: format!("H_C({}Q) (x) H_F({}Q) (x) H_E({}Q)", cfg.n_coarse, cfg.n_fine, cfg.n_env),
+        registers: format!(
+            "H_C({}Q) (x) H_F({}Q) (x) H_E({}Q)",
+            cfg.n_coarse, cfg.n_fine, cfg.n_env
+        ),
         n_qubits: cfg.total_qubits(),
         state_dim: cfg.dim(),
         total_parameters: sorter.total_parameters(),

@@ -81,23 +81,40 @@ fn forward_pass_output_is_reproducible() {
 fn test_hybrid_visual_angle_encoding_invariants() {
     let enc = DataEncodingLayer::new(10, EncodingKind::Angle);
     let sample_features: [f64; 10] = [
-        0.521, -1.244, 2.310, -0.892, 1.450,
-        -2.110, 0.782, -0.340, 1.890, -1.540,
+        0.521, -1.244, 2.310, -0.892, 1.450, -2.110, 0.782, -0.340, 1.890, -1.540,
     ];
 
     let state = enc.encode(&sample_features);
     assert_eq!(state.dim, 1024);
 
     // 1. Unitarity invariant: norm must equal 1.0 to within float epsilon
-    let norm_sq: f64 = state.real.iter().zip(&state.imag).map(|(&r, &i)| r * r + i * i).sum();
-    assert!((norm_sq - 1.0).abs() < 1e-12, "State norm must be 1.0, got {}", norm_sq);
+    let norm_sq: f64 = state
+        .real
+        .iter()
+        .zip(&state.imag)
+        .map(|(&r, &i)| r * r + i * i)
+        .sum();
+    assert!(
+        (norm_sq - 1.0).abs() < 1e-12,
+        "State norm must be 1.0, got {}",
+        norm_sq
+    );
 
     // 2. Ansätz evolution must preserve unitarity
     let ansatz = CircuitAnsatz::new(10, 3).with_pi_layer(true);
     let mut evolved = state.clone();
     ansatz.forward_in_place(&mut evolved, &ansatz.weights);
-    let evolved_norm_sq: f64 = evolved.real.iter().zip(&evolved.imag).map(|(&r, &i)| r * r + i * i).sum();
-    assert!((evolved_norm_sq - 1.0).abs() < 1e-12, "Evolved norm must be 1.0, got {}", evolved_norm_sq);
+    let evolved_norm_sq: f64 = evolved
+        .real
+        .iter()
+        .zip(&evolved.imag)
+        .map(|(&r, &i)| r * r + i * i)
+        .sum();
+    assert!(
+        (evolved_norm_sq - 1.0).abs() < 1e-12,
+        "Evolved norm must be 1.0, got {}",
+        evolved_norm_sq
+    );
 
     // 3. 55 Correlators expectation values must be bounded in [-1.0, 1.0]
     let mut observables = Vec::with_capacity(55);
@@ -114,13 +131,20 @@ fn test_hybrid_visual_angle_encoding_invariants() {
     let mut raw_exps = [0.0; 55];
     for (idx, obs) in observables.iter().enumerate() {
         let val = obs.expectation_value(&evolved);
-        assert!((-1.000001..=1.000001).contains(&val), "Expectation value out of bounds: {}", val);
+        assert!(
+            (-1.000001..=1.000001).contains(&val),
+            "Expectation value out of bounds: {}",
+            val
+        );
         raw_exps[idx] = val;
     }
 
     // 4. Correlator LayerNorm invariant: normalized mean ~ 0, variance ~ 1
     let cache = t1000::optimizer::normalize_correlators_arr_forward(&raw_exps);
     let norm_mean: f64 = cache.normalized.iter().sum::<f64>() / 55.0;
-    assert!(norm_mean.abs() < 1e-6, "LayerNorm mean must be 0, got {}", norm_mean);
+    assert!(
+        norm_mean.abs() < 1e-6,
+        "LayerNorm mean must be 0, got {}",
+        norm_mean
+    );
 }
-

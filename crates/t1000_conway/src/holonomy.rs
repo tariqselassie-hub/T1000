@@ -6,9 +6,9 @@
 //! via Confinement-Induced Resonances (CIR) based on the Lieb-Liniger holonomy cycle:
 //! g: 0 -> +inf -> -inf -> 0, generating Fractional Fermi Seas (FFS) with alpha = l.
 
-use std::f64::consts::PI;
 use num_complex::Complex64;
 use serde::{Deserialize, Serialize};
+use std::f64::consts::PI;
 
 /// Parameters defining the interaction holonomy cycle across the CIR.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -50,11 +50,7 @@ impl HolonomyTransferMatrix {
         let zero = Complex64::new(0.0, 0.0);
         let one = Complex64::new(1.0, 0.0);
         Self {
-            elements: [
-                [one, zero, zero],
-                [zero, one, zero],
-                [zero, zero, one],
-            ],
+            elements: [[one, zero, zero], [zero, one, zero], [zero, zero, one]],
         }
     }
 
@@ -64,8 +60,8 @@ impl HolonomyTransferMatrix {
         let mut out = [Complex64::new(0.0, 0.0); 3];
         for (r, item) in out.iter_mut().enumerate() {
             *item = self.elements[r][0] * c[0]
-                  + self.elements[r][1] * c[1]
-                  + self.elements[r][2] * c[2];
+                + self.elements[r][1] * c[1]
+                + self.elements[r][2] * c[2];
         }
         out
     }

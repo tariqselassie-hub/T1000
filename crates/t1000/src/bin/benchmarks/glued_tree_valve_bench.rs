@@ -161,5 +161,8 @@ fn main() {
         fs::create_dir_all(parent).expect("Create results dir");
     }
     fs::write(report_path, serde_json::to_string_pretty(&report).unwrap()).expect("Write report");
-    println!("\nReport successfully written to: {}", report_path.display());
+    println!(
+        "\nReport successfully written to: {}",
+        report_path.display()
+    );
 }

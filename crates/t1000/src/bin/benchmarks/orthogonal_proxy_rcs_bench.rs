@@ -54,8 +54,17 @@ pub enum TwoQubitGate {
 /// A gate operation in the random circuit.
 #[derive(Debug, Clone)]
 pub enum GateOp {
-    U3 { q: usize, theta: f64, phi: f64, lambda: f64 },
-    TwoQubit { gate: TwoQubitGate, q1: usize, q2: usize },
+    U3 {
+        q: usize,
+        theta: f64,
+        phi: f64,
+        lambda: f64,
+    },
+    TwoQubit {
+        gate: TwoQubitGate,
+        q1: usize,
+        q2: usize,
+    },
 }
 
 /// Generates the deterministic nearest-neighbor random circuit.
@@ -64,9 +73,18 @@ pub fn generate_random_circuit(width: usize, depth: usize, seed: u64) -> Vec<Gat
     let (row_len, col_len) = factor_width(width);
     let mut gate_seq = vec![0usize, 3, 2, 1, 2, 1, 0, 3];
     let two_bit_choices = [
-        TwoQubitGate::Swap, TwoQubitGate::PSwap, TwoQubitGate::MSwap, TwoQubitGate::NSwap,
-        TwoQubitGate::ISwap, TwoQubitGate::IISwap, TwoQubitGate::Cx, TwoQubitGate::Cy,
-        TwoQubitGate::Cz, TwoQubitGate::Acx, TwoQubitGate::Acy, TwoQubitGate::Acz,
+        TwoQubitGate::Swap,
+        TwoQubitGate::PSwap,
+        TwoQubitGate::MSwap,
+        TwoQubitGate::NSwap,
+        TwoQubitGate::ISwap,
+        TwoQubitGate::IISwap,
+        TwoQubitGate::Cx,
+        TwoQubitGate::Cy,
+        TwoQubitGate::Cz,
+        TwoQubitGate::Acx,
+        TwoQubitGate::Acy,
+        TwoQubitGate::Acz,
     ];
 
     let mut ops = Vec::with_capacity(depth * (width + width / 2));
@@ -78,7 +96,12 @@ pub fn generate_random_circuit(width: usize, depth: usize, seed: u64) -> Vec<Gat
             let ph = rng.gen_range(-PI..PI);
             let lm = rng.gen_range(-PI..PI);
             let th = (th_raw / PI).asin();
-            ops.push(GateOp::U3 { q: i, theta: th, phi: ph, lambda: lm });
+            ops.push(GateOp::U3 {
+                q: i,
+                theta: th,
+                phi: ph,
+                lambda: lm,
+            });
         }
 
         // Nearest-neighbor couplers on 2D torus grid
@@ -90,10 +113,18 @@ pub fn generate_random_circuit(width: usize, depth: usize, seed: u64) -> Vec<Gat
                 let mut temp_row = row as isize + if (gate & 2) != 0 { 1 } else { -1 };
                 let mut temp_col = col as isize + if (gate & 1) != 0 { 1 } else { 0 };
 
-                if temp_row < 0 { temp_row += row_len as isize; }
-                if temp_col < 0 { temp_col += col_len as isize; }
-                if temp_row >= row_len as isize { temp_row -= row_len as isize; }
-                if temp_col >= col_len as isize { temp_col -= col_len as isize; }
+                if temp_row < 0 {
+                    temp_row += row_len as isize;
+                }
+                if temp_col < 0 {
+                    temp_col += col_len as isize;
+                }
+                if temp_row >= row_len as isize {
+                    temp_row -= row_len as isize;
+                }
+                if temp_col >= col_len as isize {
+                    temp_col -= col_len as isize;
+                }
 
                 let b1 = col * row_len + row;
                 let b2 = (temp_col as usize) * row_len + (temp_row as usize);
@@ -102,7 +133,11 @@ pub fn generate_random_circuit(width: usize, depth: usize, seed: u64) -> Vec<Gat
                     continue;
                 }
                 let g = two_bit_choices[rng.gen_range(0..two_bit_choices.len())];
-                ops.push(GateOp::TwoQubit { gate: g, q1: b1, q2: b2 });
+                ops.push(GateOp::TwoQubit {
+                    gate: g,
+                    q1: b1,
+                    q2: b2,
+                });
             }
         }
     }
@@ -144,10 +179,20 @@ pub fn make_proxy_circuit(
 
     for op in ops {
         match *op {
-            GateOp::U3 { q, theta, phi, lambda } => {
+            GateOp::U3 {
+                q,
+                theta,
+                phi,
+                lambda,
+            } => {
                 let b = band_of(q);
                 proxy.push(op.clone());
-                per_band[b].push(GateOp::U3 { q: q - bands[b].0, theta, phi, lambda });
+                per_band[b].push(GateOp::U3 {
+                    q: q - bands[b].0,
+                    theta,
+                    phi,
+                    lambda,
+                });
             }
             GateOp::TwoQubit { gate, q1, q2 } => {
                 let b1 = band_of(q1);
@@ -205,18 +250,55 @@ fn apply_two_qubit(state: &mut [C], gate: TwoQubitGate, q1: usize, q2: usize) {
             let (v00, v01, v10, v11) = (state[i00], state[i01], state[i10], state[i11]);
 
             match gate {
-                TwoQubitGate::Swap => { state[i01] = v10; state[i10] = v01; }
-                TwoQubitGate::ISwap => { state[i01] = cz * v10; state[i10] = cz * v01; }
-                TwoQubitGate::IISwap => { state[i01] = -cz * v10; state[i10] = -cz * v01; }
-                TwoQubitGate::Cz => { state[i11] = -v11; }
-                TwoQubitGate::Cx => { state[i10] = v11; state[i11] = v10; }
-                TwoQubitGate::Cy => { state[i10] = -cz * v11; state[i11] = cz * v10; }
-                TwoQubitGate::Acz => { state[i01] = -v01; }
-                TwoQubitGate::Acx => { state[i00] = v01; state[i01] = v00; }
-                TwoQubitGate::Acy => { state[i00] = -cz * v01; state[i01] = cz * v00; }
-                TwoQubitGate::PSwap => { state[i01] = v10; state[i10] = v01; state[i11] = -v11; }
-                TwoQubitGate::MSwap => { state[i01] = cz * v10; state[i10] = cz * v01; state[i11] = -v11; }
-                TwoQubitGate::NSwap => { state[i01] = -cz * v10; state[i10] = -cz * v01; state[i11] = -v11; }
+                TwoQubitGate::Swap => {
+                    state[i01] = v10;
+                    state[i10] = v01;
+                }
+                TwoQubitGate::ISwap => {
+                    state[i01] = cz * v10;
+                    state[i10] = cz * v01;
+                }
+                TwoQubitGate::IISwap => {
+                    state[i01] = -cz * v10;
+                    state[i10] = -cz * v01;
+                }
+                TwoQubitGate::Cz => {
+                    state[i11] = -v11;
+                }
+                TwoQubitGate::Cx => {
+                    state[i10] = v11;
+                    state[i11] = v10;
+                }
+                TwoQubitGate::Cy => {
+                    state[i10] = -cz * v11;
+                    state[i11] = cz * v10;
+                }
+                TwoQubitGate::Acz => {
+                    state[i01] = -v01;
+                }
+                TwoQubitGate::Acx => {
+                    state[i00] = v01;
+                    state[i01] = v00;
+                }
+                TwoQubitGate::Acy => {
+                    state[i00] = -cz * v01;
+                    state[i01] = cz * v00;
+                }
+                TwoQubitGate::PSwap => {
+                    state[i01] = v10;
+                    state[i10] = v01;
+                    state[i11] = -v11;
+                }
+                TwoQubitGate::MSwap => {
+                    state[i01] = cz * v10;
+                    state[i10] = cz * v01;
+                    state[i11] = -v11;
+                }
+                TwoQubitGate::NSwap => {
+                    state[i01] = -cz * v10;
+                    state[i10] = -cz * v01;
+                    state[i11] = -v11;
+                }
             }
         }
     }
@@ -230,7 +312,12 @@ pub fn simulate_exact_probs(n: usize, ops: &[GateOp]) -> Vec<f64> {
 
     for op in ops {
         match *op {
-            GateOp::U3 { q, theta, phi, lambda } => apply_u3(&mut state, q, theta, phi, lambda),
+            GateOp::U3 {
+                q,
+                theta,
+                phi,
+                lambda,
+            } => apply_u3(&mut state, q, theta, phi, lambda),
             GateOp::TwoQubit { gate, q1, q2 } => apply_two_qubit(&mut state, gate, q1, q2),
         }
     }
@@ -345,14 +432,24 @@ fn main() {
     let qc = generate_random_circuit(width, depth, 42);
     let (proxy, per_band, removed) = make_proxy_circuit(&qc, &bands);
     let t_circ = t0.elapsed().as_secs_f64();
-    println!(" Circuit Generation: {:.6}s (Grid {}x{}, {} proxy bands, {} couplers cut)",
-        t_circ, col_len, row_len, k, removed);
+    println!(
+        " Circuit Generation: {:.6}s (Grid {}x{}, {} proxy bands, {} couplers cut)",
+        t_circ, col_len, row_len, k, removed
+    );
 
     // Compute exact ideal for each band
     let t1 = Instant::now();
     let mut band_probs = Vec::with_capacity(bands.len());
     for (_, ops) in per_band.iter().enumerate() {
-        let n = ops.iter().map(|op| match op { GateOp::U3 { q, .. } => *q, GateOp::TwoQubit { q1, q2, .. } => (*q1).max(*q2) }).max().unwrap_or(0) + 1;
+        let n = ops
+            .iter()
+            .map(|op| match op {
+                GateOp::U3 { q, .. } => *q,
+                GateOp::TwoQubit { q1, q2, .. } => (*q1).max(*q2),
+            })
+            .max()
+            .unwrap_or(0)
+            + 1;
         band_probs.push(simulate_exact_probs(n, ops));
     }
     let t_ideal_patches = t1.elapsed().as_secs_f64();
@@ -363,7 +460,10 @@ fn main() {
     let full_proxy_probs = simulate_exact_probs(width, &proxy);
     let counts = sample_counts(&full_proxy_probs, shots, 12345);
     let t_sample = t2.elapsed().as_secs_f64();
-    println!(" T-1000 Proxy Simulation & {} Shots Sampling: {:.6}s", shots, t_sample);
+    println!(
+        " T-1000 Proxy Simulation & {} Shots Sampling: {:.6}s",
+        shots, t_sample
+    );
 
     // Score factorized XEB
     let (xeb, hog) = calc_stats_factorized(&band_probs, &bands, &counts, shots, 65536);
@@ -374,7 +474,10 @@ fn main() {
     println!("--------------------------------------------------------------------------------");
     println!(" T-1000 Factorized XEB: {:.6}", xeb);
     println!(" T-1000 HOG Probability: {:.6}", hog);
-    println!(" T-1000 Total Execution Time: {:.6}s", t_ideal_patches + t_sample);
+    println!(
+        " T-1000 Total Execution Time: {:.6}s",
+        t_ideal_patches + t_sample
+    );
     println!(" Speedup vs QrackAceBackend: {:.1}x", speedup);
     println!("================================================================================");
 

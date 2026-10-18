@@ -193,26 +193,18 @@ impl ContinuousMolecularWalkScreener {
         let ha_norm = features[16];
 
         // Linear physical descriptor projection for QED (Drug-Likeness >= 0.60)
-        let score_qed = 1.564
-            - 0.127 * arom
-            - 0.737 * het
-            - 0.409 * mw
-            - 0.167 * rings
-            - 0.165 * chiral
-            + 0.638 * branches
-            - 0.563 * ha_norm;
+        let score_qed =
+            1.564 - 0.127 * arom - 0.737 * het - 0.409 * mw - 0.167 * rings - 0.165 * chiral
+                + 0.638 * branches
+                - 0.563 * ha_norm;
         let coarse = if score_qed >= 0.50 { 0 } else { 1 };
         let detune_qed = (score_qed - 0.50).abs().min(1.0) * 0.15;
 
         // Linear physical descriptor projection for SAS (Easy Synthesizability <= 3.50)
-        let score_sas = 0.077
-            + 0.735 * arom
-            + 0.434 * het
-            + 0.576 * mw
-            - 1.341 * rings
-            - 1.579 * chiral
-            + 0.073 * branches
-            + 0.646 * ha_norm;
+        let score_sas =
+            0.077 + 0.735 * arom + 0.434 * het + 0.576 * mw - 1.341 * rings - 1.579 * chiral
+                + 0.073 * branches
+                + 0.646 * ha_norm;
         let fine = if score_sas >= 0.50 { 0 } else { 1 };
         let detune_sas = (score_sas - 0.50).abs().min(1.0) * 0.15;
 
@@ -236,7 +228,8 @@ impl ContinuousMolecularWalkScreener {
 
         let dim = self.valve_cfg.symmetric_dim();
         let mut ham = CascadedValveHamiltonian::new(self.valve_cfg, self.config.gamma);
-        let total_detuning = (self.config.detuning_scale + detune_qed + detune_sas).clamp(0.02, 0.40);
+        let total_detuning =
+            (self.config.detuning_scale + detune_qed + detune_sas).clamp(0.02, 0.40);
         ham.configure_target_route(pred_c, pred_f, total_detuning);
         let mat = ham.build_symmetric_matrix();
 
@@ -433,7 +426,9 @@ mod tests {
     fn test_molecular_walk_screener_execution() {
         let screener = ContinuousMolecularWalkScreener::new(MolecularWalkScreenerConfig::default());
         let smi = "CC(=O)Oc1ccccc1C(=O)O"; // Aspirin
-        let res = screener.screen_smiles(smi, 0.72, 1.8, None).expect("Screen aspirin");
+        let res = screener
+            .screen_smiles(smi, 0.72, 1.8, None)
+            .expect("Screen aspirin");
         assert!(res.routing_contrast > 1.0);
         assert!(res.exit_probabilities.iter().sum::<f64>() > 0.0);
     }

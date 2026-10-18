@@ -96,17 +96,16 @@ pub fn gate_ry(theta: f64) -> [[Complex64; 2]; 2] {
 pub fn gate_rz(phi: f64) -> [[Complex64; 2]; 2] {
     let half = phi * 0.5;
     [
-        [Complex64::new(half.cos(), -half.sin()), Complex64::default()],
+        [
+            Complex64::new(half.cos(), -half.sin()),
+            Complex64::default(),
+        ],
         [Complex64::default(), Complex64::new(half.cos(), half.sin())],
     ]
 }
 
 /// Applies an arbitrary 1-qubit unitary gate U(2) to target `qubit`.
-pub fn apply_single_qubit_gate(
-    state: &mut [Complex64],
-    qubit: usize,
-    u: &[[Complex64; 2]; 2],
-) {
+pub fn apply_single_qubit_gate(state: &mut [Complex64], qubit: usize, u: &[[Complex64; 2]; 2]) {
     let half_dim = state.len() >> 1;
     let low_mask = (1 << qubit) - 1;
 
@@ -236,10 +235,7 @@ pub fn compute_ultrametric_branch_distribution(
 
 /// Verifies the Ultrametric Gram Rigidity across Coarse and Fine registers.
 /// Returns (Coarse Overlap Tr(rho_C_u * rho_C_v), Fine Overlap Tr(rho_F_u * rho_F_v)).
-pub fn ultrametric_gram_pair(
-    prob_u: &[Vec<f64>],
-    prob_v: &[Vec<f64>],
-) -> (f64, f64) {
+pub fn ultrametric_gram_pair(prob_u: &[Vec<f64>], prob_v: &[Vec<f64>]) -> (f64, f64) {
     let d_c = prob_u.len();
     let d_f = prob_u[0].len();
 
@@ -376,8 +372,8 @@ impl UltrametricTreeSorter {
     /// Initializes parameters with small pseudo-random Gaussian/uniform weights.
     pub fn init_seeded(&mut self, seed: u64) {
         use rand::Rng;
-        use rand_chacha::ChaCha8Rng;
         use rand::SeedableRng;
+        use rand_chacha::ChaCha8Rng;
 
         let mut rng = ChaCha8Rng::seed_from_u64(seed);
         for p in self.trunk_params.iter_mut() {
@@ -728,4 +724,3 @@ mod tests {
         );
     }
 }
-

@@ -12,9 +12,7 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
 use t1000::coherence::{DynamicalDecouplingKind, NoiseChannelParams};
-use t1000::rcs::{
-    NoisyRcsConfig, RcsConfig, RcsSimulator, StabilizationStrategy,
-};
+use t1000::rcs::{NoisyRcsConfig, RcsConfig, RcsSimulator, StabilizationStrategy};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DepthPointTelemetry {
@@ -96,8 +94,16 @@ fn run_single_depth_point(
         0.0
     };
 
-    let unprot_l1 = unprot_rep.trajectory.last().map(|t| t.l1_coherence_norm).unwrap_or(0.0);
-    let stab_l1 = stab_rep.trajectory.last().map(|t| t.l1_coherence_norm).unwrap_or(0.0);
+    let unprot_l1 = unprot_rep
+        .trajectory
+        .last()
+        .map(|t| t.l1_coherence_norm)
+        .unwrap_or(0.0);
+    let stab_l1 = stab_rep
+        .trajectory
+        .last()
+        .map(|t| t.l1_coherence_norm)
+        .unwrap_or(0.0);
 
     DepthPointTelemetry {
         qubits,
@@ -238,7 +244,9 @@ fn main() {
     }
     print_depth_sweep_table(&depth_points);
 
-    println!("\n[PART 2] NOISE RESILIENCE & KS GOODNESS-OF-FIT SWEEP (N = 14 QUBITS, D = 16 LAYERS)");
+    println!(
+        "\n[PART 2] NOISE RESILIENCE & KS GOODNESS-OF-FIT SWEEP (N = 14 QUBITS, D = 16 LAYERS)"
+    );
     let noise_levels = vec![0.0001, 0.0005, 0.001, 0.002, 0.005, 0.01, 0.02];
     let mut noise_points = Vec::new();
 

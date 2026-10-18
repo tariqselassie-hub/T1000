@@ -33,7 +33,10 @@ pub struct Lattice2D {
 impl Lattice2D {
     /// Create a new 2D lattice and precompute the Moore neighborhood tables.
     pub fn new(width: usize, height: usize, boundary: BoundaryCondition) -> Self {
-        assert!(width >= 2 && height >= 2, "Lattice dimensions must be at least 2x2");
+        assert!(
+            width >= 2 && height >= 2,
+            "Lattice dimensions must be at least 2x2"
+        );
         let total_cells = width * height;
         let mut neighbors = Vec::with_capacity(total_cells);
 
@@ -80,9 +83,14 @@ impl Lattice2D {
         b: BoundaryCondition,
     ) -> [usize; 8] {
         let offsets = [
-            (-1, -1), (0, -1), (1, -1),
-            (-1,  0),          (1,  0),
-            (-1,  1), (0,  1), (1,  1),
+            (-1, -1),
+            (0, -1),
+            (1, -1),
+            (-1, 0),
+            (1, 0),
+            (-1, 1),
+            (0, 1),
+            (1, 1),
         ];
         let mut nbrs = [0usize; 8];
 

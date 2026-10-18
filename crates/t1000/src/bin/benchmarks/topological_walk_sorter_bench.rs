@@ -19,9 +19,7 @@ use std::time::Instant;
 
 use t1000::cascaded_tree_valve::simulate_cascaded_classical_walk;
 use t1000::coherence::NoiseChannelParams;
-use t1000::topological_sorter::{
-    BatchSorterReport, ContinuousWalkSorter, TopologicalSorterConfig,
-};
+use t1000::topological_sorter::{BatchSorterReport, ContinuousWalkSorter, TopologicalSorterConfig};
 use t1000::ultrametric_tree::{UltrametricTreeConfig, UltrametricTreeSorter};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -82,14 +80,8 @@ fn run_classical_walk_baseline(
         let mut sample_fine = 0;
 
         for _ in 0..walks_per_sample {
-            let (_, p_target, _) = simulate_cascaded_classical_walk(
-                cfg,
-                *true_y,
-                *true_z,
-                max_steps,
-                1,
-                &mut rng,
-            );
+            let (_, p_target, _) =
+                simulate_cascaded_classical_walk(cfg, *true_y, *true_z, max_steps, 1, &mut rng);
             if p_target > 0.0 {
                 sample_joint += 1;
                 sample_coarse += 1;

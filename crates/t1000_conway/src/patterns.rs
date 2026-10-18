@@ -43,7 +43,9 @@ impl PatternFactory {
             PatternType::Blinker => Self::inject_blinker(lattice, state, x0, y0),
             PatternType::Glider => Self::inject_glider(lattice, state, x0, y0),
             PatternType::Toad => Self::inject_toad(lattice, state, x0, y0),
-            PatternType::FractionalFermiSeaBubble => Self::inject_ffs_bubble(lattice, state, x0, y0),
+            PatternType::FractionalFermiSeaBubble => {
+                Self::inject_ffs_bubble(lattice, state, x0, y0)
+            }
         }
     }
 
@@ -92,7 +94,12 @@ impl PatternFactory {
     }
 
     /// 4-cell Fractional Fermi Sea topological bubble (alpha = 2 excitation branch).
-    fn inject_ffs_bubble(lattice: &Lattice2D, state: &mut QuantumCellStateSoA, x0: usize, y0: usize) {
+    fn inject_ffs_bubble(
+        lattice: &Lattice2D,
+        state: &mut QuantumCellStateSoA,
+        x0: usize,
+        y0: usize,
+    ) {
         let coords = [(0, 0), (1, 0), (0, 1), (1, 1)];
         for (dx, dy) in coords {
             let x = (x0 + dx) % lattice.width;

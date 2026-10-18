@@ -337,11 +337,7 @@ impl ContinuousQuantumWalk {
     }
 
     /// Simulates CTQW from t = 0 to t = t_max and records spatiotemporal trajectory.
-    pub fn run_simulation(
-        &mut self,
-        t_max: f64,
-        dt: f64,
-    ) -> Vec<QuantumWalkTelemetry> {
+    pub fn run_simulation(&mut self, t_max: f64, dt: f64) -> Vec<QuantumWalkTelemetry> {
         self.reset();
         let n_steps = (t_max / dt).round() as usize;
         let mut trajectory = Vec::with_capacity(n_steps + 1);

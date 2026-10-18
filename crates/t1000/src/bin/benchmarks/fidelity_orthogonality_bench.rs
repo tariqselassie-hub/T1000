@@ -102,17 +102,32 @@ fn softmax_cross_entropy(logits: &[f64; N_CLASSES], label: usize) -> (f64, [f64;
     let e1 = (logits[1] - max_l).exp();
     let sum = (e0 + e1).max(1e-12);
     let (p0, p1) = (e0 / sum, e1 / sum);
-    let loss = if label == 0 { -p0.max(1e-12).ln() } else { -p1.max(1e-12).ln() };
-    (loss, [p0 - if label == 0 { 1.0 } else { 0.0 }, p1 - if label == 1 { 1.0 } else { 0.0 }])
+    let loss = if label == 0 {
+        -p0.max(1e-12).ln()
+    } else {
+        -p1.max(1e-12).ln()
+    };
+    (
+        loss,
+        [
+            p0 - if label == 0 { 1.0 } else { 0.0 },
+            p1 - if label == 1 { 1.0 } else { 0.0 },
+        ],
+    )
 }
 
-fn load_dataset(dir: &Path, split: &str, count: usize, encoder: &DataEncodingLayer) -> Vec<SampleItem> {
-    let feat_bytes = fs::read(dir.join(format!("{}_features_10d.bin", split))).expect("Read features");
+fn load_dataset(
+    dir: &Path,
+    split: &str,
+    count: usize,
+    encoder: &DataEncodingLayer,
+) -> Vec<SampleItem> {
+    let feat_bytes =
+        fs::read(dir.join(format!("{}_features_10d.bin", split))).expect("Read features");
     let lbl_bytes = fs::read(dir.join(format!("{}_labels.bin", split))).expect("Read labels");
     let plc_bytes = fs::read(dir.join(format!("{}_places.bin", split))).expect("Read places");
-    let feat_floats: &[f32] = unsafe {
-        std::slice::from_raw_parts(feat_bytes.as_ptr() as *const f32, count * N_QUBITS)
-    };
+    let feat_floats: &[f32] =
+        unsafe { std::slice::from_raw_parts(feat_bytes.as_ptr() as *const f32, count * N_QUBITS) };
 
     (0..count)
         .into_par_iter()
@@ -214,17 +229,28 @@ fn train_model(
                 .reduce(
                     || (0.0, vec![0.0; n_ansatz_params], vec![0.0; n_head_params]),
                     |mut acc, item| {
-                        for i in 0..n_ansatz_params { acc.1[i] += item.1[i]; }
-                        for i in 0..n_head_params { acc.2[i] += item.2[i]; }
+                        for i in 0..n_ansatz_params {
+                            acc.1[i] += item.1[i];
+                        }
+                        for i in 0..n_head_params {
+                            acc.2[i] += item.2[i];
+                        }
                         acc
                     },
                 );
 
             let avg_ans_grad: Vec<f64> = b_ans_grad.into_iter().map(|g| g / batch_len).collect();
             let avg_hd_grad: Vec<f64> = b_hd_grad.into_iter().map(|g| g / batch_len).collect();
-            optimizer.step(&mut ansatz_weights, &avg_ans_grad, &mut head_weights, &avg_hd_grad);
-            head.weights.copy_from_slice(&head_weights[..N_CLASSES * observables.len()]);
-            head.biases.copy_from_slice(&head_weights[N_CLASSES * observables.len()..]);
+            optimizer.step(
+                &mut ansatz_weights,
+                &avg_ans_grad,
+                &mut head_weights,
+                &avg_hd_grad,
+            );
+            head.weights
+                .copy_from_slice(&head_weights[..N_CLASSES * observables.len()]);
+            head.biases
+                .copy_from_slice(&head_weights[N_CLASSES * observables.len()..]);
         }
     }
 
@@ -374,14 +400,18 @@ fn main() {
     println!("\nTraining 10Q VQC for 14 Epochs to acquire Optimal WGA Checkpoint...");
     let t_trn = Instant::now();
     let (trained_vqc_weights, _) = train_model(&train_samples, &ansatz, &observables, 14);
-    println!("VQC Training completed in {:.2} s", t_trn.elapsed().as_secs_f64());
+    println!(
+        "VQC Training completed in {:.2} s",
+        t_trn.elapsed().as_secs_f64()
+    );
 
     println!("\nGenerating Statevector Manifolds across 5,794 Test Samples...");
     let test_labels: Vec<usize> = test_samples.iter().map(|s| s.label).collect();
     let test_places: Vec<usize> = test_samples.iter().map(|s| s.place).collect();
 
     // Stage 0: Input Angle States |psi_in>
-    let states_stage0: Vec<QuantumState> = test_samples.iter().map(|s| s.state_in.clone()).collect();
+    let states_stage0: Vec<QuantumState> =
+        test_samples.iter().map(|s| s.state_in.clone()).collect();
 
     // Stage 1: Untrained / Random VQC States |psi_untrained>
     let states_stage1: Vec<QuantumState> = test_samples
@@ -405,34 +435,117 @@ fn main() {
 
     println!("Computing Pairwise Quantum Fidelity (L2 Overlap) & Observable Metrics...");
     let max_pairs = 120; // 120 x 120 = 14,400 pairs per group
-    let m0 = compute_fidelity_metrics("Stage 0: Input Angle States", &states_stage0, &test_labels, &test_places, &observables, max_pairs);
-    let m1 = compute_fidelity_metrics("Stage 1: Untrained VQC", &states_stage1, &test_labels, &test_places, &observables, max_pairs);
-    let m2 = compute_fidelity_metrics("Stage 2: Trained VQC Checkpoint", &states_stage2, &test_labels, &test_places, &observables, max_pairs);
+    let m0 = compute_fidelity_metrics(
+        "Stage 0: Input Angle States",
+        &states_stage0,
+        &test_labels,
+        &test_places,
+        &observables,
+        max_pairs,
+    );
+    let m1 = compute_fidelity_metrics(
+        "Stage 1: Untrained VQC",
+        &states_stage1,
+        &test_labels,
+        &test_places,
+        &observables,
+        max_pairs,
+    );
+    let m2 = compute_fidelity_metrics(
+        "Stage 2: Trained VQC Checkpoint",
+        &states_stage2,
+        &test_labels,
+        &test_places,
+        &observables,
+        max_pairs,
+    );
 
-    println!("\n┌────────────────────────────────────────┬─────────────┬─────────────┬─────────────┐");
-    println!("│ 1. PURE QUANTUM STATE FIDELITY INVARIANT│ Stage 0 (In)│ Stage 1(Unt)│ Stage 2(Trn)│");
-    println!("├────────────────────────────────────────┼─────────────┼─────────────┼─────────────┤");
-    println!("│ Mean Intra-Class Fidelity F(L, L)      │ {:>11.4} │ {:>11.4} │ {:>11.4} │", m0.mean_intra_land_land, m1.mean_intra_land_land, m2.mean_intra_land_land);
-    println!("│ Mean Intra-Class Fidelity F(W, W)      │ {:>11.4} │ {:>11.4} │ {:>11.4} │", m0.mean_intra_water_water, m1.mean_intra_water_water, m2.mean_intra_water_water);
-    println!("│ Overall Intra-Class Fidelity <F_intra> │ {:>11.4} │ {:>11.4} │ {:>11.4} │", m0.mean_intra_class_overall, m1.mean_intra_class_overall, m2.mean_intra_class_overall);
-    println!("│ Inter-Class Fidelity <F_inter> (L vs W)│ {:>11.4} │ {:>11.4} │ {:>11.4} │", m0.mean_inter_class_land_water, m1.mean_inter_class_land_water, m2.mean_inter_class_land_water);
-    println!("├────────────────────────────────────────┼─────────────┼─────────────┼─────────────┤");
-    println!("│ HILBERT FIDELITY RATIO (F_in / F_out)  │ {:>11.4} │ {:>11.4} │ {:>11.4} │", m0.separation_ratio, m1.separation_ratio, m2.separation_ratio);
-    println!("├────────────────────────────────────────┼─────────────┼─────────────┼─────────────┤");
-    println!("│ 2. OBSERVABLE MEASUREMENT SPACE (R^55) │ Stage 0 (In)│ Stage 1(Unt)│ Stage 2(Trn)│");
-    println!("├────────────────────────────────────────┼─────────────┼─────────────┼─────────────┤");
-    println!("│ Intra-Class Distance ||c_A - c_B||     │ {:>11.4} │ {:>11.4} │ {:>11.4} │", m0.obs_intra_dist, m1.obs_intra_dist, m2.obs_intra_dist);
-    println!("│ Inter-Class Distance ||c_L - c_W||     │ {:>11.4} │ {:>11.4} │ {:>11.4} │", m0.obs_inter_dist, m1.obs_inter_dist, m2.obs_inter_dist);
-    println!("│ OBSERVABLE SEPARATION RATIO (D_out/in) │ {:>11.4} │ {:>11.4} │ {:>11.4} │", m0.obs_separation_ratio, m1.obs_separation_ratio, m2.obs_separation_ratio);
-    println!("├────────────────────────────────────────┼─────────────┼─────────────┼─────────────┤");
-    println!("│ Same Species Diff Background F(G0, G1) │ {:>11.4} │ {:>11.4} │ {:>11.4} │", m0.confounder_same_species_diff_bg, m1.confounder_same_species_diff_bg, m2.confounder_same_species_diff_bg);
-    println!("│ Diff Species Same Background F(G1, G3) │ {:>11.4} │ {:>11.4} │ {:>11.4} │", m0.confounder_diff_species_same_bg, m1.confounder_diff_species_same_bg, m2.confounder_diff_species_same_bg);
-    println!("│ Species-over-Background Selectivity    │ {:>11.4} │ {:>11.4} │ {:>11.4} │", m0.species_vs_background_selectivity, m1.species_vs_background_selectivity, m2.species_vs_background_selectivity);
-    println!("└────────────────────────────────────────┴─────────────┴─────────────┴─────────────┘");
+    println!(
+        "\n┌────────────────────────────────────────┬─────────────┬─────────────┬─────────────┐"
+    );
+    println!(
+        "│ 1. PURE QUANTUM STATE FIDELITY INVARIANT│ Stage 0 (In)│ Stage 1(Unt)│ Stage 2(Trn)│"
+    );
+    println!(
+        "├────────────────────────────────────────┼─────────────┼─────────────┼─────────────┤"
+    );
+    println!(
+        "│ Mean Intra-Class Fidelity F(L, L)      │ {:>11.4} │ {:>11.4} │ {:>11.4} │",
+        m0.mean_intra_land_land, m1.mean_intra_land_land, m2.mean_intra_land_land
+    );
+    println!(
+        "│ Mean Intra-Class Fidelity F(W, W)      │ {:>11.4} │ {:>11.4} │ {:>11.4} │",
+        m0.mean_intra_water_water, m1.mean_intra_water_water, m2.mean_intra_water_water
+    );
+    println!(
+        "│ Overall Intra-Class Fidelity <F_intra> │ {:>11.4} │ {:>11.4} │ {:>11.4} │",
+        m0.mean_intra_class_overall, m1.mean_intra_class_overall, m2.mean_intra_class_overall
+    );
+    println!(
+        "│ Inter-Class Fidelity <F_inter> (L vs W)│ {:>11.4} │ {:>11.4} │ {:>11.4} │",
+        m0.mean_inter_class_land_water,
+        m1.mean_inter_class_land_water,
+        m2.mean_inter_class_land_water
+    );
+    println!(
+        "├────────────────────────────────────────┼─────────────┼─────────────┼─────────────┤"
+    );
+    println!(
+        "│ HILBERT FIDELITY RATIO (F_in / F_out)  │ {:>11.4} │ {:>11.4} │ {:>11.4} │",
+        m0.separation_ratio, m1.separation_ratio, m2.separation_ratio
+    );
+    println!(
+        "├────────────────────────────────────────┼─────────────┼─────────────┼─────────────┤"
+    );
+    println!(
+        "│ 2. OBSERVABLE MEASUREMENT SPACE (R^55) │ Stage 0 (In)│ Stage 1(Unt)│ Stage 2(Trn)│"
+    );
+    println!(
+        "├────────────────────────────────────────┼─────────────┼─────────────┼─────────────┤"
+    );
+    println!(
+        "│ Intra-Class Distance ||c_A - c_B||     │ {:>11.4} │ {:>11.4} │ {:>11.4} │",
+        m0.obs_intra_dist, m1.obs_intra_dist, m2.obs_intra_dist
+    );
+    println!(
+        "│ Inter-Class Distance ||c_L - c_W||     │ {:>11.4} │ {:>11.4} │ {:>11.4} │",
+        m0.obs_inter_dist, m1.obs_inter_dist, m2.obs_inter_dist
+    );
+    println!(
+        "│ OBSERVABLE SEPARATION RATIO (D_out/in) │ {:>11.4} │ {:>11.4} │ {:>11.4} │",
+        m0.obs_separation_ratio, m1.obs_separation_ratio, m2.obs_separation_ratio
+    );
+    println!(
+        "├────────────────────────────────────────┼─────────────┼─────────────┼─────────────┤"
+    );
+    println!(
+        "│ Same Species Diff Background F(G0, G1) │ {:>11.4} │ {:>11.4} │ {:>11.4} │",
+        m0.confounder_same_species_diff_bg,
+        m1.confounder_same_species_diff_bg,
+        m2.confounder_same_species_diff_bg
+    );
+    println!(
+        "│ Diff Species Same Background F(G1, G3) │ {:>11.4} │ {:>11.4} │ {:>11.4} │",
+        m0.confounder_diff_species_same_bg,
+        m1.confounder_diff_species_same_bg,
+        m2.confounder_diff_species_same_bg
+    );
+    println!(
+        "│ Species-over-Background Selectivity    │ {:>11.4} │ {:>11.4} │ {:>11.4} │",
+        m0.species_vs_background_selectivity,
+        m1.species_vs_background_selectivity,
+        m2.species_vs_background_selectivity
+    );
+    println!(
+        "└────────────────────────────────────────┴─────────────┴─────────────┴─────────────┘"
+    );
 
-    let obs_gain = ((m2.obs_separation_ratio - m1.obs_separation_ratio) / m1.obs_separation_ratio) * 100.0;
+    let obs_gain =
+        ((m2.obs_separation_ratio - m1.obs_separation_ratio) / m1.obs_separation_ratio) * 100.0;
     println!("\nEmpirical Findings & Physical Analysis:");
-    println!("1. Unitarity Rigidity: State fidelities are strictly invariant across stages (W† W = I).");
+    println!(
+        "1. Unitarity Rigidity: State fidelities are strictly invariant across stages (W† W = I)."
+    );
     println!("   A unitary VQC cannot alter relative Hilbert state distances globally.");
     println!("2. Observable Projection Space (55 Correlators):");
     println!("   Observable separation ratio changed from {:.4} (untrained) -> {:.4} (trained) [{:+.2}%].",
@@ -442,11 +555,19 @@ fn main() {
         println!("    The variational circuit rotates the rigid state manifold so that the fixed");
         println!("    55 Pauli observables maximize inter-class separation relative to intra-class dispersion.");
     } else {
-        println!("--> HYPOTHESIS: Separation is entirely driven by the classical linear readout head.");
+        println!(
+            "--> HYPOTHESIS: Separation is entirely driven by the classical linear readout head."
+        );
     }
 
     let report = FidelityExperimentReport {
-        timestamp_rfc3339: format!("{}.000Z", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs()),
+        timestamp_rfc3339: format!(
+            "{}.000Z",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_secs()
+        ),
         dataset: "waterbirds_11k".to_string(),
         n_qubits: N_QUBITS,
         num_pairs_evaluated: max_pairs * max_pairs * 4,

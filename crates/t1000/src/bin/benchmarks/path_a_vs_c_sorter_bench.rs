@@ -109,17 +109,32 @@ fn softmax_cross_entropy(logits: &[f64; N_CLASSES], label: usize) -> (f64, [f64;
     let e1 = (logits[1] - max_l).exp();
     let sum = (e0 + e1).max(1e-12);
     let (p0, p1) = (e0 / sum, e1 / sum);
-    let loss = if label == 0 { -p0.max(1e-12).ln() } else { -p1.max(1e-12).ln() };
-    (loss, [p0 - if label == 0 { 1.0 } else { 0.0 }, p1 - if label == 1 { 1.0 } else { 0.0 }])
+    let loss = if label == 0 {
+        -p0.max(1e-12).ln()
+    } else {
+        -p1.max(1e-12).ln()
+    };
+    (
+        loss,
+        [
+            p0 - if label == 0 { 1.0 } else { 0.0 },
+            p1 - if label == 1 { 1.0 } else { 0.0 },
+        ],
+    )
 }
 
-fn load_dataset(dir: &Path, split: &str, count: usize, encoder: &DataEncodingLayer) -> Vec<SampleData> {
-    let feat_bytes = fs::read(dir.join(format!("{}_features_10d.bin", split))).expect("Read features");
+fn load_dataset(
+    dir: &Path,
+    split: &str,
+    count: usize,
+    encoder: &DataEncodingLayer,
+) -> Vec<SampleData> {
+    let feat_bytes =
+        fs::read(dir.join(format!("{}_features_10d.bin", split))).expect("Read features");
     let lbl_bytes = fs::read(dir.join(format!("{}_labels.bin", split))).expect("Read labels");
     let plc_bytes = fs::read(dir.join(format!("{}_places.bin", split))).expect("Read places");
-    let feat_floats: &[f32] = unsafe {
-        std::slice::from_raw_parts(feat_bytes.as_ptr() as *const f32, count * N_QUBITS)
-    };
+    let feat_floats: &[f32] =
+        unsafe { std::slice::from_raw_parts(feat_bytes.as_ptr() as *const f32, count * N_QUBITS) };
 
     (0..count)
         .into_par_iter()
@@ -161,11 +176,18 @@ fn compute_group_metrics(preds: &[(usize, usize, usize)]) -> (f64, f64, [Subgrou
     let mk_grp = |i: usize| SubgroupMetrics {
         total: g_tot[i],
         correct: g_cor[i],
-        accuracy_pct: if g_tot[i] > 0 { (g_cor[i] as f64 / g_tot[i] as f64) * 100.0 } else { 0.0 },
+        accuracy_pct: if g_tot[i] > 0 {
+            (g_cor[i] as f64 / g_tot[i] as f64) * 100.0
+        } else {
+            0.0
+        },
     };
 
     let grps = [mk_grp(0), mk_grp(1), mk_grp(2), mk_grp(3)];
-    let wga = grps.iter().map(|g| g.accuracy_pct).fold(f64::INFINITY, f64::min);
+    let wga = grps
+        .iter()
+        .map(|g| g.accuracy_pct)
+        .fold(f64::INFINITY, f64::min);
     let overall = (total_correct as f64 / n) * 100.0;
     (overall, wga, grps)
 }
@@ -236,7 +258,9 @@ fn run_path_a_benchmark(
                 .reduce(
                     || vec![0.0; n_params],
                     |mut acc, g| {
-                        for i in 0..n_params { acc[i] += g[i]; }
+                        for i in 0..n_params {
+                            acc[i] += g[i];
+                        }
                         acc
                     },
                 );
@@ -260,7 +284,11 @@ fn run_path_a_benchmark(
         .map(|s| {
             let mut evolved = s.state_in.clone();
             ansatz.forward_in_place(&mut evolved, &weights);
-            let mean_m: f64 = magnetization_obs.iter().map(|o| o.expectation_value(&evolved)).sum::<f64>() / 10.0;
+            let mean_m: f64 = magnetization_obs
+                .iter()
+                .map(|o| o.expectation_value(&evolved))
+                .sum::<f64>()
+                / 10.0;
             let pred = if mean_m >= 0.0 { 0 } else { 1 };
             (pred, s.label, s.place)
         })
@@ -302,15 +330,30 @@ fn evolve_reuploading_state(
     // Initial pi phase layer
     for q in 0..N_QUBITS {
         let sign = if q % 2 == 0 { 1.0 } else { -1.0 };
-        apply_rz_kernel(&mut state.real, &mut state.imag, q, sign * std::f64::consts::PI);
+        apply_rz_kernel(
+            &mut state.real,
+            &mut state.imag,
+            q,
+            sign * std::f64::consts::PI,
+        );
     }
 
     // Layer 0: parameterized Ry, Rz + entangling CZ
     let mut param_offset = 0;
     for q in 0..N_QUBITS {
-        apply_ry_kernel(&mut state.real, &mut state.imag, q, circuit_weights[param_offset]);
+        apply_ry_kernel(
+            &mut state.real,
+            &mut state.imag,
+            q,
+            circuit_weights[param_offset],
+        );
         param_offset += 1;
-        apply_rz_kernel(&mut state.real, &mut state.imag, q, circuit_weights[param_offset]);
+        apply_rz_kernel(
+            &mut state.real,
+            &mut state.imag,
+            q,
+            circuit_weights[param_offset],
+        );
         param_offset += 1;
     }
     for q in 0..N_QUBITS {
@@ -320,14 +363,29 @@ fn evolve_reuploading_state(
 
     // RE-UPLOAD 1: Ry(scale * raw_angles) breaking unitary rigidity
     for q in 0..N_QUBITS {
-        apply_ry_kernel(&mut state.real, &mut state.imag, q, upload_scales_l1[q] * raw_angles[q]);
+        apply_ry_kernel(
+            &mut state.real,
+            &mut state.imag,
+            q,
+            upload_scales_l1[q] * raw_angles[q],
+        );
     }
 
     // Layer 1: parameterized Ry, Rz + entangling CZ
     for q in 0..N_QUBITS {
-        apply_ry_kernel(&mut state.real, &mut state.imag, q, circuit_weights[param_offset]);
+        apply_ry_kernel(
+            &mut state.real,
+            &mut state.imag,
+            q,
+            circuit_weights[param_offset],
+        );
         param_offset += 1;
-        apply_rz_kernel(&mut state.real, &mut state.imag, q, circuit_weights[param_offset]);
+        apply_rz_kernel(
+            &mut state.real,
+            &mut state.imag,
+            q,
+            circuit_weights[param_offset],
+        );
         param_offset += 1;
     }
     for q in 0..N_QUBITS {
@@ -337,14 +395,29 @@ fn evolve_reuploading_state(
 
     // RE-UPLOAD 2: Ry(scale * raw_angles) breaking unitary rigidity
     for q in 0..N_QUBITS {
-        apply_ry_kernel(&mut state.real, &mut state.imag, q, upload_scales_l2[q] * raw_angles[q]);
+        apply_ry_kernel(
+            &mut state.real,
+            &mut state.imag,
+            q,
+            upload_scales_l2[q] * raw_angles[q],
+        );
     }
 
     // Layer 2: parameterized Ry, Rz + entangling CZ
     for q in 0..N_QUBITS {
-        apply_ry_kernel(&mut state.real, &mut state.imag, q, circuit_weights[param_offset]);
+        apply_ry_kernel(
+            &mut state.real,
+            &mut state.imag,
+            q,
+            circuit_weights[param_offset],
+        );
         param_offset += 1;
-        apply_rz_kernel(&mut state.real, &mut state.imag, q, circuit_weights[param_offset]);
+        apply_rz_kernel(
+            &mut state.real,
+            &mut state.imag,
+            q,
+            circuit_weights[param_offset],
+        );
         param_offset += 1;
     }
     for q in 0..N_QUBITS {
@@ -363,7 +436,7 @@ fn run_path_c_benchmark(
 ) -> ModelEvaluation {
     let t0 = Instant::now();
     let n_circuit_params = 60; // 3 layers x 10 qubits x 2 gates (Ry, Rz)
-    let n_upload_params = 20;  // 2 re-uploads x 10 scaling factors
+    let n_upload_params = 20; // 2 re-uploads x 10 scaling factors
     let circuit_weights = vec![0.1; n_circuit_params];
     let mut upload_scales_l1 = vec![1.0; N_QUBITS];
     let mut upload_scales_l2 = vec![1.0; N_QUBITS];
@@ -436,14 +509,24 @@ fn run_path_c_benchmark(
                     for q in 0..N_QUBITS {
                         let mut s1_pert = upload_scales_l1.clone();
                         s1_pert[q] += eps;
-                        let evolved_pert = evolve_reuploading_state(&s.raw_angles, &circuit_weights, &s1_pert, &upload_scales_l2);
+                        let evolved_pert = evolve_reuploading_state(
+                            &s.raw_angles,
+                            &circuit_weights,
+                            &s1_pert,
+                            &upload_scales_l2,
+                        );
                         let exp0_pert = observables[q].expectation_value(&evolved_pert);
                         let exp0_orig = raw_exps[q];
                         d_s1[q] = ((exp0_pert - exp0_orig) / eps) * (d_logits[0] - d_logits[1]);
 
                         let mut s2_pert = upload_scales_l2.clone();
                         s2_pert[q] += eps;
-                        let evolved_pert2 = evolve_reuploading_state(&s.raw_angles, &circuit_weights, &upload_scales_l1, &s2_pert);
+                        let evolved_pert2 = evolve_reuploading_state(
+                            &s.raw_angles,
+                            &circuit_weights,
+                            &upload_scales_l1,
+                            &s2_pert,
+                        );
                         let exp0_pert2 = observables[q].expectation_value(&evolved_pert2);
                         d_s2[q] = ((exp0_pert2 - exp0_orig) / eps) * (d_logits[0] - d_logits[1]);
                     }
@@ -453,7 +536,9 @@ fn run_path_c_benchmark(
                 .reduce(
                     || (vec![0.0; n_head_params], [0.0; N_QUBITS], [0.0; N_QUBITS]),
                     |mut acc, item| {
-                        for i in 0..n_head_params { acc.0[i] += item.0[i]; }
+                        for i in 0..n_head_params {
+                            acc.0[i] += item.0[i];
+                        }
                         for q in 0..N_QUBITS {
                             acc.1[q] += item.1[q];
                             acc.2[q] += item.2[q];
@@ -465,8 +550,10 @@ fn run_path_c_benchmark(
             for i in 0..n_head_params {
                 head_weights[i] -= lr_head * (d_head_acc[i] / batch_len);
             }
-            head.weights.copy_from_slice(&head_weights[..N_CLASSES * observables.len()]);
-            head.biases.copy_from_slice(&head_weights[N_CLASSES * observables.len()..]);
+            head.weights
+                .copy_from_slice(&head_weights[..N_CLASSES * observables.len()]);
+            head.biases
+                .copy_from_slice(&head_weights[N_CLASSES * observables.len()..]);
 
             for q in 0..N_QUBITS {
                 upload_scales_l1[q] -= lr_scales * (d_s1_acc[q] / batch_len).clamp(-1.0, 1.0);
@@ -481,7 +568,12 @@ fn run_path_c_benchmark(
     let preds: Vec<(usize, usize, usize)> = test_samples
         .par_iter()
         .map(|s| {
-            let evolved = evolve_reuploading_state(&s.raw_angles, &circuit_weights, &upload_scales_l1, &upload_scales_l2);
+            let evolved = evolve_reuploading_state(
+                &s.raw_angles,
+                &circuit_weights,
+                &upload_scales_l1,
+                &upload_scales_l2,
+            );
             let mut raw_exps = [0.0; NUM_CORRELATORS];
             for (k, obs) in observables.iter().enumerate() {
                 raw_exps[k] = obs.expectation_value(&evolved);
@@ -548,7 +640,13 @@ fn main() {
 
     // 1. Run Path A Benchmark
     println!("\n>>> Running Path A Benchmark: Pure Headless Eigenvalue Sorter (14 Epochs)...");
-    let path_a_eval = run_path_a_benchmark(&train_samples, &test_samples, &ansatz, &magnetization_obs, 14);
+    let path_a_eval = run_path_a_benchmark(
+        &train_samples,
+        &test_samples,
+        &ansatz,
+        &magnetization_obs,
+        14,
+    );
 
     // 2. Run Path C Benchmark
     println!("\n>>> Running Path C Benchmark: Trainable Data Re-Uploading (14 Epochs)...");
@@ -556,7 +654,8 @@ fn main() {
 
     // Load Baseline from Report
     let baseline_report_path = PathBuf::from("data/birds/birds_hybrid_qnn_report.json");
-    let baseline_data: serde_json::Value = serde_json::from_str(&fs::read_to_string(baseline_report_path).unwrap()).unwrap();
+    let baseline_data: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(baseline_report_path).unwrap()).unwrap();
     let base_eval = &baseline_data["best_checkpoint_evaluation"];
 
     let base_mk_grp = |name: &str| SubgroupMetrics {
@@ -582,28 +681,102 @@ fn main() {
     };
 
     // Comparative Table Output
-    println!("\n┌─────────────────────────────┬─────────────────┬─────────────────┬─────────────────┐");
-    println!("│ Metric                      │ Baseline Hybrid │ Path A (Headless│ Path C (Re-Up)  │");
-    println!("├─────────────────────────────┼─────────────────┼─────────────────┼─────────────────┤");
-    println!("│ Quantum Parameters          │ {:>15} │ {:>15} │ {:>15} │", baseline_eval.num_quantum_params, path_a_eval.num_quantum_params, path_c_eval.num_quantum_params);
-    println!("│ Classical Head Parameters   │ {:>15} │ {:>15} │ {:>15} │", baseline_eval.num_classical_params, path_a_eval.num_classical_params, path_c_eval.num_classical_params);
-    println!("│ Total Trainable Parameters  │ {:>15} │ {:>15} │ {:>15} │", baseline_eval.total_params, path_a_eval.total_params, path_c_eval.total_params);
-    println!("│ Breaks Unitary Rigidity?    │ {:>15} │ {:>15} │ {:>15} │", "No (Rigid W)", "No (Rigid W)", "YES (W(x) State)");
-    println!("├─────────────────────────────┼─────────────────┼─────────────────┼─────────────────┤");
-    println!("│ Overall Test Accuracy       │ {:>14.2}% │ {:>14.2}% │ {:>14.2}% │", baseline_eval.overall_accuracy_pct, path_a_eval.overall_accuracy_pct, path_c_eval.overall_accuracy_pct);
-    println!("│ Worst-Group Accuracy (WGA)  │ {:>14.2}% │ {:>14.2}% │ {:>14.2}% │", baseline_eval.worst_group_accuracy_pct, path_a_eval.worst_group_accuracy_pct, path_c_eval.worst_group_accuracy_pct);
-    println!("├─────────────────────────────┼─────────────────┼─────────────────┼─────────────────┤");
-    println!("│ G0: Land on Land Accuracy   │ {:>14.2}% │ {:>14.2}% │ {:>14.2}% │", baseline_eval.g0_land_land.accuracy_pct, path_a_eval.g0_land_land.accuracy_pct, path_c_eval.g0_land_land.accuracy_pct);
-    println!("│ G1: Land on Water (Distract)│ {:>14.2}% │ {:>14.2}% │ {:>14.2}% │", baseline_eval.g1_land_water.accuracy_pct, path_a_eval.g1_land_water.accuracy_pct, path_c_eval.g1_land_water.accuracy_pct);
-    println!("│ G2: Water on Land (Distract)│ {:>14.2}% │ {:>14.2}% │ {:>14.2}% │", baseline_eval.g2_water_land.accuracy_pct, path_a_eval.g2_water_land.accuracy_pct, path_c_eval.g2_water_land.accuracy_pct);
-    println!("│ G3: Water on Water Accuracy │ {:>14.2}% │ {:>14.2}% │ {:>14.2}% │", baseline_eval.g3_water_water.accuracy_pct, path_a_eval.g3_water_water.accuracy_pct, path_c_eval.g3_water_water.accuracy_pct);
-    println!("├─────────────────────────────┼─────────────────┼─────────────────┼─────────────────┤");
-    println!("│ Training Latency (14 Ep)    │ {:>13.2} s │ {:>13.2} s │ {:>13.2} s │", baseline_eval.training_time_sec, path_a_eval.training_time_sec, path_c_eval.training_time_sec);
-    println!("│ Per-Sample Compute Latency  │ {:>12.2} us │ {:>12.2} us │ {:>12.2} us │", baseline_eval.per_sample_us, path_a_eval.per_sample_us, path_c_eval.per_sample_us);
-    println!("└─────────────────────────────┴─────────────────┴─────────────────┴─────────────────┘");
+    println!(
+        "\n┌─────────────────────────────┬─────────────────┬─────────────────┬─────────────────┐"
+    );
+    println!(
+        "│ Metric                      │ Baseline Hybrid │ Path A (Headless│ Path C (Re-Up)  │"
+    );
+    println!(
+        "├─────────────────────────────┼─────────────────┼─────────────────┼─────────────────┤"
+    );
+    println!(
+        "│ Quantum Parameters          │ {:>15} │ {:>15} │ {:>15} │",
+        baseline_eval.num_quantum_params,
+        path_a_eval.num_quantum_params,
+        path_c_eval.num_quantum_params
+    );
+    println!(
+        "│ Classical Head Parameters   │ {:>15} │ {:>15} │ {:>15} │",
+        baseline_eval.num_classical_params,
+        path_a_eval.num_classical_params,
+        path_c_eval.num_classical_params
+    );
+    println!(
+        "│ Total Trainable Parameters  │ {:>15} │ {:>15} │ {:>15} │",
+        baseline_eval.total_params, path_a_eval.total_params, path_c_eval.total_params
+    );
+    println!(
+        "│ Breaks Unitary Rigidity?    │ {:>15} │ {:>15} │ {:>15} │",
+        "No (Rigid W)", "No (Rigid W)", "YES (W(x) State)"
+    );
+    println!(
+        "├─────────────────────────────┼─────────────────┼─────────────────┼─────────────────┤"
+    );
+    println!(
+        "│ Overall Test Accuracy       │ {:>14.2}% │ {:>14.2}% │ {:>14.2}% │",
+        baseline_eval.overall_accuracy_pct,
+        path_a_eval.overall_accuracy_pct,
+        path_c_eval.overall_accuracy_pct
+    );
+    println!(
+        "│ Worst-Group Accuracy (WGA)  │ {:>14.2}% │ {:>14.2}% │ {:>14.2}% │",
+        baseline_eval.worst_group_accuracy_pct,
+        path_a_eval.worst_group_accuracy_pct,
+        path_c_eval.worst_group_accuracy_pct
+    );
+    println!(
+        "├─────────────────────────────┼─────────────────┼─────────────────┼─────────────────┤"
+    );
+    println!(
+        "│ G0: Land on Land Accuracy   │ {:>14.2}% │ {:>14.2}% │ {:>14.2}% │",
+        baseline_eval.g0_land_land.accuracy_pct,
+        path_a_eval.g0_land_land.accuracy_pct,
+        path_c_eval.g0_land_land.accuracy_pct
+    );
+    println!(
+        "│ G1: Land on Water (Distract)│ {:>14.2}% │ {:>14.2}% │ {:>14.2}% │",
+        baseline_eval.g1_land_water.accuracy_pct,
+        path_a_eval.g1_land_water.accuracy_pct,
+        path_c_eval.g1_land_water.accuracy_pct
+    );
+    println!(
+        "│ G2: Water on Land (Distract)│ {:>14.2}% │ {:>14.2}% │ {:>14.2}% │",
+        baseline_eval.g2_water_land.accuracy_pct,
+        path_a_eval.g2_water_land.accuracy_pct,
+        path_c_eval.g2_water_land.accuracy_pct
+    );
+    println!(
+        "│ G3: Water on Water Accuracy │ {:>14.2}% │ {:>14.2}% │ {:>14.2}% │",
+        baseline_eval.g3_water_water.accuracy_pct,
+        path_a_eval.g3_water_water.accuracy_pct,
+        path_c_eval.g3_water_water.accuracy_pct
+    );
+    println!(
+        "├─────────────────────────────┼─────────────────┼─────────────────┼─────────────────┤"
+    );
+    println!(
+        "│ Training Latency (14 Ep)    │ {:>13.2} s │ {:>13.2} s │ {:>13.2} s │",
+        baseline_eval.training_time_sec,
+        path_a_eval.training_time_sec,
+        path_c_eval.training_time_sec
+    );
+    println!(
+        "│ Per-Sample Compute Latency  │ {:>12.2} us │ {:>12.2} us │ {:>12.2} us │",
+        baseline_eval.per_sample_us, path_a_eval.per_sample_us, path_c_eval.per_sample_us
+    );
+    println!(
+        "└─────────────────────────────┴─────────────────┴─────────────────┴─────────────────┘"
+    );
 
     let report = ComparisonReport {
-        timestamp_rfc3339: format!("{}.000Z", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs()),
+        timestamp_rfc3339: format!(
+            "{}.000Z",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_secs()
+        ),
         dataset: "waterbirds_11k".to_string(),
         n_qubits: N_QUBITS,
         baseline_hybrid: baseline_eval,

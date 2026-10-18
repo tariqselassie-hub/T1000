@@ -221,7 +221,8 @@ impl RcsSimulator {
         let params = Self::generate_params(noisy_cfg.base.seed, n_params);
         ansatz.update_params(&params);
 
-        let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(noisy_cfg.base.seed.wrapping_add(0xCAFE_BABE));
+        let mut rng =
+            rand_chacha::ChaCha8Rng::seed_from_u64(noisy_cfg.base.seed.wrapping_add(0xCAFE_BABE));
         let start_time = Instant::now();
         let mut trajectory = Vec::with_capacity(depth);
 
@@ -242,8 +243,7 @@ impl RcsSimulator {
             let half_dt = noisy_cfg.gate_time_us * 0.5;
             let uses_dd = matches!(
                 noisy_cfg.stabilization,
-                StabilizationStrategy::DynamicalDecoupling(_)
-                    | StabilizationStrategy::Combined(_)
+                StabilizationStrategy::DynamicalDecoupling(_) | StabilizationStrategy::Combined(_)
             );
 
             if uses_dd && half_dt > 0.0 {

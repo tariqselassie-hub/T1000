@@ -300,8 +300,8 @@ fn load_hybrid_split(
     count: usize,
     encoder: &DataEncodingLayer,
 ) -> Vec<(QuantumState, usize, usize)> {
-    let feat_bytes =
-        fs::read(dir.join(format!("{}_features_10d.bin", split))).expect("Failed reading features bin");
+    let feat_bytes = fs::read(dir.join(format!("{}_features_10d.bin", split)))
+        .expect("Failed reading features bin");
     let lbl_bytes =
         fs::read(dir.join(format!("{}_labels.bin", split))).expect("Failed reading labels bin");
     let plc_bytes =

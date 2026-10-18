@@ -137,7 +137,9 @@ fn main() {
     println!("└──────┴────────────┴─────────────┴──────────────────────────┴─────────────────────────┴──────────────┘");
 
     // 2. High-Resolution Spatiotemporal Wavepacket Simulation for Depth n = 6 (126 vertices)
-    println!("\nGenerating spatiotemporal ballistic wavepacket trajectory (depth n=6, 14 columns)...");
+    println!(
+        "\nGenerating spatiotemporal ballistic wavepacket trajectory (depth n=6, 14 columns)..."
+    );
     let detailed_cfg = GluedTreesConfig::new(6);
     let mut detailed_qw = ContinuousQuantumWalk::new(detailed_cfg, 0.5);
     let detailed_trajectory = detailed_qw.run_simulation(25.0, 0.1);
@@ -183,7 +185,11 @@ fn main() {
 
     println!("  Unperturbed Peak Exit Prob: {:.2}%", p_clean * 100.0);
     println!("  With Weld Phase Defect    : {:.2}%", p_defect * 100.0);
-    println!("  With Steering Counter-Rot : {:.2}% (Recovery: {:.1}%)", p_steered * 100.0, recovery_pct);
+    println!(
+        "  With Steering Counter-Rot : {:.2}% (Recovery: {:.1}%)",
+        p_steered * 100.0,
+        recovery_pct
+    );
 
     let defect_report = DefectRecoveryReport {
         depth: test_depth,

@@ -73,9 +73,19 @@ impl QuantumCellStateSoA {
     }
 
     /// Set a cell to an arbitrary superposition (|0>, |1>, |2>) and normalize.
-    pub fn set_cell_superposition(&mut self, idx: usize, c0: Complex64, c1: Complex64, c2: Complex64) {
+    pub fn set_cell_superposition(
+        &mut self,
+        idx: usize,
+        c0: Complex64,
+        c1: Complex64,
+        c2: Complex64,
+    ) {
         let norm_sq = c0.norm_sqr() + c1.norm_sqr() + c2.norm_sqr();
-        let inv_norm = if norm_sq > 1e-15 { 1.0 / norm_sq.sqrt() } else { 1.0 };
+        let inv_norm = if norm_sq > 1e-15 {
+            1.0 / norm_sq.sqrt()
+        } else {
+            1.0
+        };
         self.re0[idx] = c0.re * inv_norm;
         self.im0[idx] = c0.im * inv_norm;
         self.re1[idx] = c1.re * inv_norm;

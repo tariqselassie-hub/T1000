@@ -18,14 +18,14 @@ use std::fs;
 use std::path::Path;
 use std::time::Instant;
 use t1000::ultrametric_tree::{
-    compute_ultrametric_branch_distribution, ultrametric_gram_pair,
-    ultrametric_tree_distance, UltrametricTreeConfig, UltrametricTreeSorter,
+    compute_ultrametric_branch_distribution, ultrametric_gram_pair, ultrametric_tree_distance,
+    UltrametricTreeConfig, UltrametricTreeSorter,
 };
 
 const N_QUBITS: usize = 10;
 const N_COARSE: usize = 1; // 2 coarse classes (Landbird vs Waterbird)
-const N_FINE: usize = 1;   // 2 fine subpopulations (Land vs Water background)
-const N_ENV: usize = 8;    // 8 entropy sink qubits (total 10 qubits)
+const N_FINE: usize = 1; // 2 fine subpopulations (Land vs Water background)
+const N_ENV: usize = 8; // 8 entropy sink qubits (total 10 qubits)
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SubgroupMetrics {
@@ -77,13 +77,13 @@ struct BirdSample {
 }
 
 fn load_samples(dir: &Path, split: &str, count: usize) -> Vec<BirdSample> {
-    let feat_bytes = fs::read(dir.join(format!("{}_features_10d.bin", split))).expect("Read features");
+    let feat_bytes =
+        fs::read(dir.join(format!("{}_features_10d.bin", split))).expect("Read features");
     let lbl_bytes = fs::read(dir.join(format!("{}_labels.bin", split))).expect("Read labels");
     let plc_bytes = fs::read(dir.join(format!("{}_places.bin", split))).expect("Read places");
 
-    let feat_floats: &[f32] = unsafe {
-        std::slice::from_raw_parts(feat_bytes.as_ptr() as *const f32, count * N_QUBITS)
-    };
+    let feat_floats: &[f32] =
+        unsafe { std::slice::from_raw_parts(feat_bytes.as_ptr() as *const f32, count * N_QUBITS) };
 
     (0..count)
         .into_par_iter()
@@ -101,7 +101,12 @@ fn load_samples(dir: &Path, split: &str, count: usize) -> Vec<BirdSample> {
         .collect()
 }
 
-fn evaluate_subgroup(samples: &[BirdSample], sorter: &UltrametricTreeSorter, l: usize, p: usize) -> SubgroupMetrics {
+fn evaluate_subgroup(
+    samples: &[BirdSample],
+    sorter: &UltrametricTreeSorter,
+    l: usize,
+    p: usize,
+) -> SubgroupMetrics {
     let filtered: Vec<&BirdSample> = samples
         .iter()
         .filter(|s| s.label == l && s.place == p)
@@ -139,12 +144,19 @@ fn main() {
 
     let train_samples = load_samples(data_dir, "train", 4795);
     let test_samples = load_samples(data_dir, "test", 5794);
-    println!("Loaded Train: {} samples | Test: {} samples", train_samples.len(), test_samples.len());
+    println!(
+        "Loaded Train: {} samples | Test: {} samples",
+        train_samples.len(),
+        test_samples.len()
+    );
 
     let cfg = UltrametricTreeConfig::new(N_COARSE, N_FINE, N_ENV);
     println!(
         "Registers: Coarse (H_C) = {}Q | Fine (H_F) = {}Q | Env (H_E) = {}Q | Total = {}Q",
-        cfg.n_coarse, cfg.n_fine, cfg.n_env, cfg.total_qubits()
+        cfg.n_coarse,
+        cfg.n_fine,
+        cfg.n_env,
+        cfg.total_qubits()
     );
 
     let mut sorter = UltrametricTreeSorter::new(cfg, 2);
@@ -156,9 +168,18 @@ fn main() {
     let gamma1 = 0.5;
     let gamma2 = 1.0;
 
-    let s_g0 = train_samples.iter().find(|s| s.label == 0 && s.place == 0).unwrap();
-    let s_g1 = train_samples.iter().find(|s| s.label == 0 && s.place == 1).unwrap();
-    let s_g2 = train_samples.iter().find(|s| s.label == 1 && s.place == 0).unwrap();
+    let s_g0 = train_samples
+        .iter()
+        .find(|s| s.label == 0 && s.place == 0)
+        .unwrap();
+    let s_g1 = train_samples
+        .iter()
+        .find(|s| s.label == 0 && s.place == 1)
+        .unwrap();
+    let s_g2 = train_samples
+        .iter()
+        .find(|s| s.label == 1 && s.place == 0)
+        .unwrap();
 
     let p_g0 = compute_ultrametric_branch_distribution(&sorter.forward(&s_g0.features), &cfg);
     let p_g1 = compute_ultrametric_branch_distribution(&sorter.forward(&s_g1.features), &cfg);
@@ -173,10 +194,26 @@ fn main() {
     let d_02 = ultrametric_tree_distance(0, 0, 1, 0, gamma1, gamma2);
     let triangle_holds = d_01 <= d_12.max(d_02) && d_02 <= d_01.max(d_12) && d_12 <= d_01.max(d_02);
 
-    println!("  Identical Subpop Overlap: Coarse={:.4}, Fine={:.4}", c_ident, f_ident);
-    println!("  Sibling Subpop Overlap:   Coarse={:.4}, Fine={:.4}", c_sib, f_sib);
-    println!("  Disjoint Coarse Overlap:  Coarse={:.4}, Fine={:.4}", c_disj, f_disj);
-    println!("  Strong Triangle Inequality: {}", if triangle_holds { "PASS (Ultra-Metric Valid)" } else { "FAIL" });
+    println!(
+        "  Identical Subpop Overlap: Coarse={:.4}, Fine={:.4}",
+        c_ident, f_ident
+    );
+    println!(
+        "  Sibling Subpop Overlap:   Coarse={:.4}, Fine={:.4}",
+        c_sib, f_sib
+    );
+    println!(
+        "  Disjoint Coarse Overlap:  Coarse={:.4}, Fine={:.4}",
+        c_disj, f_disj
+    );
+    println!(
+        "  Strong Triangle Inequality: {}",
+        if triangle_holds {
+            "PASS (Ultra-Metric Valid)"
+        } else {
+            "FAIL"
+        }
+    );
 
     // 2. Training Stage
     println!("\n[2/3] Training Ultrametric Tree Sorter via Multi-Branch QMUX Optimization...");
@@ -207,8 +244,10 @@ fn main() {
             let s = &train_samples[idx];
             // Compute parallel branch gradients via Parameter Shift
             for f_off in 0..cfg.n_fine {
-                let g_ry = sorter.parameter_shift_branch_grad(&s.features, f_off, false, s.label, s.place);
-                let g_rz = sorter.parameter_shift_branch_grad(&s.features, f_off, true, s.label, s.place);
+                let g_ry =
+                    sorter.parameter_shift_branch_grad(&s.features, f_off, false, s.label, s.place);
+                let g_rz =
+                    sorter.parameter_shift_branch_grad(&s.features, f_off, true, s.label, s.place);
                 for y in 0..cfg.d_coarse() {
                     let weight = if y == s.label { -1.0 } else { 0.2 };
                     grad_branch[y][f_off * 2] += weight * g_ry[y];
@@ -219,7 +258,10 @@ fn main() {
 
         let b_scale = lr / (batch_idx.len() as f64);
         for y in 0..cfg.d_coarse() {
-            for (p, g) in sorter.branch_params[y].iter_mut().zip(grad_branch[y].iter()) {
+            for (p, g) in sorter.branch_params[y]
+                .iter_mut()
+                .zip(grad_branch[y].iter())
+            {
                 *p -= b_scale * g;
             }
         }
@@ -269,7 +311,11 @@ fn main() {
     let g2 = evaluate_subgroup(&test_samples, &sorter, 1, 0);
     let g3 = evaluate_subgroup(&test_samples, &sorter, 1, 1);
 
-    let wga = g0.accuracy_pct.min(g1.accuracy_pct).min(g2.accuracy_pct).min(g3.accuracy_pct);
+    let wga = g0
+        .accuracy_pct
+        .min(g1.accuracy_pct)
+        .min(g2.accuracy_pct)
+        .min(g3.accuracy_pct);
 
     println!("--------------------------------------------------------------------------------");
     println!("TEST RESULTS:");
@@ -277,17 +323,35 @@ fn main() {
     println!("  Worst-Group Accuracy (WGA): {:.2}%", wga);
     println!("  Fine Subpopulation Acc:    {:.2}%", test_fine_acc);
     println!("  Joint Leaf Accuracy:       {:.2}%", test_joint_acc);
-    println!("  G0 (Land / Land):          {:.2}% ({}/{})", g0.accuracy_pct, g0.correct, g0.total);
-    println!("  G1 (Land / Water):         {:.2}% ({}/{})", g1.accuracy_pct, g1.correct, g1.total);
-    println!("  G2 (Water / Land):         {:.2}% ({}/{})", g2.accuracy_pct, g2.correct, g2.total);
-    println!("  G3 (Water / Water):        {:.2}% ({}/{})", g3.accuracy_pct, g3.correct, g3.total);
-    println!("  Inference Latency:         {:.2} us/sample", per_sample_us);
+    println!(
+        "  G0 (Land / Land):          {:.2}% ({}/{})",
+        g0.accuracy_pct, g0.correct, g0.total
+    );
+    println!(
+        "  G1 (Land / Water):         {:.2}% ({}/{})",
+        g1.accuracy_pct, g1.correct, g1.total
+    );
+    println!(
+        "  G2 (Water / Land):         {:.2}% ({}/{})",
+        g2.accuracy_pct, g2.correct, g2.total
+    );
+    println!(
+        "  G3 (Water / Water):        {:.2}% ({}/{})",
+        g3.accuracy_pct, g3.correct, g3.total
+    );
+    println!(
+        "  Inference Latency:         {:.2} us/sample",
+        per_sample_us
+    );
     println!("--------------------------------------------------------------------------------");
 
     let report = UltrametricTreeReport {
         timestamp_rfc3339: chrono_or_now(),
         dataset: "Waterbirds 10D (MobileNetV3 PCA)".to_string(),
-        registers: format!("H_C({}Q) (x) H_F({}Q) (x) H_E({}Q)", cfg.n_coarse, cfg.n_fine, cfg.n_env),
+        registers: format!(
+            "H_C({}Q) (x) H_F({}Q) (x) H_E({}Q)",
+            cfg.n_coarse, cfg.n_fine, cfg.n_env
+        ),
         n_qubits: cfg.total_qubits(),
         num_parameters: sorter.total_parameters(),
         geometry: UltrametricGeometryReport {

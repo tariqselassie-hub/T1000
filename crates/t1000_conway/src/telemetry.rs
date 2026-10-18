@@ -12,11 +12,11 @@ use crate::state::QuantumCellStateSoA;
 /// ANSI color constants conforming to Deen OS Sovereign Visual Specification.
 pub mod colors {
     pub const RESET: &str = "\x1b[0m";
-    pub const EMERALD: &str = "\x1b[38;2;0;230;118m";      // #00e676 (Living cells)
-    pub const AMBER: &str = "\x1b[38;2;255;179;0m";        // #ffb300 (FFS l=2 cells)
-    pub const SLATE_GRID: &str = "\x1b[38;2;51;65;85m";     // #334155 (Vacuum / Grid)
+    pub const EMERALD: &str = "\x1b[38;2;0;230;118m"; // #00e676 (Living cells)
+    pub const AMBER: &str = "\x1b[38;2;255;179;0m"; // #ffb300 (FFS l=2 cells)
+    pub const SLATE_GRID: &str = "\x1b[38;2;51;65;85m"; // #334155 (Vacuum / Grid)
     pub const POLAR_WHITE: &str = "\x1b[38;2;248;250;252m"; // #f8fafc (Monospace text)
-    pub const ALERT_RED: &str = "\x1b[38;2;239;68;68m";     // #ef4444 (Alerts / Norm err)
+    pub const ALERT_RED: &str = "\x1b[38;2;239;68;68m"; // #ef4444 (Alerts / Norm err)
 }
 
 /// Formatter for visual and structured telemetry readouts.

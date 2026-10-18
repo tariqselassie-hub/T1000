@@ -3,12 +3,12 @@
 
 //! Integration & Verification Tests for T-1000 Quantum Conway Engine.
 
-use t1000_conway::{
-    build_holonomy_unitary, ffs_momentum_plateau, geometric_holonomy_phase,
-    BoundaryCondition, ClassicalConwayEngine, HolonomyParams, Lattice2D,
-    PatternFactory, PatternType, QuantumConwaySimulator,
-};
 use std::f64::consts::PI;
+use t1000_conway::{
+    build_holonomy_unitary, ffs_momentum_plateau, geometric_holonomy_phase, BoundaryCondition,
+    ClassicalConwayEngine, HolonomyParams, Lattice2D, PatternFactory, PatternType,
+    QuantumConwaySimulator,
+};
 
 #[test]
 fn test_lattice_geometry_and_wrapping() {

@@ -36,12 +36,19 @@ struct QgolRunResults {
 }
 
 fn run_glider_soliton_scenario(width: usize, height: usize) -> ScenarioTelemetry {
-    println!("{}[SCENARIO 1: Bethe-String Glider Soliton Propagation]{}", colors::POLAR_WHITE, colors::RESET);
+    println!(
+        "{}[SCENARIO 1: Bethe-String Glider Soliton Propagation]{}",
+        colors::POLAR_WHITE,
+        colors::RESET
+    );
     let lattice = Lattice2D::new(width, height, BoundaryCondition::Toroidal);
     let mut sim = QuantumConwaySimulator::new(lattice, HolonomyParams::default());
     PatternFactory::inject_pattern(PatternType::Glider, &sim.lattice, &mut sim.state, 2, 2);
 
-    println!("{}", TelemetryVisualizer::render_grid(&sim.lattice, &sim.state));
+    println!(
+        "{}",
+        TelemetryVisualizer::render_grid(&sim.lattice, &sim.state)
+    );
     let start = Instant::now();
     let mut history = Vec::new();
 
@@ -52,7 +59,10 @@ fn run_glider_soliton_scenario(width: usize, height: usize) -> ScenarioTelemetry
     let elapsed = start.elapsed().as_micros();
 
     let last = history.last().unwrap();
-    println!("{}", TelemetryVisualizer::render_grid(&sim.lattice, &sim.state));
+    println!(
+        "{}",
+        TelemetryVisualizer::render_grid(&sim.lattice, &sim.state)
+    );
     println!("{}", TelemetryVisualizer::format_banner(last));
 
     ScenarioTelemetry {
@@ -69,12 +79,25 @@ fn run_glider_soliton_scenario(width: usize, height: usize) -> ScenarioTelemetry
 }
 
 fn run_ffs_overpopulation_protection_scenario(width: usize, height: usize) -> ScenarioTelemetry {
-    println!("{}[SCENARIO 2: Fractional Fermi Sea Topological Protection]{}", colors::POLAR_WHITE, colors::RESET);
+    println!(
+        "{}[SCENARIO 2: Fractional Fermi Sea Topological Protection]{}",
+        colors::POLAR_WHITE,
+        colors::RESET
+    );
     let lattice = Lattice2D::new(width, height, BoundaryCondition::Toroidal);
     let mut sim = QuantumConwaySimulator::new(lattice, HolonomyParams::default());
-    PatternFactory::inject_pattern(PatternType::FractionalFermiSeaBubble, &sim.lattice, &mut sim.state, 6, 6);
+    PatternFactory::inject_pattern(
+        PatternType::FractionalFermiSeaBubble,
+        &sim.lattice,
+        &mut sim.state,
+        6,
+        6,
+    );
 
-    println!("{}", TelemetryVisualizer::render_grid(&sim.lattice, &sim.state));
+    println!(
+        "{}",
+        TelemetryVisualizer::render_grid(&sim.lattice, &sim.state)
+    );
     let start = Instant::now();
     let mut history = Vec::new();
 
@@ -85,7 +108,10 @@ fn run_ffs_overpopulation_protection_scenario(width: usize, height: usize) -> Sc
     let elapsed = start.elapsed().as_micros();
 
     let last = history.last().unwrap();
-    println!("{}", TelemetryVisualizer::render_grid(&sim.lattice, &sim.state));
+    println!(
+        "{}",
+        TelemetryVisualizer::render_grid(&sim.lattice, &sim.state)
+    );
     println!("{}", TelemetryVisualizer::format_banner(last));
 
     ScenarioTelemetry {
@@ -102,12 +128,19 @@ fn run_ffs_overpopulation_protection_scenario(width: usize, height: usize) -> Sc
 }
 
 fn run_cat_blinker_scenario(width: usize, height: usize) -> ScenarioTelemetry {
-    println!("{}[SCENARIO 3: Coherent Cat Blinker Revival]{}", colors::POLAR_WHITE, colors::RESET);
+    println!(
+        "{}[SCENARIO 3: Coherent Cat Blinker Revival]{}",
+        colors::POLAR_WHITE,
+        colors::RESET
+    );
     let lattice = Lattice2D::new(width, height, BoundaryCondition::Toroidal);
     let mut sim = QuantumConwaySimulator::new(lattice, HolonomyParams::default());
     PatternFactory::inject_cat_blinker(&sim.lattice, &mut sim.state, 5, 5);
 
-    println!("{}", TelemetryVisualizer::render_grid(&sim.lattice, &sim.state));
+    println!(
+        "{}",
+        TelemetryVisualizer::render_grid(&sim.lattice, &sim.state)
+    );
     let start = Instant::now();
     let mut history = Vec::new();
 
@@ -118,7 +151,10 @@ fn run_cat_blinker_scenario(width: usize, height: usize) -> ScenarioTelemetry {
     let elapsed = start.elapsed().as_micros();
 
     let last = history.last().unwrap();
-    println!("{}", TelemetryVisualizer::render_grid(&sim.lattice, &sim.state));
+    println!(
+        "{}",
+        TelemetryVisualizer::render_grid(&sim.lattice, &sim.state)
+    );
     println!("{}", TelemetryVisualizer::format_banner(last));
 
     ScenarioTelemetry {
@@ -138,8 +174,15 @@ fn main() {
     let width = 16;
     let height = 16;
 
-    println!("{}[T-1000 Sovereign Quantum Conway Game of Life Engine]{}", colors::POLAR_WHITE, colors::RESET);
-    println!("Lattice Geometry: {}x{} Toroidal | Generalized Exclusion Statistics: alpha = 2", width, height);
+    println!(
+        "{}[T-1000 Sovereign Quantum Conway Game of Life Engine]{}",
+        colors::POLAR_WHITE,
+        colors::RESET
+    );
+    println!(
+        "Lattice Geometry: {}x{} Toroidal | Generalized Exclusion Statistics: alpha = 2",
+        width, height
+    );
 
     let s1 = run_glider_soliton_scenario(width, height);
     let s2 = run_ffs_overpopulation_protection_scenario(width, height);

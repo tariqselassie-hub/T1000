@@ -437,7 +437,12 @@ impl ClassicalKWayGluedWalker {
         (max_steps, false, false)
     }
 
-    pub fn benchmark(&self, target_exit: usize, n_trials: usize, max_steps: usize) -> (f64, f64, f64) {
+    pub fn benchmark(
+        &self,
+        target_exit: usize,
+        n_trials: usize,
+        max_steps: usize,
+    ) -> (f64, f64, f64) {
         use rand::SeedableRng;
         let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0x5EED_0042);
 
@@ -499,7 +504,10 @@ mod tests {
         let traj = valve.run_simulation(15.0, 0.1);
 
         let max_target = traj.iter().map(|s| s.p_target_exit).fold(0.0_f64, f64::max);
-        let max_competing = traj.iter().map(|s| s.p_non_target_sum).fold(0.0_f64, f64::max);
+        let max_competing = traj
+            .iter()
+            .map(|s| s.p_non_target_sum)
+            .fold(0.0_f64, f64::max);
 
         assert!(
             max_target > max_competing,

@@ -90,7 +90,11 @@ pub fn compute_neighborhood_occupations(
         *d = state.cell_density(i);
     }
 
-    for (i, occ) in out_occupations.iter_mut().enumerate().take(lattice.total_cells) {
+    for (i, occ) in out_occupations
+        .iter_mut()
+        .enumerate()
+        .take(lattice.total_cells)
+    {
         let nbrs = lattice.moore_neighbors(i);
         let mut sum = 0.0f64;
         for &nbr_idx in nbrs {

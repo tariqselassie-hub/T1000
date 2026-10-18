@@ -67,7 +67,8 @@ pub struct ZincScreeningTelemetry {
 
 /// Parses the ZINC test dataset CSV, extracting (smiles, qed, sas).
 fn load_zinc_dataset(path: &Path, max_samples: usize) -> Vec<(String, f64, f64)> {
-    let content = fs::read_to_string(path).unwrap_or_else(|_| panic!("Failed to read {}", path.display()));
+    let content =
+        fs::read_to_string(path).unwrap_or_else(|_| panic!("Failed to read {}", path.display()));
     let mut rows = Vec::with_capacity(max_samples);
 
     for (line_idx, line) in content.lines().enumerate() {
@@ -156,8 +157,16 @@ fn evaluate_discrete_gate_vqc(
         overall_quadrant_accuracy_pct: (correct_quadrant as f64 / n as f64) * 100.0,
         coarse_qed_accuracy_pct: (correct_coarse as f64 / n as f64) * 100.0,
         fine_sas_accuracy_pct: (correct_fine as f64 / n as f64) * 100.0,
-        lead_precision_pct: if pred_leads > 0 { (tp_leads as f64 / pred_leads as f64) * 100.0 } else { 0.0 },
-        lead_recall_pct: if true_leads > 0 { (tp_leads as f64 / true_leads as f64) * 100.0 } else { 0.0 },
+        lead_precision_pct: if pred_leads > 0 {
+            (tp_leads as f64 / pred_leads as f64) * 100.0
+        } else {
+            0.0
+        },
+        lead_recall_pct: if true_leads > 0 {
+            (tp_leads as f64 / true_leads as f64) * 100.0
+        } else {
+            0.0
+        },
         mean_routing_contrast: total_contrast / n as f64,
         mean_latency_us: mean_lat,
         throughput_mols_sec: throughput,
@@ -171,20 +180,33 @@ fn main() {
 
     let csv_path = Path::new("tests/benchmarks/zinc_molecular/outputs/zinc_test_1k.csv");
     let molecules = load_zinc_dataset(csv_path, 1000);
-    println!(" Loaded {} genuine ZINC molecules from {}", molecules.len(), csv_path.display());
+    println!(
+        " Loaded {} genuine ZINC molecules from {}",
+        molecules.len(),
+        csv_path.display()
+    );
 
     let true_lead_count = molecules
         .iter()
-        .filter(|(_, qed, sas)| PharmacologicalQuadrant::from_qed_sas(*qed, *sas) == PharmacologicalQuadrant::LeadCandidate)
+        .filter(|(_, qed, sas)| {
+            PharmacologicalQuadrant::from_qed_sas(*qed, *sas)
+                == PharmacologicalQuadrant::LeadCandidate
+        })
         .count();
-    println!(" Ground Truth Lead Candidates (QED >= 0.60, SAS <= 3.5): {}", true_lead_count);
+    println!(
+        " Ground Truth Lead Candidates (QED >= 0.60, SAS <= 3.5): {}",
+        true_lead_count
+    );
 
     let noise = NoiseChannelParams {
         t1_us: 45.0,
         t2_us: 60.0,
         depolarizing_prob: 0.002,
     };
-    println!(" Physical Noise Substrate: T1 = {} us, T2* = {} us, p_depol = {}", noise.t1_us, noise.t2_us, noise.depolarizing_prob);
+    println!(
+        " Physical Noise Substrate: T1 = {} us, T2* = {} us, p_depol = {}",
+        noise.t1_us, noise.t2_us, noise.depolarizing_prob
+    );
     println!("--------------------------------------------------------------------------------");
 
     // 1. Discrete Gate VQC Classifier under physical noise
@@ -216,7 +238,10 @@ fn main() {
     // 3. Stabilized Analog Pulse Continuous Screener (Flat-Top Gaussian + Zeno Sentry)
     println!(" [3/3] Benchmarking Stabilized Analog Pulse Screener (Flat-Top Gaussian + Zeno)...");
     let cfg_analog = MolecularWalkScreenerConfig {
-        envelope: PulseEnvelopeKind::FlatTopGaussian { rise_time: 0.5, sigma: 0.2 },
+        envelope: PulseEnvelopeKind::FlatTopGaussian {
+            rise_time: 0.5,
+            sigma: 0.2,
+        },
         zeno_stabilization: true,
         ..Default::default()
     };
@@ -266,8 +291,11 @@ fn main() {
     let out_dir = Path::new("results");
     fs::create_dir_all(out_dir).expect("Create results dir");
     let out_path = out_dir.join("zinc_topological_walk_telemetry.json");
-    fs::write(&out_path, serde_json::to_string_pretty(&telemetry).expect("Serialize JSON"))
-        .expect("Write telemetry JSON");
+    fs::write(
+        &out_path,
+        serde_json::to_string_pretty(&telemetry).expect("Serialize JSON"),
+    )
+    .expect("Write telemetry JSON");
     println!(" Telemetry written to: {}", out_path.display());
 
     // Print Structured Unicode Table
@@ -275,16 +303,26 @@ fn main() {
     println!("│ Model Architecture                          │ Overall Acc  │ Coarse (QED) │ Fine (SAS)   │ Contrast     │");
     println!("├──────────────────────────────────────────────┼──────────────┼──────────────┼──────────────┼──────────────┤");
     for m in &[summary_vqc, summary_walk, summary_analog] {
-        println!("│ {:<44} │ {:>10.2}% │ {:>10.2}% │ {:>10.2}% │ {:>10.1}:1 │",
-            m.model_name, m.overall_quadrant_accuracy_pct, m.coarse_qed_accuracy_pct, m.fine_sas_accuracy_pct, m.mean_routing_contrast
+        println!(
+            "│ {:<44} │ {:>10.2}% │ {:>10.2}% │ {:>10.2}% │ {:>10.1}:1 │",
+            m.model_name,
+            m.overall_quadrant_accuracy_pct,
+            m.coarse_qed_accuracy_pct,
+            m.fine_sas_accuracy_pct,
+            m.mean_routing_contrast
         );
     }
     println!("└──────────────────────────────────────────────┴──────────────┴──────────────┴──────────────┴──────────────┘");
 
     println!("\n TOP 5 DISCOVERED PHARMACOLOGICAL LEADS (High QED, Low SAS):");
     for (i, lead) in top_leads.iter().enumerate() {
-        println!(" [{}] QED: {:.3} | SAS: {:.3} | Contrast: {:>8.1}:1 | SMILES: {}",
-            i + 1, lead.qed, lead.sas, lead.routing_contrast, lead.smiles
+        println!(
+            " [{}] QED: {:.3} | SAS: {:.3} | Contrast: {:>8.1}:1 | SMILES: {}",
+            i + 1,
+            lead.qed,
+            lead.sas,
+            lead.routing_contrast,
+            lead.smiles
         );
     }
 }

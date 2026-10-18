@@ -51,11 +51,16 @@ pub mod state;
 pub mod telemetry;
 pub mod tensor_network;
 pub mod tiled_butterfly;
-pub mod trainer;
 pub mod topological_sorter;
+pub mod trainer;
 pub mod ultrametric_tree;
 pub mod zipper;
 
+pub use cascaded_tree_valve::{
+    simulate_cascaded_classical_walk, simulate_cascaded_quantum_walk, CascadedBenchmarkResult,
+    CascadedTrajectoryPoint, CascadedValveConfig, CascadedValveHamiltonian, QuantumWalkStateSoA,
+    SparseCoupling, SparseSymmetricHamiltonian,
+};
 pub use chemistry::{
     list_period_molecules, simulate_period_molecule, JordanWignerHamiltonian,
     MolecularQuantumReport, PauliOp, PauliTerm, Period12Molecule, Period12MoleculeMetadata,
@@ -66,11 +71,6 @@ pub use clifford_t::{
     SynthesisSolution, ZOmega,
 };
 pub use engine::{FpgaDeviceInfo, SystemManifestReport, T1000Engine};
-pub use cascaded_tree_valve::{
-    simulate_cascaded_classical_walk, simulate_cascaded_quantum_walk, CascadedBenchmarkResult,
-    CascadedTrajectoryPoint, CascadedValveConfig, CascadedValveHamiltonian, QuantumWalkStateSoA,
-    SparseCoupling, SparseSymmetricHamiltonian,
-};
 pub use glued_tree_valve::{
     ClassicalKWayGluedWalker, ContinuousTreeValveWalk, GluedTreeValveConfig,
     MultiExitValveHamiltonian, ValveStepTelemetry,
@@ -132,6 +132,10 @@ pub use lattice::{
 };
 pub use measurements::{POVMClassifier, PauliObservable};
 pub use memory::{MemoryEntry, QuantumAssociativeMemory};
+pub use molecular_walk_screener::{
+    BatchMolecularScreeningReport, ContinuousMolecularWalkScreener, MolecularWalkScreenerConfig,
+    MoleculeScreeningResult, PharmacologicalQuadrant, PulseEnvelopeKind,
+};
 pub use optimizer::{
     normalize_correlators_arr_backward, normalize_correlators_arr_forward, AdamOptimizer,
     CorrelatorNormCacheArr, ParameterShiftEngine, TwoSpeedHybridOptimizer,
@@ -156,10 +160,6 @@ pub use rcs::{
 pub use smiles::{
     BondKind, ParsedSmiles, SmilesAtom, SmilesError, SmilesExplorer, SmilesFeatures,
     SmilesFeaturizer, SmilesPropertyProfile, SmilesQuantumEncoder, SmilesToken,
-};
-pub use molecular_walk_screener::{
-    BatchMolecularScreeningReport, ContinuousMolecularWalkScreener, MolecularWalkScreenerConfig,
-    MoleculeScreeningResult, PharmacologicalQuadrant, PulseEnvelopeKind,
 };
 pub use state::{QuantumFeatureMap, QuantumState};
 pub use tiled_butterfly::{apply_layer_fused, tiled_apply_cz, tiled_apply_ry, tiled_apply_rz};
@@ -378,7 +378,7 @@ mod tests {
         }
 
         // 2. Fused AVX2 Rademacher Kernel
-        let mut fused = base.clone();
+        let mut fused = base;
         pi_layer.forward_in_place(&mut fused);
 
         // Strict bit-exact / floating-point parity comparison
