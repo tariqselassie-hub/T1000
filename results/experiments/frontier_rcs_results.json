@@ -1,168 +1,264 @@
 {
-  "qubits": 20,
-  "depth": 12,
-  "total_states": 1048576,
+  "qubits": 19,
+  "depth": 36,
+  "total_states": 524288,
   "reference": {
     "name": "Scalar reference statevector (frontier_rcs.rs)",
-    "total_time_seconds": 0.3931547,
-    "gate_count": 721,
+    "total_time_seconds": 0.5110722,
+    "gate_count": 2053,
     "layers": []
   },
   "optimized": {
     "name": "t1000 AVX2 + tiled kernels",
-    "total_time_seconds": 0.0758082,
-    "gate_count": 721,
+    "total_time_seconds": 0.1272593,
+    "gate_count": 2053,
     "layers": [
       {
         "layer": 1,
-        "latency_seconds": 0.0058762
+        "latency_seconds": 0.0027499
       },
       {
         "layer": 2,
-        "latency_seconds": 0.0055737
+        "latency_seconds": 0.0035039
       },
       {
         "layer": 3,
-        "latency_seconds": 0.0057514
+        "latency_seconds": 0.0027723
       },
       {
         "layer": 4,
-        "latency_seconds": 0.0057149
+        "latency_seconds": 0.0024297
       },
       {
         "layer": 5,
-        "latency_seconds": 0.0061245
+        "latency_seconds": 0.003043
       },
       {
         "layer": 6,
-        "latency_seconds": 0.0050721
+        "latency_seconds": 0.0034951
       },
       {
         "layer": 7,
-        "latency_seconds": 0.005473
+        "latency_seconds": 0.0028807
       },
       {
         "layer": 8,
-        "latency_seconds": 0.0060578
+        "latency_seconds": 0.0030435
       },
       {
         "layer": 9,
-        "latency_seconds": 0.0063435
+        "latency_seconds": 0.0035306
       },
       {
         "layer": 10,
-        "latency_seconds": 0.0057087
+        "latency_seconds": 0.003056
       },
       {
         "layer": 11,
-        "latency_seconds": 0.0050266
+        "latency_seconds": 0.0033553
       },
       {
         "layer": 12,
-        "latency_seconds": 0.0056609
+        "latency_seconds": 0.0036088
+      },
+      {
+        "layer": 13,
+        "latency_seconds": 0.0037452
+      },
+      {
+        "layer": 14,
+        "latency_seconds": 0.0034483
+      },
+      {
+        "layer": 15,
+        "latency_seconds": 0.0036078
+      },
+      {
+        "layer": 16,
+        "latency_seconds": 0.003471
+      },
+      {
+        "layer": 17,
+        "latency_seconds": 0.0031818
+      },
+      {
+        "layer": 18,
+        "latency_seconds": 0.0034885
+      },
+      {
+        "layer": 19,
+        "latency_seconds": 0.0035937
+      },
+      {
+        "layer": 20,
+        "latency_seconds": 0.0030112
+      },
+      {
+        "layer": 21,
+        "latency_seconds": 0.0037125
+      },
+      {
+        "layer": 22,
+        "latency_seconds": 0.0030041
+      },
+      {
+        "layer": 23,
+        "latency_seconds": 0.0029003
+      },
+      {
+        "layer": 24,
+        "latency_seconds": 0.0035457
+      },
+      {
+        "layer": 25,
+        "latency_seconds": 0.0027143
+      },
+      {
+        "layer": 26,
+        "latency_seconds": 0.0034747
+      },
+      {
+        "layer": 27,
+        "latency_seconds": 0.0032674
+      },
+      {
+        "layer": 28,
+        "latency_seconds": 0.0040631
+      },
+      {
+        "layer": 29,
+        "latency_seconds": 0.0037692
+      },
+      {
+        "layer": 30,
+        "latency_seconds": 0.003258
+      },
+      {
+        "layer": 31,
+        "latency_seconds": 0.0029457
+      },
+      {
+        "layer": 32,
+        "latency_seconds": 0.0030005
+      },
+      {
+        "layer": 33,
+        "latency_seconds": 0.0040368
+      },
+      {
+        "layer": 34,
+        "latency_seconds": 0.0031198
+      },
+      {
+        "layer": 35,
+        "latency_seconds": 0.0033557
+      },
+      {
+        "layer": 36,
+        "latency_seconds": 0.0028937
       }
     ]
   },
   "optimized_threads": 20,
-  "speedup_vs_reference": 5.186176429462776,
+  "speedup_vs_reference": 4.015990972761912,
   "agreement": {
-    "max_amplitude_error": 9.148507953680036e-18,
-    "state_fidelity": 0.9999999999999867,
-    "total_variation_distance": 1.197211119053513e-15
+    "max_amplitude_error": 2.140935571697884e-17,
+    "state_fidelity": 1.0000000000000018,
+    "total_variation_distance": 2.0361773392038378e-15
   },
   "porter_thomas": {
-    "dim": 1048576,
-    "exact_xeb": 1.0069329305510752,
-    "naive_xeb": 1.0069310099807582,
-    "sum_p_sqr": 1.9139585590179045e-6,
-    "expected_sum_p_sqr": 1.9073468138248312e-6,
-    "shannon_entropy": 13.438627004058635,
-    "entropy_deficit": 0.42431660714027153,
-    "expected_entropy_deficit": 0.42278385826138454,
-    "effective_participation_ratio": 522477.35212883743,
-    "expected_participation_ratio": 524288.5,
-    "ks_statistic": 0.0009722686185000828,
-    "ks_critical_value": 0.001326171875,
+    "dim": 524288,
+    "exact_xeb": 0.9976142770626899,
+    "naive_xeb": 0.9976104714734937,
+    "sum_p_sqr": 3.8101396016569017e-6,
+    "expected_sum_p_sqr": 3.8146899896812636e-6,
+    "shannon_entropy": 12.748064715022851,
+    "entropy_deficit": 0.4217317156161098,
+    "expected_entropy_deficit": 0.4227833814244537,
+    "effective_participation_ratio": 262457.5749311478,
+    "expected_participation_ratio": 262144.5,
+    "ks_statistic": 0.0012784502354983296,
+    "ks_critical_value": 0.0018754902516627569,
     "passes_ks_test": true,
     "is_porter_thomas_conforming": true
   },
   "top_bitstrings": [
     [
-      "|01001011010100010100>",
-      0.000014301841606709468
+      "|0101111001101101010>",
+      0.000024758513803992085
     ],
     [
-      "|10000001010111101000>",
-      0.000013095651066254544
+      "|1011010111011110010>",
+      0.00002428423239749202
     ],
     [
-      "|01010001111110101000>",
-      0.000012418903767766724
+      "|0010011001011101010>",
+      0.0000221620448797734
     ],
     [
-      "|00010011000100001000>",
-      0.000012070789018314919
+      "|0101011010111101011>",
+      0.000021964391277185784
     ],
     [
-      "|00000000000110101000>",
-      0.000011896490447869245
+      "|0010111111011101000>",
+      0.000021733981482012122
     ]
   ],
   "gradients": {
     "compare_qubits": 12,
     "compare_depth": 4,
     "compare_params": 96,
-    "adjoint_seconds": 0.0006706,
-    "parameter_shift_seconds": 0.0225949,
+    "adjoint_seconds": 0.0009932,
+    "parameter_shift_seconds": 0.0170777,
     "max_abs_difference": 3.2959746043559335e-16,
-    "full_circuit_params": 480,
-    "full_circuit_adjoint_seconds": 0.2209898
+    "full_circuit_params": 1368,
+    "full_circuit_adjoint_seconds": 0.3313202
   },
   "variational_training": {
     "epochs": 5,
-    "initial_loss": 0.507265608268195,
-    "final_loss": 0.4493110268676225,
-    "total_training_seconds": 0.781939,
-    "mean_epoch_seconds": 0.15638780000000002,
+    "initial_loss": 0.5059192648576889,
+    "final_loss": 0.445667508398135,
+    "total_training_seconds": 0.4196543,
+    "mean_epoch_seconds": 0.08393086,
     "scheduler_mode": "Parallel Work-Stealing Pool (20 Threads)",
     "history": [
       {
         "epoch": 1,
-        "loss": 0.507265608268195,
-        "gradient_norm": 0.04031895537443538,
-        "epoch_seconds": 0.1559178,
+        "loss": 0.5059192648576889,
+        "gradient_norm": 0.033569269293115975,
+        "epoch_seconds": 0.0836001,
         "active_threads": 20,
         "scheduler_mode": "Parallel Work-Stealing Pool (20 Threads)"
       },
       {
         "epoch": 2,
-        "loss": 0.49206805136534476,
-        "gradient_norm": 0.038069565900762596,
-        "epoch_seconds": 0.1567458,
+        "loss": 0.49206094847216675,
+        "gradient_norm": 0.032966933153949086,
+        "epoch_seconds": 0.0821276,
         "active_threads": 20,
         "scheduler_mode": "Parallel Work-Stealing Pool (20 Threads)"
       },
       {
         "epoch": 3,
-        "loss": 0.478184686209631,
-        "gradient_norm": 0.039041148427600356,
-        "epoch_seconds": 0.1560581,
+        "loss": 0.47795154096183096,
+        "gradient_norm": 0.03662745694589464,
+        "epoch_seconds": 0.0878256,
         "active_threads": 20,
         "scheduler_mode": "Parallel Work-Stealing Pool (20 Threads)"
       },
       {
         "epoch": 4,
-        "loss": 0.4642394291665756,
-        "gradient_norm": 0.04233849692558299,
-        "epoch_seconds": 0.1566884,
+        "loss": 0.46267989104819846,
+        "gradient_norm": 0.04294155191911087,
+        "epoch_seconds": 0.0845926,
         "active_threads": 20,
         "scheduler_mode": "Parallel Work-Stealing Pool (20 Threads)"
       },
       {
         "epoch": 5,
-        "loss": 0.4493110268676225,
-        "gradient_norm": 0.04680423373424203,
-        "epoch_seconds": 0.1555246,
+        "loss": 0.445667508398135,
+        "gradient_norm": 0.050560141009721525,
+        "epoch_seconds": 0.0812603,
         "active_threads": 20,
         "scheduler_mode": "Parallel Work-Stealing Pool (20 Threads)"
       }

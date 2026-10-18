@@ -18,8 +18,8 @@
       "lead_precision_pct": 82.83582089552239,
       "lead_recall_pct": 55.04132231404959,
       "mean_routing_contrast": 2.7299507854864444,
-      "mean_latency_us": 0.025,
-      "throughput_mols_sec": 40000000.0
+      "mean_latency_us": 0.027,
+      "throughput_mols_sec": 37037037.03703704
     },
     {
       "model_name": "Continuous Topological Walk Screener",
@@ -30,8 +30,8 @@
       "lead_precision_pct": 65.94285714285715,
       "lead_recall_pct": 95.37190082644628,
       "mean_routing_contrast": 22.194249486575043,
-      "mean_latency_us": 128.307,
-      "throughput_mols_sec": 7793.807040925281
+      "mean_latency_us": 38.899,
+      "throughput_mols_sec": 25707.601737833877
     },
     {
       "model_name": "Stabilized Analog Pulse Continuous Screener",
@@ -42,8 +42,8 @@
       "lead_precision_pct": 65.94285714285715,
       "lead_recall_pct": 95.37190082644628,
       "mean_routing_contrast": 22.194249486575043,
-      "mean_latency_us": 128.183,
-      "throughput_mols_sec": 7801.346512408042
+      "mean_latency_us": 38.862,
+      "throughput_mols_sec": 25732.077607946063
     }
   ],
   "top_lead_candidates": [
