@@ -36,6 +36,7 @@ data/mimac/*.png
 data/mimac/*.png.png
 data/mimac/*.pdf
 data/birds/*.bin
+data/mnist/*.idx*-ubyte
 *.zip
 *.tar.gz
 

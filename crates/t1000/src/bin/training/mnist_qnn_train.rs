@@ -66,11 +66,13 @@ pub struct MnistQnnReport {
 /// Locate MNIST dataset files across known workspace paths.
 fn locate_mnist_file(filename_candidates: &[&str]) -> Option<PathBuf> {
     let candidate_dirs = [
+        "data/mnist",
+        "../data/mnist",
+        "data",
+        "../data",
         "C:\\Users\\zoddj\\zenith_workspace_divizion\\GuddaLM\\data",
         "../GuddaLM/data",
         "../../GuddaLM/data",
-        "data",
-        "../data",
     ];
 
     for dir in &candidate_dirs {

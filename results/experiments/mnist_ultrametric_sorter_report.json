@@ -1,0 +1,81 @@
+{
+  "timestamp_rfc3339": "2026-10-17T20:00:00Z",
+  "architecture": "T-1000 3-Register Ultrametric Tree Sorter (QMUX)",
+  "registers": "H_C(1Q) (x) H_F(3Q) (x) H_E(6Q)",
+  "n_qubits": 10,
+  "state_dim": 1024,
+  "total_parameters": 55,
+  "classical_head_parameters": 0,
+  "train_samples": 10000,
+  "test_samples": 2000,
+  "training_time_sec": 17.1711277,
+  "inference_per_sample_us": 4.9055,
+  "test_parity_accuracy_pct": 49.8,
+  "test_fine_subdigit_accuracy_pct": 15.1,
+  "test_digit_accuracy_pct": 8.3,
+  "baseline_legacy_qnn_acc_pct": 84.5,
+  "per_digit_metrics": [
+    {
+      "digit": 0,
+      "total": 175,
+      "correct": 0,
+      "accuracy_pct": 0.0
+    },
+    {
+      "digit": 1,
+      "total": 234,
+      "correct": 4,
+      "accuracy_pct": 1.7094017094017095
+    },
+    {
+      "digit": 2,
+      "total": 219,
+      "correct": 0,
+      "accuracy_pct": 0.0
+    },
+    {
+      "digit": 3,
+      "total": 207,
+      "correct": 66,
+      "accuracy_pct": 31.88405797101449
+    },
+    {
+      "digit": 4,
+      "total": 217,
+      "correct": 0,
+      "accuracy_pct": 0.0
+    },
+    {
+      "digit": 5,
+      "total": 179,
+      "correct": 4,
+      "accuracy_pct": 2.2346368715083798
+    },
+    {
+      "digit": 6,
+      "total": 178,
+      "correct": 0,
+      "accuracy_pct": 0.0
+    },
+    {
+      "digit": 7,
+      "total": 205,
+      "correct": 91,
+      "accuracy_pct": 44.390243902439025
+    },
+    {
+      "digit": 8,
+      "total": 192,
+      "correct": 1,
+      "accuracy_pct": 0.5208333333333333
+    },
+    {
+      "digit": 9,
+      "total": 194,
+      "correct": 0,
+      "accuracy_pct": 0.0
+    }
+  ],
+  "unitarity_conserved": true,
+  "strong_triangle_inequality_holds": true
+}

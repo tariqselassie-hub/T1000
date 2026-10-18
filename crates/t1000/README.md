@@ -35,6 +35,8 @@
 | **[`qec::vnni`](src/qec/vnni.rs)** | 32-way INT8 vector dot-product syndrome engine (`{{vex}} vpdpbusd`) evaluating surface code stabilizer checks at **$37.6\text{ Million decodings/sec}$**. |
 | **[`heptal_qnn`](src/heptal_qnn.rs)** | Sovereign Radix-7 qudit ($\mathbb{Z}_7$) Matrix Product State (MPS) QNN for chemical descriptor space (784-byte L1 resident). |
 | **[`ultrametric_tree`](src/ultrametric_tree.rs)** | Multi-register hierarchical Quantum Multiplexor (QMUX) sorter ($\mathcal{H} = \mathcal{H}_C \otimes \mathcal{H}_F \otimes \mathcal{H}_E$) enforcing ultrametric geometry, parallel branch parameter shifts, and entropy sink purification. |
+| **[`glued_trees`](src/glued_trees.rs)** | Continuous-Time Quantum Walk (CTQW) engine on welded binary trees (Childs et al.) demonstrating exponential quantum speedup via column-symmetric subspace invariance. |
+| **[`glued_tree_valve`](src/glued_tree_valve.rs)** | Multi-Exit Topological Tree Valve & Quantum Router ($K$-way welded tree) utilizing Aharonov-Bohm phase holonomy and dark-subspace cancellation for ballistic qudit routing. |
 | **[`molfeatures`](src/molfeatures.rs)** | Native OpenSMILES parser with 19 structural descriptors mapped to parameterized rotation angles $R_y(x_i)$. |
 
 ---
@@ -42,8 +44,8 @@
 ## Executable Binaries (`src/bin/`)
 
 The crate organizes CLI binaries into four domain subdirectories:
-* **`src/bin/training/`**: QNN variational training pipelines (`mnist_qnn_train`, `birds_hybrid_qnn_train`, `zinc_qnn_train`, `corpus_vqc_train`).
-* **`src/bin/benchmarks/`**: Reproducible architectural showdowns (`ultrametric_tree_sorter_bench`, `fidelity_orthogonality_bench`, `path_a_vs_c_sorter_bench`, `zinc_scaled_14q_16q_bench`, `zinc_heptal_qnn_bench`).
+* **`src/bin/training/`**: QNN variational training pipelines (`mnist_qnn_train`, `mnist_ultrametric_sorter`, `birds_hybrid_qnn_train`, `zinc_qnn_train`, `corpus_vqc_train`).
+* **`src/bin/benchmarks/`**: Reproducible architectural showdowns (`glued_trees_bench`, `glued_tree_valve_bench`, `ultrametric_tree_sorter_bench`, `fidelity_orthogonality_bench`, `path_a_vs_c_sorter_bench`, `zinc_scaled_14q_16q_bench`, `zinc_heptal_qnn_bench`).
 * **`src/bin/measurements/`**: Quantum hardware telemetry and algorithms (`frontier_rcs`, `vnni_syndrome_bench`, `cut_bridge_chsh_bench`, `coherence_frontier_push`, `nighthawk_r2_bench`).
 * **`src/bin/screening/`**: High-throughput chemical discovery (`zinc_dual_search`, `zinc_250k_screen`, `eval_single_mol`).
 

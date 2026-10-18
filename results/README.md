@@ -8,7 +8,7 @@ This directory stores reproducible experiment reports, benchmark telemetry JSON/
 
 ```
 results/
-├── charts/         # 16 High-resolution scientific figures (Obsidian & Laser Green)
+├── charts/         # 18 High-resolution scientific figures (Obsidian & Laser Green)
 ├── experiments/    # Hardware and simulation JSON/CSV telemetry reports
 └── data/           # Intermediate screening metrics and latent coordinate tables
 ```
@@ -35,11 +35,15 @@ results/
 | **14** | **`nighthawk_r2_kagome_layout.png`** | 120-qubit IBM Quantum Nighthawk R2 & Kagome strip plaquette layout. | ~2,032 KB |
 | **15** | **`waterbirds_hybrid_qnn_telemetry.png`** | Waterbirds 11k visual transfer QNN robustness and subpopulation generalization. | ~534 KB |
 | **16** | **`ultrametric_tree_sorter_telemetry.png`** | Multi-register QMUX Ultrametric Tree Sorter architecture and runtime telemetry. | ~464 KB |
+| **17** | **`glued_trees_speedup_telemetry.png`** | Childs et al. Glued Trees exponential quantum walk speedup & wavepacket trajectory. | ~645 KB |
+| **18** | **`glued_tree_valve_telemetry.png`** | Multi-Exit Topological Glued-Tree Valve ($K$-way router) ballistic sorting telemetry. | ~672 KB |
 
 ---
 
 ## Experiment Reports Manifest (`results/experiments/`)
 
+* **`glued_tree_valve_report.json`**: Multi-Exit Topological Glued-Tree Valve & Quantum Router benchmark across $K=2$ and $K=4$ exit trees ($n=3\dots 8$, contrast $> 1,700:1$).
+* **`glued_trees_report.json`**: Childs et al. Continuous-Time Quantum Walk vs classical random walk traversal across depths $n=2\dots 10$ (exponential speedup verified; $100.0\%$ defect recovery fidelity).
 * **`ultrametric_tree_sorter_report.json`**: Multi-register hierarchical QMUX benchmark on Waterbirds ($4.14\,\mu\text{s/sample}$, $70.69\%$ coarse accuracy, strong triangle inequality verified).
 * **`path_a_vs_c_comparison_report.json`**: Direct comparison of Headless Sorter (Path A) vs. Data Re-Uploading (Path C).
 * **`fidelity_orthogonality_report.json`**: Mathematical proof and empirical verification of the Unitarity Rigidity Theorem ($W^\dagger W = \mathbb{I}$).
@@ -51,7 +55,7 @@ results/
 
 ## Reproducibility Command
 
-To regenerate all 16 scientific figures from current disk telemetry:
+To regenerate all 18 scientific figures from current disk telemetry:
 ```bash
 python scripts/charting/chart_all.py
 ```

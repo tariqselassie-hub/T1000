@@ -25,6 +25,8 @@ pub mod compiler;
 pub mod diagonal;
 pub mod engine;
 pub mod feature_map;
+pub mod glued_tree_valve;
+pub mod glued_trees;
 pub mod gpu;
 pub mod heptal_qnn;
 pub mod heptal_wave;
@@ -61,6 +63,14 @@ pub use clifford_t::{
     SynthesisSolution, ZOmega,
 };
 pub use engine::{FpgaDeviceInfo, SystemManifestReport, T1000Engine};
+pub use glued_tree_valve::{
+    ClassicalKWayGluedWalker, ContinuousTreeValveWalk, GluedTreeValveConfig,
+    MultiExitValveHamiltonian, ValveStepTelemetry,
+};
+pub use glued_trees::{
+    ClassicalGluedWalker, ContinuousQuantumWalk, GluedTreesConfig, QuantumWalkTelemetry,
+    SymmetricChainHamiltonian,
+};
 pub use gpu::{IGpuBridge, IGpuBridgeConfig, IGpuExecutionReport};
 pub use simd::{SimdBackend, SimdStateView, SimdStateViewMut};
 pub use simd_bloch::{

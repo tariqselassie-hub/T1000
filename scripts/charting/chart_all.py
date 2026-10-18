@@ -196,6 +196,26 @@ def run_all_charts() -> None:
         generated.append(("Ultrametric Tree QMUX Telemetry", png.name, f"{size_kb:.1f} KB"))
         print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
 
+    # 17. Childs et al. Glued Trees Exponential Speedup Telemetry
+    glued_report = exp_dir / "glued_trees_report.json"
+    if glued_report.exists():
+        import chart_glued_trees
+        chart_glued_trees.generate_telemetry_chart()
+        png = chart_dir / "glued_trees_speedup_telemetry.png"
+        size_kb = png.stat().st_size / 1024.0
+        generated.append(("Glued Trees Exponential Speedup", png.name, f"{size_kb:.1f} KB"))
+        print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
+
+    # 18. Multi-Exit Topological Glued-Tree Valve & Quantum Router Telemetry
+    valve_report = exp_dir / "glued_tree_valve_report.json"
+    if valve_report.exists():
+        import chart_glued_tree_valve
+        chart_glued_tree_valve.generate_telemetry_chart()
+        png = chart_dir / "glued_tree_valve_telemetry.png"
+        size_kb = png.stat().st_size / 1024.0
+        generated.append(("Glued-Tree Valve & Router", png.name, f"{size_kb:.1f} KB"))
+        print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
+
     print("\n╔═══════════════════════════════════════════════════════════════════════════════╗")
     print("║                        RENDERED ARTIFACT MANIFEST                             ║")
     print("╠═════════════════════════════════════╦══════════════════════════════════╦══════════╣")
