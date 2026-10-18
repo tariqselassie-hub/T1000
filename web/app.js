@@ -43,42 +43,97 @@ class QuantumMolecularDashboard {
         this.activeSelectedGate = null; // { q, l, gate }
         this.circuit = this.createEmptyCircuit(this.qubitCount, this.layerCount);
 
-        this.initDecks();
+        this.initPageNavigation();
         this.initThree();
         this.initEventListeners();
         this.initCircuitComposer();
         this.initDefaultExperiment();
+        this.initValveSimulator();
         this.checkHardwareStatus();
         this.loadTelemetryMatrix();
     }
 
     // -------------------------------------------------------------------------
-    // Deck Navigation
+    // Dual-Page & Sub-View Navigation
     // -------------------------------------------------------------------------
-    initDecks() {
-        const tabs = document.querySelectorAll('.deck-tab');
-        tabs.forEach(tab => {
+    initPageNavigation() {
+        // 1. Primary Page Switching: Page 1 (Neural) vs Page 2 (Simulator)
+        const pageTabs = document.querySelectorAll('.page-tab');
+        pageTabs.forEach(tab => {
             tab.addEventListener('click', () => {
-                tabs.forEach(t => t.classList.remove('active'));
+                pageTabs.forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
 
-                const targetDeckId = tab.dataset.deck;
-                document.querySelectorAll('.deck-section').forEach(sec => {
-                    sec.classList.remove('active');
+                const targetPageId = tab.dataset.page;
+                document.querySelectorAll('.page-view').forEach(view => {
+                    view.classList.remove('active');
                 });
-                const activeSec = document.getElementById(targetDeckId);
+                const targetView = document.getElementById(targetPageId);
+                if (targetView) {
+                    targetView.classList.add('active');
+                }
+
+                // Trigger appropriate refresh depending on active sub-view
+                if (targetPageId === 'page-neural') {
+                    const activeSub = targetView.querySelector('.sub-view.active, .sub-view-fullscreen.active');
+                    if (activeSub && activeSub.id === 'sub-neural-manifold') {
+                        setTimeout(() => this.onWindowResize(), 50);
+                    }
+                } else if (targetPageId === 'page-simulator') {
+                    const activeSub = targetView.querySelector('.sub-view.active, .sub-view-fullscreen.active');
+                    if (activeSub && activeSub.id === 'sub-sim-composer') {
+                        this.renderCircuitGrid();
+                        this.executeCircuit();
+                    } else if (activeSub && activeSub.id === 'sub-sim-hardware') {
+                        this.loadTelemetryMatrix();
+                    }
+                }
+            });
+        });
+
+        // 2. Sub-Tab Navigation inside each Page
+        const subTabs = document.querySelectorAll('.sub-tab');
+        subTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const parentNav = tab.closest('.sub-nav-bar');
+                if (parentNav) {
+                    parentNav.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+                }
+                tab.classList.add('active');
+
+                const targetSubId = tab.dataset.sub;
+                const parentPage = tab.closest('.page-view');
+                if (parentPage) {
+                    parentPage.querySelectorAll('.sub-view, .sub-view-fullscreen').forEach(sec => {
+                        sec.classList.remove('active');
+                    });
+                }
+                const activeSec = document.getElementById(targetSubId);
                 if (activeSec) {
                     activeSec.classList.add('active');
                 }
 
-                if (targetDeckId === 'deck-manifold') {
-                    this.onWindowResize();
-                } else if (targetDeckId === 'deck-composer') {
+                if (targetSubId === 'sub-neural-manifold') {
+                    setTimeout(() => this.onWindowResize(), 50);
+                } else if (targetSubId === 'sub-sim-composer') {
                     this.renderCircuitGrid();
                     this.executeCircuit();
-                } else if (targetDeckId === 'deck-telemetry') {
+                } else if (targetSubId === 'sub-sim-hardware') {
                     this.loadTelemetryMatrix();
                 }
+            });
+        });
+
+        // Legacy / fallback deck-tab support
+        const legacyTabs = document.querySelectorAll('.deck-tab');
+        legacyTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                legacyTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                const targetDeckId = tab.dataset.deck;
+                document.querySelectorAll('.deck-section').forEach(sec => sec.classList.remove('active'));
+                const activeSec = document.getElementById(targetDeckId);
+                if (activeSec) activeSec.classList.add('active');
             });
         });
     }
@@ -2239,6 +2294,53 @@ class QuantumMolecularDashboard {
         });
 
         chartBox.innerHTML = `<pre style="margin:0; font-family:var(--font-mono); font-size:10px;">${lines.join('\n')}</pre>`;
+    }
+
+    initValveSimulator() {
+        const slider = document.getElementById('valve-detuning-slider');
+        const sliderVal = document.getElementById('valve-detuning-val');
+        const btnRun = document.getElementById('btn-run-valve-sim');
+        const archSelect = document.getElementById('valve-arch-select');
+        const targetSelect = document.getElementById('valve-target-select');
+
+        if (slider && sliderVal) {
+            slider.addEventListener('input', () => {
+                const val = parseFloat(slider.value);
+                const ratio = val > 0 ? (1.0 / val).toFixed(0) : 'Inf';
+                sliderVal.textContent = `${val.toFixed(2)} (${ratio}x)`;
+            });
+        }
+
+        if (btnRun) {
+            btnRun.addEventListener('click', async () => {
+                btnRun.disabled = true;
+                btnRun.textContent = '>> SOLVING HAMILTONIAN...';
+                const arch = archSelect ? archSelect.value : 'cascaded';
+                const target = targetSelect ? targetSelect.value : '0';
+
+                let jsonFile = 'data/cascaded_tree_valve_report.json';
+                if (arch === 'k_way') jsonFile = 'data/glued_tree_valve_report.json';
+                if (arch === 'childs') jsonFile = 'data/glued_trees_report.json';
+
+                try {
+                    const r = await fetch(jsonFile);
+                    if (r.ok) {
+                        const data = await r.json();
+                        btnRun.textContent = `>> ROUTED TO ROOT #${target} (DONE)`;
+                        setTimeout(() => {
+                            btnRun.textContent = '>> SIMULATE TRAJECTORY';
+                            btnRun.disabled = false;
+                        }, 1800);
+                    } else {
+                        btnRun.textContent = '>> SIMULATE TRAJECTORY';
+                        btnRun.disabled = false;
+                    }
+                } catch {
+                    btnRun.textContent = '>> SIMULATE TRAJECTORY';
+                    btnRun.disabled = false;
+                }
+            });
+        }
     }
 }
 

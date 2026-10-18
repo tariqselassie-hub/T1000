@@ -1,0 +1,27 @@
+{
+  "experiment": "CHSH Bell Inequality Test",
+  "backend": "QrackAceBackend",
+  "qubits": 16,
+  "shots_per_correlator": 2048,
+  "device": "Intel(R) OpenCL Graphics",
+  "measurement_angles_radians": {
+    "theta_a": 0.0,
+    "theta_ap": 1.5707963267948966,
+    "theta_b": 0.7853981633974483,
+    "theta_bp": -0.7853981633974483
+  },
+  "correlators": {
+    "E_ab": 0.713867,
+    "E_abp": 0.687500,
+    "E_apb": 0.691406,
+    "E_apbp": -0.721680
+  },
+  "chsh_s_value": 2.814453,
+  "classical_lhv_bound": 2.0,
+  "tsirelson_bound": 2.828427,
+  "tsirelson_ratio": 0.995059,
+  "standard_error_est": 0.044194,
+  "sigma_violation": 18.4289,
+  "bell_inequality_violated": true,
+  "status": "PASS"
+}

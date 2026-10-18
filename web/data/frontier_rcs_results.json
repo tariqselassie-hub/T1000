@@ -1,114 +1,170 @@
 {
-  "qubits": 26,
-  "depth": 4,
-  "total_states": 67108864,
+  "qubits": 20,
+  "depth": 12,
+  "total_states": 1048576,
   "reference": {
     "name": "Scalar reference statevector (frontier_rcs.rs)",
-    "total_time_seconds": 28.1334661,
-    "gate_count": 313,
+    "total_time_seconds": 0.3931547,
+    "gate_count": 721,
     "layers": []
   },
   "optimized": {
     "name": "t1000 AVX2 + tiled kernels",
-    "total_time_seconds": 8.0604659,
-    "gate_count": 313,
+    "total_time_seconds": 0.0758082,
+    "gate_count": 721,
     "layers": [
       {
         "layer": 1,
-        "latency_seconds": 1.9316106
+        "latency_seconds": 0.0058762
       },
       {
         "layer": 2,
-        "latency_seconds": 1.9369022999999999
+        "latency_seconds": 0.0055737
       },
       {
         "layer": 3,
-        "latency_seconds": 1.9946727
+        "latency_seconds": 0.0057514
       },
       {
         "layer": 4,
-        "latency_seconds": 2.0052689
+        "latency_seconds": 0.0057149
+      },
+      {
+        "layer": 5,
+        "latency_seconds": 0.0061245
+      },
+      {
+        "layer": 6,
+        "latency_seconds": 0.0050721
+      },
+      {
+        "layer": 7,
+        "latency_seconds": 0.005473
+      },
+      {
+        "layer": 8,
+        "latency_seconds": 0.0060578
+      },
+      {
+        "layer": 9,
+        "latency_seconds": 0.0063435
+      },
+      {
+        "layer": 10,
+        "latency_seconds": 0.0057087
+      },
+      {
+        "layer": 11,
+        "latency_seconds": 0.0050266
+      },
+      {
+        "layer": 12,
+        "latency_seconds": 0.0056609
       }
     ]
   },
   "optimized_threads": 20,
-  "speedup_vs_reference": 3.49030272555337,
+  "speedup_vs_reference": 5.186176429462776,
   "agreement": {
-    "max_amplitude_error": 4.445228907190568e-18,
-    "state_fidelity": 1.0000000000006395,
-    "total_variation_distance": 8.06439880405252e-16
+    "max_amplitude_error": 9.148507953680036e-18,
+    "state_fidelity": 0.9999999999999867,
+    "total_variation_distance": 1.197211119053513e-15
   },
   "porter_thomas": {
-    "dim": 67108864,
-    "exact_xeb": 8.548855640895377,
-    "naive_xeb": 8.548855386119628,
-    "sum_p_sqr": 1.4228903332530898e-7,
-    "expected_sum_p_sqr": 2.980232194360611e-8,
-    "shannon_entropy": 16.754700794900426,
-    "entropy_deficit": 1.2671258996581507,
-    "expected_entropy_deficit": 0.42278432764788576,
-    "effective_participation_ratio": 7027948.511771426,
-    "expected_participation_ratio": 33554432.5,
-    "ks_statistic": 0.2782214985345034,
-    "ks_critical_value": 0.000165771484375,
-    "passes_ks_test": false,
-    "is_porter_thomas_conforming": false
+    "dim": 1048576,
+    "exact_xeb": 1.0069329305510752,
+    "naive_xeb": 1.0069310099807582,
+    "sum_p_sqr": 1.9139585590179045e-6,
+    "expected_sum_p_sqr": 1.9073468138248312e-6,
+    "shannon_entropy": 13.438627004058635,
+    "entropy_deficit": 0.42431660714027153,
+    "expected_entropy_deficit": 0.42278385826138454,
+    "effective_participation_ratio": 522477.35212883743,
+    "expected_participation_ratio": 524288.5,
+    "ks_statistic": 0.0009722686185000828,
+    "ks_critical_value": 0.001326171875,
+    "passes_ks_test": true,
+    "is_porter_thomas_conforming": true
   },
   "top_bitstrings": [
     [
-      "|00001010101100011011111000>",
-      9.368941874090188e-6
+      "|01001011010100010100>",
+      0.000014301841606709468
     ],
     [
-      "|00000101001111111011010111>",
-      8.139396334886081e-6
+      "|10000001010111101000>",
+      0.000013095651066254544
     ],
     [
-      "|00001011110101111011010111>",
-      8.072753756223497e-6
+      "|01010001111110101000>",
+      0.000012418903767766724
     ],
     [
-      "|00001010110101111001111000>",
-      7.98148350184004e-6
+      "|00010011000100001000>",
+      0.000012070789018314919
     ],
     [
-      "|00001010110101111011010111>",
-      7.792561706854585e-6
+      "|00000000000110101000>",
+      0.000011896490447869245
     ]
   ],
   "gradients": {
     "compare_qubits": 12,
     "compare_depth": 4,
     "compare_params": 96,
-    "adjoint_seconds": 0.0008265,
-    "parameter_shift_seconds": 0.033346,
+    "adjoint_seconds": 0.0006706,
+    "parameter_shift_seconds": 0.0225949,
     "max_abs_difference": 3.2959746043559335e-16,
-    "full_circuit_params": 208,
-    "full_circuit_adjoint_seconds": 28.6499729
+    "full_circuit_params": 480,
+    "full_circuit_adjoint_seconds": 0.2209898
   },
   "variational_training": {
-    "epochs": 2,
-    "initial_loss": 0.5260209612358019,
-    "final_loss": 0.47818959905313657,
-    "total_training_seconds": 57.136178,
-    "mean_epoch_seconds": 28.568089,
-    "scheduler_mode": "Parallel Streaming Pool + Non-Temporal Stores (20 Threads)",
+    "epochs": 5,
+    "initial_loss": 0.507265608268195,
+    "final_loss": 0.4493110268676225,
+    "total_training_seconds": 0.781939,
+    "mean_epoch_seconds": 0.15638780000000002,
+    "scheduler_mode": "Parallel Work-Stealing Pool (20 Threads)",
     "history": [
       {
         "epoch": 1,
-        "loss": 0.5260209612358019,
-        "gradient_norm": 0.11448129221127502,
-        "epoch_seconds": 28.7357498,
+        "loss": 0.507265608268195,
+        "gradient_norm": 0.04031895537443538,
+        "epoch_seconds": 0.1559178,
         "active_threads": 20,
-        "scheduler_mode": "Parallel Streaming Pool + Non-Temporal Stores (20 Threads)"
+        "scheduler_mode": "Parallel Work-Stealing Pool (20 Threads)"
       },
       {
         "epoch": 2,
-        "loss": 0.47818959905313657,
-        "gradient_norm": 0.10679768015930916,
-        "epoch_seconds": 28.4002763,
+        "loss": 0.49206805136534476,
+        "gradient_norm": 0.038069565900762596,
+        "epoch_seconds": 0.1567458,
         "active_threads": 20,
-        "scheduler_mode": "Parallel Streaming Pool + Non-Temporal Stores (20 Threads)"
+        "scheduler_mode": "Parallel Work-Stealing Pool (20 Threads)"
+      },
+      {
+        "epoch": 3,
+        "loss": 0.478184686209631,
+        "gradient_norm": 0.039041148427600356,
+        "epoch_seconds": 0.1560581,
+        "active_threads": 20,
+        "scheduler_mode": "Parallel Work-Stealing Pool (20 Threads)"
+      },
+      {
+        "epoch": 4,
+        "loss": 0.4642394291665756,
+        "gradient_norm": 0.04233849692558299,
+        "epoch_seconds": 0.1566884,
+        "active_threads": 20,
+        "scheduler_mode": "Parallel Work-Stealing Pool (20 Threads)"
+      },
+      {
+        "epoch": 5,
+        "loss": 0.4493110268676225,
+        "gradient_norm": 0.04680423373424203,
+        "epoch_seconds": 0.1555246,
+        "active_threads": 20,
+        "scheduler_mode": "Parallel Work-Stealing Pool (20 Threads)"
       }
     ]
   }
