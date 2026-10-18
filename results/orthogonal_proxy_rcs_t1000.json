@@ -1,0 +1,18 @@
+{
+  "width": 12,
+  "depth": 8,
+  "grid_rows": 4,
+  "grid_cols": 3,
+  "proxy_patches": 2,
+  "patch_qubits": [
+    4,
+    8
+  ],
+  "couplers_cut": 16,
+  "total_couplers": 48,
+  "ideal_patches_latency_secs": 0.0000261,
+  "sampling_latency_secs": 0.0007953,
+  "xeb_proxy": 0.9989459983900217,
+  "hog_proxy": 0.974609375,
+  "speedup_vs_qrack": 13462.137813489166
+}

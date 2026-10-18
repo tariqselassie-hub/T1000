@@ -259,6 +259,17 @@ def run_all_charts() -> None:
             generated.append(("ZINC Topological Walk Screening", png.name, f"{size_kb:.1f} KB"))
             print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
 
+    # 23. Orthogonal K-Patch Proxy RCS Showdown Telemetry
+    showdown_json = ws_root / "results" / "orthogonal_proxy_showdown_telemetry.json"
+    if showdown_json.exists():
+        import chart_orthogonal_proxy_showdown
+        chart_orthogonal_proxy_showdown.main()
+        png = ws_root / "assets" / "orthogonal_proxy_showdown.png"
+        if png.exists():
+            size_kb = png.stat().st_size / 1024.0
+            generated.append(("Orthogonal Proxy RCS Showdown", png.name, f"{size_kb:.1f} KB"))
+            print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
+
     print("\n╔═══════════════════════════════════════════════════════════════════════════════╗")
     print("║                        RENDERED ARTIFACT MANIFEST                             ║")
     print("╠═════════════════════════════════════╦══════════════════════════════════╦══════════╣")

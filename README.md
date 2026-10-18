@@ -265,10 +265,14 @@ cargo run --release -p t1000 --bin topological_walk_sorter_bench
 # Run Continuous Topological Walk Molecular Screening on 1,000 ZINC drug candidates
 cargo run --release -p t1000 --bin zinc_topological_walk_screen
 
+# Run Orthogonal K-Patch Proxy RCS Showdown (PyQrack QrackAceBackend vs T-1000)
+python scripts/benchmarks/t1000_orthogonal_proxy_showdown.py
+
 # Launch interactive 3D molecular dashboard and Lego-block circuit composer
 python web/serve.py
 ```
 
+* **Orthogonal K-Patch Proxy RCS Showdown (Qrack vs T-1000):** [`docs/findings/orthogonal_proxy_rcs_showdown.md`](docs/findings/orthogonal_proxy_rcs_showdown.md).
 * **ZINC Continuous Topological Walk Molecular Screening:** [`docs/findings/zinc_topological_walk_screening.md`](docs/findings/zinc_topological_walk_screening.md).
 * **Continuous Topological Walk Sorter with Weld Zeno Sentry:** [`docs/findings/continuous_topological_walk_sorter.md`](docs/findings/continuous_topological_walk_sorter.md).
 * **RCS Chaos & Physical Noise Coherence Horizon:** [`docs/findings/rcs_physical_noise_chaos_transition.md`](docs/findings/rcs_physical_noise_chaos_transition.md).
