@@ -248,6 +248,17 @@ def run_all_charts() -> None:
             generated.append(("Topological Walk Sorter Showdown", png.name, f"{size_kb:.1f} KB"))
             print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
 
+    # 22. ZINC Topological Walk Molecular Screening Telemetry
+    zinc_screen_json = ws_root / "results" / "zinc_topological_walk_telemetry.json"
+    if zinc_screen_json.exists():
+        import chart_zinc_topological_screen
+        chart_zinc_topological_screen.main()
+        png = ws_root / "assets" / "zinc_topological_walk_screen.png"
+        if png.exists():
+            size_kb = png.stat().st_size / 1024.0
+            generated.append(("ZINC Topological Walk Screening", png.name, f"{size_kb:.1f} KB"))
+            print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
+
     print("\n╔═══════════════════════════════════════════════════════════════════════════════╗")
     print("║                        RENDERED ARTIFACT MANIFEST                             ║")
     print("╠═════════════════════════════════════╦══════════════════════════════════╦══════════╣")

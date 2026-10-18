@@ -35,6 +35,7 @@ pub mod ingest;
 pub mod lattice;
 pub mod measurements;
 pub mod memory;
+pub mod molecular_walk_screener;
 pub mod molfeatures;
 pub mod optimizer;
 pub mod parallel;
@@ -154,6 +155,10 @@ pub use rcs::{
 pub use smiles::{
     BondKind, ParsedSmiles, SmilesAtom, SmilesError, SmilesExplorer, SmilesFeatures,
     SmilesFeaturizer, SmilesPropertyProfile, SmilesQuantumEncoder, SmilesToken,
+};
+pub use molecular_walk_screener::{
+    BatchMolecularScreeningReport, ContinuousMolecularWalkScreener, MolecularWalkScreenerConfig,
+    MoleculeScreeningResult, PharmacologicalQuadrant, PulseEnvelopeKind,
 };
 pub use state::{QuantumFeatureMap, QuantumState};
 pub use tiled_butterfly::{apply_layer_fused, tiled_apply_cz, tiled_apply_ry, tiled_apply_rz};

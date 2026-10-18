@@ -259,10 +259,19 @@ python scripts/charting/chart_all.py
 # Verify physical Artix-7 FPGA autonomous layers and chaos streaming over COM6
 python scripts/fpga/test_chaos_streaming.py
 
+# Run Continuous Topological Walk Sorter Showdown under Physical Noise
+cargo run --release -p t1000 --bin topological_walk_sorter_bench
+
+# Run Continuous Topological Walk Molecular Screening on 1,000 ZINC drug candidates
+cargo run --release -p t1000 --bin zinc_topological_walk_screen
+
 # Launch interactive 3D molecular dashboard and Lego-block circuit composer
 python web/serve.py
 ```
 
+* **ZINC Continuous Topological Walk Molecular Screening:** [`docs/findings/zinc_topological_walk_screening.md`](docs/findings/zinc_topological_walk_screening.md).
+* **Continuous Topological Walk Sorter with Weld Zeno Sentry:** [`docs/findings/continuous_topological_walk_sorter.md`](docs/findings/continuous_topological_walk_sorter.md).
+* **RCS Chaos & Physical Noise Coherence Horizon:** [`docs/findings/rcs_physical_noise_chaos_transition.md`](docs/findings/rcs_physical_noise_chaos_transition.md).
 * **Cascaded Multi-Tier Glued-Tree Valve Findings:** [`docs/findings/cascaded_tree_valve_deep_routing.md`](docs/findings/cascaded_tree_valve_deep_routing.md).
 * **Multi-Exit Topological Glued-Tree Valve & Router Findings:** [`docs/findings/glued_tree_topological_valve.md`](docs/findings/glued_tree_topological_valve.md).
 * **Childs et al. Glued-Trees Exponential Speedup Findings:** [`docs/findings/glued_trees_exponential_speedup.md`](docs/findings/glued_trees_exponential_speedup.md).

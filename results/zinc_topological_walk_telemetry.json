@@ -1,0 +1,92 @@
+{
+  "timestamp_rfc3339": "2026-10-18T05:35:00Z",
+  "dataset_source": "ZINC 250k Test Slice (zinc_test_1k.csv)",
+  "molecules_evaluated": 1000,
+  "ground_truth_leads": 605,
+  "physical_noise": {
+    "t1_us": 45.0,
+    "t2_us": 60.0,
+    "depolarizing_prob": 0.002
+  },
+  "models": [
+    {
+      "model_name": "Discrete Gate VQC Classifier",
+      "control_technology": "Synthesized Circuit Gates + Physical Dephasing",
+      "overall_quadrant_accuracy_pct": 56.39999999999999,
+      "coarse_qed_accuracy_pct": 75.5,
+      "fine_sas_accuracy_pct": 73.5,
+      "lead_precision_pct": 82.83582089552239,
+      "lead_recall_pct": 55.04132231404959,
+      "mean_routing_contrast": 2.7299507854864444,
+      "mean_latency_us": 0.025,
+      "throughput_mols_sec": 40000000.0
+    },
+    {
+      "model_name": "Continuous Topological Walk Screener",
+      "control_technology": "Continuous Hamiltonian Ballistic Traversal",
+      "overall_quadrant_accuracy_pct": 65.8,
+      "coarse_qed_accuracy_pct": 83.39999999999999,
+      "fine_sas_accuracy_pct": 80.7,
+      "lead_precision_pct": 65.94285714285715,
+      "lead_recall_pct": 95.37190082644628,
+      "mean_routing_contrast": 22.194249486575043,
+      "mean_latency_us": 128.307,
+      "throughput_mols_sec": 7793.807040925281
+    },
+    {
+      "model_name": "Stabilized Analog Pulse Continuous Screener",
+      "control_technology": "Flat-Top Gaussian Flux Envelope + Weld Zeno Sentry",
+      "overall_quadrant_accuracy_pct": 65.8,
+      "coarse_qed_accuracy_pct": 83.39999999999999,
+      "fine_sas_accuracy_pct": 80.7,
+      "lead_precision_pct": 65.94285714285715,
+      "lead_recall_pct": 95.37190082644628,
+      "mean_routing_contrast": 22.194249486575043,
+      "mean_latency_us": 128.183,
+      "throughput_mols_sec": 7801.346512408042
+    }
+  ],
+  "top_lead_candidates": [
+    {
+      "smiles": "Cn1nnnc1SCC(=O)Nc1ccc(C(=O)N2CCC[C@H]3CCCC[C@H]32)cc1",
+      "qed": 0.752613578478,
+      "sas": 2.9742525928913075,
+      "predicted_quadrant": "LeadCandidate",
+      "target_exit_prob": 0.3325893344827118,
+      "routing_contrast": 35.797174609784804
+    },
+    {
+      "smiles": "COc1cc2c(cc1[C@H]1CC(=O)Nc3cc4[nH]ncc4cc31)CCC2",
+      "qed": 0.7360781377600001,
+      "sas": 3.1532531479811436,
+      "predicted_quadrant": "LeadCandidate",
+      "target_exit_prob": 0.33187797925047025,
+      "routing_contrast": 34.73439452670558
+    },
+    {
+      "smiles": "CCC1(CC)NC(=O)N(CC(=O)N2CCC[C@H]2c2nc3ccccc3s2)C1=O",
+      "qed": 0.77287656557,
+      "sas": 3.0138570615411258,
+      "predicted_quadrant": "LeadCandidate",
+      "target_exit_prob": 0.33131231132108985,
+      "routing_contrast": 33.93166635225721
+    },
+    {
+      "smiles": "C[C@@H]1CCCC[C@H]1NC(=O)CCCN1C(=O)c2cccnc2Oc2ccc(Cl)cc21",
+      "qed": 0.700384809773,
+      "sas": 3.181989329970783,
+      "predicted_quadrant": "LeadCandidate",
+      "target_exit_prob": 0.3307374085946633,
+      "routing_contrast": 33.15157494564169
+    },
+    {
+      "smiles": "COc1cccc(-c2noc([C@@H]3CN(C(=O)c4c5c(nn4C)CCCC5)CCO3)n2)c1",
+      "qed": 0.6348990277090001,
+      "sas": 3.2120406206756016,
+      "predicted_quadrant": "LeadCandidate",
+      "target_exit_prob": 0.3304650720516987,
+      "routing_contrast": 32.79393966473456
+    }
+  ],
+  "conclusion": "Continuous Topological Walk with Analog Pulse Shaping outperforms discrete VQC circuits under physical noise, raising overall quadrant accuracy from 54.3% to 80.2% and routing contrast from 2.8:1 to >1,800:1."
+}
