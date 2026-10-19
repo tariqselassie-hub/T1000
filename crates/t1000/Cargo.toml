@@ -247,6 +247,10 @@ path = "src/bin/training/qgnn_molecular_bench.rs"
 name = "full_qnn_suite_bench"
 path = "src/bin/benchmarks/full_qnn_suite_bench.rs"
 
+[[bin]]
+name = "qec_fault_tolerance_bench"
+path = "src/bin/benchmarks/qec_fault_tolerance_bench.rs"
+
 
 
 

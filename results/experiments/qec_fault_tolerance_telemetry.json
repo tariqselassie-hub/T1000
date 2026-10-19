@@ -1,0 +1,170 @@
+{
+  "timestamp": "2026-10-19T12:45:00Z",
+  "hardware": "Intel x86_64 AVX2 + FMA (Host Native)",
+  "magic_distillation": {
+    "trials_per_point": 50,
+    "sweeps": [
+      {
+        "input_error_rate": 0.005,
+        "accepted": true,
+        "syndrome_bits": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "output_infidelity": 4.365277777777779e-6,
+        "theoretical_infidelity": 4.3750000000000005e-6,
+        "output_fidelity": 0.9999956347222221,
+        "acceptance_probability": 0.9
+      },
+      {
+        "input_error_rate": 0.01,
+        "accepted": true,
+        "syndrome_bits": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "output_infidelity": 0.000035000000000000004,
+        "theoretical_infidelity": 0.000035000000000000004,
+        "output_fidelity": 0.9999650000000002,
+        "acceptance_probability": 0.84
+      },
+      {
+        "input_error_rate": 0.02,
+        "accepted": true,
+        "syndrome_bits": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "output_infidelity": 0.0002868108108108108,
+        "theoretical_infidelity": 0.00028000000000000003,
+        "output_fidelity": 0.9997131891891893,
+        "acceptance_probability": 0.74
+      },
+      {
+        "input_error_rate": 0.04,
+        "accepted": true,
+        "syndrome_bits": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "output_infidelity": 0.00224,
+        "theoretical_infidelity": 0.0022400000000000002,
+        "output_fidelity": 0.9977600000000001,
+        "acceptance_probability": 0.56
+      },
+      {
+        "input_error_rate": 0.08,
+        "accepted": true,
+        "syndrome_bits": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "output_infidelity": 0.017696000000000003,
+        "theoretical_infidelity": 0.017920000000000002,
+        "output_fidelity": 0.982304,
+        "acceptance_probability": 0.32
+      },
+      {
+        "input_error_rate": 0.12,
+        "accepted": true,
+        "syndrome_bits": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "output_infidelity": 0.059808,
+        "theoretical_infidelity": 0.06048,
+        "output_fidelity": 0.9401920000000001,
+        "acceptance_probability": 0.18
+      }
+    ],
+    "cubic_fit_coefficient": 35.0
+  },
+  "lattice_surgery": {
+    "patch_distance": 3,
+    "total_qubits": 18,
+    "statevector_dim": 262144,
+    "execution_time_ms": 25.1493,
+    "logical_zz_correlation": 1.0000000000000002,
+    "logical_xx_correlation": 1.0000000000000002,
+    "logical_bell_fidelity": 1.0,
+    "cnot_truth_table_verified": true
+  },
+  "error_recovery": {
+    "injected_qubit": 2,
+    "error_kind": "BitFlip (Pauli-X)",
+    "syndrome_detected": true,
+    "recovery_fidelity": 1.0
+  }
+}
