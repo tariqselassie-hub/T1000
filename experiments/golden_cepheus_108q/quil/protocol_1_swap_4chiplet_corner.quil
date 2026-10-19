@@ -1,0 +1,51 @@
+# ==============================================================================
+# RIGETTI CEPHEUS-1-108Q GOLDEN BENCHMARK
+# Protocol 1: Sequential SWAP Baseline (Critical 4-Chiplet Corner Junction)
+#
+# Target Plaquette: P24 (Row 2, Col 2) Centered at 4-Die Intersection:
+#   Chiplet 0 (TL) | Chiplet 1 (TR)
+#   ---------------+---------------
+#   Chiplet 4 (BL) | Chiplet 5 (BR)
+#
+# Qubit Mapping:
+#   Q_TL = 26 (Chiplet 0, Row 2, Col 2)
+#   Q_TR = 27 (Chiplet 1, Row 2, Col 3 - Crosses Vertical Seam!)
+#   Q_BL = 38 (Chiplet 4, Row 3, Col 2 - Crosses Horizontal Seam!)
+#   Q_BR = 39 (Chiplet 5, Row 3, Col 3 - Crosses Both Seams!)
+#
+# Coupling: ALL 4 EDGES ARE INTER-DIE SEAMS (p = 0.0220):
+#   Edge (26, 27) : Die 0 <-> Die 1 (Seam)
+#   Edge (26, 38) : Die 0 <-> Die 4 (Seam)
+#   Edge (27, 39) : Die 1 <-> Die 5 (Seam)
+#   Edge (38, 39) : Die 4 <-> Die 5 (Seam)
+#
+# Result of Cascading Seam Errors:
+#   Predicted T-1000 Fidelity: 0.8588 (Severe Seam Collapse)
+# ==============================================================================
+
+DECLARE ro BIT[2]
+
+RESET 26
+RESET 27
+RESET 38
+RESET 39
+
+# ------------------------------------------------------------------------------
+# 1. State Preparation: Bell state |Phi+> across seam edge (26, 27)
+# ------------------------------------------------------------------------------
+H 26
+CNOT 26 27
+
+# ------------------------------------------------------------------------------
+# 2. Sequential SWAP Cascade: Q27 -> Q39 (3 CNOTs across inter-die seam (27, 39))
+# Incurs 3 consecutive noisy bump-bond traversals (p = 0.0220 each)!
+# ------------------------------------------------------------------------------
+CNOT 27 39
+CNOT 39 27
+CNOT 27 39
+
+# ------------------------------------------------------------------------------
+# 3. Readout on Diagonal Bell Pair (Q26, Q39)
+# ------------------------------------------------------------------------------
+MEASURE 26 ro[0]
+MEASURE 39 ro[1]

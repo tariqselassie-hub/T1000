@@ -1,0 +1,13 @@
+{
+  "job_id": "ef387a4a-1898-4214-a686-8ee1c088942a",
+  "backend_id": "7433acb8-ae52-4bc9-9030-6df68c696538",
+  "backend_name": "Rigetti Cepheus-1-108Q",
+  "algorithm": "Continuous-Time Quantum Walk on Glued Binary Trees (n=3)",
+  "circuit_file": "glued_trees_quantum_walk_cepheus.qasm",
+  "status": "Created",
+  "timestamp_rfc3339": "2026-10-19T08:16:18.417247",
+  "shots": 1000,
+  "cost_credits": 1,
+  "plan_name": "Public Plan",
+  "queue_priority": "Standard Queue"
+}

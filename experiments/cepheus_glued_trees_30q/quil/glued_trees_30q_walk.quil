@@ -1,0 +1,152 @@
+# ==============================================================================
+# RIGETTI CEPHEUS-1-108Q GOLDEN EXPERIMENT
+# Continuous-Time Quantum Walk (CTQW) on 30-Qubit Glued Binary Trees (n = 3)
+#
+# Hardware Mapping across 4 Modular Chiplets:
+#   Tree A (15 Vertices): Chiplets 0 & 4 (Left of Seam, Col 0..2)
+#   Tree B (15 Vertices): Chiplets 1 & 5 (Right of Seam, Col 3..5)
+#   Weld: 8 Inter-Die Seam Bump Bonds connecting Col 3 to Col 4 (p_seam = 0.0220)
+#
+# Qubit Allocation:
+#   Root A: Q0
+#   Root B: Q5
+#   Weld Seam Pairs: (2, 3), (14, 15), (26, 27), (38, 39), (48, 51), (49, 52), (50, 53), (60, 63)
+#
+# Native Gates:
+#   Hopping is executed via native flux-tunable XY(theta) gates.
+#   theta = 2 * gamma * dt = 2 * 0.50 * 0.10 = 0.10 rad (Intra-tree: theta * sqrt(2) = 0.1414 rad)
+# ==============================================================================
+
+DECLARE ro BIT[30]
+DECLARE exit_hit BIT[1]
+
+# ------------------------------------------------------------------------------
+# 1. Initialization: Reset all 30 Qubits to Ground State |0>
+# ------------------------------------------------------------------------------
+RESET 0
+RESET 1
+RESET 12
+RESET 13
+RESET 24
+RESET 25
+RESET 36
+RESET 2
+RESET 14
+RESET 26
+RESET 38
+RESET 48
+RESET 49
+RESET 50
+RESET 60
+RESET 3
+RESET 15
+RESET 27
+RESET 39
+RESET 51
+RESET 52
+RESET 53
+RESET 63
+RESET 16
+RESET 28
+RESET 40
+RESET 41
+RESET 4
+RESET 17
+RESET 5
+
+# ------------------------------------------------------------------------------
+# 2. State Preparation: Localize Single Walker Excitation at Root A (Q0)
+# ------------------------------------------------------------------------------
+X 0
+
+# ------------------------------------------------------------------------------
+# 3. Trotterized Continuous-Time Quantum Walk Steps
+# Alternating brickwork schedule of native XY(theta) pulses across physical couplers
+# ------------------------------------------------------------------------------
+
+# --- Trotter Step Layer A (Even Column Bonds) ---
+XY(0.1414) 0 1
+XY(0.1414) 0 12
+
+# Col 2 to Col 3 (Leaves Tree A)
+XY(0.1414) 13 2
+XY(0.1414) 13 14
+XY(0.1414) 24 26
+XY(0.1414) 25 38
+XY(0.1414) 25 48
+XY(0.1414) 36 49
+XY(0.1414) 36 50
+XY(0.1414) 36 60
+
+# WELD LAYER: 8 Inter-Die Bump-Bond Seam Couplers (Die 0/4 <-> Die 1/5)
+XY(0.2000) 2 3
+XY(0.2000) 14 15
+XY(0.2000) 26 27
+XY(0.2000) 38 39
+XY(0.2000) 48 51
+XY(0.2000) 49 52
+XY(0.2000) 50 53
+XY(0.2000) 60 63
+
+# Col 5 to Col 6 (Inside Tree B)
+XY(0.1414) 16 4
+XY(0.1414) 28 4
+XY(0.1414) 40 17
+XY(0.1414) 41 17
+
+# --- Trotter Step Layer B (Odd Column Bonds) ---
+# Col 1 to Col 2 (Inside Tree A)
+XY(0.1414) 1 13
+XY(0.1414) 1 24
+XY(0.1414) 12 25
+XY(0.1414) 12 36
+
+# Col 4 (Leaves Tree B) to Col 5
+XY(0.1414) 3 16
+XY(0.1414) 15 16
+XY(0.1414) 27 28
+XY(0.1414) 39 28
+XY(0.1414) 51 40
+XY(0.1414) 52 40
+XY(0.1414) 53 41
+XY(0.1414) 63 41
+
+# Col 6 to Root B (Exit Target)
+XY(0.1414) 4 5
+XY(0.1414) 17 5
+
+# ------------------------------------------------------------------------------
+# 4. Readout: Single-Shot Full Graph Occupation & Exit Root
+# ------------------------------------------------------------------------------
+MEASURE 0 ro[0]
+MEASURE 1 ro[1]
+MEASURE 12 ro[2]
+MEASURE 13 ro[3]
+MEASURE 24 ro[4]
+MEASURE 25 ro[5]
+MEASURE 36 ro[6]
+MEASURE 2 ro[7]
+MEASURE 14 ro[8]
+MEASURE 26 ro[9]
+MEASURE 38 ro[10]
+MEASURE 48 ro[11]
+MEASURE 49 ro[12]
+MEASURE 50 ro[13]
+MEASURE 60 ro[14]
+MEASURE 3 ro[15]
+MEASURE 15 ro[16]
+MEASURE 27 ro[17]
+MEASURE 39 ro[18]
+MEASURE 51 ro[19]
+MEASURE 52 ro[20]
+MEASURE 53 ro[21]
+MEASURE 63 ro[22]
+MEASURE 16 ro[23]
+MEASURE 28 ro[24]
+MEASURE 40 ro[25]
+MEASURE 41 ro[26]
+MEASURE 4 ro[27]
+MEASURE 17 ro[28]
+MEASURE 5 ro[29]
+
+MEASURE 5 exit_hit[0]

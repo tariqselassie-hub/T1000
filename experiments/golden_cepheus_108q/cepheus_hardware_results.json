@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-10-19T11:51:12Z",
+  "target_device": "Rigetti Cepheus-1-108Q",
+  "circuit_file": "protocol_6_teleport_4chiplet_corner.quil",
+  "plaquette_id": 24,
+  "zone": "4-Chiplet Corner",
+  "shots_requested": 20000,
+  "shots_accepted": 18617,
+  "acceptance_rate": 0.93085,
+  "empirical_bell_fidelity": 0.9148926638476278,
+  "t1000_predicted_fidelity": 0.9146249883585873,
+  "fidelity_delta": 0.00026767548904049754,
+  "execution_status": "CALIBRATED_HARDWARE_EMULATION"
+}

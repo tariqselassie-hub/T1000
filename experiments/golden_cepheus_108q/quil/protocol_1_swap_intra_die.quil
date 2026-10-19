@@ -1,0 +1,42 @@
+# ==============================================================================
+# RIGETTI CEPHEUS-1-108Q GOLDEN BENCHMARK
+# Protocol 1: Sequential SWAP Baseline (Intra-Die Zone)
+#
+# Target Plaquette: P0 (Row 0, Col 0) on Chiplet 0 (Top-Left 3x3 Die)
+# Qubit Mapping:
+#   Q_TL = 0  (Top-Left)
+#   Q_TR = 1  (Top-Right / Mediator 1)
+#   Q_BL = 12 (Bottom-Left / Mediator 2)
+#   Q_BR = 13 (Bottom-Right / Target)
+#
+# Coupling: All edges intra-die (p_gate = 0.0080, p_idle = 0.0050)
+# Predicted T-1000 Fidelity: 0.9368
+# ==============================================================================
+
+DECLARE ro BIT[2]
+
+RESET 0
+RESET 1
+RESET 12
+RESET 13
+
+# ------------------------------------------------------------------------------
+# 1. State Preparation: Bell state |Phi+> on top horizontal edge (0, 1)
+# ------------------------------------------------------------------------------
+H 0
+CNOT 0 1
+
+# ------------------------------------------------------------------------------
+# 2. Sequential SWAP Cascade: Q1 -> Q13 (3 CNOTs across vertical edge)
+# ------------------------------------------------------------------------------
+CNOT 1 13
+CNOT 13 1
+CNOT 1 13
+
+# ------------------------------------------------------------------------------
+# 3. Readout on Diagonal Bell Pair (Q0, Q13)
+# Note: For XX tomography, append: H 0; H 13
+# Note: For YY tomography, append: RX(pi/2) 0; RX(pi/2) 13
+# ------------------------------------------------------------------------------
+MEASURE 0 ro[0]
+MEASURE 13 ro[1]

@@ -1,0 +1,22 @@
+{
+  "suite": "Rigetti Cepheus-1-108Q 30-Qubit Glued Tree Quantum Walk",
+  "circuit_file": "glued_trees_30q_walk.quil",
+  "graph": {
+    "tree_depth": 3,
+    "total_qubits": 30,
+    "symmetric_columns": 8,
+    "entrance_root_qubit": 0,
+    "exit_root_qubit": 5,
+    "weld_seam_couplers": 8
+  },
+  "compilation_metrics": {
+    "native_two_qubit_gate": "XY",
+    "total_two_qubit_gates_per_trotter_step": 32,
+    "recommended_trotter_steps_to_peak": 68,
+    "dt": 0.10,
+    "theoretical_peak_time": 6.80,
+    "predicted_ideal_exit_prob": 0.7726,
+    "predicted_seam_noisy_exit_prob": 0.7722,
+    "recommended_shot_budget": 20000
+  }
+}

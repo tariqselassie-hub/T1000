@@ -1,0 +1,98 @@
+{
+  "benchmark_suite": "Rigetti Cepheus-1-108Q Plaquette Golden Experiment",
+  "generated_at": "2026-10-19T07:48:00Z",
+  "target_qpu": "Cepheus-1-108Q",
+  "circuits": [
+    {
+      "circuit_id": "P0_SWAP_INTRA",
+      "filename": "protocol_1_swap_intra_die.quil",
+      "protocol": "Protocol 1: Sequential SWAP",
+      "zone": "Intra-Chiplet",
+      "plaquette_id": 0,
+      "qubits": [0, 1, 12, 13],
+      "cnot_count": 4,
+      "circuit_depth": 5,
+      "predicted_fidelity_t1000": 0.9368,
+      "predicted_acceptance": 1.0000,
+      "recommended_shots": 10000
+    },
+    {
+      "circuit_id": "P0_TELEPORT_INTRA",
+      "filename": "protocol_6_teleport_intra_die.quil",
+      "protocol": "Protocol 6: 4-Edge MBQC Teleportation",
+      "zone": "Intra-Chiplet",
+      "plaquette_id": 0,
+      "qubits": [0, 1, 12, 13],
+      "cnot_count": 4,
+      "circuit_depth": 5,
+      "predicted_fidelity_t1000": 0.9683,
+      "predicted_acceptance": 0.9740,
+      "recommended_shots": 10000
+    },
+    {
+      "circuit_id": "P2_SWAP_SEAM",
+      "filename": "protocol_1_swap_seam_straddle.quil",
+      "protocol": "Protocol 1: Sequential SWAP",
+      "zone": "Seam-Straddling",
+      "plaquette_id": 2,
+      "qubits": [2, 3, 14, 15],
+      "cnot_count": 4,
+      "circuit_depth": 5,
+      "predicted_fidelity_t1000": 0.8977,
+      "predicted_acceptance": 1.0000,
+      "recommended_shots": 10000
+    },
+    {
+      "circuit_id": "P2_TELEPORT_SEAM",
+      "filename": "protocol_6_teleport_seam_straddle.quil",
+      "protocol": "Protocol 6: 4-Edge MBQC Teleportation",
+      "zone": "Seam-Straddling",
+      "plaquette_id": 2,
+      "qubits": [2, 3, 14, 15],
+      "cnot_count": 4,
+      "circuit_depth": 5,
+      "predicted_fidelity_t1000": 0.9414,
+      "predicted_acceptance": 0.9460,
+      "recommended_shots": 10000
+    },
+    {
+      "circuit_id": "P24_SWAP_CORNER",
+      "filename": "protocol_1_swap_4chiplet_corner.quil",
+      "protocol": "Protocol 1: Sequential SWAP",
+      "zone": "4-Chiplet Corner",
+      "plaquette_id": 24,
+      "qubits": [26, 27, 38, 39],
+      "cnot_count": 4,
+      "circuit_depth": 5,
+      "predicted_fidelity_t1000": 0.8588,
+      "predicted_acceptance": 1.0000,
+      "recommended_shots": 20000
+    },
+    {
+      "circuit_id": "P24_TELEPORT_CORNER",
+      "filename": "protocol_6_teleport_4chiplet_corner.quil",
+      "protocol": "Protocol 6: 4-Edge MBQC Teleportation",
+      "zone": "4-Chiplet Corner",
+      "plaquette_id": 24,
+      "qubits": [26, 27, 38, 39],
+      "cnot_count": 4,
+      "circuit_depth": 5,
+      "predicted_fidelity_t1000": 0.9146,
+      "predicted_acceptance": 0.9180,
+      "recommended_shots": 20000
+    },
+    {
+      "circuit_id": "P24_TELEPORT_DYNAMIC_BRANCH",
+      "filename": "protocol_6_teleport_dynamic_pauli.quil",
+      "protocol": "Protocol 6: Dynamic Classical Feedback",
+      "zone": "4-Chiplet Corner",
+      "plaquette_id": 24,
+      "qubits": [26, 27, 38, 39],
+      "cnot_count": 4,
+      "circuit_depth": 6,
+      "predicted_fidelity_t1000": 0.9146,
+      "predicted_acceptance": 0.9180,
+      "recommended_shots": 20000
+    }
+  ]
+}

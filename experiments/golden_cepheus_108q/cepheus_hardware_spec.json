@@ -1,0 +1,117 @@
+{
+  "system_name": "Rigetti Cepheus-1-108Q",
+  "architecture_type": "Modular Multi-Chiplet Superconducting QPU",
+  "topology": {
+    "dimensions": {
+      "columns": 12,
+      "rows": 9,
+      "total_qubits": 108
+    },
+    "modular_packaging": {
+      "chiplet_count": 12,
+      "chiplet_grid": {
+        "columns": 4,
+        "rows": 3
+      },
+      "chiplet_size": {
+        "columns": 3,
+        "rows": 3,
+        "qubits_per_chiplet": 9
+      }
+    },
+    "couplers": {
+      "total_count": 195,
+      "intra_die_count": 144,
+      "inter_die_seam_count": 51,
+      "vertical_seams_count": 27,
+      "horizontal_seams_count": 24,
+      "vertical_seam_columns": [2, 5, 8],
+      "horizontal_seam_rows": [2, 5]
+    },
+    "plaquettes": {
+      "total_count": 88,
+      "grid": {
+        "columns": 11,
+        "rows": 8
+      },
+      "zones": {
+        "intra_chiplet_count": 48,
+        "seam_straddling_count": 34,
+        "corner_4chiplet_count": 6,
+        "corner_4chiplet_plaquette_ids": [24, 27, 30, 57, 60, 63]
+      }
+    }
+  },
+  "error_profile": {
+    "gate_errors": {
+      "intra_die_2q_error_p": 0.0080,
+      "inter_die_seam_2q_error_p": 0.0220,
+      "single_qubit_gate_error_p": 0.0010,
+      "readout_assignment_error_p": 0.0250,
+      "idle_depolarizing_per_step_p": 0.0050
+    },
+    "coherence_times": {
+      "mean_t1_us": 32.5,
+      "mean_t2_echo_us": 26.8,
+      "single_qubit_gate_duration_ns": 40.0,
+      "two_qubit_cz_duration_ns": 160.0,
+      "readout_duration_ns": 1200.0
+    }
+  },
+  "native_instruction_set": {
+    "single_qubit": ["RZ", "RX", "RY"],
+    "two_qubit": ["CZ", "CPHASE", "XY"],
+    "measurement": ["MEASURE"],
+    "control": ["RESET", "DECLARE", "JUMP-WHEN", "JUMP-UNLESS", "LABEL"]
+  },
+  "key_4chiplet_corners": [
+    {
+      "plaquette_id": 24,
+      "row": 2,
+      "col": 2,
+      "chiplets": [0, 1, 4, 5],
+      "qubits": { "tl": 26, "tr": 27, "bl": 38, "br": 39 },
+      "seams": { "top": true, "bottom": true, "left": true, "right": true }
+    },
+    {
+      "plaquette_id": 27,
+      "row": 2,
+      "col": 5,
+      "chiplets": [1, 2, 5, 6],
+      "qubits": { "tl": 29, "tr": 30, "bl": 41, "br": 42 },
+      "seams": { "top": true, "bottom": true, "left": true, "right": true }
+    },
+    {
+      "plaquette_id": 30,
+      "row": 2,
+      "col": 8,
+      "chiplets": [2, 3, 6, 7],
+      "qubits": { "tl": 32, "tr": 33, "bl": 44, "br": 45 },
+      "seams": { "top": true, "bottom": true, "left": true, "right": true }
+    },
+    {
+      "plaquette_id": 57,
+      "row": 5,
+      "col": 2,
+      "chiplets": [4, 5, 8, 9],
+      "qubits": { "tl": 62, "tr": 63, "bl": 74, "br": 75 },
+      "seams": { "top": true, "bottom": true, "left": true, "right": true }
+    },
+    {
+      "plaquette_id": 60,
+      "row": 5,
+      "col": 5,
+      "chiplets": [5, 6, 9, 10],
+      "qubits": { "tl": 65, "tr": 66, "bl": 77, "br": 78 },
+      "seams": { "top": true, "bottom": true, "left": true, "right": true }
+    },
+    {
+      "plaquette_id": 63,
+      "row": 5,
+      "col": 8,
+      "chiplets": [6, 7, 10, 11],
+      "qubits": { "tl": 68, "tr": 69, "bl": 80, "br": 81 },
+      "seams": { "top": true, "bottom": true, "left": true, "right": true }
+    }
+  ]
+}

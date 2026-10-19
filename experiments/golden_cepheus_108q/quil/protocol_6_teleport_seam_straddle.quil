@@ -1,0 +1,62 @@
+# ==============================================================================
+# RIGETTI CEPHEUS-1-108Q GOLDEN BENCHMARK
+# Protocol 6: 4-Edge Plaquette Teleportation + Software Pauli Frame (Seam-Straddle)
+#
+# Target Plaquette: P2 (Row 0, Col 2) Straddling Chiplet 0 and Chiplet 1
+# Qubit Mapping:
+#   Q_TL = 2  (Target 1, Chiplet 0)
+#   Q_TR = 3  (Mediator 1, Chiplet 1)
+#   Q_BL = 14 (Mediator 2, Chiplet 0)
+#   Q_BR = 15 (Target 2, Chiplet 1)
+#
+# Coupling:
+#   Edge (2, 3)   : Inter-die seam bump bond (p = 0.0220)
+#   Edge (14, 15) : Inter-die seam bump bond (p = 0.0220)
+#   Edge (2, 14)  : Intra-die coupler (p = 0.0080)
+#   Edge (3, 15)  : Intra-die coupler (p = 0.0080)
+#
+# Predicted T-1000 Fidelity: 0.9414 (Acceptance Rate: 94.6%)
+# ==============================================================================
+
+DECLARE ro BIT[2]
+DECLARE s2 BIT[1]
+DECLARE s3 BIT[1]
+
+RESET 2
+RESET 3
+RESET 14
+RESET 15
+
+# ------------------------------------------------------------------------------
+# 1. Mediator 1 Preparation (H on Q3)
+# ------------------------------------------------------------------------------
+H 3
+
+# ------------------------------------------------------------------------------
+# 2. Entangle Upper (Seam) and Right (Intra) Edges from Mediator 1
+# ------------------------------------------------------------------------------
+CNOT 3 2
+CNOT 3 15
+
+# ------------------------------------------------------------------------------
+# 3. Entangle Left (Intra) and Bottom (Seam) Edges to Mediator 2
+# ------------------------------------------------------------------------------
+CNOT 2 14
+CNOT 15 14
+
+# ------------------------------------------------------------------------------
+# 4. Close X-Basis Measurement on Mediator 1
+# ------------------------------------------------------------------------------
+H 3
+
+# ------------------------------------------------------------------------------
+# 5. Measure Syndrome Bits
+# ------------------------------------------------------------------------------
+MEASURE 3 s2[0]
+MEASURE 14 s3[0]
+
+# ------------------------------------------------------------------------------
+# 6. Readout on Diagonal Bell Pair (Q2, Q15)
+# ------------------------------------------------------------------------------
+MEASURE 2 ro[0]
+MEASURE 15 ro[1]

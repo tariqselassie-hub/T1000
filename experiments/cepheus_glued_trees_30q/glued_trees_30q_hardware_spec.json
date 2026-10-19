@@ -1,0 +1,44 @@
+{
+  "experiment_name": "Rigetti Cepheus-1-108Q 30-Qubit Glued-Tree Quantum Walk",
+  "theoretical_foundation": "Childs, Cleve, Deotto, Farhi, Gutmann, Spielman (STOC 2003)",
+  "hardware_substrate": "Rigetti Cepheus-1-108Q Modular Superconducting Array",
+  "graph_parameters": {
+    "tree_depth": 3,
+    "tree_branching": 2,
+    "total_vertices": 30,
+    "columns_symmetric_dim": 8,
+    "vertices_tree_a": 15,
+    "vertices_tree_b": 15,
+    "weld_cycle_edges": 8
+  },
+  "hardware_allocation": {
+    "chiplets_utilized": [0, 1, 4, 5],
+    "tree_a_chiplets": [0, 4],
+    "tree_b_chiplets": [1, 5],
+    "root_a_qubit": 0,
+    "root_b_qubit": 5,
+    "seam_couplers": [
+      { "node_a": 7, "qubit_a": 2, "node_b": 15, "qubit_b": 3, "seam": true, "p_error": 0.0220 },
+      { "node_a": 8, "qubit_a": 14, "node_b": 16, "qubit_b": 15, "seam": true, "p_error": 0.0220 },
+      { "node_a": 9, "qubit_a": 26, "node_b": 17, "qubit_b": 27, "seam": true, "p_error": 0.0220 },
+      { "node_a": 10, "qubit_a": 38, "node_b": 18, "qubit_b": 39, "seam": true, "p_error": 0.0220 },
+      { "node_a": 11, "qubit_a": 48, "node_b": 19, "qubit_b": 51, "seam": true, "p_error": 0.0220 },
+      { "node_a": 12, "qubit_a": 49, "node_b": 20, "qubit_b": 52, "seam": true, "p_error": 0.0220 },
+      { "node_a": 13, "qubit_a": 50, "node_b": 21, "qubit_b": 53, "seam": true, "p_error": 0.0220 },
+      { "node_a": 14, "qubit_a": 60, "node_b": 22, "qubit_b": 63, "seam": true, "p_error": 0.0220 }
+    ]
+  },
+  "dynamics_parameters": {
+    "hopping_amplitude_gamma": 0.50,
+    "trotter_step_dt": 0.10,
+    "peak_transit_time_t": 6.80,
+    "total_trotter_steps_to_peak": 68,
+    "pulse_duration_per_step_ns": 320.0,
+    "total_physical_transit_duration_us": 21.76,
+    "coherence_budget": {
+      "t1_us": 32.5,
+      "t2_echo_us": 26.8,
+      "transit_fraction_of_t2": 0.8119
+    }
+  }
+}

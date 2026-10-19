@@ -1,0 +1,61 @@
+# ==============================================================================
+# RIGETTI CEPHEUS-1-108Q GOLDEN BENCHMARK
+# Protocol 6: 4-Edge Plaquette Teleportation + Software Pauli Frame (Intra-Die)
+#
+# Target Plaquette: P0 (Row 0, Col 0) on Chiplet 0
+# Qubit Mapping:
+#   Q_TL = 0  (Target 1)
+#   Q_TR = 1  (Mediator 1: X-basis stabilizer & teleport bridge)
+#   Q_BL = 12 (Mediator 2: Z-basis parity syndrome detector)
+#   Q_BR = 13 (Target 2)
+#
+# Coupling: All edges intra-die (p_gate = 0.0080, p_idle = 0.0050)
+# Predicted T-1000 Fidelity: 0.9683 (Acceptance Rate: 97.4%)
+# ==============================================================================
+
+DECLARE ro BIT[2]
+DECLARE s2 BIT[1]
+DECLARE s3 BIT[1]
+
+RESET 0
+RESET 1
+RESET 12
+RESET 13
+
+# ------------------------------------------------------------------------------
+# 1. Mediator 1 Preparation (H on Q1)
+# ------------------------------------------------------------------------------
+H 1
+
+# ------------------------------------------------------------------------------
+# 2. Entangle Upper and Right Edges from Mediator 1
+# ------------------------------------------------------------------------------
+CNOT 1 0
+CNOT 1 13
+
+# ------------------------------------------------------------------------------
+# 3. Entangle Left and Bottom Edges to Mediator 2 (Parity Detector)
+# ------------------------------------------------------------------------------
+CNOT 0 12
+CNOT 13 12
+
+# ------------------------------------------------------------------------------
+# 4. Close X-Basis Measurement on Mediator 1
+# ------------------------------------------------------------------------------
+H 1
+
+# ------------------------------------------------------------------------------
+# 5. Measure Syndrome Bits
+#   s3[0] measures Z-parity syndrome (accept condition: s3 == 0)
+#   s2[0] measures X-basis projection (s2 == 0 -> |Phi+>, s2 == 1 -> |Phi->)
+# ------------------------------------------------------------------------------
+MEASURE 1 s2[0]
+MEASURE 12 s3[0]
+
+# ------------------------------------------------------------------------------
+# 6. Readout on Diagonal Bell Pair (Q0, Q13)
+# Post-processing software Pauli frame:
+#   If s2[0] == 1, multiply correlation by phase sign (-1) for XX and YY.
+# ------------------------------------------------------------------------------
+MEASURE 0 ro[0]
+MEASURE 13 ro[1]

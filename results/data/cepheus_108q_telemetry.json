@@ -18,7 +18,7 @@
   "overall_mean_swap": 0.9163853897214306,
   "overall_mean_teleport": 0.9542518019288674,
   "overall_mean_keep": 0.9623561703501854,
-  "execution_time_us": 905.2,
+  "execution_time_us": 1351.5,
   "plaquettes": [
     {
       "plaquette_id": 0,

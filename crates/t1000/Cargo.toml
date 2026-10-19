@@ -235,6 +235,10 @@ path = "src/bin/benchmarks/nighthawk_99_plaquette_bench.rs"
 name = "cepheus_108q_bench"
 path = "src/bin/benchmarks/cepheus_108q_bench.rs"
 
+[[bin]]
+name = "cepheus_glued_trees_bench"
+path = "src/bin/benchmarks/cepheus_glued_trees_bench.rs"
+
 
 
 

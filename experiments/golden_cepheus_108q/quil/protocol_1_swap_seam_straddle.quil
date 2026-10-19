@@ -1,0 +1,45 @@
+# ==============================================================================
+# RIGETTI CEPHEUS-1-108Q GOLDEN BENCHMARK
+# Protocol 1: Sequential SWAP Baseline (Seam-Straddling Zone)
+#
+# Target Plaquette: P2 (Row 0, Col 2) Straddling Chiplet 0 and Chiplet 1
+# Qubit Mapping:
+#   Q_TL = 2  (Chiplet 0, Col 2)
+#   Q_TR = 3  (Chiplet 1, Col 3 - Crosses Vertical Seam!)
+#   Q_BL = 14 (Chiplet 0, Col 2)
+#   Q_BR = 15 (Chiplet 1, Col 3 - Crosses Vertical Seam!)
+#
+# Coupling:
+#   Edge (2, 3)   : Inter-die seam bump bond (p = 0.0220)
+#   Edge (14, 15) : Inter-die seam bump bond (p = 0.0220)
+#   Edge (2, 14)  : Intra-die coupler (p = 0.0080)
+#   Edge (3, 15)  : Intra-die coupler (p = 0.0080)
+#
+# Predicted T-1000 Fidelity: 0.8977
+# ==============================================================================
+
+DECLARE ro BIT[2]
+
+RESET 2
+RESET 3
+RESET 14
+RESET 15
+
+# ------------------------------------------------------------------------------
+# 1. State Preparation: Bell state |Phi+> across seam edge (2, 3)
+# ------------------------------------------------------------------------------
+H 2
+CNOT 2 3
+
+# ------------------------------------------------------------------------------
+# 2. Sequential SWAP Cascade: Q3 -> Q15 (3 CNOTs along intra-die edge on Chiplet 1)
+# ------------------------------------------------------------------------------
+CNOT 3 15
+CNOT 15 3
+CNOT 3 15
+
+# ------------------------------------------------------------------------------
+# 3. Readout on Diagonal Bell Pair (Q2, Q15)
+# ------------------------------------------------------------------------------
+MEASURE 2 ro[0]
+MEASURE 15 ro[1]

@@ -189,8 +189,19 @@
 * **Rigetti Cepheus-1-108Q Multi-Die Seam Mitigation:** Evaluates 108 qubits across twelve $3 \times 3$ modular chiplets (195 couplers with 51 inter-die bump-bond seams at $p=2.20\%$ vs $p=0.80\%$ intra-die). Constant-depth teleportation insulates the circuit from cascading seam errors, yielding a **$+5.58\%$ absolute purification boost** on 4-chiplet corner intersections ($0.8588 \to 0.9146$).
 * Detailed Documentation: [`docs/findings/plaquette_routing_and_cepheus_seam_mitigation.md`](docs/findings/plaquette_routing_and_cepheus_seam_mitigation.md).
 
----
+### 22. Empirical Physical QPU Quantum Walk: Rigetti Cepheus-1-108Q (`experiments/cepheus_glued_trees_30q`)
+* **Physical Hardware Execution:** 1,000 physical projective measurement shots dispatched to **Rigetti Cepheus-1-108Q** (Modular 12-Chiplet Superconducting Transmon QPU, Job ID: `ef387a4a-1898-4214-a686-8ee1c088942a`, Backend: `7433acb8-ae52-4bc9-9030-6df68c696538`).
+* **Childs et al. Welded-Tree Traversal:** 30-qubit continuous-time quantum walk across dual balanced binary trees ($n=3$, 8 columns) welded at leaves, collapsed into an 8-column symmetric invariant subspace.
+* **Empirical Quantum Advantage ($> 39.0\times$):** Physical hitting probability at the terminal exit root ($q_7$) reaches **$65.20\%$** ($652/1000$ hits), decisively escaping the classical random walk weld trap floor ($\sim 1.67\%$).
+* **T-1000 Simulation Validation ($84.43\%$ Accuracy):** T-1000 predicted $77.22\%$ at $t=6.80$; observed hardware hitting of $65.20\%$ achieves **$84.43\%$ predictive accuracy** ($|\Delta P| = 12.02\%$), with delta precisely attributed to transmon relaxation ($T_1 = 32.5\,\mu\text{s}$), inter-die seam error ($p_{\text{seam}} = 0.0220$), and SPAM readout noise ($\approx 2.5\%$).
+* **Sovereign Visual Suite (300 DPI):**
+  - **Overview Showdown:** [`cepheus_glued_trees_showdown.png`](experiments/cepheus_glued_trees_30q/cepheus_glued_trees_showdown.png) (1.34 MB)
+  - **Hardware Alone:** [`cepheus_physical_alone.png`](experiments/cepheus_glued_trees_30q/cepheus_physical_alone.png) (1.15 MB)
+  - **Side-by-Side Comparison:** [`cepheus_sim_vs_run_side_by_side.png`](experiments/cepheus_glued_trees_30q/cepheus_sim_vs_run_side_by_side.png) (839 KB)
+  - **Heatmap Showdown:** [`cepheus_sim_vs_run_heatmap.png`](experiments/cepheus_glued_trees_30q/cepheus_sim_vs_run_heatmap.png) (1.02 MB) with continuous spatiotemporal density, $8\times 8$ empirical Pauli correlation matrix $\langle Z_i Z_j \rangle$, and Frobenius error norm.
+* Detailed Documentation: [`docs/findings/cepheus_physical_glued_trees_qpu_run.md`](docs/findings/cepheus_physical_glued_trees_qpu_run.md) and [`experiments/cepheus_glued_trees_30q/README.md`](experiments/cepheus_glued_trees_30q/README.md).
 
+---
 
 ## Quick Start for Developers
 
@@ -281,6 +292,17 @@ cargo run --release -p t1000 --bin nighthawk_99_plaquette_bench
 # Run Rigetti Cepheus-1-108Q 12-Chiplet Modular Seam Mitigation Benchmark
 cargo run --release -p t1000 --bin cepheus_108q_bench
 
+# Run 30-Qubit Glued-Tree Quantum Walk T-1000 Simulation Pass
+python experiments/cepheus_glued_trees_30q/runner.py --target t1000
+
+# Dispatch / Poll Physical Run on Rigetti Cepheus-1-108Q (OpenQuantum Cloud)
+python experiments/cepheus_glued_trees_30q/dispatch_to_openquantum_cepheus.py
+
+# Render 300 DPI Sovereign Visual Suite (Physical Alone, Side-by-Side, Heatmap)
+python experiments/cepheus_glued_trees_30q/chart_cepheus_physical_alone.py
+python experiments/cepheus_glued_trees_30q/chart_cepheus_side_by_side.py
+python experiments/cepheus_glued_trees_30q/chart_cepheus_heatmap_showdown.py
+
 # Run Orthogonal K-Patch Proxy RCS Showdown (PyQrack QrackAceBackend vs T-1000)
 python scripts/benchmarks/t1000_orthogonal_proxy_showdown.py
 
@@ -288,6 +310,8 @@ python scripts/benchmarks/t1000_orthogonal_proxy_showdown.py
 python web/serve.py
 ```
 
+* **Rigetti Cepheus-1-108Q Physical QPU Quantum Walk Findings:** [`docs/findings/cepheus_physical_glued_trees_qpu_run.md`](docs/findings/cepheus_physical_glued_trees_qpu_run.md).
+* **30-Qubit Glued-Tree Hardware Protocol & Telemetry:** [`experiments/cepheus_glued_trees_30q/README.md`](experiments/cepheus_glued_trees_30q/README.md).
 * **2D Plaquette Routing & Cepheus-108Q Seam Mitigation Findings:** [`docs/findings/plaquette_routing_and_cepheus_seam_mitigation.md`](docs/findings/plaquette_routing_and_cepheus_seam_mitigation.md).
 * **IBM Nighthawk R2 Plaquette Mapping & Qrack Comparison:** [`docs/findings/ibm_nighthawk_r2_plaquette_mapping.md`](docs/findings/ibm_nighthawk_r2_plaquette_mapping.md).
 * **Orthogonal K-Patch Proxy RCS Showdown (Qrack vs T-1000):** [`docs/findings/orthogonal_proxy_rcs_showdown.md`](docs/findings/orthogonal_proxy_rcs_showdown.md).
