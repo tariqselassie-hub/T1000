@@ -362,6 +362,7 @@ python scripts/charting/chart_full_qnn_suite.py
 python web/serve.py
 ```
 
+* **Fault-Tolerant Lattice Surgery & Magic State Distillation:** [`docs/findings/fault_tolerant_lattice_surgery_and_magic_distillation.md`](docs/findings/fault_tolerant_lattice_surgery_and_magic_distillation.md).
 * **Full Quantum Neural Network (QNN) Suite Benchmark & Showdown:** [`docs/findings/full_quantum_neural_network_suite_benchmarks.md`](docs/findings/full_quantum_neural_network_suite_benchmarks.md).
 * **Lie-Algebraic Geometric QGNN & Barren Plateau Resilience:** [`docs/findings/geometric_qgnn_barren_plateau_resilience.md`](docs/findings/geometric_qgnn_barren_plateau_resilience.md).
 * **Rigetti Cepheus-1-108Q Physical QPU Quantum Walk Findings:** [`docs/findings/cepheus_physical_glued_trees_qpu_run.md`](docs/findings/cepheus_physical_glued_trees_qpu_run.md).
@@ -381,7 +382,7 @@ python web/serve.py
 * **Zero-Allocation Dense VQC & Heptal Qudit MPS QNN Findings:** [`docs/findings/avx2_zero_allocation_and_heptal_qnn.md`](docs/findings/avx2_zero_allocation_and_heptal_qnn.md).
 * **Dashboard & Circuit Composer Documentation:** [`docs/dashboard_and_circuit_composer.md`](docs/dashboard_and_circuit_composer.md).
 * **Bloch-Zipper & MPS Derivation:** [`docs/bloch_zipper_mps_specification.md`](docs/bloch_zipper_mps_specification.md).
-* **Empirical Research & Findings Registry:** [`docs/findings/README.md`](docs/findings/README.md).
+* **Empirical Research & Findings Registry (Dual-Housed with Deen OS Monographs M123–M147):** [`docs/findings/README.md`](docs/findings/README.md).
 
 ---
 
