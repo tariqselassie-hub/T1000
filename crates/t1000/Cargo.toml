@@ -243,6 +243,10 @@ path = "src/bin/benchmarks/cepheus_glued_trees_bench.rs"
 name = "qgnn_molecular_bench"
 path = "src/bin/training/qgnn_molecular_bench.rs"
 
+[[bin]]
+name = "full_qnn_suite_bench"
+path = "src/bin/benchmarks/full_qnn_suite_bench.rs"
+
 
 
 

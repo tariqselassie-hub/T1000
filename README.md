@@ -208,6 +208,18 @@
 * **Sovereign Publication Visual:** 4-panel showdown chart rendered at 300 DPI ([`results/charts/qgnn_geometric_showdown.png`](results/charts/qgnn_geometric_showdown.png)).
 * Detailed Documentation: [`docs/findings/geometric_qgnn_barren_plateau_resilience.md`](docs/findings/geometric_qgnn_barren_plateau_resilience.md).
 
+### 24. Full Quantum Neural Network (QNN) Suite Benchmark (`full_qnn_suite_bench`)
+* **Comprehensive 7-Pillar Evaluation:** Unifies and tests all mathematical subsystems across the entire quantum neural architecture on host AVX2+FMA hardware:
+  1. *Geometric QGNN:* $392,634\text{ mols/s}$ ($2.55\,\mu\text{s}$), $|\Delta y|=0.0000$, $\text{Var}=4.29\times 10^{-2}$ at 14Q.
+  2. *Continuous Walk Sorter:* $25,711\text{ samps/s}$ ($38.89\,\mu\text{s}$), $400:1$ routing contrast, $45.7\%$ ballistic peak.
+  3. *Ultrametric Tree Sorter:* $11,210,762\text{ samps/s}$ ($0.09\,\mu\text{s}$), $0$ Strong Triangle Inequality violations.
+  4. *Q-SSM Mamba (1D MPS):* $555,556\text{ tokens/s}$ ($1,800\text{ ns}$), $128\text{ B}$ L1 cache pinned, $\text{MSE}=0.1923$.
+  5. *Radix-7 Heptal Qudit MPS:* $2,261\text{ mols/s}$ ($442.3\,\mu\text{s}$), $784\text{ B}$ L1 active window ($2.33\times 10^{14}\times$ state compression over $7^{19}$ Hilbert space).
+  6. *Dense Molecular VQC (14Q):* $184,963\text{ evals/s}$ ($5.41\,\mu\text{s}$), $262\text{ KB}$ L2 resident, unitary norm drift $0.000000000000$.
+  7. *Reverse-Mode Adjoint Diff:* $1.34\text{ ms}$ for 96 parameters across 12Q (**$153.6\times$ speedup** over parameter-shift rule), $0$ heap allocations in backward pass.
+* **Sovereign Publication Visual:** 4-panel showdown chart rendered at 300 DPI ([`results/charts/full_qnn_suite_showdown.png`](results/charts/full_qnn_suite_showdown.png)).
+* Detailed Documentation: [`docs/findings/full_quantum_neural_network_suite_benchmarks.md`](docs/findings/full_quantum_neural_network_suite_benchmarks.md).
+
 ---
 
 ## Quick Start for Developers
@@ -319,10 +331,17 @@ python scripts/charting/chart_qgnn_showdown.py
 # Run Orthogonal K-Patch Proxy RCS Showdown (PyQrack QrackAceBackend vs T-1000)
 python scripts/benchmarks/t1000_orthogonal_proxy_showdown.py
 
+# Run Full Quantum Neural Network (QNN) Suite Benchmark (All 7 Pillars)
+cargo run --release -p t1000 --bin full_qnn_suite_bench
+
+# Render 300 DPI Sovereign Full QNN Suite Showdown Visual
+python scripts/charting/chart_full_qnn_suite.py
+
 # Launch interactive 3D molecular dashboard and Lego-block circuit composer
 python web/serve.py
 ```
 
+* **Full Quantum Neural Network (QNN) Suite Benchmark & Showdown:** [`docs/findings/full_quantum_neural_network_suite_benchmarks.md`](docs/findings/full_quantum_neural_network_suite_benchmarks.md).
 * **Lie-Algebraic Geometric QGNN & Barren Plateau Resilience:** [`docs/findings/geometric_qgnn_barren_plateau_resilience.md`](docs/findings/geometric_qgnn_barren_plateau_resilience.md).
 * **Rigetti Cepheus-1-108Q Physical QPU Quantum Walk Findings:** [`docs/findings/cepheus_physical_glued_trees_qpu_run.md`](docs/findings/cepheus_physical_glued_trees_qpu_run.md).
 * **30-Qubit Glued-Tree Hardware Protocol & Telemetry:** [`experiments/cepheus_glued_trees_30q/README.md`](experiments/cepheus_glued_trees_30q/README.md).

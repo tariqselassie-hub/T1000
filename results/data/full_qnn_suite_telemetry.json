@@ -1,0 +1,53 @@
+{
+  "timestamp": "2026-10-19T09:18:00Z",
+  "platform": "x86_64 AVX2+FMA Sovereign Core",
+  "qgnn_result": {
+    "latency_us": 2.7751,
+    "throughput_mols_sec": 360347.37486937403,
+    "permutation_drift": 0.0,
+    "gradient_variance_14q": 0.042931,
+    "is_barren_resilient": true
+  },
+  "topological_sorter_result": {
+    "latency_us": 37.774,
+    "ballistic_hitting_prob": 0.4570285027435706,
+    "routing_contrast": 399.9999999999995,
+    "zeno_projections": 1,
+    "norm_conservation": 1.0
+  },
+  "ultrametric_tree_result": {
+    "latency_us": 0.0845,
+    "throughput_samples_sec": 11834319.526627218,
+    "coarse_fine_registers": "H_C(1Q) x H_F(1Q) x H_E(2Q)",
+    "strong_triangle_violations": 0,
+    "unitary_conservation": 1.0
+  },
+  "qssm_result": {
+    "latency_per_token_ns": 2075.0,
+    "throughput_tokens_sec": 481928.0,
+    "l1_cache_resident_bytes": 128,
+    "reconstruction_mse": 0.19229378928611937
+  },
+  "heptal_qnn_result": {
+    "latency_us": 470.3397,
+    "throughput_mols_sec": 2126.1228852252957,
+    "effective_hilbert_space": "7^19 (~1.14e16)",
+    "l1_active_window_bytes": 784,
+    "gauge_norm": 1.0
+  },
+  "dense_vqc_result": {
+    "qubits": 14,
+    "latency_us": 6.0865,
+    "throughput_evals_sec": 164298.03663846216,
+    "state_footprint_bytes": 262144,
+    "norm_drift": 0.0
+  },
+  "adjoint_result": {
+    "qubits": 12,
+    "num_parameters": 96,
+    "backward_latency_ms": 1.2129,
+    "speedup_vs_param_shift": 153.60000000000002,
+    "max_gradient_norm": 0.8558591000872686
+  },
+  "overall_mean_throughput_ops_sec": 3090272.7652550703
+}
