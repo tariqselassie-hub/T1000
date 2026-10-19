@@ -23,6 +23,12 @@ pub enum PatternType {
     Toad,
     /// 4-cell Fractional Fermi Sea topological bubble (alpha = 2).
     FractionalFermiSeaBubble,
+    /// Opposing pair of colliding gliders.
+    GliderPair,
+    /// Superposed quantum beam splitter with pi/2 relative phase.
+    QuantumBeamSplitter,
+    /// Period-15 oscillator (Pentadecathlon).
+    Pentadecathlon,
 }
 
 /// Helper to instantiate canonical patterns onto 2D lattices.
@@ -46,6 +52,11 @@ impl PatternFactory {
             PatternType::FractionalFermiSeaBubble => {
                 Self::inject_ffs_bubble(lattice, state, x0, y0)
             }
+            PatternType::GliderPair => Self::inject_glider_pair(lattice, state, x0, y0, 0.0),
+            PatternType::QuantumBeamSplitter => {
+                Self::inject_glider_pair(lattice, state, x0, y0, std::f64::consts::PI * 0.5)
+            }
+            PatternType::Pentadecathlon => Self::inject_pentadecathlon(lattice, state, x0, y0),
         }
     }
 
@@ -129,6 +140,62 @@ impl PatternFactory {
         for (dx, dy) in outer_coords {
             let idx = lattice.coord_to_idx((x0 + dx) % lattice.width, (y0 + dy) % lattice.height);
             state.set_cell_superposition(idx, amp, amp, vac);
+        }
+    }
+
+    /// Inject two opposing gliders on collision trajectory with relative quantum phase.
+    pub fn inject_glider_pair(
+        lattice: &Lattice2D,
+        state: &mut QuantumCellStateSoA,
+        x0: usize,
+        y0: usize,
+        phase_rad: f64,
+    ) {
+        let inv_sqrt2 = 1.0 / 2.0f64.sqrt();
+        let amp_a = Complex64::new(inv_sqrt2, 0.0);
+        let amp_b = Complex64::from_polar(inv_sqrt2, phase_rad);
+
+        // Glider A (SE bound) at (x0, y0)
+        let coords_a = [(1, 0), (2, 1), (0, 2), (1, 2), (2, 2)];
+        for (dx, dy) in coords_a {
+            let x = (x0 + dx) % lattice.width;
+            let y = (y0 + dy) % lattice.height;
+            let idx = lattice.coord_to_idx(x, y);
+            let c0 = Complex64::new(state.re0[idx], state.im0[idx]);
+            let c2 = Complex64::new(state.re2[idx], state.im2[idx]);
+            let cur_c1 = Complex64::new(state.re1[idx], state.im1[idx]);
+            state.set_cell_superposition(idx, c0, cur_c1 + amp_a, c2);
+        }
+
+        // Glider B (SW bound) at (x0 + 8, y0)
+        let coords_b = [(1, 0), (0, 1), (0, 2), (1, 2), (2, 2)];
+        let x_b0 = (x0 + 8) % lattice.width;
+        for (dx, dy) in coords_b {
+            let x = (x_b0 + dx) % lattice.width;
+            let y = (y0 + dy) % lattice.height;
+            let idx = lattice.coord_to_idx(x, y);
+            let c0 = Complex64::new(state.re0[idx], state.im0[idx]);
+            let c2 = Complex64::new(state.re2[idx], state.im2[idx]);
+            let cur_c1 = Complex64::new(state.re1[idx], state.im1[idx]);
+            state.set_cell_superposition(idx, c0, cur_c1 + amp_b, c2);
+        }
+    }
+
+    /// Pentadecathlon: 10-cell period-15 oscillator.
+    pub fn inject_pentadecathlon(
+        lattice: &Lattice2D,
+        state: &mut QuantumCellStateSoA,
+        x0: usize,
+        y0: usize,
+    ) {
+        let offsets = [
+            (1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 0), (9, 0), (10, 0)
+        ];
+        for (dx, dy) in offsets {
+            let x = (x0 + dx) % lattice.width;
+            let y = (y0 + dy) % lattice.height;
+            let idx = lattice.coord_to_idx(x, y);
+            state.set_cell_living(idx);
         }
     }
 }

@@ -113,3 +113,78 @@ fn test_cat_blinker_superposition_preservation() {
     let final_pop = sim.state.total_population();
     assert!(final_pop > 0.0 && final_pop < (sim.lattice.total_cells as f64));
 }
+
+#[test]
+fn test_glider_collision_interferometry() {
+    let report = t1000_conway::sweep_glider_interferometry(16, 16, 8, 8);
+    assert_eq!(report.phase_points, 8);
+    assert!(report.max_transmission >= report.min_transmission);
+    assert!(report.visibility >= 0.0 && report.visibility <= 1.0);
+    assert!(report.max_entanglement_nats > 0.0);
+
+    for point in &report.sweep_results {
+        assert!(point.max_norm_error < 1e-12);
+        assert!(point.transmission_prob >= 0.0 && point.transmission_prob <= 1.0);
+    }
+}
+
+#[test]
+fn test_simd_vs_scalar_agreement() {
+    let params = HolonomyParams::default();
+    let u4 = [
+        build_holonomy_unitary(1.0, &params),
+        build_holonomy_unitary(2.5, &params),
+        build_holonomy_unitary(3.0, &params),
+        build_holonomy_unitary(4.2, &params),
+    ];
+
+    let mut re0_simd = [0.8, 0.2, 0.1, 0.0];
+    let mut im0_simd = [0.1, 0.0, 0.0, 0.0];
+    let mut re1_simd = [0.2, 0.8, 0.7, 0.5];
+    let mut im1_simd = [0.0, 0.1, 0.2, 0.0];
+    let mut re2_simd = [0.0, 0.0, 0.2, 0.5];
+    let mut im2_simd = [0.0, 0.0, 0.0, 0.1];
+
+    let mut re0_scal = re0_simd;
+    let mut im0_scal = im0_simd;
+    let mut re1_scal = re1_simd;
+    let mut im1_scal = im1_simd;
+    let mut re2_scal = re2_simd;
+    let mut im2_scal = im2_simd;
+
+    let indices = [0, 1, 2, 3];
+
+    t1000_conway::simd::apply_unitary_4cells(
+        &mut re0_simd, &mut im0_simd, &mut re1_simd, &mut im1_simd, &mut re2_simd, &mut im2_simd,
+        indices, &u4,
+    );
+
+    t1000_conway::simd::apply_unitary_4cells_scalar(
+        &mut re0_scal, &mut im0_scal, &mut re1_scal, &mut im1_scal, &mut re2_scal, &mut im2_scal,
+        indices, &u4,
+    );
+
+    for lane in 0..4 {
+        assert!((re0_simd[lane] - re0_scal[lane]).abs() < 1e-14);
+        assert!((im0_simd[lane] - im0_scal[lane]).abs() < 1e-14);
+        assert!((re1_simd[lane] - re1_scal[lane]).abs() < 1e-14);
+        assert!((im1_simd[lane] - im1_scal[lane]).abs() < 1e-14);
+        assert!((re2_simd[lane] - re2_scal[lane]).abs() < 1e-14);
+        assert!((im2_simd[lane] - im2_scal[lane]).abs() < 1e-14);
+    }
+}
+
+#[test]
+fn test_scale_to_32x32_and_64x64() {
+    for &dim in &[32, 64] {
+        let lattice = Lattice2D::new(dim, dim, BoundaryCondition::Toroidal);
+        let mut sim = QuantumConwaySimulator::new(lattice, HolonomyParams::default());
+        PatternFactory::inject_pattern(PatternType::Glider, &sim.lattice, &mut sim.state, dim / 4, dim / 4);
+
+        for _ in 0..5 {
+            let telem = sim.step();
+            assert!(telem.max_norm_error < 1e-12, "Norm failed at dim {}: {:.2e}", dim, telem.max_norm_error);
+        }
+    }
+}
+

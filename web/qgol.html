@@ -100,20 +100,36 @@
             <button class="btn-ctrl probe" id="btn-born-probe" title="Trigger projective measurement collapse across lattice">BORN PROBE</button>
         </div>
 
-        <!-- Pattern Presets & Speed Slider -->
+        <!-- Pattern Presets, Grid Scale & Phase Sliders -->
         <div class="control-group">
             <select class="select-ctrl" id="select-pattern">
                 <option value="glider">Bethe-String Glider Soliton</option>
+                <option value="glider_pair" selected>Quantum Glider Collision (Phase Tunable)</option>
+                <option value="beam_splitter">Mach-Zehnder Beam-Splitter (Δθ = π/2)</option>
                 <option value="ffs_bubble">Fractional Fermi Sea Bubble (l=2)</option>
                 <option value="cat_blinker">Schr&ouml;dinger Cat Blinker</option>
+                <option value="pentadecathlon">Pentadecathlon (Period-15)</option>
                 <option value="block">Quantum Block (Still-Life)</option>
                 <option value="soup">Coherent Quantum Soup</option>
             </select>
 
+            <select class="select-ctrl" id="select-grid-dim">
+                <option value="16">16 x 16 (256 Cells)</option>
+                <option value="24" selected>24 x 24 (576 Cells)</option>
+                <option value="32">32 x 32 (1,024 Cells)</option>
+                <option value="48">48 x 48 (2,304 Cells)</option>
+            </select>
+
+            <div class="slider-group" id="group-phase-slider">
+                <span>PHASE &Delta;&theta;:</span>
+                <input type="range" id="slider-phase" min="0" max="360" value="90">
+                <span id="phase-val" class="val-green">90&deg; (&pi;/2)</span>
+            </div>
+
             <div class="slider-group">
                 <span>SPEED:</span>
-                <input type="range" id="slider-speed" min="1" max="20" value="4">
-                <span id="speed-val" class="val-green">4 TPS</span>
+                <input type="range" id="slider-speed" min="1" max="20" value="6">
+                <span id="speed-val" class="val-green">6 TPS</span>
             </div>
         </div>
 

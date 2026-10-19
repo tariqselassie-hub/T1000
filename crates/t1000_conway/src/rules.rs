@@ -76,17 +76,18 @@ impl ClassicalConwayEngine {
 /// Compute Moore neighborhood occupation vector for all cells in `state`.
 /// Returns a vector of length `lattice.total_cells` where each entry is
 /// sum_{j in Moore(i)} ( P(|1>_j) + 2 * P(|2>_j) ).
-pub fn compute_neighborhood_occupations(
+/// Compute Moore neighborhood occupation vector using a pre-allocated scratch buffer for zero-allocation loops.
+pub fn compute_neighborhood_occupations_buffered(
     lattice: &Lattice2D,
     state: &QuantumCellStateSoA,
+    density_scratch: &mut [f64],
     out_occupations: &mut [f64],
 ) {
     assert_eq!(lattice.total_cells, state.num_cells);
+    assert_eq!(density_scratch.len(), state.num_cells);
     assert_eq!(out_occupations.len(), state.num_cells);
 
-    // Pre-calculate individual cell densities
-    let mut densities = vec![0.0f64; state.num_cells];
-    for (i, d) in densities.iter_mut().enumerate().take(state.num_cells) {
+    for (i, d) in density_scratch.iter_mut().enumerate().take(state.num_cells) {
         *d = state.cell_density(i);
     }
 
@@ -98,10 +99,21 @@ pub fn compute_neighborhood_occupations(
         let nbrs = lattice.moore_neighbors(i);
         let mut sum = 0.0f64;
         for &nbr_idx in nbrs {
-            sum += densities[nbr_idx];
+            sum += density_scratch[nbr_idx];
         }
         *occ = sum;
     }
+}
+
+/// Compute Moore neighborhood occupation vector for all cells in `state`.
+/// Allocates scratch buffer; for hot loops, prefer `compute_neighborhood_occupations_buffered`.
+pub fn compute_neighborhood_occupations(
+    lattice: &Lattice2D,
+    state: &QuantumCellStateSoA,
+    out_occupations: &mut [f64],
+) {
+    let mut scratch = vec![0.0f64; state.num_cells];
+    compute_neighborhood_occupations_buffered(lattice, state, &mut scratch, out_occupations);
 }
 
 /// Compute Hamming distance between a classical binary grid and a quantum projected binary grid.

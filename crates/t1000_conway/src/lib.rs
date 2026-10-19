@@ -10,14 +10,20 @@
 //! grid rules, Margolus partition operators, and soliton trackers separate from
 //! the VQC and chemical screening engines.
 
+pub mod collision;
 pub mod holonomy;
 pub mod lattice;
 pub mod patterns;
 pub mod rules;
+pub mod simd;
 pub mod simulator;
 pub mod state;
 pub mod telemetry;
 
+pub use collision::{
+    inject_directed_glider, run_collision_experiment, setup_glider_collision,
+    sweep_glider_interferometry, CollisionTelemetry, GliderDirection, GliderInterferometryReport,
+};
 pub use holonomy::{
     build_holonomy_unitary, ffs_momentum_plateau, geometric_holonomy_phase, HolonomyParams,
     HolonomyTransferMatrix,
@@ -25,8 +31,11 @@ pub use holonomy::{
 pub use lattice::{BoundaryCondition, Lattice2D};
 pub use patterns::{PatternFactory, PatternType};
 pub use rules::{
-    compute_hamming_distance, compute_neighborhood_occupations, ClassicalConwayEngine,
+    compute_hamming_distance, compute_neighborhood_occupations,
+    compute_neighborhood_occupations_buffered, ClassicalConwayEngine,
 };
+pub use simd::apply_unitary_4cells;
 pub use simulator::{QuantumConwaySimulator, StepTelemetry};
 pub use state::{CellBasis, QuantumCellStateSoA};
 pub use telemetry::{colors, TelemetryVisualizer};
+

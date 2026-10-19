@@ -340,6 +340,31 @@ class QuantumConwayEngine {
                 const idx = this.coordToIdx(midX - 2 + dx, midY - 2 + dy);
                 this.re0[idx] = 0; this.re1[idx] = 1;
             });
+        } else if (type === 'glider_pair' || type === 'beam_splitter') {
+            const phase = (type === 'beam_splitter') ? (Math.PI * 0.5) : (this.relativePhaseRad || (Math.PI * 0.5));
+            const invSqrt2 = 1.0 / Math.sqrt(2);
+            // Glider A (SE bound) starting top-left
+            const coordsA = [[1, 0], [2, 1], [0, 2], [1, 2], [2, 2]];
+            coordsA.forEach(([dx, dy]) => {
+                const idx = this.coordToIdx((midX - 7 + dx + this.width) % this.width, (midY - 7 + dy + this.height) % this.height);
+                this.re0[idx] = 0;
+                this.re1[idx] = invSqrt2;
+                this.im1[idx] = 0;
+            });
+            // Glider B (SW bound) starting top-right with relative quantum phase
+            const coordsB = [[1, 0], [0, 1], [0, 2], [1, 2], [2, 2]];
+            coordsB.forEach(([dx, dy]) => {
+                const idx = this.coordToIdx((midX + 5 + dx + this.width) % this.width, (midY - 7 + dy + this.height) % this.height);
+                this.re0[idx] = 0;
+                this.re1[idx] += invSqrt2 * Math.cos(phase);
+                this.im1[idx] += invSqrt2 * Math.sin(phase);
+            });
+        } else if (type === 'pentadecathlon') {
+            const offsets = [[1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 0], [7, 0], [8, 0], [9, 0], [10, 0]];
+            offsets.forEach(([dx, dy]) => {
+                const idx = this.coordToIdx((midX - 5 + dx + this.width) % this.width, (midY + dy + this.height) % this.height);
+                this.re0[idx] = 0; this.re1[idx] = 1;
+            });
         } else if (type === 'ffs_bubble') {
             const coords = [[0, 0], [1, 0], [0, 1], [1, 1]];
             coords.forEach(([dx, dy]) => {
@@ -379,8 +404,11 @@ class QuantumConwayEngine {
 
 class QGolVisualizerDeck {
     constructor() {
-        this.engine = new QuantumConwayEngine(16, 16);
-        this.engine.injectPattern('glider');
+        this.gridDim = 24;
+        this.relativePhaseRad = Math.PI * 0.5;
+        this.engine = new QuantumConwayEngine(this.gridDim, this.gridDim);
+        this.engine.relativePhaseRad = this.relativePhaseRad;
+        this.engine.injectPattern('glider_pair');
 
         // Canvases
         this.cvsIso = document.getElementById('canvas-iso');
@@ -457,16 +485,26 @@ class QGolVisualizerDeck {
             else if (e.key === '3') this.switchView('panel-hilbert');
         });
 
-        // Isometric Drag rotation
+        // Isometric Drag rotation & Canvas Painting
+        this.dragDistance = 0;
         this.cvsIso.addEventListener('mousedown', (e) => {
             this.isDragging = true;
             this.lastMouse = { x: e.clientX, y: e.clientY };
+            this.dragDistance = 0;
         });
-        window.addEventListener('mouseup', () => this.isDragging = false);
+        window.addEventListener('mouseup', (e) => {
+            if (this.isDragging) {
+                this.isDragging = false;
+                if (this.dragDistance < 6) {
+                    this.handleCanvasClick(e);
+                }
+            }
+        });
         window.addEventListener('mousemove', (e) => {
             if (!this.isDragging) return;
             const dx = e.clientX - this.lastMouse.x;
             const dy = e.clientY - this.lastMouse.y;
+            this.dragDistance += Math.hypot(dx, dy);
             this.isoYaw += dx * 0.008;
             this.isoPitch = Math.max(0.1, Math.min(Math.PI / 2.2, this.isoPitch + dy * 0.008));
             this.lastMouse = { x: e.clientX, y: e.clientY };
@@ -474,6 +512,9 @@ class QGolVisualizerDeck {
         this.cvsIso.addEventListener('wheel', (e) => {
             e.preventDefault();
             this.isoZoom = Math.max(0.5, Math.min(2.5, this.isoZoom - e.deltaY * 0.001));
+        });
+        this.cvsIso.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
         });
 
         // Controls
@@ -505,12 +546,98 @@ class QGolVisualizerDeck {
             this.updateTelemetryHUD(this.engine.gatherTelemetry());
         });
 
+        const selectGrid = document.getElementById('select-grid-dim');
+        if (selectGrid) {
+            selectGrid.addEventListener('change', (e) => {
+                this.gridDim = parseInt(e.target.value, 10);
+                this.engine = new QuantumConwayEngine(this.gridDim, this.gridDim);
+                this.engine.relativePhaseRad = this.relativePhaseRad;
+                const currentPat = document.getElementById('select-pattern').value;
+                this.engine.injectPattern(currentPat);
+                this.updateTelemetryHUD(this.engine.gatherTelemetry());
+            });
+        }
+
+        const sliderPhase = document.getElementById('slider-phase');
+        const phaseVal = document.getElementById('phase-val');
+        if (sliderPhase && phaseVal) {
+            sliderPhase.addEventListener('input', (e) => {
+                const deg = parseFloat(e.target.value);
+                this.relativePhaseRad = deg * (Math.PI / 180.0);
+                this.engine.relativePhaseRad = this.relativePhaseRad;
+                const piFrac = (deg / 180.0).toFixed(2);
+                phaseVal.textContent = `${Math.round(deg)}° (${piFrac}π)`;
+                const currentPat = document.getElementById('select-pattern').value;
+                if (currentPat === 'glider_pair' || currentPat === 'beam_splitter') {
+                    this.engine.injectPattern(currentPat);
+                    this.updateTelemetryHUD(this.engine.gatherTelemetry());
+                }
+            });
+        }
+
         const sliderSpeed = document.getElementById('slider-speed');
         const speedVal = document.getElementById('speed-val');
         sliderSpeed.addEventListener('input', (e) => {
             this.ticksPerSec = parseInt(e.target.value);
             speedVal.textContent = `${this.ticksPerSec} TPS`;
         });
+    }
+
+    handleCanvasClick(e) {
+        if (!this.cvsIso) return;
+        const rect = this.cvsIso.getBoundingClientRect();
+        if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) {
+            return;
+        }
+
+        const mouseX = (e.clientX - rect.left) * (this.cvsIso.width / rect.width);
+        const mouseY = (e.clientY - rect.top) * (this.cvsIso.height / rect.height);
+
+        const w = this.cvsIso.width;
+        const h = this.cvsIso.height;
+        const cx = w / 2;
+        const cy = h / 2 + 30;
+        const size = Math.min(w, h) * 0.038 * this.isoZoom;
+
+        const dx = mouseX - cx;
+        const dy = mouseY - cy;
+        const rotX = dx / (size * 2.2);
+        const rotY = dy / (size * 1.2 * Math.sin(this.isoPitch));
+
+        const nx = rotX * Math.cos(this.isoYaw) + rotY * Math.sin(this.isoYaw);
+        const ny = -rotX * Math.sin(this.isoYaw) + rotY * Math.cos(this.isoYaw);
+
+        const x = Math.round(nx + this.engine.width / 2);
+        const y = Math.round(ny + this.engine.height / 2);
+
+        if (x >= 0 && x < this.engine.width && y >= 0 && y < this.engine.height) {
+            const idx = this.engine.coordToIdx(x, y);
+
+            if (e.shiftKey) {
+                // Shift-Click: Vacuum |0>
+                this.engine.re0[idx] = 1.0; this.engine.im0[idx] = 0.0;
+                this.engine.re1[idx] = 0.0; this.engine.im1[idx] = 0.0;
+                this.engine.re2[idx] = 0.0; this.engine.im2[idx] = 0.0;
+            } else if (e.button === 2 || e.altKey) {
+                // Right-Click / Alt-Click: Fractional Fermi Sea |2>
+                this.engine.re0[idx] = 0.0; this.engine.im0[idx] = 0.0;
+                this.engine.re1[idx] = 0.0; this.engine.im1[idx] = 0.0;
+                this.engine.re2[idx] = 1.0; this.engine.im2[idx] = 0.0;
+            } else {
+                // Left-Click: Toggle Living |1> vs Vacuum |0>
+                const isLiving = this.engine.probLiving(idx) > 0.5;
+                if (isLiving) {
+                    this.engine.re0[idx] = 1.0; this.engine.im0[idx] = 0.0;
+                    this.engine.re1[idx] = 0.0; this.engine.im1[idx] = 0.0;
+                    this.engine.re2[idx] = 0.0; this.engine.im2[idx] = 0.0;
+                } else {
+                    this.engine.re0[idx] = 0.0; this.engine.im0[idx] = 0.0;
+                    this.engine.re1[idx] = 1.0; this.engine.im1[idx] = 0.0;
+                    this.engine.re2[idx] = 0.0; this.engine.im2[idx] = 0.0;
+                }
+            }
+            this.updateTelemetryHUD(this.engine.gatherTelemetry());
+        }
     }
 
     renderLoop(now) {

@@ -1,316 +1,696 @@
 {
-  "timestamp": "2026-10-18T13:30:00Z",
-  "license": "MIT OR Apache-2.0",
   "grid_size": [
     16,
     16
   ],
+  "interferometry_sweep": {
+    "max_entanglement_nats": 0.6931471805599454,
+    "max_transmission": 1.0,
+    "min_transmission": 1.0,
+    "phase_points": 16,
+    "sweep_results": [
+      {
+        "annihilation_prob": 0.0,
+        "bound_state_prob": 1.0,
+        "ffs_population": 163.09476625249044,
+        "living_population": 123.04935517980124,
+        "max_norm_error": 1.1102230246251565e-15,
+        "peak_entanglement": 0.6931471805599454,
+        "phase_deg": 0.0,
+        "relative_phase_rad": 0.0,
+        "steps": 12,
+        "transmission_prob": 1.0
+      },
+      {
+        "annihilation_prob": 0.0,
+        "bound_state_prob": 1.0,
+        "ffs_population": 160.37436823091895,
+        "living_population": 125.94347760473632,
+        "max_norm_error": 8.881784197001252e-16,
+        "peak_entanglement": 0.6931471650152486,
+        "phase_deg": 22.5,
+        "relative_phase_rad": 0.39269908169872414,
+        "steps": 12,
+        "transmission_prob": 1.0
+      },
+      {
+        "annihilation_prob": 0.0,
+        "bound_state_prob": 1.0,
+        "ffs_population": 157.0262769343952,
+        "living_population": 128.77972796178437,
+        "max_norm_error": 6.661338147750939e-16,
+        "peak_entanglement": 0.6931471711196686,
+        "phase_deg": 45.0,
+        "relative_phase_rad": 0.7853981633974483,
+        "steps": 12,
+        "transmission_prob": 1.0
+      },
+      {
+        "annihilation_prob": 0.0,
+        "bound_state_prob": 1.0,
+        "ffs_population": 175.28477517816705,
+        "living_population": 111.35505604333137,
+        "max_norm_error": 8.881784197001252e-16,
+        "peak_entanglement": 0.6931471073249864,
+        "phase_deg": 67.5,
+        "relative_phase_rad": 1.1780972450961724,
+        "steps": 12,
+        "transmission_prob": 1.0
+      },
+      {
+        "annihilation_prob": 0.0,
+        "bound_state_prob": 1.0,
+        "ffs_population": 171.59052527397625,
+        "living_population": 114.96710803499562,
+        "max_norm_error": 6.661338147750939e-16,
+        "peak_entanglement": 0.6931471380292145,
+        "phase_deg": 90.0,
+        "relative_phase_rad": 1.5707963267948966,
+        "steps": 12,
+        "transmission_prob": 1.0
+      },
+      {
+        "annihilation_prob": 0.0,
+        "bound_state_prob": 1.0,
+        "ffs_population": 163.67654867236246,
+        "living_population": 122.83912869502714,
+        "max_norm_error": 6.661338147750939e-16,
+        "peak_entanglement": 0.6931470170034014,
+        "phase_deg": 112.5,
+        "relative_phase_rad": 1.9634954084936207,
+        "steps": 12,
+        "transmission_prob": 1.0
+      },
+      {
+        "annihilation_prob": 0.0,
+        "bound_state_prob": 1.0,
+        "ffs_population": 158.49023136246157,
+        "living_population": 127.85294545668948,
+        "max_norm_error": 6.661338147750939e-16,
+        "peak_entanglement": 0.6931471111961118,
+        "phase_deg": 135.0,
+        "relative_phase_rad": 2.356194490192345,
+        "steps": 12,
+        "transmission_prob": 1.0
+      },
+      {
+        "annihilation_prob": 0.0,
+        "bound_state_prob": 1.0,
+        "ffs_population": 168.29342454314474,
+        "living_population": 118.15577530185183,
+        "max_norm_error": 6.661338147750939e-16,
+        "peak_entanglement": 0.6931461586448061,
+        "phase_deg": 157.5,
+        "relative_phase_rad": 2.748893571891069,
+        "steps": 12,
+        "transmission_prob": 1.0
+      },
+      {
+        "annihilation_prob": 0.0,
+        "bound_state_prob": 1.0,
+        "ffs_population": 172.86684853762486,
+        "living_population": 113.63070001935425,
+        "max_norm_error": 6.661338147750939e-16,
+        "peak_entanglement": 0.6931460092293139,
+        "phase_deg": 180.0,
+        "relative_phase_rad": 3.141592653589793,
+        "steps": 12,
+        "transmission_prob": 1.0
+      },
+      {
+        "annihilation_prob": 0.0,
+        "bound_state_prob": 1.0,
+        "ffs_population": 173.33105246448517,
+        "living_population": 113.1479172040542,
+        "max_norm_error": 7.771561172376096e-16,
+        "peak_entanglement": 0.6931460423946185,
+        "phase_deg": 202.5,
+        "relative_phase_rad": 3.5342917352885173,
+        "steps": 12,
+        "transmission_prob": 1.0
+      },
+      {
+        "annihilation_prob": 0.0,
+        "bound_state_prob": 1.0,
+        "ffs_population": 173.72490657189334,
+        "living_population": 112.8229343272025,
+        "max_norm_error": 6.661338147750939e-16,
+        "peak_entanglement": 0.693147165353931,
+        "phase_deg": 225.0,
+        "relative_phase_rad": 3.9269908169872414,
+        "steps": 12,
+        "transmission_prob": 1.0
+      },
+      {
+        "annihilation_prob": 0.0,
+        "bound_state_prob": 1.0,
+        "ffs_population": 168.05298819133594,
+        "living_population": 118.52503437879744,
+        "max_norm_error": 8.881784197001252e-16,
+        "peak_entanglement": 0.6931469120001198,
+        "phase_deg": 247.49999999999997,
+        "relative_phase_rad": 4.319689898685965,
+        "steps": 12,
+        "transmission_prob": 1.0
+      },
+      {
+        "annihilation_prob": 0.0,
+        "bound_state_prob": 1.0,
+        "ffs_population": 166.83160351874275,
+        "living_population": 119.6523337202647,
+        "max_norm_error": 8.881784197001252e-16,
+        "peak_entanglement": 0.6931460357918507,
+        "phase_deg": 270.0,
+        "relative_phase_rad": 4.71238898038469,
+        "steps": 12,
+        "transmission_prob": 1.0
+      },
+      {
+        "annihilation_prob": 0.0,
+        "bound_state_prob": 1.0,
+        "ffs_population": 166.68012630103857,
+        "living_population": 119.94257408615267,
+        "max_norm_error": 7.771561172376096e-16,
+        "peak_entanglement": 0.6931470014250702,
+        "phase_deg": 292.5,
+        "relative_phase_rad": 5.105088062083414,
+        "steps": 12,
+        "transmission_prob": 1.0
+      },
+      {
+        "annihilation_prob": 0.0,
+        "bound_state_prob": 1.0,
+        "ffs_population": 161.8283040823427,
+        "living_population": 124.01393644604767,
+        "max_norm_error": 8.881784197001252e-16,
+        "peak_entanglement": 0.6931471805043367,
+        "phase_deg": 315.0,
+        "relative_phase_rad": 5.497787143782138,
+        "steps": 12,
+        "transmission_prob": 1.0
+      },
+      {
+        "annihilation_prob": 0.0,
+        "bound_state_prob": 1.0,
+        "ffs_population": 161.0227088764578,
+        "living_population": 124.92767027424978,
+        "max_norm_error": 8.881784197001252e-16,
+        "peak_entanglement": 0.6931471790836183,
+        "phase_deg": 337.5,
+        "relative_phase_rad": 5.890486225480862,
+        "steps": 12,
+        "transmission_prob": 1.0
+      }
+    ],
+    "visibility": 0.0
+  },
+  "license": "MIT OR Apache-2.0",
+  "multi_scale_benchmark": [
+    {
+      "grid_dimension": "16x16",
+      "latency_us_per_step": 169.1,
+      "norm_conservation_error": 1.5543122344752192e-15,
+      "throughput_cells_per_sec": 1513897.1023063278,
+      "total_cells": 256
+    },
+    {
+      "grid_dimension": "32x32",
+      "latency_us_per_step": 2560.2,
+      "norm_conservation_error": 1.3322676295501878e-15,
+      "throughput_cells_per_sec": 399968.75244121556,
+      "total_cells": 1024
+    },
+    {
+      "grid_dimension": "64x64",
+      "latency_us_per_step": 37856.0,
+      "norm_conservation_error": 1.3322676295501878e-15,
+      "throughput_cells_per_sec": 108199.49281487743,
+      "total_cells": 4096
+    }
+  ],
   "scenarios": [
     {
-      "scenario": "Bethe-String Glider Soliton",
-      "total_steps": 12,
-      "elapsed_us": 15668,
-      "final_population": 196.11400524044205,
-      "final_ffs_population": 63.87953822686766,
-      "max_norm_error": 8.881784197001252e-16,
+      "elapsed_us": 2488,
       "entanglement_entropy": 0.6925757010016689,
-      "mean_momentum_density": 0.3559198611372781,
+      "final_ffs_population": 63.87953822686766,
+      "final_population": 196.11400524044205,
       "history": [
         {
-          "step": 1,
-          "total_population": 126.44353077376346,
-          "living_population": 126.44353077376346,
-          "ffs_population": 0.0,
-          "max_norm_error": 2.220446049250313e-16,
           "entanglement_entropy": 0.693092620717384,
-          "mean_momentum_density": 0.9668093422942009
-        },
-        {
-          "step": 2,
-          "total_population": 137.56490099933112,
-          "living_population": 127.79179745202835,
-          "ffs_population": 4.886551773651378,
-          "max_norm_error": 2.220446049250313e-16,
-          "entanglement_entropy": 0.6924611571491535,
-          "mean_momentum_density": 0.9602361595366223
-        },
-        {
-          "step": 3,
-          "total_population": 156.40487614993776,
-          "living_population": 108.9518223014217,
-          "ffs_population": 23.726526924258042,
-          "max_norm_error": 4.440892098500626e-16,
-          "entanglement_entropy": 0.6924611571491535,
-          "mean_momentum_density": 0.8252628304750822
-        },
-        {
-          "step": 4,
-          "total_population": 162.5445609402465,
-          "living_population": 102.81213751111308,
-          "ffs_population": 29.866211714566685,
-          "max_norm_error": 3.3306690738754696e-16,
-          "entanglement_entropy": 0.6924611571491535,
-          "mean_momentum_density": 0.7489828773252291
-        },
-        {
-          "step": 5,
-          "total_population": 181.40635873044005,
-          "living_population": 83.95033972091959,
-          "ffs_population": 48.72800950476026,
-          "max_norm_error": 4.440892098500626e-16,
-          "entanglement_entropy": 0.6924611571491534,
-          "mean_momentum_density": 0.568134483644466
-        },
-        {
-          "step": 6,
-          "total_population": 196.31187963084452,
-          "living_population": 69.04481882051505,
-          "ffs_population": 63.63353040516481,
-          "max_norm_error": 4.440892098500626e-16,
-          "entanglement_entropy": 0.6924611571491534,
-          "mean_momentum_density": 0.4162077490825117
-        },
-        {
-          "step": 7,
-          "total_population": 197.40287296972622,
-          "living_population": 67.95382548163352,
-          "ffs_population": 64.72452374404638,
-          "max_norm_error": 4.440892098500626e-16,
-          "entanglement_entropy": 0.6924611571491535,
-          "mean_momentum_density": 0.3572570139632343
-        },
-        {
-          "step": 8,
-          "total_population": 195.93268995009612,
-          "living_population": 69.42400850126374,
-          "ffs_population": 63.254340724416124,
-          "max_norm_error": 6.661338147750939e-16,
-          "entanglement_entropy": 0.6924611571491535,
-          "mean_momentum_density": 0.3448137968017995
-        },
-        {
-          "step": 9,
-          "total_population": 201.1228062929847,
-          "living_population": 64.23389215837516,
-          "ffs_population": 68.44445706730473,
-          "max_norm_error": 8.881784197001252e-16,
-          "entanglement_entropy": 0.6924611571491534,
-          "mean_momentum_density": 0.32462794109700965
-        },
-        {
-          "step": 10,
-          "total_population": 196.15977211710134,
-          "living_population": 69.19692633425856,
-          "ffs_population": 63.48142289142129,
-          "max_norm_error": 8.881784197001252e-16,
-          "entanglement_entropy": 0.6924611571491535,
-          "mean_momentum_density": 0.34744318329069374
-        },
-        {
-          "step": 11,
-          "total_population": 200.8035406667191,
-          "living_population": 63.6653933604297,
-          "ffs_population": 68.56907365314471,
-          "max_norm_error": 8.881784197001252e-16,
-          "entanglement_entropy": 0.6925757010016689,
-          "mean_momentum_density": 0.30989726445193083
-        },
-        {
-          "step": 12,
-          "total_population": 196.11400524044205,
-          "living_population": 68.35492878670675,
-          "ffs_population": 63.87953822686766,
-          "max_norm_error": 8.881784197001252e-16,
-          "entanglement_entropy": 0.6925757010016689,
-          "mean_momentum_density": 0.3559198611372781
-        }
-      ]
-    },
-    {
-      "scenario": "FFS Overpopulation Protection",
-      "total_steps": 8,
-      "elapsed_us": 9819,
-      "final_population": 200.71669847018404,
-      "final_ffs_population": 68.84867829557253,
-      "max_norm_error": 5.551115123125783e-16,
-      "entanglement_entropy": 0.6930313134821877,
-      "mean_momentum_density": 0.30805582709353035,
-      "history": [
-        {
-          "step": 1,
-          "total_population": 133.86962127351384,
-          "living_population": 129.86641907570868,
-          "ffs_population": 2.001601098902592,
-          "max_norm_error": 2.220446049250313e-16,
-          "entanglement_entropy": 0.6930313134821877,
-          "mean_momentum_density": 0.9779545420562
-        },
-        {
-          "step": 2,
-          "total_population": 147.47966442592008,
-          "living_population": 116.25637592330244,
-          "ffs_population": 15.611644251308833,
-          "max_norm_error": 2.220446049250313e-16,
-          "entanglement_entropy": 0.6930313134821877,
-          "mean_momentum_density": 0.8573844899875475
-        },
-        {
-          "step": 3,
-          "total_population": 161.1907670668482,
-          "living_population": 102.54527328237445,
-          "ffs_population": 29.322746892236868,
-          "max_norm_error": 2.220446049250313e-16,
-          "entanglement_entropy": 0.6930313134821877,
-          "mean_momentum_density": 0.7570536484798623
-        },
-        {
-          "step": 4,
-          "total_population": 180.31223579498953,
-          "living_population": 83.42380455423312,
-          "ffs_population": 48.444215620378216,
-          "max_norm_error": 2.220446049250313e-16,
-          "entanglement_entropy": 0.6930313134821877,
-          "mean_momentum_density": 0.6122745693899735
-        },
-        {
-          "step": 5,
-          "total_population": 175.1356633303962,
-          "living_population": 88.60037701882646,
-          "ffs_population": 43.267643155784924,
-          "max_norm_error": 4.440892098500626e-16,
-          "entanglement_entropy": 0.6930313134821877,
-          "mean_momentum_density": 0.4836770306120832
-        },
-        {
-          "step": 6,
-          "total_population": 225.74852673597803,
-          "living_population": 37.987513613244865,
-          "ffs_population": 93.88050656136654,
-          "max_norm_error": 5.551115123125783e-16,
-          "entanglement_entropy": 0.6930313134821877,
-          "mean_momentum_density": 0.24728749024700647
-        },
-        {
-          "step": 7,
-          "total_population": 173.04796300932813,
-          "living_population": 90.68807733989473,
-          "ffs_population": 41.17994283471672,
-          "max_norm_error": 6.661338147750939e-16,
-          "entanglement_entropy": 0.6930313134821877,
-          "mean_momentum_density": 0.31777335240598675
-        },
-        {
-          "step": 8,
-          "total_population": 200.71669847018404,
-          "living_population": 63.01934187903886,
-          "ffs_population": 68.84867829557253,
-          "max_norm_error": 5.551115123125783e-16,
-          "entanglement_entropy": 0.6930313134821877,
-          "mean_momentum_density": 0.30805582709353035
-        }
-      ]
-    },
-    {
-      "scenario": "Coherent Cat Blinker",
-      "total_steps": 10,
-      "elapsed_us": 10587,
-      "final_population": 191.73880251380078,
-      "final_ffs_population": 57.06417965092199,
-      "max_norm_error": 8.881784197001252e-16,
-      "entanglement_entropy": 0.6929736215731916,
-      "mean_momentum_density": 0.3963178964127412,
-      "history": [
-        {
-          "step": 1,
-          "total_population": 125.86026780910016,
-          "living_population": 125.86026780910016,
           "ffs_population": 0.0,
+          "living_population": 126.44353077376346,
           "max_norm_error": 2.220446049250313e-16,
-          "entanglement_entropy": 0.6930355372746383,
-          "mean_momentum_density": 0.9676844838128983
+          "mean_momentum_density": 0.9668093422942009,
+          "step": 1,
+          "total_population": 126.44353077376346
         },
         {
+          "entanglement_entropy": 0.6924611571491535,
+          "ffs_population": 4.886551773651378,
+          "living_population": 127.79179745202835,
+          "max_norm_error": 2.220446049250313e-16,
+          "mean_momentum_density": 0.9602361595366223,
           "step": 2,
-          "total_population": 130.56753150409705,
-          "living_population": 130.23256670472497,
-          "ffs_population": 0.16748239968602593,
-          "max_norm_error": 2.220446049250313e-16,
-          "entanglement_entropy": 0.6930555230695913,
-          "mean_momentum_density": 0.9569262922908196
+          "total_population": 137.56490099933112
         },
         {
-          "step": 3,
-          "total_population": 157.1639175632583,
-          "living_population": 100.5443019293062,
-          "ffs_population": 28.309807816976054,
-          "max_norm_error": 2.220446049250313e-16,
-          "entanglement_entropy": 0.6928169194644354,
-          "mean_momentum_density": 0.7462799141748795
-        },
-        {
-          "step": 4,
-          "total_population": 163.02904123464583,
-          "living_population": 106.8851942306662,
-          "ffs_population": 28.07192350198984,
-          "max_norm_error": 2.220446049250313e-16,
-          "entanglement_entropy": 0.6929332351367274,
-          "mean_momentum_density": 0.707653217885022
-        },
-        {
-          "step": 5,
-          "total_population": 187.95579775445935,
-          "living_population": 76.2887437896073,
-          "ffs_population": 55.833526982426,
+          "entanglement_entropy": 0.6924611571491535,
+          "ffs_population": 23.726526924258042,
+          "living_population": 108.9518223014217,
           "max_norm_error": 4.440892098500626e-16,
-          "entanglement_entropy": 0.6931471268873101,
-          "mean_momentum_density": 0.5164703161785311
+          "mean_momentum_density": 0.8252628304750822,
+          "step": 3,
+          "total_population": 156.40487614993776
         },
         {
+          "entanglement_entropy": 0.6924611571491535,
+          "ffs_population": 29.866211714566685,
+          "living_population": 102.81213751111308,
+          "max_norm_error": 3.3306690738754696e-16,
+          "mean_momentum_density": 0.7489828773252291,
+          "step": 4,
+          "total_population": 162.5445609402465
+        },
+        {
+          "entanglement_entropy": 0.6924611571491534,
+          "ffs_population": 48.72800950476026,
+          "living_population": 83.95033972091959,
+          "max_norm_error": 2.220446049250313e-16,
+          "mean_momentum_density": 0.568134483644466,
+          "step": 5,
+          "total_population": 181.40635873044005
+        },
+        {
+          "entanglement_entropy": 0.6924611571491534,
+          "ffs_population": 63.633530405164805,
+          "living_population": 69.04481882051505,
+          "max_norm_error": 4.440892098500626e-16,
+          "mean_momentum_density": 0.4162077490825117,
           "step": 6,
-          "total_population": 190.3578854151503,
-          "living_population": 78.99136031060705,
-          "ffs_population": 55.683262552271586,
-          "max_norm_error": 6.661338147750939e-16,
-          "entanglement_entropy": 0.6929736215731916,
-          "mean_momentum_density": 0.39317184153795504
+          "total_population": 196.31187963084452
         },
         {
+          "entanglement_entropy": 0.6924611571491534,
+          "ffs_population": 64.72452374404638,
+          "living_population": 67.95382548163352,
+          "max_norm_error": 4.440892098500626e-16,
+          "mean_momentum_density": 0.35725701396323434,
           "step": 7,
-          "total_population": 223.92088039083518,
-          "living_population": 45.42836533492198,
-          "ffs_population": 89.24625752795669,
-          "max_norm_error": 6.661338147750939e-16,
-          "entanglement_entropy": 0.6929736215731916,
-          "mean_momentum_density": 0.2338116418026857
+          "total_population": 197.40287296972622
         },
         {
+          "entanglement_entropy": 0.6924611571491535,
+          "ffs_population": 63.254340724416124,
+          "living_population": 69.42400850126374,
+          "max_norm_error": 6.661338147750939e-16,
+          "mean_momentum_density": 0.3448137968017996,
           "step": 8,
-          "total_population": 180.25907301405363,
-          "living_population": 89.09017271170352,
-          "ffs_population": 45.58445015117509,
-          "max_norm_error": 8.881784197001252e-16,
-          "entanglement_entropy": 0.6929736215731916,
-          "mean_momentum_density": 0.3802005385865765
+          "total_population": 195.93268995009612
         },
         {
+          "entanglement_entropy": 0.6924611571491535,
+          "ffs_population": 68.44445706730474,
+          "living_population": 64.23389215837514,
+          "max_norm_error": 4.440892098500626e-16,
+          "mean_momentum_density": 0.32462794109700965,
           "step": 9,
-          "total_population": 212.85099081998874,
-          "living_population": 56.49825490576857,
-          "ffs_population": 78.17636795711005,
-          "max_norm_error": 6.661338147750939e-16,
-          "entanglement_entropy": 0.6929736215731916,
-          "mean_momentum_density": 0.24528864690786029
+          "total_population": 201.1228062929847
         },
         {
+          "entanglement_entropy": 0.6924611571491535,
+          "ffs_population": 63.48142289142131,
+          "living_population": 69.19692633425855,
+          "max_norm_error": 6.661338147750939e-16,
+          "mean_momentum_density": 0.34744318329069357,
           "step": 10,
-          "total_population": 191.73880251380078,
-          "living_population": 77.61044321195666,
-          "ffs_population": 57.06417965092199,
+          "total_population": 196.15977211710134
+        },
+        {
+          "entanglement_entropy": 0.6925757010016689,
+          "ffs_population": 68.56907365314471,
+          "living_population": 63.66539336042972,
           "max_norm_error": 8.881784197001252e-16,
-          "entanglement_entropy": 0.6929736215731916,
-          "mean_momentum_density": 0.3963178964127412
+          "mean_momentum_density": 0.30989726445193083,
+          "step": 11,
+          "total_population": 200.80354066671904
+        },
+        {
+          "entanglement_entropy": 0.6925757010016689,
+          "ffs_population": 63.87953822686766,
+          "living_population": 68.35492878670676,
+          "max_norm_error": 8.881784197001252e-16,
+          "mean_momentum_density": 0.35591986113727825,
+          "step": 12,
+          "total_population": 196.11400524044205
         }
-      ]
+      ],
+      "max_norm_error": 8.881784197001252e-16,
+      "mean_momentum_density": 0.35591986113727825,
+      "scenario": "Bethe-String Glider Soliton",
+      "total_steps": 12
+    },
+    {
+      "elapsed_us": 1742,
+      "entanglement_entropy": 0.6930313134821877,
+      "final_ffs_population": 68.84867829557248,
+      "final_population": 200.716698470184,
+      "history": [
+        {
+          "entanglement_entropy": 0.6930313134821877,
+          "ffs_population": 2.001601098902592,
+          "living_population": 129.86641907570868,
+          "max_norm_error": 2.220446049250313e-16,
+          "mean_momentum_density": 0.9779545420562,
+          "step": 1,
+          "total_population": 133.86962127351384
+        },
+        {
+          "entanglement_entropy": 0.6930313134821877,
+          "ffs_population": 15.611644251308833,
+          "living_population": 116.25637592330244,
+          "max_norm_error": 2.220446049250313e-16,
+          "mean_momentum_density": 0.8573844899875475,
+          "step": 2,
+          "total_population": 147.47966442592008
+        },
+        {
+          "entanglement_entropy": 0.6930313134821877,
+          "ffs_population": 29.322746892236868,
+          "living_population": 102.54527328237445,
+          "max_norm_error": 2.220446049250313e-16,
+          "mean_momentum_density": 0.7570536484798623,
+          "step": 3,
+          "total_population": 161.1907670668482
+        },
+        {
+          "entanglement_entropy": 0.6930313134821877,
+          "ffs_population": 48.444215620378216,
+          "living_population": 83.42380455423312,
+          "max_norm_error": 3.3306690738754696e-16,
+          "mean_momentum_density": 0.6122745693899735,
+          "step": 4,
+          "total_population": 180.31223579498953
+        },
+        {
+          "entanglement_entropy": 0.6930313134821877,
+          "ffs_population": 43.267643155784924,
+          "living_population": 88.60037701882646,
+          "max_norm_error": 4.440892098500626e-16,
+          "mean_momentum_density": 0.4836770306120832,
+          "step": 5,
+          "total_population": 175.1356633303962
+        },
+        {
+          "entanglement_entropy": 0.6930313134821877,
+          "ffs_population": 93.88050656136654,
+          "living_population": 37.98751361324487,
+          "max_norm_error": 4.440892098500626e-16,
+          "mean_momentum_density": 0.2472874902470066,
+          "step": 6,
+          "total_population": 225.74852673597806
+        },
+        {
+          "entanglement_entropy": 0.6930313134821877,
+          "ffs_population": 41.1799428347167,
+          "living_population": 90.68807733989475,
+          "max_norm_error": 4.440892098500626e-16,
+          "mean_momentum_density": 0.31777335240598675,
+          "step": 7,
+          "total_population": 173.04796300932816
+        },
+        {
+          "entanglement_entropy": 0.6930313134821877,
+          "ffs_population": 68.84867829557248,
+          "living_population": 63.01934187903889,
+          "max_norm_error": 4.440892098500626e-16,
+          "mean_momentum_density": 0.30805582709353035,
+          "step": 8,
+          "total_population": 200.716698470184
+        }
+      ],
+      "max_norm_error": 4.440892098500626e-16,
+      "mean_momentum_density": 0.30805582709353035,
+      "scenario": "FFS Overpopulation Protection",
+      "total_steps": 8
+    },
+    {
+      "elapsed_us": 1716,
+      "entanglement_entropy": 0.6929736215731916,
+      "final_ffs_population": 57.064179650922,
+      "final_population": 191.73880251380075,
+      "history": [
+        {
+          "entanglement_entropy": 0.6930355372746383,
+          "ffs_population": 0.0,
+          "living_population": 125.86026780910016,
+          "max_norm_error": 2.220446049250313e-16,
+          "mean_momentum_density": 0.9676844838128983,
+          "step": 1,
+          "total_population": 125.86026780910016
+        },
+        {
+          "entanglement_entropy": 0.6930555230695913,
+          "ffs_population": 0.16748239968602593,
+          "living_population": 130.23256670472497,
+          "max_norm_error": 4.440892098500626e-16,
+          "mean_momentum_density": 0.9569262922908196,
+          "step": 2,
+          "total_population": 130.56753150409705
+        },
+        {
+          "entanglement_entropy": 0.6928169194644354,
+          "ffs_population": 28.309807816976054,
+          "living_population": 100.5443019293062,
+          "max_norm_error": 2.220446049250313e-16,
+          "mean_momentum_density": 0.7462799141748795,
+          "step": 3,
+          "total_population": 157.1639175632583
+        },
+        {
+          "entanglement_entropy": 0.6929332351367274,
+          "ffs_population": 28.07192350198984,
+          "living_population": 106.88519423066619,
+          "max_norm_error": 4.440892098500626e-16,
+          "mean_momentum_density": 0.707653217885022,
+          "step": 4,
+          "total_population": 163.02904123464583
+        },
+        {
+          "entanglement_entropy": 0.6931471268873102,
+          "ffs_population": 55.833526982426,
+          "living_population": 76.2887437896073,
+          "max_norm_error": 4.440892098500626e-16,
+          "mean_momentum_density": 0.5164703161785312,
+          "step": 5,
+          "total_population": 187.95579775445935
+        },
+        {
+          "entanglement_entropy": 0.6929736215731916,
+          "ffs_population": 55.683262552271586,
+          "living_population": 78.99136031060706,
+          "max_norm_error": 6.661338147750939e-16,
+          "mean_momentum_density": 0.3931718415379552,
+          "step": 6,
+          "total_population": 190.3578854151503
+        },
+        {
+          "entanglement_entropy": 0.6929736215731916,
+          "ffs_population": 89.24625752795664,
+          "living_population": 45.42836533492201,
+          "max_norm_error": 6.661338147750939e-16,
+          "mean_momentum_density": 0.2338116418026859,
+          "step": 7,
+          "total_population": 223.92088039083518
+        },
+        {
+          "entanglement_entropy": 0.6929736215731916,
+          "ffs_population": 45.584450151175055,
+          "living_population": 89.09017271170357,
+          "max_norm_error": 6.661338147750939e-16,
+          "mean_momentum_density": 0.3802005385865766,
+          "step": 8,
+          "total_population": 180.25907301405363
+        },
+        {
+          "entanglement_entropy": 0.6929736215731916,
+          "ffs_population": 78.17636795711005,
+          "living_population": 56.49825490576861,
+          "max_norm_error": 6.661338147750939e-16,
+          "mean_momentum_density": 0.24528864690786029,
+          "step": 9,
+          "total_population": 212.85099081998868
+        },
+        {
+          "entanglement_entropy": 0.6929736215731916,
+          "ffs_population": 57.064179650922,
+          "living_population": 77.61044321195664,
+          "max_norm_error": 8.881784197001252e-16,
+          "mean_momentum_density": 0.39631789641274096,
+          "step": 10,
+          "total_population": 191.73880251380075
+        }
+      ],
+      "max_norm_error": 8.881784197001252e-16,
+      "mean_momentum_density": 0.39631789641274096,
+      "scenario": "Coherent Cat Blinker",
+      "total_steps": 10
+    },
+    {
+      "elapsed_us": 14495,
+      "entanglement_entropy": 0.6931460216059571,
+      "final_ffs_population": 149.87202562515415,
+      "final_population": 435.7381715533318,
+      "history": [
+        {
+          "entanglement_entropy": 0.6931470199800962,
+          "ffs_population": 0.0,
+          "living_population": 286.1392100106176,
+          "max_norm_error": 4.440892098500626e-16,
+          "mean_momentum_density": 0.997159465218274,
+          "step": 1,
+          "total_population": 286.1392100106176
+        },
+        {
+          "entanglement_entropy": 0.6931471773085727,
+          "ffs_population": 0.8142544680179313,
+          "living_population": 285.4640279908409,
+          "max_norm_error": 6.661338147750939e-16,
+          "mean_momentum_density": 0.9910945180887482,
+          "step": 2,
+          "total_population": 287.09253692687685
+        },
+        {
+          "entanglement_entropy": 0.6931465210508259,
+          "ffs_population": 3.9676940868845763,
+          "living_population": 282.0052380962042,
+          "max_norm_error": 4.440892098500626e-16,
+          "mean_momentum_density": 0.975730892577026,
+          "step": 3,
+          "total_population": 289.94062626997356
+        },
+        {
+          "entanglement_entropy": 0.6931467856298457,
+          "ffs_population": 13.028302214158417,
+          "living_population": 273.01884385999216,
+          "max_norm_error": 4.440892098500626e-16,
+          "mean_momentum_density": 0.943619484081401,
+          "step": 4,
+          "total_population": 299.0754482883095
+        },
+        {
+          "entanglement_entropy": 0.693147180160682,
+          "ffs_population": 25.69117185886069,
+          "living_population": 260.6021058299718,
+          "max_norm_error": 4.440892098500626e-16,
+          "mean_momentum_density": 0.8883538143891826,
+          "step": 5,
+          "total_population": 311.98444954769434
+        },
+        {
+          "entanglement_entropy": 0.69314630892568,
+          "ffs_population": 38.84850400451977,
+          "living_population": 247.07535033374955,
+          "max_norm_error": 4.440892098500626e-16,
+          "mean_momentum_density": 0.8323662655395627,
+          "step": 6,
+          "total_population": 324.77235834279026
+        },
+        {
+          "entanglement_entropy": 0.69314630892568,
+          "ffs_population": 56.57658325613805,
+          "living_population": 229.34727108213127,
+          "max_norm_error": 4.440892098500626e-16,
+          "mean_momentum_density": 0.7416234934863498,
+          "step": 7,
+          "total_population": 342.5004375944087
+        },
+        {
+          "entanglement_entropy": 0.6931471803976723,
+          "ffs_population": 77.59125439483424,
+          "living_population": 208.70495575663097,
+          "max_norm_error": 6.661338147750939e-16,
+          "mean_momentum_density": 0.6377724281770326,
+          "step": 8,
+          "total_population": 363.88746454630075
+        },
+        {
+          "entanglement_entropy": 0.6931471803976723,
+          "ffs_population": 96.40620996618938,
+          "living_population": 189.890000185276,
+          "max_norm_error": 6.661338147750939e-16,
+          "mean_momentum_density": 0.52239122754723,
+          "step": 9,
+          "total_population": 382.7024201176561
+        },
+        {
+          "entanglement_entropy": 0.6931471507846348,
+          "ffs_population": 125.9094120859085,
+          "living_population": 160.3221066738448,
+          "max_norm_error": 8.881784197001252e-16,
+          "mean_momentum_density": 0.39818793805451125,
+          "step": 10,
+          "total_population": 412.1409308456632
+        },
+        {
+          "entanglement_entropy": 0.6931471507846348,
+          "ffs_population": 128.4201976229501,
+          "living_population": 157.81132113680312,
+          "max_norm_error": 8.881784197001252e-16,
+          "mean_momentum_density": 0.3112419852852154,
+          "step": 11,
+          "total_population": 414.6517163827044
+        },
+        {
+          "entanglement_entropy": 0.6931466073298871,
+          "ffs_population": 162.26669802008172,
+          "living_population": 123.72844660260101,
+          "max_norm_error": 1.1102230246251565e-15,
+          "mean_momentum_density": 0.2082332448036941,
+          "step": 12,
+          "total_population": 448.26184264276486
+        },
+        {
+          "entanglement_entropy": 0.6931466073298871,
+          "ffs_population": 122.72811075417013,
+          "living_population": 163.26703386851264,
+          "max_norm_error": 1.1102230246251565e-15,
+          "mean_momentum_density": 0.2484609536130868,
+          "step": 13,
+          "total_population": 408.7232553768533
+        },
+        {
+          "entanglement_entropy": 0.6931471213205606,
+          "ffs_population": 155.5140682990786,
+          "living_population": 130.88588052163192,
+          "max_norm_error": 1.1102230246251565e-15,
+          "mean_momentum_density": 0.20647115183116566,
+          "step": 14,
+          "total_population": 441.91401711978915
+        },
+        {
+          "entanglement_entropy": 0.6931471213205606,
+          "ffs_population": 132.176369908808,
+          "living_population": 154.2235789119025,
+          "max_norm_error": 1.1102230246251565e-15,
+          "mean_momentum_density": 0.22409836985763715,
+          "step": 15,
+          "total_population": 418.5763187295186
+        },
+        {
+          "entanglement_entropy": 0.6931460216059571,
+          "ffs_population": 149.87202562515415,
+          "living_population": 135.99412030302378,
+          "max_norm_error": 1.1102230246251565e-15,
+          "mean_momentum_density": 0.21624423997912678,
+          "step": 16,
+          "total_population": 435.7381715533318
+        }
+      ],
+      "max_norm_error": 1.1102230246251565e-15,
+      "mean_momentum_density": 0.21624423997912678,
+      "scenario": "Quantum Glider Beam-Splitter Collision",
+      "total_steps": 16
     }
-  ]
+  ],
+  "timestamp": "2026-10-19T12:00:00Z"
 }

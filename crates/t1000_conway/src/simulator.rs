@@ -8,7 +8,6 @@
 
 use crate::holonomy::{build_holonomy_unitary, HolonomyParams};
 use crate::lattice::Lattice2D;
-use crate::rules::compute_neighborhood_occupations;
 use crate::state::QuantumCellStateSoA;
 use num_complex::Complex64;
 use serde::{Deserialize, Serialize};
@@ -40,6 +39,8 @@ pub struct QuantumConwaySimulator {
     pub lattice: Lattice2D,
     /// Active SoA quantum cell state.
     pub state: QuantumCellStateSoA,
+    /// Pre-allocated buffer for intermediate cell densities.
+    density_buffer: Vec<f64>,
     /// Pre-allocated buffer for neighborhood densities.
     nbr_buffer: Vec<f64>,
     /// Holonomy cycle parameters.
@@ -54,6 +55,7 @@ impl QuantumConwaySimulator {
         let total = lattice.total_cells;
         Self {
             state: QuantumCellStateSoA::new_vacuum(total),
+            density_buffer: vec![0.0; total],
             nbr_buffer: vec![0.0; total],
             lattice,
             params,
@@ -67,20 +69,54 @@ impl QuantumConwaySimulator {
         let (sub_a, sub_b) = self.lattice.checkerboard_sublattices();
 
         // 1. Advance Sublattice A
-        compute_neighborhood_occupations(&self.lattice, &self.state, &mut self.nbr_buffer);
+        crate::rules::compute_neighborhood_occupations_buffered(
+            &self.lattice,
+            &self.state,
+            &mut self.density_buffer,
+            &mut self.nbr_buffer,
+        );
         self.apply_sublattice_unitary(&sub_a);
 
         // 2. Advance Sublattice B with updated Sublattice A densities
-        compute_neighborhood_occupations(&self.lattice, &self.state, &mut self.nbr_buffer);
+        crate::rules::compute_neighborhood_occupations_buffered(
+            &self.lattice,
+            &self.state,
+            &mut self.density_buffer,
+            &mut self.nbr_buffer,
+        );
         self.apply_sublattice_unitary(&sub_b);
 
         self.current_step += 1;
         self.gather_telemetry()
     }
 
-    /// Apply unitary holonomy transfer matrix in-place to a subset of cells.
+    /// Apply unitary holonomy transfer matrix in-place to a subset of cells
+    /// using AVX2+FMA 4-cell packet streaming.
     fn apply_sublattice_unitary(&mut self, indices: &[usize]) {
-        for &idx in indices {
+        let chunks = indices.chunks_exact(4);
+        let remainder = chunks.remainder();
+
+        for chunk in chunks {
+            let idx4 = [chunk[0], chunk[1], chunk[2], chunk[3]];
+            let u4 = [
+                build_holonomy_unitary(self.nbr_buffer[idx4[0]], &self.params),
+                build_holonomy_unitary(self.nbr_buffer[idx4[1]], &self.params),
+                build_holonomy_unitary(self.nbr_buffer[idx4[2]], &self.params),
+                build_holonomy_unitary(self.nbr_buffer[idx4[3]], &self.params),
+            ];
+            crate::simd::apply_unitary_4cells(
+                &mut self.state.re0,
+                &mut self.state.im0,
+                &mut self.state.re1,
+                &mut self.state.im1,
+                &mut self.state.re2,
+                &mut self.state.im2,
+                idx4,
+                &u4,
+            );
+        }
+
+        for &idx in remainder {
             let nbr_occ = self.nbr_buffer[idx];
             let u = build_holonomy_unitary(nbr_occ, &self.params);
 

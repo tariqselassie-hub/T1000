@@ -344,16 +344,19 @@ input[type="range"] {
     color: var(--text-slate);
 }
 
+.val-green,
 .telemetry-chip .val-green {
     color: var(--quantum-emerald);
     font-weight: 700;
 }
 
+.val-amber,
 .telemetry-chip .val-amber {
     color: var(--ffs-amber);
     font-weight: 700;
 }
 
+.val-polar,
 .telemetry-chip .val-polar {
     color: var(--text-polar);
     font-weight: 700;
