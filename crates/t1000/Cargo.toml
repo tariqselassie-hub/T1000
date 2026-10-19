@@ -223,6 +223,21 @@ path = "src/bin/benchmarks/zinc_scaled_14q_16q_bench.rs"
 name = "zinc_heptal_qnn_bench"
 path = "src/bin/benchmarks/zinc_heptal_qnn_bench.rs"
 
+[[bin]]
+name = "plaquette_1234_bench"
+path = "src/bin/benchmarks/plaquette_1234_bench.rs"
+
+[[bin]]
+name = "nighthawk_99_plaquette_bench"
+path = "src/bin/benchmarks/nighthawk_99_plaquette_bench.rs"
+
+[[bin]]
+name = "cepheus_108q_bench"
+path = "src/bin/benchmarks/cepheus_108q_bench.rs"
+
+
+
+
 # =========================================================================
 # Executable Binaries: Chemical SMILES Ingest & Screening
 # =========================================================================

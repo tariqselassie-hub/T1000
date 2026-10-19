@@ -1596,3 +1596,144 @@ button.btn-secondary.active {
     border-radius: 2px;
 }
 
+/* ========================================================================= */
+/* 99-Plaquette IBM Nighthawk R2 Dual-Graph Telemetry & Heatmap              */
+/* ========================================================================= */
+.plaquette-deck-layout {
+    display: grid;
+    grid-template-columns: 1fr 420px;
+    gap: 20px;
+    margin-top: 16px;
+}
+
+@media (max-width: 1200px) {
+    .plaquette-deck-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+.plaquette-grid-board {
+    background: var(--bg-canvas);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+}
+
+.plaquette-board-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.plaquette-cells-container {
+    display: grid;
+    grid-template-columns: repeat(11, 1fr);
+    grid-template-rows: repeat(9, 1fr);
+    gap: 6px;
+    width: 100%;
+}
+
+.plaquette-tile {
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 3px;
+    padding: 6px 2px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+    position: relative;
+    user-select: none;
+    min-height: 48px;
+}
+
+.plaquette-tile:hover {
+    border-color: var(--quantum-green);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 230, 118, 0.25);
+    z-index: 10;
+}
+
+.plaquette-tile.active {
+    border-color: var(--hardware-gold) !important;
+    box-shadow: 0 0 10px rgba(255, 179, 0, 0.5) !important;
+    background: rgba(255, 179, 0, 0.12) !important;
+}
+
+.plaquette-tile.diagonal {
+    outline: 2px dashed rgba(255, 179, 0, 0.7);
+    outline-offset: -2px;
+}
+
+.plaquette-tile.boundary {
+    border-color: rgba(255, 179, 0, 0.35);
+}
+
+.plaquette-tile-id {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-slate);
+    font-weight: 700;
+}
+
+.plaquette-tile-fid {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--quantum-green);
+    font-weight: 800;
+    margin-top: 2px;
+}
+
+.plaquette-inspector-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.proto-bar-row {
+    margin-bottom: 10px;
+}
+
+.proto-bar-header {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    margin-bottom: 4px;
+}
+
+.proto-progress-track {
+    height: 8px;
+    background: #080c14;
+    border-radius: 2px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+.proto-progress-fill {
+    height: 100%;
+    background: var(--quantum-green);
+    border-radius: 1px;
+    transition: width 0.3s ease;
+}
+
+.proto-progress-fill.gold {
+    background: var(--hardware-gold);
+}
+
+.proto-progress-fill.red {
+    background: var(--alert-red);
+}
+
+

@@ -182,9 +182,15 @@
 * **Immunity to Discrete Gate Noise Accumulation:** Under physical open-system dephasing ($T_1 = 45\,\mu\text{s}, T_2^* = 60\,\mu\text{s}, p_{\text{depol}} = 0.0020$), joint subpopulation classification accuracy jumps from **$24.50\%$** (discrete circuit QMUX) to **$82.00\%$** (continuous topological walk), with **$90.00\%$ coarse accuracy** and **$92.00\%$ fine accuracy**.
 * **$719\times$ Contrast Explosion:** Extinction of incorrect branches increases from $2.85:1$ (discrete QMUX) to **$2,050.00:1$**.
 * **Intermediate Weld Zeno Sentry:** Intersperse high-frequency projective monitoring at the intermediate weld roots, increasing target ballistic exit hitting probability from $0.4992 \to 0.5089$ and escaping the classical random walk dispersion trap ($25.20\%$).
-* Detailed Documentation: [`docs/findings/continuous_topological_walk_sorter.md`](docs/findings/continuous_topological_walk_sorter.md).
+### 21. 2D Plaquette Routing, Multi-Chiplet Seam Mitigation & Architecture Showdown (`plaquette_1234_bench`, `nighthawk_99_plaquette_bench`, `cepheus_108q_bench`)
+* **Measurement-Based 4-Edge Plaquette Teleportation:** Replaces lossy multi-hop sequential SWAP chains ($1 \to 2 \to 4$) with single-tick 4-edge measurement-based teleportation across intermediate diagonal mediators ($1+(2,3)=4$).
+* **Active Classical Pauli-Z Frame Recovery:** Software frame tracking decodes $X$-basis syndrome outcomes $s_2 \in \{0, 1\}$ with zero physical gate delay, doubling post-selection acceptance from **$48.4\% \to 96.8\%$** while locking Bell state fidelity at **$0.9606$**.
+* **Global 20-Hop Cross-Chip Diagonal Routing:** Across the 120-qubit monolithic **IBM Quantum Nighthawk R2** ($12 \times 10$ grid), standard 60-CNOT SWAP cascades crash link fidelity to **$0.2119$**; 4-edge plaquette teleportation sustains **$0.6687$** (**$+45.7\%$ boost**) entirely within 384 bytes of CPU L1 cache.
+* **Rigetti Cepheus-1-108Q Multi-Die Seam Mitigation:** Evaluates 108 qubits across twelve $3 \times 3$ modular chiplets (195 couplers with 51 inter-die bump-bond seams at $p=2.20\%$ vs $p=0.80\%$ intra-die). Constant-depth teleportation insulates the circuit from cascading seam errors, yielding a **$+5.58\%$ absolute purification boost** on 4-chiplet corner intersections ($0.8588 \to 0.9146$).
+* Detailed Documentation: [`docs/findings/plaquette_routing_and_cepheus_seam_mitigation.md`](docs/findings/plaquette_routing_and_cepheus_seam_mitigation.md).
 
 ---
+
 
 ## Quick Start for Developers
 
@@ -266,6 +272,15 @@ cargo run --release -p t1000 --bin topological_walk_sorter_bench
 # Run Continuous Topological Walk Molecular Screening on 1,000 ZINC drug candidates
 cargo run --release -p t1000 --bin zinc_topological_walk_screen
 
+# Run Elementary 4-Qubit Plaquette Routing Benchmark Suite (Protocols 1-6)
+cargo run --release -p t1000 --bin plaquette_1234_bench
+
+# Run IBM Nighthawk R2 99-Plaquette Monolithic Architecture Benchmark
+cargo run --release -p t1000 --bin nighthawk_99_plaquette_bench
+
+# Run Rigetti Cepheus-1-108Q 12-Chiplet Modular Seam Mitigation Benchmark
+cargo run --release -p t1000 --bin cepheus_108q_bench
+
 # Run Orthogonal K-Patch Proxy RCS Showdown (PyQrack QrackAceBackend vs T-1000)
 python scripts/benchmarks/t1000_orthogonal_proxy_showdown.py
 
@@ -273,6 +288,8 @@ python scripts/benchmarks/t1000_orthogonal_proxy_showdown.py
 python web/serve.py
 ```
 
+* **2D Plaquette Routing & Cepheus-108Q Seam Mitigation Findings:** [`docs/findings/plaquette_routing_and_cepheus_seam_mitigation.md`](docs/findings/plaquette_routing_and_cepheus_seam_mitigation.md).
+* **IBM Nighthawk R2 Plaquette Mapping & Qrack Comparison:** [`docs/findings/ibm_nighthawk_r2_plaquette_mapping.md`](docs/findings/ibm_nighthawk_r2_plaquette_mapping.md).
 * **Orthogonal K-Patch Proxy RCS Showdown (Qrack vs T-1000):** [`docs/findings/orthogonal_proxy_rcs_showdown.md`](docs/findings/orthogonal_proxy_rcs_showdown.md).
 * **ZINC Continuous Topological Walk Molecular Screening:** [`docs/findings/zinc_topological_walk_screening.md`](docs/findings/zinc_topological_walk_screening.md).
 * **Continuous Topological Walk Sorter with Weld Zeno Sentry:** [`docs/findings/continuous_topological_walk_sorter.md`](docs/findings/continuous_topological_walk_sorter.md).

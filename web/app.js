@@ -51,6 +51,7 @@ class QuantumMolecularDashboard {
         this.initValveSimulator();
         this.checkHardwareStatus();
         this.loadTelemetryMatrix();
+        this.loadPlaquetteTelemetry();
     }
 
     // -------------------------------------------------------------------------
@@ -120,6 +121,8 @@ class QuantumMolecularDashboard {
                     this.executeCircuit();
                 } else if (targetSubId === 'sub-sim-hardware') {
                     this.loadTelemetryMatrix();
+                } else if (targetSubId === 'sub-sim-plaquettes') {
+                    this.loadPlaquetteTelemetry();
                 }
             });
         });
@@ -2341,6 +2344,212 @@ class QuantumMolecularDashboard {
                 }
             });
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // DECK 4: 99-PLAQUETTE NIGHTHAWK & 88-PLAQUETTE CEPHEUS-108Q DUAL-GRAPH
+    // -------------------------------------------------------------------------
+    initPlaquetteSwitcher() {
+        const btnNh = document.getElementById('btn-arch-nighthawk');
+        const btnCeph = document.getElementById('btn-arch-cepheus');
+        if (btnNh && btnCeph) {
+            btnNh.addEventListener('click', () => {
+                btnCeph.classList.remove('active');
+                btnNh.classList.add('active');
+                this.currentPlaquetteArch = 'nighthawk';
+                this.loadPlaquetteTelemetry();
+            });
+            btnCeph.addEventListener('click', () => {
+                btnNh.classList.remove('active');
+                btnCeph.classList.add('active');
+                this.currentPlaquetteArch = 'cepheus';
+                this.loadPlaquetteTelemetry();
+            });
+        }
+    }
+
+    async loadPlaquetteTelemetry() {
+        if (!this.plaquetteSwitcherInitialized) {
+            this.initPlaquetteSwitcher();
+            this.plaquetteSwitcherInitialized = true;
+        }
+
+        const isCeph = this.currentPlaquetteArch === 'cepheus';
+        const jsonFile = isCeph
+            ? 'data/cepheus_108q_telemetry.json'
+            : 'data/nighthawk_99_plaquette_telemetry.json';
+
+        let plaqData = null;
+        try {
+            const res = await fetch(jsonFile);
+            if (res.ok) {
+                plaqData = await res.json();
+            }
+        } catch (e) {
+            console.warn(`Failed to fetch ${jsonFile}`, e);
+        }
+
+        if (plaqData) {
+            this.renderPlaquetteHeatmap(plaqData, isCeph);
+        }
+    }
+
+    renderPlaquetteHeatmap(data, isCeph = false) {
+        const gridEl = document.getElementById('plaquette-cells-grid');
+        if (!gridEl || !Array.isArray(data.plaquettes)) return;
+        gridEl.innerHTML = '';
+
+        // Update Headers
+        const titleEl = document.getElementById('plaq-deck-title');
+        const subTitleEl = document.getElementById('plaq-deck-subtitle');
+        const badgeEl = document.getElementById('plaq-deck-badge');
+
+        if (titleEl) {
+            titleEl.textContent = isCeph
+                ? 'RIGETTI CEPHEUS-1-108Q: 12-CHIPLET DUAL-GRAPH TELEMETRY (88 PLAQUETTES)'
+                : 'IBM QUANTUM NIGHTHAWK R2: 99-PLAQUETTE DUAL-GRAPH TELEMETRY';
+        }
+        if (subTitleEl) {
+            subTitleEl.textContent = isCeph
+                ? '108 Qubits • Twelve 3x3 Modular Chiplets • 195 Couplers (51 Seam Bridges) • 4-Edge Teleportation'
+                : '120 Programmable Qubits • 218 Tunable Couplers • 99 Elementary 2×2 Plaquettes • 4-Edge Teleportation & Classical Pauli Frame';
+        }
+        if (badgeEl) {
+            badgeEl.textContent = isCeph
+                ? 'MODULAR 3x3 CHIPLETS • 2.2% SEAM PENALTY MITIGATED'
+                : 'L1 RESIDENT (384 B) • Δ = 0.000000 STOKES INVARIANT';
+            badgeEl.className = isCeph ? 'matrix-badge-gold' : 'matrix-badge-green';
+        }
+
+        // Update Top Stats
+        const elTotal = document.getElementById('plaq-stat-total');
+        const elSpokes = document.getElementById('plaq-stat-spokes');
+        const elBoundary = document.getElementById('plaq-stat-boundary');
+        const elMeanFid = document.getElementById('plaq-stat-mean-fid');
+        const elMeanAcc = document.getElementById('plaq-stat-mean-acc');
+        const elBoost = document.getElementById('plaq-stat-diag-boost');
+
+        if (elTotal) elTotal.textContent = isCeph ? '88 (12 Chiplets)' : data.total_plaquettes;
+        if (elSpokes) elSpokes.textContent = isCeph ? `${data.intra_die_couplers} Intra` : data.internal_spokes_cancelled;
+        if (elBoundary) elBoundary.textContent = isCeph ? `${data.seam_couplers} Seam` : data.boundary_couplers_active;
+        if (elMeanFid) {
+            const fid = isCeph ? data.overall_mean_teleport : data.mean_fid_teleport_pauli;
+            elMeanFid.textContent = fid.toFixed(4);
+        }
+        if (elMeanAcc) {
+            const acc = isCeph ? data.overall_mean_keep : data.mean_keep_teleport_pauli;
+            elMeanAcc.textContent = `${(acc * 100).toFixed(1)}%`;
+        }
+        if (elBoost) {
+            if (isCeph) {
+                const cornerGain = (data.mean_fid_teleport_corner - data.mean_fid_swap_corner) * 100;
+                elBoost.textContent = `+${cornerGain.toFixed(1)}% Corner`;
+            } else {
+                const boost = (data.diagonal_20hop_teleport_fidelity - data.diagonal_20hop_swap_fidelity) * 100;
+                elBoost.textContent = `+${boost.toFixed(1)}%`;
+            }
+        }
+
+        // Adjust CSS grid rows
+        gridEl.style.gridTemplateRows = isCeph ? 'repeat(8, 1fr)' : 'repeat(9, 1fr)';
+
+        // Render cells
+        data.plaquettes.forEach((p, idx) => {
+            const tile = document.createElement('div');
+            tile.className = 'plaquette-tile';
+
+            if (isCeph) {
+                if (p.zone_type === '4-Chiplet Corner') {
+                    tile.style.backgroundColor = 'rgba(239, 68, 68, 0.22)';
+                    tile.style.borderColor = 'rgba(239, 68, 68, 0.7)';
+                } else if (p.zone_type === 'Seam-Straddling') {
+                    tile.style.backgroundColor = 'rgba(255, 179, 0, 0.16)';
+                    tile.style.borderColor = 'rgba(255, 179, 0, 0.5)';
+                } else {
+                    tile.style.backgroundColor = 'rgba(0, 230, 118, 0.18)';
+                    tile.style.borderColor = 'rgba(0, 230, 118, 0.35)';
+                }
+            } else {
+                if (p.is_boundary) tile.classList.add('boundary');
+                const normFid = Math.max(0, Math.min(1, (p.fid_teleport_pauli - 0.957) / 0.006));
+                const g = Math.round(180 + normFid * 75);
+                const r = Math.round(15 + (1 - normFid) * 45);
+                tile.style.backgroundColor = `rgba(${r}, ${g}, 118, ${0.12 + normFid * 0.18})`;
+            }
+
+            tile.innerHTML = `
+                <span class="plaquette-tile-id">P${p.plaquette_id}</span>
+                <span class="plaquette-tile-fid">${p.fid_teleport_pauli.toFixed(4)}</span>
+            `;
+
+            tile.addEventListener('click', () => {
+                gridEl.querySelectorAll('.plaquette-tile').forEach(t => t.classList.remove('active'));
+                tile.classList.add('active');
+                this.selectPlaquette(p, isCeph);
+            });
+
+            if (idx === 0) {
+                tile.classList.add('active');
+                this.selectPlaquette(p, isCeph);
+            }
+
+            gridEl.appendChild(tile);
+        });
+    }
+
+    selectPlaquette(p, isCeph = false) {
+        const titleEl = document.getElementById('insp-plaq-title');
+        const badgeEl = document.getElementById('insp-boundary-badge');
+        const coordsEl = document.getElementById('insp-coords');
+        const qubitsEl = document.getElementById('insp-qubits');
+        const couplersEl = document.getElementById('insp-couplers');
+        const noiseEl = document.getElementById('insp-noise');
+
+        if (titleEl) titleEl.textContent = `PLAQUETTE P_${p.plaquette_id}`;
+        if (badgeEl) {
+            if (isCeph) {
+                badgeEl.textContent = p.zone_type ? p.zone_type.toUpperCase() : 'SEAM TILE';
+                badgeEl.className = p.zone_type === '4-Chiplet Corner' ? 'matrix-badge-gold' : (p.zone_type === 'Intra-Chiplet' ? 'matrix-badge-green' : 'matrix-badge-gold');
+            } else {
+                badgeEl.textContent = p.is_boundary ? 'BOUNDARY TILE' : 'INTERNAL TILE';
+                badgeEl.className = p.is_boundary ? 'matrix-badge-gold' : 'matrix-badge-green';
+            }
+        }
+        if (coordsEl) coordsEl.textContent = `Col ${p.col}, Row ${p.row}`;
+        if (qubitsEl) {
+            qubitsEl.textContent = isCeph
+                ? `[TL:Q${p.q_tl} (Die #${p.chiplet_tl}), BR:Q${p.q_br} (Die #${p.chiplet_br})]`
+                : `[TL:Q${p.q_tl}, TR:Q${p.q_tr}, BL:Q${p.q_bl}, BR:Q${p.q_br}]`;
+        }
+        if (couplersEl) {
+            couplersEl.textContent = isCeph
+                ? `Seams: [T:${p.edge_top_seam ? 'SEAM' : 'INTRA'}, B:${p.edge_bot_seam ? 'SEAM' : 'INTRA'}, L:${p.edge_left_seam ? 'SEAM' : 'INTRA'}, R:${p.edge_right_seam ? 'SEAM' : 'INTRA'}]`
+                : `[T:#${p.edge_top}, B:#${p.edge_bot}, L:#${p.edge_left}, R:#${p.edge_right}]`;
+        }
+        if (noiseEl) {
+            noiseEl.textContent = isCeph
+                ? `Coupler Noise: ${p.zone_type === 'Intra-Chiplet' ? '0.80% (Intra-Die)' : (p.zone_type === '4-Chiplet Corner' ? '2.20% (4 Seams)' : '0.80% - 2.20% (Seam)')} | Idle 0.50%`
+                : `Gate ${(p.p_gate_mean * 100).toFixed(2)}% | Idle ${(p.p_idle_mean * 100).toFixed(2)}%`;
+        }
+
+        const updateBar = (valId, fillId, val, acc = null, min = 0.82, max = 0.98) => {
+            const vEl = document.getElementById(valId);
+            const fEl = document.getElementById(fillId);
+            if (vEl) {
+                vEl.textContent = acc !== null ? `${val.toFixed(4)} (Acc ${(acc * 100).toFixed(1)}%)` : val.toFixed(4);
+            }
+            if (fEl) {
+                const pct = Math.max(10, Math.min(100, ((val - min) / (max - min)) * 100));
+                fEl.style.width = `${pct}%`;
+            }
+        };
+
+        updateBar('bar-val-swap', 'bar-fill-swap', p.fid_swap);
+        updateBar('bar-val-raw', 'bar-fill-raw', p.fid_dual_raw || p.fid_swap);
+        updateBar('bar-val-checked', 'bar-fill-checked', p.fid_dual_checked || p.fid_symmetric_bridge, p.keep_dual_checked || p.keep_symmetric_bridge);
+        updateBar('bar-val-stabilizer', 'bar-fill-stabilizer', p.fid_dual_stabilizer || p.fid_teleport_pauli, p.keep_dual_stabilizer || (p.keep_teleport_pauli * 0.5));
+        updateBar('bar-val-bridge', 'bar-fill-bridge', p.fid_symmetric_bridge, p.keep_symmetric_bridge);
+        updateBar('bar-val-teleport', 'bar-fill-teleport', p.fid_teleport_pauli, p.keep_teleport_pauli);
     }
 }
 
