@@ -42,6 +42,7 @@ pub mod parallel;
 pub mod plaquette;
 pub mod protocol;
 pub mod qec;
+pub mod qgnn;
 pub mod qssm;
 pub mod rcs;
 pub mod simd;
@@ -80,6 +81,7 @@ pub use glued_trees::{
     SymmetricChainHamiltonian,
 };
 pub use gpu::{IGpuBridge, IGpuBridgeConfig, IGpuExecutionReport};
+pub use qgnn::{EquivariantGraphConvLayer, GeometricQgnn, MolecularGraph};
 pub use simd::{SimdBackend, SimdStateView, SimdStateViewMut};
 pub use simd_bloch::{
     compute_all_bloch_vectors, compute_bloch_restoring_weights, compute_qubit_bloch, BlochVector,

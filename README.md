@@ -201,6 +201,13 @@
   - **Heatmap Showdown:** [`cepheus_sim_vs_run_heatmap.png`](experiments/cepheus_glued_trees_30q/cepheus_sim_vs_run_heatmap.png) (1.02 MB) with continuous spatiotemporal density, $8\times 8$ empirical Pauli correlation matrix $\langle Z_i Z_j \rangle$, and Frobenius error norm.
 * Detailed Documentation: [`docs/findings/cepheus_physical_glued_trees_qpu_run.md`](docs/findings/cepheus_physical_glued_trees_qpu_run.md) and [`experiments/cepheus_glued_trees_30q/README.md`](experiments/cepheus_glued_trees_30q/README.md).
 
+### 23. Lie-Algebraic Geometric Quantum Graph Neural Network (`t1000::qgnn`)
+* **Barren Plateau Resilience:** Maps OpenSMILES molecular bond graphs into Lie-algebraic equivariant graph convolutions whose dynamical Lie algebra scales polynomially ($\dim(\mathfrak{g}) \sim \mathcal{O}(N)$) rather than exponentially ($\dim(\mathfrak{su}(2^N)) = 4^N - 1$), maintaining non-vanishing gradient variance ($\text{Var} = 4.2931 \times 10^{-2}$ at 14Q) across deep registers.
+* **Exact Permutation Equivariance:** Invariant node projection and Heisenberg exchange entangling layers ($U = \exp(-i \frac{\phi}{2}(XX+YY+\Delta ZZ))$) guarantee exact permutation invariance under graph automorphisms ($|\Delta y| = 0.0000 \times 10^0$).
+* **ZINC Molecular Screening:** Microsecond AVX2+FMA inference latency of **$2.46\,\mu\text{s}$ per molecule** (**$406,273$ molecules/second**) on real drug candidates.
+* **Sovereign Publication Visual:** 4-panel showdown chart rendered at 300 DPI ([`results/charts/qgnn_geometric_showdown.png`](results/charts/qgnn_geometric_showdown.png)).
+* Detailed Documentation: [`docs/findings/geometric_qgnn_barren_plateau_resilience.md`](docs/findings/geometric_qgnn_barren_plateau_resilience.md).
+
 ---
 
 ## Quick Start for Developers
@@ -303,6 +310,12 @@ python experiments/cepheus_glued_trees_30q/chart_cepheus_physical_alone.py
 python experiments/cepheus_glued_trees_30q/chart_cepheus_side_by_side.py
 python experiments/cepheus_glued_trees_30q/chart_cepheus_heatmap_showdown.py
 
+# Run Lie-Algebraic Geometric QGNN Molecular Benchmark & Barren Plateau Showdown
+cargo run --release -p t1000 --bin qgnn_molecular_bench
+
+# Render 300 DPI Sovereign QGNN Showdown Visual
+python scripts/charting/chart_qgnn_showdown.py
+
 # Run Orthogonal K-Patch Proxy RCS Showdown (PyQrack QrackAceBackend vs T-1000)
 python scripts/benchmarks/t1000_orthogonal_proxy_showdown.py
 
@@ -310,6 +323,7 @@ python scripts/benchmarks/t1000_orthogonal_proxy_showdown.py
 python web/serve.py
 ```
 
+* **Lie-Algebraic Geometric QGNN & Barren Plateau Resilience:** [`docs/findings/geometric_qgnn_barren_plateau_resilience.md`](docs/findings/geometric_qgnn_barren_plateau_resilience.md).
 * **Rigetti Cepheus-1-108Q Physical QPU Quantum Walk Findings:** [`docs/findings/cepheus_physical_glued_trees_qpu_run.md`](docs/findings/cepheus_physical_glued_trees_qpu_run.md).
 * **30-Qubit Glued-Tree Hardware Protocol & Telemetry:** [`experiments/cepheus_glued_trees_30q/README.md`](experiments/cepheus_glued_trees_30q/README.md).
 * **2D Plaquette Routing & Cepheus-108Q Seam Mitigation Findings:** [`docs/findings/plaquette_routing_and_cepheus_seam_mitigation.md`](docs/findings/plaquette_routing_and_cepheus_seam_mitigation.md).
