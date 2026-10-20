@@ -387,10 +387,32 @@ cargo run --release -p t1000 --bin full_qnn_suite_bench
 # Render 300 DPI Sovereign Full QNN Suite Showdown Visual
 python scripts/charting/chart_full_qnn_suite.py
 
+# Run 18-Qubit Transversal [[7, 1, 3]] Steane-Wheel FT-QNN Training with In-Register Ancillas
+cargo run --release -p t1000 --bin qm9_transversal_w7_train
+
+# Render Sovereign Transversal FT-QNN Dynamics Chart (Monograph M153)
+python scripts/charting/chart_qm9_transversal_w7_training.py
+
+# Run Quantum Conway QCA Multi-Scale Benchmark & Soliton Interferometry
+cargo run --release -p t1000_conway --bin qgol_sim
+
+# Render Sovereign QCA Holonomy & Topological Soliton Chart (Monograph M152)
+python scripts/charting/chart_qgol_holonomy.py
+
+# Run 18-Qubit Fault-Tolerant QM9 VQC Training with Mid-Circuit VNNI Filtering (Monograph M151)
+cargo run --release -p t1000 --bin qm9_fault_tolerant_train
+
+# Render Sovereign Fault-Tolerant QM9 VQC Dynamics Chart
+python scripts/charting/chart_qm9_fault_tolerant_training.py
+
 # Launch interactive 3D molecular dashboard and Lego-block circuit composer
 python web/serve.py
 ```
 
+* **18-Qubit Transversal [[7, 1, 3]] Steane-Wheel FT-QNN & In-Register Physical Ancillas (Monograph M153):** [`docs/findings/qm9_transversal_w7_fault_tolerant_training.md`](docs/findings/qm9_transversal_w7_fault_tolerant_training.md).
+* **Non-Abelian Geometric Holonomy, Quantized Vortex Dipoles & Floquet Chaos Scrambling in Unitary QCA (Monograph M152):** [`docs/findings/qgol_geometric_holonomy_and_topological_solitons.md`](docs/findings/qgol_geometric_holonomy_and_topological_solitons.md).
+* **18-Qubit Fault-Tolerant QM9 VQC Training & Mid-Circuit AVX-VNNI Syndrome Filtering (Monograph M151):** [`docs/findings/qm9_fault_tolerant_vqc_training_and_midcircuit_vnni_filtering.md`](docs/findings/qm9_fault_tolerant_vqc_training_and_midcircuit_vnni_filtering.md).
+* **QM9 Ab Initio VQC Training, Atomic Baseline Decomposition & Dual-Angle Quantum Phase Map (Monograph M150):** [`docs/findings/qm9_ab_initio_vqc_training_and_baseline_decomposition.md`](docs/findings/qm9_ab_initio_vqc_training_and_baseline_decomposition.md).
 * **Real-Symmetric Molecular Eigensystem & Zero-Allocation QM9 Ingestion:** [`docs/findings/molecular_eigensystem_and_qm9_ingestion.md`](docs/findings/molecular_eigensystem_and_qm9_ingestion.md).
 * **Closed-Loop AVX-VNNI Real-Time Surface Code Threshold Dynamics:** [`docs/findings/vnni_qec_threshold_dynamics.md`](docs/findings/vnni_qec_threshold_dynamics.md).
 * **Fault-Tolerant Lattice Surgery & Magic State Distillation:** [`docs/findings/fault_tolerant_lattice_surgery_and_magic_distillation.md`](docs/findings/fault_tolerant_lattice_surgery_and_magic_distillation.md).
@@ -413,8 +435,7 @@ python web/serve.py
 * **Zero-Allocation Dense VQC & Heptal Qudit MPS QNN Findings:** [`docs/findings/avx2_zero_allocation_and_heptal_qnn.md`](docs/findings/avx2_zero_allocation_and_heptal_qnn.md).
 * **Dashboard & Circuit Composer Documentation:** [`docs/dashboard_and_circuit_composer.md`](docs/dashboard_and_circuit_composer.md).
 * **Bloch-Zipper & MPS Derivation:** [`docs/bloch_zipper_mps_specification.md`](docs/bloch_zipper_mps_specification.md).
-* **QM9 Ab Initio VQC Training, Atomic Baseline Decomposition & Dual-Angle Quantum Phase Map:** [`docs/findings/qm9_ab_initio_vqc_training_and_baseline_decomposition.md`](docs/findings/qm9_ab_initio_vqc_training_and_baseline_decomposition.md).
-* **Empirical Research & Findings Registry (Dual-Housed with Deen OS Monographs M123–M150):** [`docs/findings/README.md`](docs/findings/README.md).
+* **Empirical Research & Findings Registry (Dual-Housed with Deen OS Monographs M123–M153):** [`docs/findings/README.md`](docs/findings/README.md).
 
 ---
 
