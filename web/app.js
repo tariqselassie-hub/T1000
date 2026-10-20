@@ -161,10 +161,25 @@ class QuantumMolecularDashboard {
         this.renderer.shadowMap.enabled = true;
         this.container.appendChild(this.renderer.domElement);
 
-        this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
-        this.controls.enableDamping = true;
-        this.controls.dampingFactor = 0.05;
-        this.controls.rotateSpeed = 0.8;
+        if (typeof THREE.OrbitControls === 'function') {
+            this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+        } else if (typeof OrbitControls === 'function') {
+            this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+        } else {
+            console.warn('OrbitControls constructor unavailable; using fallback camera controls.');
+            this.controls = {
+                enableDamping: false,
+                dampingFactor: 0.05,
+                rotateSpeed: 0.8,
+                update: () => {},
+                reset: () => {}
+            };
+        }
+        if (this.controls.enableDamping !== undefined) {
+            this.controls.enableDamping = true;
+            this.controls.dampingFactor = 0.05;
+            this.controls.rotateSpeed = 0.8;
+        }
 
         const ambient = new THREE.AmbientLight(0xffffff, 0.45);
         this.scene.add(ambient);
@@ -2357,31 +2372,59 @@ class QuantumMolecularDashboard {
     }
 
     updateComposerTelemetry(data) {
-        document.getElementById('tel-wall-time').textContent = data.wall_time_us ? `${data.wall_time_us.toFixed(2)} μs` : '--';
-        document.getElementById('tel-silicon-time').textContent = data.pure_silicon_us ? `${data.pure_silicon_us.toFixed(2)} μs` : '--';
-        document.getElementById('tel-throughput').textContent = data.gate_throughput ? `${(data.gate_throughput / 1000).toFixed(0)} kG/s` : '--';
-        document.getElementById('tel-fxeb').textContent = data.f_xeb ? data.f_xeb.toFixed(4) : '0.9998';
+        const safeSet = (id, text) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = text;
+        };
 
-        document.getElementById('tel-target-name').textContent = data.target_executed || 'Silicon Target';
-        document.getElementById('tel-dsp-lanes').textContent = `${data.dsp_lanes || 8} DSP48E1 Slices`;
-        document.getElementById('tel-cycles').textContent = `${(data.clock_cycles || 0).toLocaleString()} Cycles @ 100MHz`;
-        document.getElementById('tel-entropy').textContent = `${data.shannon_entropy || 5.82} bits`;
-        document.getElementById('tel-hash').textContent = data.attestation_hash || '0x1000_QPU_EE';
+        const wallTime = data.wall_time_us ? `${data.wall_time_us.toFixed(2)} μs` : '--';
+        safeSet('tel-wall-time', wallTime);
+        safeSet('comp-wall-time', wallTime);
 
-        const elCoh = document.getElementById('tel-coherence-l1');
-        if (elCoh) elCoh.textContent = (data.coherence_norm !== undefined) ? data.coherence_norm.toFixed(3) : (data.coherence_l1 !== undefined ? data.coherence_l1.toFixed(3) : '0.942');
+        const siliconTime = data.pure_silicon_us ? `${data.pure_silicon_us.toFixed(2)} μs` : '--';
+        safeSet('tel-silicon-time', siliconTime);
 
-        const elZeno = document.getElementById('tel-zeno-surv');
-        if (elZeno) elZeno.textContent = (data.zeno_survival_prob !== undefined) ? `${(data.zeno_survival_prob * 100).toFixed(2)}%` : '99.98%';
+        const throughput = data.gate_throughput ? `${(data.gate_throughput / 1000).toFixed(0)} kG/s` : '--';
+        safeSet('tel-throughput', throughput);
+        safeSet('comp-gate-throughput', data.gate_throughput ? `${data.gate_throughput.toLocaleString()} gates/s` : '--');
 
-        const elPurity = document.getElementById('tel-purity');
-        if (elPurity) elPurity.textContent = (data.purity !== undefined) ? data.purity.toFixed(3) : '1.000';
+        safeSet('tel-fxeb', data.f_xeb ? data.f_xeb.toFixed(4) : '0.9998');
 
-        const elEntropy = document.getElementById('tel-bipartite-entropy');
-        if (elEntropy) elEntropy.textContent = (data.bipartite_entropy_bits !== undefined) ? `${data.bipartite_entropy_bits.toFixed(2)} bits` : '0.82 bits';
+        const targetName = data.target_executed || 'Silicon Target';
+        safeSet('tel-target-name', targetName);
+        safeSet('comp-target-name', targetName);
+
+        safeSet('tel-dsp-lanes', `${data.dsp_lanes || 8} DSP48E1 Slices`);
+        const cycles = `${(data.clock_cycles || 0).toLocaleString()} Cycles @ 100MHz`;
+        safeSet('tel-cycles', cycles);
+        safeSet('comp-clock-cycles', `${(data.clock_cycles || 0).toLocaleString()} cycles`);
+
+        safeSet('tel-entropy', `${data.shannon_entropy || 5.82} bits`);
+        const hash = data.attestation_hash || '0x1000_QPU_EE';
+        safeSet('tel-hash', hash);
+        safeSet('comp-attestation-hash', hash);
+
+        const cohVal = (data.coherence_norm !== undefined) ? data.coherence_norm.toFixed(3) : (data.coherence_l1 !== undefined ? data.coherence_l1.toFixed(3) : '0.942');
+        safeSet('tel-coherence-l1', cohVal);
+        safeSet('comp-coherence-l1', cohVal);
+
+        const zenoVal = (data.zeno_survival_prob !== undefined) ? `${(data.zeno_survival_prob * 100).toFixed(2)}%` : '99.98%';
+        safeSet('tel-zeno-surv', zenoVal);
+
+        const purityVal = (data.purity !== undefined) ? data.purity.toFixed(3) : '1.000';
+        safeSet('tel-purity', purityVal);
+        safeSet('comp-purity', (data.purity !== undefined) ? data.purity.toFixed(4) : '1.0000');
+
+        const entVal = (data.bipartite_entropy_bits !== undefined) ? `${data.bipartite_entropy_bits.toFixed(2)} bits` : '0.82 bits';
+        safeSet('tel-bipartite-entropy', entVal);
+        safeSet('comp-entanglement-s', (data.bipartite_entropy_bits !== undefined) ? data.bipartite_entropy_bits.toFixed(3) : '1.000');
+
+        if (data.total_gates !== undefined) safeSet('comp-total-gates', String(data.total_gates));
+        if (data.depth !== undefined) safeSet('comp-circuit-depth', String(data.depth));
+        if (data.state_dim !== undefined) safeSet('comp-state-dim', data.state_dim.toLocaleString());
 
         // Pauli-Z Bars
-        const barsCont = document.getElementById('composer-qubit-bars');
+        const barsCont = document.getElementById('composer-qubit-bars') || document.getElementById('qubit-bars');
         if (barsCont && data.pauli_z) {
             barsCont.innerHTML = '';
             data.pauli_z.forEach((val, q) => {
@@ -2405,7 +2448,7 @@ class QuantumMolecularDashboard {
         }
 
         // Basis States List
-        const basisList = document.getElementById('composer-basis-states');
+        const basisList = document.getElementById('composer-basis-states') || document.getElementById('comp-basis-list');
         if (basisList && data.top_states) {
             basisList.innerHTML = '';
             data.top_states.forEach(st => {
@@ -2417,7 +2460,7 @@ class QuantumMolecularDashboard {
                     <div class="basis-prob-bar-wrap">
                         <div class="basis-prob-bar-fill" style="width:${pct}%;"></div>
                     </div>
-                    <span class="basis-prob-num">${pct}%</span>
+                    <span class="basis-val">${pct}%</span>
                 `;
                 basisList.appendChild(row);
             });

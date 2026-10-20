@@ -894,7 +894,10 @@ class SovereignHandler(http.server.SimpleHTTPRequestHandler):
             super().log_message(format, *args)
 
     def do_GET(self):
-        if self.path == "/api/status":
+        if self.path == "/favicon.ico":
+            self.send_response(204)
+            self.end_headers()
+        elif self.path == "/api/status":
             self.handle_api_status()
         elif self.path == "/api/manifest":
             self.handle_api_manifest()
