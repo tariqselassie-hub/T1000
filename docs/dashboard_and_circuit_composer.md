@@ -11,22 +11,23 @@ This document specifies the architecture, operational protocols, visual telemetr
 
 The T-1000 web dashboard provides an empirical interface connecting molecular latent space exploration with physical quantum circuit execution. Built in vanilla HTML5, WebGL (Three.js), and pure CSS/JavaScript, it communicates locally with `web/serve.py` over high-speed HTTP/JSON REST APIs and physical UART serial links (`COM6` @ 3.0 MBaud).
 
-### Tri-Deck Workspace Layout
+### Sovereign 4-Deck Workspace Layout
 
 ```
-┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                      T-1000 SOVEREIGN QUANTUM WORKSPACE & TELEMETRY DECK                         │
-├──────────────────────────┬─────────────────────────────────────┬─────────────────────────────────┤
-│ [1] 3D MOLECULAR         │ [2] LEGO CIRCUIT COMPOSER           │ [3] RUN TELEMETRY & HARDWARE    │
-│     MANIFOLD             │     (CANVAS & EXPERIMENTAL BENCH)   │     MATRIX                      │
-└──────────────────────────┴─────────────────────────────────────┴─────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                          T-1000 SOVEREIGN QUANTUM WORKSPACE & TELEMETRY DECK                           │
+├──────────────────────────┬──────────────────────────┬──────────────────────────┬───────────────────────┤
+│ [1] MOLECULAR & CTQW     │ [2] CIRCUIT COMPOSER     │ [3] FAULT-TOLERANT QEC   │ [4] 36Q VIRTUAL BRIDGE│
+│     (3D MANIFOLD & WALK) │     (12Q LEGO CANVAS)    │     (STEANE W7 & MAGIC)  │     (CUT-BRIDGE & PLAQ│
+└──────────────────────────┴──────────────────────────┴──────────────────────────┴───────────────────────┘
 ```
 
 | Deck | Workspace Scope | Key Subsystems & Telemetry Readouts |
 | :--- | :--- | :--- |
-| **Deck 1** | 3D Quantum Molecular & Atomic Manifold | Force-directed distance-geometry relaxation, CPK atomic spheres, electron orbital density mesh, 17-dataset telemetry stream, and `→ TO COMPOSER` circuit export. |
-| **Deck 2** | Lego-Block Quantum Circuit Composer | Visual quantum wire grid ($q_0 \dots q_{11}$), time layers ($L_0 \dots L_{15}$), modular snap-in gate blocks, parameter slider HUD ($\theta \in [-\pi, +\pi]$), and dual CPU/FPGA execution. |
-| **Deck 3** | Empirical Run Telemetry Matrix | Physical Artix-7 FPGA vs Core Ultra AVX2 scaling table ($10 \to 26$ qubits), MNIST VQC training loss convergence curve, Frontier RCS benchmark KPIs, and NIST entropy audit logs. |
+| **Deck 1** | 3D Molecular Manifold & CTQW Screener | Force-directed distance-geometry relaxation, CPK atomic spheres, electron orbital density mesh, Coulomb Laplacian eigenvalues, ballistic hitting times $t_{\text{hit}}$, Zeno sentry fidelity ($99.9999\%$), and `→ TO COMPOSER` circuit export. |
+| **Deck 2** | Lego-Block Quantum Circuit Composer | Visual quantum wire grid ($q_0 \dots q_{11}$), time layers ($L_0 \dots L_{15}$), modular snap-in gate blocks, floating parameter slider HUD ($\theta \in [0, 2\pi]$), Auto-DD scheduler, and dual CPU/FPGA execution. |
+| **Deck 3** | Fault-Tolerant QEC & Magic State Deck | 18-Qubit Transversal Steane-Wheel $W_7$ ($7\text{ data} + 11\text{ in-register ancillas}$), Bravyi-Kitaev 15-to-1 magic state distillation factory ($P_e \le 35 p^3$), Rotated $[[9, 1, 3]]$ Surface Code, and AVX-512 VNNI parity engine. |
+| **Deck 4** | 36Q Virtual Cut-Bridge & Silicon Matrix | $131,072\times$ L3 cache compression ($1.00\text{ TB} \to 8\text{ MB}$), mid-circuit checkpointing, Intel Xe Graphics OpenCL UMA bridge, PC vs Artix-7 FPGA 26Q scaling table, IBM Nighthawk 99-plaquette dual-graph heatmap, and Ultrametric Tree QMUX. |
 
 ---
 
@@ -188,12 +189,25 @@ Executes an arbitrary circuit payload on the requested hardware target:
 
 ## 6. How to Launch & Operate
 
-Start the server locally:
+### Primary Startup Commands
 ```bash
+# Standard interactive launch (automatically launches local browser)
 python web/serve.py
-```
-To run in background mode without automatically launching a system browser:
-```bash
+
+# Headless daemon mode (ideal for background execution, remote servers, or CI)
 python web/serve.py --no-browser
+
+# Launch with explicit serial port, baud rate, and HTTP port overrides
+T1000_QPU_PORT=COM6 T1000_QPU_BAUD=3000000 PORT=8000 python web/serve.py --no-browser
 ```
-Endpoint available at `http://localhost:8000`.
+
+### Operational URLs & Endpoints
+- **Main Dashboard Deck:** `http://localhost:8000/index.html`
+  - **[Deck 1] Molecular & CTQW:** 3D force-directed molecule viewer, SMILES featurizer, and Continuous Topological Walk ballistic hitting telemetry.
+  - **[Deck 2] Circuit Composer:** 12-wire quantum wire grid ($q_0 \dots q_{11}$), gate palette, parameter HUD, Auto-DD scheduler, and dual CPU/FPGA execution.
+  - **[Deck 3] Fault-Tolerant QEC:** 18-Qubit Transversal Steane-Wheel $W_7$, Bravyi-Kitaev 15-to-1 magic state distillation factory, and Rotated Surface Code.
+  - **[Deck 4] 36Q Virtual Bridge:** 36-Qubit Virtual Cut-Bridge ($131,072\times$ L3 compression), Intel Xe Graphics OpenCL bridge, and IBM Nighthawk 99-plaquette heatmap.
+- **Quantum Life (Fractional Fermi QCA Simulator):** `http://localhost:8000/qgol.html`
+- **REST Health Status:** `http://localhost:8000/api/status`
+- **Unified Telemetry Manifest:** `http://localhost:8000/api/telemetry_data`
+

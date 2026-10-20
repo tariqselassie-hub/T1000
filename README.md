@@ -254,46 +254,112 @@
 
 ---
 
-## Quick Start for Developers
+## System Startup & Execution Guide
 
-Clone and build the entire workspace with standard Cargo tools:
+The `T-1000` sovereign engine comprises 10 specialized quantum and neural systems. Below are the exact startup, execution, and verification commands for each system:
+
+---
+
+### System 1: Sovereign Web Dashboard & Telemetry Bridge
+Serves the 4-deck operational workspace (3D Molecular Manifold & CTQW, Lego Circuit Composer, Fault-Tolerant QEC, and 36Q Virtual Bridge) alongside the Quantum Life QCA simulator.
 
 ```bash
-git clone https://github.com/tariqselassie-hub/T1000.git
-cd T1000
+# Standard startup (automatically launches browser at http://localhost:8000)
+python web/serve.py
 
-# Run all unit, integration, and oracle verification tests
-cargo test --workspace
+# Headless background startup (e.g., remote server, CI/CD, or automated agents)
+python web/serve.py --no-browser
 
-# Run Fault-Tolerant Lattice Surgery & Magic State Distillation Benchmark
-cargo run --release -p t1000 --bin qec_fault_tolerance_bench
+# Launch with explicit FPGA serial port, baud rate, and custom HTTP port overrides
+T1000_QPU_PORT=COM6 T1000_QPU_BAUD=3000000 PORT=8000 python web/serve.py --no-browser
+```
 
-# Run Unitary Quantum Conway Cellular Automata & Glider S-Matrix Simulation
-cargo run --release -p t1000_conway --bin qgol_sim
+* **Operational Endpoints:**
+  - Main Dashboard (Decks 1–4): `http://localhost:8000/index.html`
+  - Deck 1: 3D Molecular Manifold & CTQW Screener (Monograph M154)
+  - Deck 2: Lego Quantum Circuit Composer & Silicon Execution Dock (AVX2 / FPGA COM6)
+  - Deck 3: Fault-Tolerant QEC & Magic State Distillation Deck (Monographs M153 & M156)
+  - Deck 4: 36Q Virtual Cut-Bridge & 99-Plaquette Heatmap (Monographs M151 & M155)
+  - Quantum Life (Fractional Fermi QCA Simulator, Monograph M152): `http://localhost:8000/qgol.html`
+  - REST Health Status: `http://localhost:8000/api/status`
+  - Unified Experiment Telemetry Feed: `http://localhost:8000/api/telemetry_data`
 
-# Run Cascaded Multi-Tier Tree Valve Benchmark (Dual-Weld Deep Quantum Routing)
-cargo run --release -p t1000 --bin cascaded_tree_valve_bench
+---
 
-# Run Multi-Exit Glued-Tree Valve & Quantum Router Benchmark (K-Way Topological Routing)
-cargo run --release -p t1000 --bin glued_tree_valve_bench
+### System 2: Physical Silicon FPGA Hardware Coprocessor (AMD Artix-7 Basys 3)
+Controls the bare-metal FPGA hardware pipeline operating over `COM6 @ 3,000,000 Baud`.
 
-# Run Glued Trees Traversal Exponential Speedup Benchmark (Childs et al. CTQW)
-cargo run --release -p t1000 --bin glued_trees_bench
+```bash
+# Ping and verify physical Artix-7 1000_QPU hardware connection & link status
+python scripts/fpga/test_1000_qpu.py
 
-# Run Ultrametric Tree Sorter QMUX Benchmark (Waterbirds Hierarchical Multi-Register)
-cargo run --release -p t1000 --bin ultrametric_tree_sorter_bench
+# Stream high-entropy 256-bit quantum chaos seeds (Opcode 0x30 @ 4,179 seeds/s)
+python scripts/fpga/test_chaos_streaming.py
 
-# Run Headless Pure Quantum Sorter vs Data Re-Uploading Showdown (Waterbirds 11k)
-cargo run --release -p t1000 --bin path_a_vs_c_sorter_bench
+# Execute 19-second continuous high-throughput burst stability test
+python scripts/fpga/test_19s_chaos_burst.py
 
-# Run Hilbert Space Fidelity & Observable Orientation Sorter Benchmark
-cargo run --release -p t1000 --bin fidelity_orthogonality_bench
+# Execute PC Core Ultra AVX2 vs Artix-7 FPGA 26-Qubit scaling benchmark
+python scripts/fpga/bench_pc_vs_fpga_scaling.py
 
-# Run 10-Qubit Waterbirds Hybrid Transfer Quantum Neural Network Training
-cargo run --release -p t1000 --bin birds_hybrid_qnn_train -- 15
+# Run NIST SP 800-22 statistical quantum randomness and entropy audit
+python scripts/fpga/nist_randomness_audit.py
 
-# Run AVX-VNNI hardware-accelerated QEC syndrome and stabilizer benchmark (CPU INT8 VNNI)
-cargo run --release -p t1000 --bin vnni_syndrome_bench
+# Generate full 26-qubit FPGA silicon scaling telemetry JSON dataset
+python scripts/fpga/run_fpga_26q_telemetry.py
+```
+
+---
+
+### System 3: Core SIMD AVX2 Quantum Circuit & Random Circuit Sampling (RCS) Engine
+High-throughput fused 256-bit AVX2+FMA state evolution and statistical chaos verification.
+
+```bash
+# Execute deep Random Circuit Sampling frontier benchmark (default: 18Q, 36 layers, 1,945 gates)
+cargo run --release -p t1000 --bin frontier_rcs -- --qubits 18 --depth 36
+
+# Run customized fast RCS benchmark (e.g. 14 qubits, 20 layers)
+cargo run --release -p t1000 --bin frontier_rcs -- --qubits 14 --depth 20
+
+# Run open-system Lindbladian decoherence & physical noise transition benchmark (M149)
+cargo run --release -p t1000 --bin rcs_coherence_chaos_bench
+
+# Render 300 DPI Sovereign Visual of RCS Physical Noise Transition
+python scripts/charting/chart_rcs_coherence_chaos.py
+
+# Run Quantum Coherence Frontier Push (Dense 26Q + Tensor Network 64Q + Heptal 7^9 qudits)
+cargo run --release -p t1000 --bin coherence_frontier_push
+
+# Run Orthogonal K-Patch Proxy RCS Showdown (PyQrack QrackAceBackend vs T-1000)
+python scripts/benchmarks/t1000_orthogonal_proxy_showdown.py
+
+# Render 300 DPI Sovereign Visual of Orthogonal Proxy Showdown
+python scripts/charting/chart_orthogonal_proxy_showdown.py
+```
+
+---
+
+### System 4: Fault-Tolerant QEC & Magic State Distillation Systems (M151, M153, M156)
+Universal Eastin-Knill bypass, transversal Steane-wheel Clifford gates, and real-time surface code decoders.
+
+```bash
+# Run Universal FT-QNN Training with Bravyi-Kitaev 15-to-1 Magic State Distillation (Monograph M156)
+cargo run --release -p t1000 --bin qm9_magic_w7_ft_train
+
+# Render Sovereign Universal FT-QNN Magic State Distillation Chart (Monograph M156)
+python scripts/charting/chart_qm9_magic_w7_training.py
+
+# Run 18-Qubit Transversal [[7, 1, 3]] Steane-Wheel FT-QNN Training with In-Register Ancillas (Monograph M153)
+cargo run --release -p t1000 --bin qm9_transversal_w7_train
+
+# Render Sovereign Transversal FT-QNN Dynamics Chart (Monograph M153)
+python scripts/charting/chart_qm9_transversal_w7_training.py
+
+# Run 18-Qubit Fault-Tolerant QM9 VQC Training with Mid-Circuit VNNI Filtering (Monograph M151)
+cargo run --release -p t1000 --bin qm9_fault_tolerant_train
+
+# Render Sovereign Fault-Tolerant QM9 VQC Dynamics Chart (Monograph M151)
+python scripts/charting/chart_qm9_fault_tolerant_training.py
 
 # Run Closed-Loop AVX-VNNI Real-Time Surface Code Threshold Sweep (3.5M Monte Carlo shots)
 cargo run --release -p t1000 --bin vnni_threshold_bench
@@ -301,76 +367,102 @@ cargo run --release -p t1000 --bin vnni_threshold_bench
 # Render 300 DPI Sovereign Visual of VNNI QEC Threshold Dynamics
 python scripts/charting/chart_vnni_threshold.py
 
-# Run Real-Symmetric Molecular Eigensystem & QM9 Ingestion Benchmark
+# Run AVX-VNNI hardware-accelerated syndrome and stabilizer benchmark (CPU INT8 VNNI)
+cargo run --release -p t1000 --bin vnni_syndrome_bench
+
+# Run Fault-Tolerant Dual-Patch Lattice Surgery & Bell Pair Generation Benchmark
+cargo run --release -p t1000 --bin qec_fault_tolerance_bench
+
+# Render 300 DPI Sovereign Visual of Lattice Surgery Dynamics
+python scripts/charting/chart_qec_fault_tolerance.py
+```
+
+---
+
+### System 5: 36-Qubit Virtual Cut-Bridge & Heterogeneous Co-Processor Pipeline (M155)
+$131,072\times$ L3 cache compression ($1.00\text{ TB} \to 8\text{ MB}$) and Intel Xe Graphics OpenCL UMA zero-copy bridge.
+
+```bash
+# Run 36-Qubit Virtual Cut-Bridge & Heterogeneous Co-Processor Benchmark (Monograph M155)
+cargo run --release -p t1000 --bin virtual_36q_cut_bridge_bench
+
+# Render Sovereign 36-Qubit Virtual Cut-Bridge Dynamics Chart (Monograph M155)
+python scripts/charting/chart_virtual_36q_cut_bridge.py
+
+# Run 36-Qubit Mid-Circuit Checkpointed Cut-Bridge Benchmark (CPU AVX2+FMA)
+cargo run --release -p t1000 --bin cut_bridge_36q_bench
+
+# Run 36-Qubit Cross-Bridge CHSH Bell Inequality Verification Benchmark (CPU AVX2+FMA)
+cargo run --release -p t1000 --bin cut_bridge_chsh_bench
+
+# Run Intel Graphics (Xe iGPU) Zero-Copy UMA Dense Statevector Benchmark (OpenCL)
+cargo run --release -p t1000 --bin igpu_bridge_bench
+
+# Run concurrent Heterogeneous Co-Processor Pipeline (CPU AVX2 + Intel iGPU OpenCL)
+python scripts/qec/heterogeneous_bridge_pipeline.py
+```
+
+---
+
+### System 6: Molecular Latent Space & Continuous-Time Quantum Walk (CTQW) (M154)
+Chemical featurization, Coulomb Hamiltonian eigensolvers, and ballistic topological walk screeners.
+
+```bash
+# Run QM9 Continuous-Time Topological Quantum Walk Chemical Screener & Zeno Filter (Monograph M154)
+cargo run --release -p t1000 --bin continuous_walk_qm9_filter
+
+# Render Sovereign QM9 Continuous Topological Walk Screening Dynamics Chart (Monograph M154)
+python scripts/charting/chart_qm9_continuous_walk.py
+
+# Run Continuous Topological Walk Molecular Screening on 1,000 ZINC Drug Candidates
+cargo run --release -p t1000 --bin zinc_topological_walk_screen
+
+# Render Sovereign ZINC Topological Screening Dynamics Chart
+python scripts/charting/chart_zinc_topological_screen.py
+
+# Execute ZINC 250k Whole-Library Dual Search (Search 1 Pareto Leads + Search 3 Anomalies)
+cargo run --release -p t1000 --bin zinc_dual_search
+
+# Render Sovereign Visuals for ZINC Pareto Leads and Quantum Anomalies
+python scripts/charting/chart_zinc_pareto.py
+python scripts/charting/chart_zinc_anomalies.py
+
+# Run Real-Symmetric Molecular Eigensystem & Zero-Allocation QM9 Ingestion Benchmark
 cargo run --release -p t1000 --bin molecular_eigensystem_bench
 
 # Render 300 DPI Sovereign Visual of Molecular Eigensystem Dynamics
 python scripts/charting/chart_molecular_eigensystem.py
 
-# Run Intel Graphics (Xe iGPU) zero-copy UMA dense statevector benchmark (OpenCL)
-cargo run --release -p t1000 --bin igpu_bridge_bench
+# Run Cascaded Multi-Tier Tree Valve Benchmark (Dual-Weld Deep Quantum Routing)
+cargo run --release -p t1000 --bin cascaded_tree_valve_bench
 
-# Run 36-qubit cross-bridge CHSH Bell inequality verification benchmark (CPU AVX2+FMA)
-cargo run --release -p t1000 --bin cut_bridge_chsh_bench
+# Render 300 DPI Sovereign Visual of Cascaded Tree Valve Dynamics
+python scripts/charting/chart_cascaded_tree_valve.py
 
-# Run 36-qubit mid-circuit checkpointed cut-bridge benchmark (CPU AVX2+FMA)
-cargo run --release -p t1000 --bin cut_bridge_36q_bench
+# Run Multi-Exit Glued-Tree Valve & Quantum Router Benchmark (K-Way Routing)
+cargo run --release -p t1000 --bin glued_tree_valve_bench
 
-# Run concurrent Heterogeneous Co-Processor Pipeline (CPU AVX2 + Intel iGPU OpenCL)
-python scripts/qec/heterogeneous_bridge_pipeline.py
+# Render 300 DPI Sovereign Visual of Glued-Tree Valve Dynamics
+python scripts/charting/chart_glued_tree_valve.py
 
-# Run Quantum State-Space Autoencoder (Q-SSM) Training & Streaming Benchmark
-cargo run --release -p t1000 --bin qssm_autoencoder_bench
+# Run Glued Trees Traversal Exponential Speedup Benchmark (Childs et al. CTQW)
+cargo run --release -p t1000 --bin glued_trees_bench
 
-# Run Zero-Data Real-Time Quantum Quench Autoencoder & Dynamical Phase Classifier
-cargo run --release -p t1000 --bin qssm_quench_bench
+# Render 300 DPI Sovereign Visual of Glued-Trees Traversal Dynamics
+python scripts/charting/chart_glued_trees.py
+```
 
-# Run 1D MPS Bloch-Zipper and Heptal SU(7) Complementarity Benchmarks (14 to 200 qubits/qudits)
-cargo run --release -p t1000 --bin bloch_zipper_bench
+---
 
-# Run 10-qubit MNIST Quantum Neural Network & Coherence Benchmark
-cargo run --release -p t1000 --bin mnist_qnn_train
+### System 7: Quantum Vision, Ultrametric Sorters & Sequence Autoencoders
+Headless geometric coordinate sorters, non-Archimedean tree factorizations, and quantum state-space models.
 
-# Execute 14-qubit, 36-depth Random Circuit Sampling frontier benchmark
-cargo run --release -p t1000 --bin frontier_rcs -- --qubits 14 --depth 36
+```bash
+# Run Full Quantum Neural Network (QNN) Suite Benchmark (All 7 Mathematical Pillars)
+cargo run --release -p t1000 --bin full_qnn_suite_bench
 
-# Execute ZINC 250k whole-library dual search (Search 3 Anomalies + Search 1 Pareto Leads)
-cargo run --release -p t1000 --bin zinc_dual_search
-
-# Run sovereign Quantum Coherence Frontier Push (Dense 26Q + TN 64Q + Heptal 7^9 Qudits)
-cargo run --release -p t1000 --bin coherence_frontier_push
-
-# Generate all scientific research charts and telemetry figures
-python scripts/charting/chart_all.py
-
-# Verify physical Artix-7 FPGA autonomous layers and chaos streaming over COM6
-python scripts/fpga/test_chaos_streaming.py
-
-# Run Continuous Topological Walk Sorter Showdown under Physical Noise
-cargo run --release -p t1000 --bin topological_walk_sorter_bench
-
-# Run Continuous Topological Walk Molecular Screening on 1,000 ZINC drug candidates
-cargo run --release -p t1000 --bin zinc_topological_walk_screen
-
-# Run Elementary 4-Qubit Plaquette Routing Benchmark Suite (Protocols 1-6)
-cargo run --release -p t1000 --bin plaquette_1234_bench
-
-# Run IBM Nighthawk R2 99-Plaquette Monolithic Architecture Benchmark
-cargo run --release -p t1000 --bin nighthawk_99_plaquette_bench
-
-# Run Rigetti Cepheus-1-108Q 12-Chiplet Modular Seam Mitigation Benchmark
-cargo run --release -p t1000 --bin cepheus_108q_bench
-
-# Run 30-Qubit Glued-Tree Quantum Walk T-1000 Simulation Pass
-python experiments/cepheus_glued_trees_30q/runner.py --target t1000
-
-# Dispatch / Poll Physical Run on Rigetti Cepheus-1-108Q (OpenQuantum Cloud)
-python experiments/cepheus_glued_trees_30q/dispatch_to_openquantum_cepheus.py
-
-# Render 300 DPI Sovereign Visual Suite (Physical Alone, Side-by-Side, Heatmap)
-python experiments/cepheus_glued_trees_30q/chart_cepheus_physical_alone.py
-python experiments/cepheus_glued_trees_30q/chart_cepheus_side_by_side.py
-python experiments/cepheus_glued_trees_30q/chart_cepheus_heatmap_showdown.py
+# Render 300 DPI Sovereign Full QNN Suite Showdown Visual
+python scripts/charting/chart_full_qnn_suite.py
 
 # Run Lie-Algebraic Geometric QGNN Molecular Benchmark & Barren Plateau Showdown
 cargo run --release -p t1000 --bin qgnn_molecular_bench
@@ -378,53 +470,109 @@ cargo run --release -p t1000 --bin qgnn_molecular_bench
 # Render 300 DPI Sovereign QGNN Showdown Visual
 python scripts/charting/chart_qgnn_showdown.py
 
-# Run Orthogonal K-Patch Proxy RCS Showdown (PyQrack QrackAceBackend vs T-1000)
-python scripts/benchmarks/t1000_orthogonal_proxy_showdown.py
+# Run Ultrametric Tree Sorter QMUX Benchmark (Waterbirds Hierarchical Multi-Register)
+cargo run --release -p t1000 --bin ultrametric_tree_sorter_bench
 
-# Run Full Quantum Neural Network (QNN) Suite Benchmark (All 7 Pillars)
-cargo run --release -p t1000 --bin full_qnn_suite_bench
+# Render 300 DPI Sovereign Visual of Ultrametric Tree Sorter Dynamics
+python scripts/charting/chart_ultrametric_tree.py
 
-# Render 300 DPI Sovereign Full QNN Suite Showdown Visual
-python scripts/charting/chart_full_qnn_suite.py
+# Run Headless Pure Quantum Sorter vs Data Re-Uploading Showdown (Waterbirds 11k)
+cargo run --release -p t1000 --bin path_a_vs_c_sorter_bench
 
-# Run Universal FT-QNN Training with Magic State Distillation & Transversal W7 QEC (Monograph M156)
-cargo run --release -p t1000 --bin qm9_magic_w7_ft_train
+# Run Hilbert Space Fidelity & Observable Orientation Sorter Benchmark
+cargo run --release -p t1000 --bin fidelity_orthogonality_bench
 
-# Render Sovereign Universal FT-QNN Magic State Dynamics Chart (Monograph M156)
-python scripts/charting/chart_qm9_magic_w7_training.py
+# Run 10-Qubit Waterbirds Hybrid Transfer Quantum Neural Network Training (15 Epochs)
+cargo run --release -p t1000 --bin birds_hybrid_qnn_train -- 15
 
-# Run 36-Qubit Virtual Cut-Bridge & Co-Processor Benchmark (Monograph M155)
-cargo run --release -p t1000 --bin virtual_36q_cut_bridge_bench
+# Render 300 DPI Sovereign Visual of Waterbirds Hybrid QNN Dynamics
+python scripts/charting/chart_birds_hybrid.py
 
-# Render Sovereign 36-Qubit Virtual Cut-Bridge Dynamics Chart (Monograph M155)
-python scripts/charting/chart_virtual_36q_cut_bridge.py
+# Run 10-Qubit MNIST Quantum Neural Network & Coherence Benchmark (Adjoint AVX2)
+cargo run --release -p t1000 --bin mnist_qnn_train
 
-# Run 18-Qubit Transversal [[7, 1, 3]] Steane-Wheel FT-QNN Training with In-Register Ancillas
-cargo run --release -p t1000 --bin qm9_transversal_w7_train
+# Render 300 DPI Sovereign Visual of MNIST QNN Training Dynamics
+python scripts/charting/chart_mnist_qnn.py
 
-# Render Sovereign Transversal FT-QNN Dynamics Chart (Monograph M153)
-python scripts/charting/chart_qm9_transversal_w7_training.py
+# Run Quantum State-Space Autoencoder (Q-SSM Mamba) Streaming Benchmark
+cargo run --release -p t1000 --bin qssm_autoencoder_bench
 
-# Run QM9 Continuous-Time Topological Quantum Walk Chemical Screener & Zeno Filter (Monograph M154)
-cargo run --release -p t1000 --bin continuous_walk_qm9_filter
+# Run Zero-Data Real-Time Quantum Quench Autoencoder & Dynamical Phase Classifier
+cargo run --release -p t1000 --bin qssm_quench_bench
 
-# Render Sovereign QM9 Continuous Topological Walk Screening Dynamics Chart (Monograph M154)
-python scripts/charting/chart_qm9_continuous_walk.py
+# Render 300 DPI Sovereign Visuals of Lattice Quench and Phase Transition Dynamics
+python scripts/charting/chart_lattice_quench.py
+python scripts/charting/chart_lattice_phase.py
 
-# Run Quantum Conway QCA Multi-Scale Benchmark & Soliton Interferometry
+# Run 1D MPS Bloch-Zipper and Heptal SU(7) Complementarity Benchmarks (14 to 200 qubits/qudits)
+cargo run --release -p t1000 --bin bloch_zipper_bench
+```
+
+---
+
+### System 8: Superconducting 2D Plaquettes & Cloud QPU Dispatch (IBM Nighthawk & Rigetti Cepheus)
+Dual-graph error mitigation, boundary spoke cancellation, and live cloud hardware dispatch.
+
+```bash
+# Run IBM Nighthawk R2 99-Plaquette Monolithic Architecture Benchmark
+cargo run --release -p t1000 --bin nighthawk_99_plaquette_bench
+
+# Render 300 DPI Sovereign Visual of IBM Nighthawk 99-Plaquette Heatmap & Teleportation
+python scripts/charting/chart_nighthawk_99_plaquettes.py
+python scripts/charting/chart_nighthawk_layout.py
+
+# Run Rigetti Cepheus-1-108Q 12-Chiplet Modular Seam Mitigation Benchmark
+cargo run --release -p t1000 --bin cepheus_108q_bench
+
+# Render 300 DPI Sovereign Visual of Rigetti Cepheus 108Q Seam Mitigation
+python scripts/charting/chart_cepheus_108q.py
+
+# Run Elementary 4-Qubit Plaquette Routing Benchmark Suite (Protocols 1-6)
+cargo run --release -p t1000 --bin plaquette_1234_bench
+
+# Run 30-Qubit Glued-Tree Quantum Walk T-1000 Simulation Pass
+python experiments/cepheus_glued_trees_30q/runner.py --target t1000
+
+# Dispatch / Poll Physical Run on Rigetti Cepheus-1-108Q (OpenQuantum Cloud)
+python experiments/cepheus_glued_trees_30q/dispatch_to_openquantum_cepheus.py
+
+# Render 300 DPI Sovereign Visual Suite for Cepheus (Physical Alone, Side-by-Side, Heatmap)
+python experiments/cepheus_glued_trees_30q/chart_cepheus_physical_alone.py
+python experiments/cepheus_glued_trees_30q/chart_cepheus_side_by_side.py
+python experiments/cepheus_glued_trees_30q/chart_cepheus_heatmap_showdown.py
+```
+
+---
+
+### System 9: Unitary Quantum Cellular Automata & Fractional Fermi Solitons (M152)
+Interaction holonomy cycles across Confinement-Induced Resonances and Mach-Zehnder soliton collision interferometry.
+
+```bash
+# Run Quantum Conway QCA Multi-Scale Benchmark & Soliton S-Matrix Simulation
 cargo run --release -p t1000_conway --bin qgol_sim
 
 # Render Sovereign QCA Holonomy & Topological Soliton Chart (Monograph M152)
 python scripts/charting/chart_qgol_holonomy.py
 
-# Run 18-Qubit Fault-Tolerant QM9 VQC Training with Mid-Circuit VNNI Filtering (Monograph M151)
-cargo run --release -p t1000 --bin qm9_fault_tolerant_train
+# Interactive 3D Web Visualizer:
+# Start the web server (python web/serve.py) and navigate in any WebGL browser to:
+# http://localhost:8000/qgol.html
+```
 
-# Render Sovereign Fault-Tolerant QM9 VQC Dynamics Chart
-python scripts/charting/chart_qm9_fault_tolerant_training.py
+---
 
-# Launch interactive 3D molecular dashboard and Lego-block circuit composer
-python web/serve.py
+### System 10: Automated Test Suite & Full Scientific Charting Generation
+Live disk-grounded verification of workspace integrity and batch generation of publication graphics.
+
+```bash
+# Run all unit tests, integration tests, and oracle verifications across the entire workspace
+cargo test --workspace
+
+# Fast workspace compilation and lint hygiene check
+cargo check --workspace
+
+# Batch generate all 39 publication-grade 300 DPI scientific charts in one command
+python scripts/charting/chart_all.py
 ```
 
 * **Universal Fault-Tolerant Quantum Neural Networks: Eastin-Knill Bypass via Magic State Distillation (Monograph M156):** [`docs/findings/universal_ft_qnn_magic_state_w7_injection.md`](docs/findings/universal_ft_qnn_magic_state_w7_injection.md).
