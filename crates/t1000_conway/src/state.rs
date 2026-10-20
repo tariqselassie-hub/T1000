@@ -52,6 +52,16 @@ impl QuantumCellStateSoA {
         }
     }
 
+    /// Set a cell to a pure vacuum state (|0>).
+    pub fn set_cell_vacuum(&mut self, idx: usize) {
+        self.re0[idx] = 1.0;
+        self.im0[idx] = 0.0;
+        self.re1[idx] = 0.0;
+        self.im1[idx] = 0.0;
+        self.re2[idx] = 0.0;
+        self.im2[idx] = 0.0;
+    }
+
     /// Set a cell to a pure classical living state (|1>).
     pub fn set_cell_living(&mut self, idx: usize) {
         self.re0[idx] = 0.0;

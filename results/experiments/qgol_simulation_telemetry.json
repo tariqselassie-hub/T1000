@@ -208,29 +208,29 @@
   "multi_scale_benchmark": [
     {
       "grid_dimension": "16x16",
-      "latency_us_per_step": 169.1,
+      "latency_us_per_step": 275.65,
       "norm_conservation_error": 1.5543122344752192e-15,
-      "throughput_cells_per_sec": 1513897.1023063278,
+      "throughput_cells_per_sec": 928713.9488481771,
       "total_cells": 256
     },
     {
       "grid_dimension": "32x32",
-      "latency_us_per_step": 2560.2,
+      "latency_us_per_step": 2605.1,
       "norm_conservation_error": 1.3322676295501878e-15,
-      "throughput_cells_per_sec": 399968.75244121556,
+      "throughput_cells_per_sec": 393075.1218763195,
       "total_cells": 1024
     },
     {
       "grid_dimension": "64x64",
-      "latency_us_per_step": 37856.0,
+      "latency_us_per_step": 38478.35,
       "norm_conservation_error": 1.3322676295501878e-15,
-      "throughput_cells_per_sec": 108199.49281487743,
+      "throughput_cells_per_sec": 106449.47093625377,
       "total_cells": 4096
     }
   ],
   "scenarios": [
     {
-      "elapsed_us": 2488,
+      "elapsed_us": 2289,
       "entanglement_entropy": 0.6925757010016689,
       "final_ffs_population": 63.87953822686766,
       "final_population": 196.11400524044205,
@@ -240,108 +240,156 @@
           "ffs_population": 0.0,
           "living_population": 126.44353077376346,
           "max_norm_error": 2.220446049250313e-16,
+          "max_vorticity": 0.32756301419044204,
+          "mean_current_magnitude": 0.022190443942807028,
           "mean_momentum_density": 0.9668093422942009,
+          "scrambling_otoc": 0.16758857175996217,
           "step": 1,
-          "total_population": 126.44353077376346
+          "total_population": 126.44353077376346,
+          "vortex_count": 12
         },
         {
           "entanglement_entropy": 0.6924611571491535,
           "ffs_population": 4.886551773651378,
           "living_population": 127.79179745202835,
           "max_norm_error": 2.220446049250313e-16,
+          "max_vorticity": 0.7139724911868878,
+          "mean_current_magnitude": 0.06777652606682727,
           "mean_momentum_density": 0.9602361595366223,
+          "scrambling_otoc": 0.16910681952388268,
           "step": 2,
-          "total_population": 137.56490099933112
+          "total_population": 137.56490099933112,
+          "vortex_count": 23
         },
         {
           "entanglement_entropy": 0.6924611571491535,
           "ffs_population": 23.726526924258042,
           "living_population": 108.9518223014217,
           "max_norm_error": 4.440892098500626e-16,
+          "max_vorticity": 0.6974813800075357,
+          "mean_current_magnitude": 0.09283815542853162,
           "mean_momentum_density": 0.8252628304750822,
+          "scrambling_otoc": 0.1743641050877668,
           "step": 3,
-          "total_population": 156.40487614993776
+          "total_population": 156.40487614993776,
+          "vortex_count": 27
         },
         {
           "entanglement_entropy": 0.6924611571491535,
           "ffs_population": 29.866211714566685,
           "living_population": 102.81213751111308,
           "max_norm_error": 3.3306690738754696e-16,
+          "max_vorticity": 0.7130244559621994,
+          "mean_current_magnitude": 0.07016927204533237,
           "mean_momentum_density": 0.7489828773252291,
+          "scrambling_otoc": 0.174013761559684,
           "step": 4,
-          "total_population": 162.5445609402465
+          "total_population": 162.5445609402465,
+          "vortex_count": 27
         },
         {
           "entanglement_entropy": 0.6924611571491534,
           "ffs_population": 48.72800950476026,
           "living_population": 83.95033972091959,
           "max_norm_error": 2.220446049250313e-16,
+          "max_vorticity": 0.665896525800213,
+          "mean_current_magnitude": 0.09084207738075356,
           "mean_momentum_density": 0.568134483644466,
+          "scrambling_otoc": 0.17602804845721878,
           "step": 5,
-          "total_population": 181.40635873044005
+          "total_population": 181.40635873044005,
+          "vortex_count": 31
         },
         {
           "entanglement_entropy": 0.6924611571491534,
           "ffs_population": 63.633530405164805,
           "living_population": 69.04481882051505,
           "max_norm_error": 4.440892098500626e-16,
+          "max_vorticity": 0.7629023993506757,
+          "mean_current_magnitude": 0.07041786848795638,
           "mean_momentum_density": 0.4162077490825117,
+          "scrambling_otoc": 0.16973330337144965,
           "step": 6,
-          "total_population": 196.31187963084452
+          "total_population": 196.31187963084452,
+          "vortex_count": 24
         },
         {
           "entanglement_entropy": 0.6924611571491534,
           "ffs_population": 64.72452374404638,
           "living_population": 67.95382548163352,
           "max_norm_error": 4.440892098500626e-16,
+          "max_vorticity": 0.6247604296401568,
+          "mean_current_magnitude": 0.0886194196429445,
           "mean_momentum_density": 0.35725701396323434,
+          "scrambling_otoc": 0.17155047820651997,
           "step": 7,
-          "total_population": 197.40287296972622
+          "total_population": 197.40287296972622,
+          "vortex_count": 29
         },
         {
           "entanglement_entropy": 0.6924611571491535,
           "ffs_population": 63.254340724416124,
           "living_population": 69.42400850126374,
           "max_norm_error": 6.661338147750939e-16,
+          "max_vorticity": 0.8664439891157941,
+          "mean_current_magnitude": 0.07212850922465076,
           "mean_momentum_density": 0.3448137968017996,
+          "scrambling_otoc": 0.16781614611295068,
           "step": 8,
-          "total_population": 195.93268995009612
+          "total_population": 195.93268995009612,
+          "vortex_count": 25
         },
         {
           "entanglement_entropy": 0.6924611571491535,
           "ffs_population": 68.44445706730474,
           "living_population": 64.23389215837514,
           "max_norm_error": 4.440892098500626e-16,
+          "max_vorticity": 0.7403959759746034,
+          "mean_current_magnitude": 0.09070739242575135,
           "mean_momentum_density": 0.32462794109700965,
+          "scrambling_otoc": 0.17008045468984273,
           "step": 9,
-          "total_population": 201.1228062929847
+          "total_population": 201.1228062929847,
+          "vortex_count": 26
         },
         {
           "entanglement_entropy": 0.6924611571491535,
           "ffs_population": 63.48142289142131,
           "living_population": 69.19692633425855,
           "max_norm_error": 6.661338147750939e-16,
+          "max_vorticity": 0.9257040614952289,
+          "mean_current_magnitude": 0.07236634952228849,
           "mean_momentum_density": 0.34744318329069357,
+          "scrambling_otoc": 0.16656397019522085,
           "step": 10,
-          "total_population": 196.15977211710134
+          "total_population": 196.15977211710134,
+          "vortex_count": 23
         },
         {
           "entanglement_entropy": 0.6925757010016689,
           "ffs_population": 68.56907365314471,
           "living_population": 63.66539336042972,
           "max_norm_error": 8.881784197001252e-16,
+          "max_vorticity": 0.9239929184117739,
+          "mean_current_magnitude": 0.09301171271368641,
           "mean_momentum_density": 0.30989726445193083,
+          "scrambling_otoc": 0.1714914755516335,
           "step": 11,
-          "total_population": 200.80354066671904
+          "total_population": 200.80354066671904,
+          "vortex_count": 30
         },
         {
           "entanglement_entropy": 0.6925757010016689,
           "ffs_population": 63.87953822686766,
           "living_population": 68.35492878670676,
           "max_norm_error": 8.881784197001252e-16,
+          "max_vorticity": 0.927618653618594,
+          "mean_current_magnitude": 0.07691509365075844,
           "mean_momentum_density": 0.35591986113727825,
+          "scrambling_otoc": 0.1652377924597121,
           "step": 12,
-          "total_population": 196.11400524044205
+          "total_population": 196.11400524044205,
+          "vortex_count": 25
         }
       ],
       "max_norm_error": 8.881784197001252e-16,
@@ -350,7 +398,7 @@
       "total_steps": 12
     },
     {
-      "elapsed_us": 1742,
+      "elapsed_us": 2557,
       "entanglement_entropy": 0.6930313134821877,
       "final_ffs_population": 68.84867829557248,
       "final_population": 200.716698470184,
@@ -360,72 +408,104 @@
           "ffs_population": 2.001601098902592,
           "living_population": 129.86641907570868,
           "max_norm_error": 2.220446049250313e-16,
+          "max_vorticity": 0.24976973027453606,
+          "mean_current_magnitude": 0.044495382784161736,
           "mean_momentum_density": 0.9779545420562,
+          "scrambling_otoc": 0.16237750758219943,
           "step": 1,
-          "total_population": 133.86962127351384
+          "total_population": 133.86962127351384,
+          "vortex_count": 8
         },
         {
           "entanglement_entropy": 0.6930313134821877,
           "ffs_population": 15.611644251308833,
           "living_population": 116.25637592330244,
           "max_norm_error": 2.220446049250313e-16,
+          "max_vorticity": 0.6153749109085066,
+          "mean_current_magnitude": 0.06449681277964692,
           "mean_momentum_density": 0.8573844899875475,
+          "scrambling_otoc": 0.15329476035238687,
           "step": 2,
-          "total_population": 147.47966442592008
+          "total_population": 147.47966442592008,
+          "vortex_count": 24
         },
         {
           "entanglement_entropy": 0.6930313134821877,
           "ffs_population": 29.322746892236868,
           "living_population": 102.54527328237445,
           "max_norm_error": 2.220446049250313e-16,
+          "max_vorticity": 0.5827621478039536,
+          "mean_current_magnitude": 0.059750962601464175,
           "mean_momentum_density": 0.7570536484798623,
+          "scrambling_otoc": 0.14762864498642925,
           "step": 3,
-          "total_population": 161.1907670668482
+          "total_population": 161.1907670668482,
+          "vortex_count": 20
         },
         {
           "entanglement_entropy": 0.6930313134821877,
           "ffs_population": 48.444215620378216,
           "living_population": 83.42380455423312,
           "max_norm_error": 3.3306690738754696e-16,
+          "max_vorticity": 0.9724764380061803,
+          "mean_current_magnitude": 0.0778209557959451,
           "mean_momentum_density": 0.6122745693899735,
+          "scrambling_otoc": 0.1478431696670224,
           "step": 4,
-          "total_population": 180.31223579498953
+          "total_population": 180.31223579498953,
+          "vortex_count": 24
         },
         {
           "entanglement_entropy": 0.6930313134821877,
           "ffs_population": 43.267643155784924,
           "living_population": 88.60037701882646,
           "max_norm_error": 4.440892098500626e-16,
+          "max_vorticity": 0.48200763370341093,
+          "mean_current_magnitude": 0.04493888027082835,
           "mean_momentum_density": 0.4836770306120832,
+          "scrambling_otoc": 0.16158170299947616,
           "step": 5,
-          "total_population": 175.1356633303962
+          "total_population": 175.1356633303962,
+          "vortex_count": 24
         },
         {
           "entanglement_entropy": 0.6930313134821877,
           "ffs_population": 93.88050656136654,
           "living_population": 37.98751361324487,
           "max_norm_error": 4.440892098500626e-16,
+          "max_vorticity": 1.8120826077574232,
+          "mean_current_magnitude": 0.12369310421010023,
           "mean_momentum_density": 0.2472874902470066,
+          "scrambling_otoc": 0.16029416677493377,
           "step": 6,
-          "total_population": 225.74852673597806
+          "total_population": 225.74852673597806,
+          "vortex_count": 36
         },
         {
           "entanglement_entropy": 0.6930313134821877,
           "ffs_population": 41.1799428347167,
           "living_population": 90.68807733989475,
           "max_norm_error": 4.440892098500626e-16,
+          "max_vorticity": 0.7116764109783851,
+          "mean_current_magnitude": 0.055905099828933456,
           "mean_momentum_density": 0.31777335240598675,
+          "scrambling_otoc": 0.167211862086241,
           "step": 7,
-          "total_population": 173.04796300932816
+          "total_population": 173.04796300932816,
+          "vortex_count": 28
         },
         {
           "entanglement_entropy": 0.6930313134821877,
           "ffs_population": 68.84867829557248,
           "living_population": 63.01934187903889,
           "max_norm_error": 4.440892098500626e-16,
+          "max_vorticity": 1.3361850326268374,
+          "mean_current_magnitude": 0.10477615680305591,
           "mean_momentum_density": 0.30805582709353035,
+          "scrambling_otoc": 0.16079857531231634,
           "step": 8,
-          "total_population": 200.716698470184
+          "total_population": 200.716698470184,
+          "vortex_count": 32
         }
       ],
       "max_norm_error": 4.440892098500626e-16,
@@ -434,7 +514,7 @@
       "total_steps": 8
     },
     {
-      "elapsed_us": 1716,
+      "elapsed_us": 2048,
       "entanglement_entropy": 0.6929736215731916,
       "final_ffs_population": 57.064179650922,
       "final_population": 191.73880251380075,
@@ -444,90 +524,130 @@
           "ffs_population": 0.0,
           "living_population": 125.86026780910016,
           "max_norm_error": 2.220446049250313e-16,
+          "max_vorticity": 0.1716216136503654,
+          "mean_current_magnitude": 0.0165173457719822,
           "mean_momentum_density": 0.9676844838128983,
+          "scrambling_otoc": 0.16985658494293088,
           "step": 1,
-          "total_population": 125.86026780910016
+          "total_population": 125.86026780910016,
+          "vortex_count": 8
         },
         {
           "entanglement_entropy": 0.6930555230695913,
           "ffs_population": 0.16748239968602593,
           "living_population": 130.23256670472497,
           "max_norm_error": 4.440892098500626e-16,
+          "max_vorticity": 0.24827224807271123,
+          "mean_current_magnitude": 0.06242503820189712,
           "mean_momentum_density": 0.9569262922908196,
+          "scrambling_otoc": 0.16771544313928144,
           "step": 2,
-          "total_population": 130.56753150409705
+          "total_population": 130.56753150409705,
+          "vortex_count": 8
         },
         {
           "entanglement_entropy": 0.6928169194644354,
           "ffs_population": 28.309807816976054,
           "living_population": 100.5443019293062,
           "max_norm_error": 2.220446049250313e-16,
+          "max_vorticity": 0.4866737777086288,
+          "mean_current_magnitude": 0.12046596396696976,
           "mean_momentum_density": 0.7462799141748795,
+          "scrambling_otoc": 0.15533904240045104,
           "step": 3,
-          "total_population": 157.1639175632583
+          "total_population": 157.1639175632583,
+          "vortex_count": 16
         },
         {
           "entanglement_entropy": 0.6929332351367274,
           "ffs_population": 28.07192350198984,
           "living_population": 106.88519423066619,
           "max_norm_error": 4.440892098500626e-16,
+          "max_vorticity": 0.2446596079421679,
+          "mean_current_magnitude": 0.07931428179134069,
           "mean_momentum_density": 0.707653217885022,
+          "scrambling_otoc": 0.15683113517968464,
           "step": 4,
-          "total_population": 163.02904123464583
+          "total_population": 163.02904123464583,
+          "vortex_count": 16
         },
         {
           "entanglement_entropy": 0.6931471268873102,
           "ffs_population": 55.833526982426,
           "living_population": 76.2887437896073,
           "max_norm_error": 4.440892098500626e-16,
+          "max_vorticity": 0.5922469327757262,
+          "mean_current_magnitude": 0.111793008020362,
           "mean_momentum_density": 0.5164703161785312,
+          "scrambling_otoc": 0.16053292595743185,
           "step": 5,
-          "total_population": 187.95579775445935
+          "total_population": 187.95579775445935,
+          "vortex_count": 40
         },
         {
           "entanglement_entropy": 0.6929736215731916,
           "ffs_population": 55.683262552271586,
           "living_population": 78.99136031060706,
           "max_norm_error": 6.661338147750939e-16,
+          "max_vorticity": 0.5656951334641335,
+          "mean_current_magnitude": 0.08285284205944239,
           "mean_momentum_density": 0.3931718415379552,
+          "scrambling_otoc": 0.16370628916558275,
           "step": 6,
-          "total_population": 190.3578854151503
+          "total_population": 190.3578854151503,
+          "vortex_count": 40
         },
         {
           "entanglement_entropy": 0.6929736215731916,
           "ffs_population": 89.24625752795664,
           "living_population": 45.42836533492201,
           "max_norm_error": 6.661338147750939e-16,
+          "max_vorticity": 0.9456308876644475,
+          "mean_current_magnitude": 0.1372089452230498,
           "mean_momentum_density": 0.2338116418026859,
+          "scrambling_otoc": 0.16485522803183958,
           "step": 7,
-          "total_population": 223.92088039083518
+          "total_population": 223.92088039083518,
+          "vortex_count": 32
         },
         {
           "entanglement_entropy": 0.6929736215731916,
           "ffs_population": 45.584450151175055,
           "living_population": 89.09017271170357,
           "max_norm_error": 6.661338147750939e-16,
+          "max_vorticity": 0.6513738166515752,
+          "mean_current_magnitude": 0.0915756687533249,
           "mean_momentum_density": 0.3802005385865766,
+          "scrambling_otoc": 0.1623059845652665,
           "step": 8,
-          "total_population": 180.25907301405363
+          "total_population": 180.25907301405363,
+          "vortex_count": 32
         },
         {
           "entanglement_entropy": 0.6929736215731916,
           "ffs_population": 78.17636795711005,
           "living_population": 56.49825490576861,
           "max_norm_error": 6.661338147750939e-16,
+          "max_vorticity": 1.2798721591021156,
+          "mean_current_magnitude": 0.16028578873608068,
           "mean_momentum_density": 0.24528864690786029,
+          "scrambling_otoc": 0.16384271664095373,
           "step": 9,
-          "total_population": 212.85099081998868
+          "total_population": 212.85099081998868,
+          "vortex_count": 40
         },
         {
           "entanglement_entropy": 0.6929736215731916,
           "ffs_population": 57.064179650922,
           "living_population": 77.61044321195664,
           "max_norm_error": 8.881784197001252e-16,
+          "max_vorticity": 0.672835162123403,
+          "mean_current_magnitude": 0.09239683116712413,
           "mean_momentum_density": 0.39631789641274096,
+          "scrambling_otoc": 0.1636546942065335,
           "step": 10,
-          "total_population": 191.73880251380075
+          "total_population": 191.73880251380075,
+          "vortex_count": 40
         }
       ],
       "max_norm_error": 8.881784197001252e-16,
@@ -536,7 +656,7 @@
       "total_steps": 10
     },
     {
-      "elapsed_us": 14495,
+      "elapsed_us": 13473,
       "entanglement_entropy": 0.6931460216059571,
       "final_ffs_population": 149.87202562515415,
       "final_population": 435.7381715533318,
@@ -546,150 +666,524 @@
           "ffs_population": 0.0,
           "living_population": 286.1392100106176,
           "max_norm_error": 4.440892098500626e-16,
+          "max_vorticity": 0.09525077219709673,
+          "mean_current_magnitude": 0.005002344657211735,
           "mean_momentum_density": 0.997159465218274,
+          "scrambling_otoc": 0.1669044574083461,
           "step": 1,
-          "total_population": 286.1392100106176
+          "total_population": 286.1392100106176,
+          "vortex_count": 0
         },
         {
           "entanglement_entropy": 0.6931471773085727,
           "ffs_population": 0.8142544680179313,
           "living_population": 285.4640279908409,
           "max_norm_error": 6.661338147750939e-16,
+          "max_vorticity": 0.13031204012390543,
+          "mean_current_magnitude": 0.00534877328201312,
           "mean_momentum_density": 0.9910945180887482,
+          "scrambling_otoc": 0.16728010689611106,
           "step": 2,
-          "total_population": 287.09253692687685
+          "total_population": 287.09253692687685,
+          "vortex_count": 0
         },
         {
           "entanglement_entropy": 0.6931465210508259,
           "ffs_population": 3.9676940868845763,
           "living_population": 282.0052380962042,
           "max_norm_error": 4.440892098500626e-16,
+          "max_vorticity": 0.13954604831795658,
+          "mean_current_magnitude": 0.004698298774037412,
           "mean_momentum_density": 0.975730892577026,
+          "scrambling_otoc": 0.1685548866935092,
           "step": 3,
-          "total_population": 289.94062626997356
+          "total_population": 289.94062626997356,
+          "vortex_count": 0
         },
         {
           "entanglement_entropy": 0.6931467856298457,
           "ffs_population": 13.028302214158417,
           "living_population": 273.01884385999216,
           "max_norm_error": 4.440892098500626e-16,
+          "max_vorticity": 0.16495959691213447,
+          "mean_current_magnitude": 0.006952855361671831,
           "mean_momentum_density": 0.943619484081401,
+          "scrambling_otoc": 0.17212055766844375,
           "step": 4,
-          "total_population": 299.0754482883095
+          "total_population": 299.0754482883095,
+          "vortex_count": 3
         },
         {
           "entanglement_entropy": 0.693147180160682,
           "ffs_population": 25.69117185886069,
           "living_population": 260.6021058299718,
           "max_norm_error": 4.440892098500626e-16,
+          "max_vorticity": 0.27833989652437074,
+          "mean_current_magnitude": 0.009028665545702606,
           "mean_momentum_density": 0.8883538143891826,
+          "scrambling_otoc": 0.17706787743576172,
           "step": 5,
-          "total_population": 311.98444954769434
+          "total_population": 311.98444954769434,
+          "vortex_count": 9
         },
         {
           "entanglement_entropy": 0.69314630892568,
           "ffs_population": 38.84850400451977,
           "living_population": 247.07535033374955,
           "max_norm_error": 4.440892098500626e-16,
+          "max_vorticity": 0.275912096603953,
+          "mean_current_magnitude": 0.008821538909449915,
           "mean_momentum_density": 0.8323662655395627,
+          "scrambling_otoc": 0.1785686356997641,
           "step": 6,
-          "total_population": 324.77235834279026
+          "total_population": 324.77235834279026,
+          "vortex_count": 6
         },
         {
           "entanglement_entropy": 0.69314630892568,
           "ffs_population": 56.57658325613805,
           "living_population": 229.34727108213127,
           "max_norm_error": 4.440892098500626e-16,
+          "max_vorticity": 0.24697599951521904,
+          "mean_current_magnitude": 0.007157763525368043,
           "mean_momentum_density": 0.7416234934863498,
+          "scrambling_otoc": 0.17951779504227686,
           "step": 7,
-          "total_population": 342.5004375944087
+          "total_population": 342.5004375944087,
+          "vortex_count": 6
         },
         {
           "entanglement_entropy": 0.6931471803976723,
           "ffs_population": 77.59125439483424,
           "living_population": 208.70495575663097,
           "max_norm_error": 6.661338147750939e-16,
+          "max_vorticity": 0.3129895514547575,
+          "mean_current_magnitude": 0.011433616559289103,
           "mean_momentum_density": 0.6377724281770326,
+          "scrambling_otoc": 0.17898750650345774,
           "step": 8,
-          "total_population": 363.88746454630075
+          "total_population": 363.88746454630075,
+          "vortex_count": 12
         },
         {
           "entanglement_entropy": 0.6931471803976723,
           "ffs_population": 96.40620996618938,
           "living_population": 189.890000185276,
           "max_norm_error": 6.661338147750939e-16,
+          "max_vorticity": 0.40286014351907795,
+          "mean_current_magnitude": 0.011632821474668643,
           "mean_momentum_density": 0.52239122754723,
+          "scrambling_otoc": 0.17509805944499726,
           "step": 9,
-          "total_population": 382.7024201176561
+          "total_population": 382.7024201176561,
+          "vortex_count": 13
         },
         {
           "entanglement_entropy": 0.6931471507846348,
           "ffs_population": 125.9094120859085,
           "living_population": 160.3221066738448,
           "max_norm_error": 8.881784197001252e-16,
+          "max_vorticity": 0.32487295427329344,
+          "mean_current_magnitude": 0.011181605149852744,
           "mean_momentum_density": 0.39818793805451125,
+          "scrambling_otoc": 0.17454307012192014,
           "step": 10,
-          "total_population": 412.1409308456632
+          "total_population": 412.1409308456632,
+          "vortex_count": 11
         },
         {
           "entanglement_entropy": 0.6931471507846348,
           "ffs_population": 128.4201976229501,
           "living_population": 157.81132113680312,
           "max_norm_error": 8.881784197001252e-16,
+          "max_vorticity": 0.3339139566655478,
+          "mean_current_magnitude": 0.00994027390011657,
           "mean_momentum_density": 0.3112419852852154,
+          "scrambling_otoc": 0.1672431464054501,
           "step": 11,
-          "total_population": 414.6517163827044
+          "total_population": 414.6517163827044,
+          "vortex_count": 12
         },
         {
           "entanglement_entropy": 0.6931466073298871,
           "ffs_population": 162.26669802008172,
           "living_population": 123.72844660260101,
           "max_norm_error": 1.1102230246251565e-15,
+          "max_vorticity": 0.3291408020861265,
+          "mean_current_magnitude": 0.010240217380029752,
           "mean_momentum_density": 0.2082332448036941,
+          "scrambling_otoc": 0.1675888194305819,
           "step": 12,
-          "total_population": 448.26184264276486
+          "total_population": 448.26184264276486,
+          "vortex_count": 12
         },
         {
           "entanglement_entropy": 0.6931466073298871,
           "ffs_population": 122.72811075417013,
           "living_population": 163.26703386851264,
           "max_norm_error": 1.1102230246251565e-15,
+          "max_vorticity": 0.3959101016154651,
+          "mean_current_magnitude": 0.009371715934961717,
           "mean_momentum_density": 0.2484609536130868,
+          "scrambling_otoc": 0.16631625847601406,
           "step": 13,
-          "total_population": 408.7232553768533
+          "total_population": 408.7232553768533,
+          "vortex_count": 12
         },
         {
           "entanglement_entropy": 0.6931471213205606,
           "ffs_population": 155.5140682990786,
           "living_population": 130.88588052163192,
           "max_norm_error": 1.1102230246251565e-15,
+          "max_vorticity": 0.43088851530936323,
+          "mean_current_magnitude": 0.011374727163902991,
           "mean_momentum_density": 0.20647115183116566,
+          "scrambling_otoc": 0.16550533377635956,
           "step": 14,
-          "total_population": 441.91401711978915
+          "total_population": 441.91401711978915,
+          "vortex_count": 13
         },
         {
           "entanglement_entropy": 0.6931471213205606,
           "ffs_population": 132.176369908808,
           "living_population": 154.2235789119025,
           "max_norm_error": 1.1102230246251565e-15,
+          "max_vorticity": 0.3718559975054152,
+          "mean_current_magnitude": 0.00966715605473191,
           "mean_momentum_density": 0.22409836985763715,
+          "scrambling_otoc": 0.16853542917564887,
           "step": 15,
-          "total_population": 418.5763187295186
+          "total_population": 418.5763187295186,
+          "vortex_count": 14
         },
         {
           "entanglement_entropy": 0.6931460216059571,
           "ffs_population": 149.87202562515415,
           "living_population": 135.99412030302378,
           "max_norm_error": 1.1102230246251565e-15,
+          "max_vorticity": 0.3277982074150999,
+          "mean_current_magnitude": 0.01039549162444747,
           "mean_momentum_density": 0.21624423997912678,
+          "scrambling_otoc": 0.16493432216983137,
           "step": 16,
-          "total_population": 435.7381715533318
+          "total_population": 435.7381715533318,
+          "vortex_count": 11
         }
       ],
       "max_norm_error": 1.1102230246251565e-15,
       "mean_momentum_density": 0.21624423997912678,
       "scenario": "Quantum Glider Beam-Splitter Collision",
       "total_steps": 16
+    },
+    {
+      "elapsed_us": 4104,
+      "entanglement_entropy": 0.6903650052122304,
+      "final_ffs_population": 0.0,
+      "final_population": 206.46529847868652,
+      "history": [
+        {
+          "entanglement_entropy": 0.6737145112294538,
+          "ffs_population": 0.0,
+          "living_population": 64.7034346443995,
+          "max_norm_error": 6.661338147750939e-16,
+          "max_vorticity": 0.24553395843383663,
+          "mean_current_magnitude": 0.05273259913711494,
+          "mean_momentum_density": 0.22088004405744116,
+          "scrambling_otoc": 0.07503820031353711,
+          "step": 1,
+          "total_population": 64.7034346443995,
+          "vortex_count": 6
+        },
+        {
+          "entanglement_entropy": 0.6824514666685676,
+          "ffs_population": 0.0,
+          "living_population": 93.16587413737028,
+          "max_norm_error": 6.661338147750939e-16,
+          "max_vorticity": 0.49883016445405626,
+          "mean_current_magnitude": 0.10849355038595691,
+          "mean_momentum_density": 0.290885863825284,
+          "scrambling_otoc": 0.089528102755835,
+          "step": 2,
+          "total_population": 93.16587413737028,
+          "vortex_count": 42
+        },
+        {
+          "entanglement_entropy": 0.6828221791740721,
+          "ffs_population": 0.0,
+          "living_population": 98.40166334513768,
+          "max_norm_error": 8.881784197001252e-16,
+          "max_vorticity": 0.57131029243714,
+          "mean_current_magnitude": 0.137217296352805,
+          "mean_momentum_density": 0.2796669470552206,
+          "scrambling_otoc": 0.08492539740581603,
+          "step": 3,
+          "total_population": 98.40166334513768,
+          "vortex_count": 68
+        },
+        {
+          "entanglement_entropy": 0.6829980597856644,
+          "ffs_population": 0.0,
+          "living_population": 113.71105861693377,
+          "max_norm_error": 8.881784197001252e-16,
+          "max_vorticity": 0.7354450593938004,
+          "mean_current_magnitude": 0.1650704970770221,
+          "mean_momentum_density": 0.2985741285133419,
+          "scrambling_otoc": 0.08958400653443935,
+          "step": 4,
+          "total_population": 113.71105861693377,
+          "vortex_count": 82
+        },
+        {
+          "entanglement_entropy": 0.6816187649921086,
+          "ffs_population": 0.0,
+          "living_population": 130.14515684940892,
+          "max_norm_error": 8.881784197001252e-16,
+          "max_vorticity": 0.7557779997545441,
+          "mean_current_magnitude": 0.18916996296122676,
+          "mean_momentum_density": 0.4446067230859,
+          "scrambling_otoc": 0.09368194691137717,
+          "step": 5,
+          "total_population": 130.14515684940892,
+          "vortex_count": 102
+        },
+        {
+          "entanglement_entropy": 0.6844834453621305,
+          "ffs_population": 0.0,
+          "living_population": 142.85264438929596,
+          "max_norm_error": 8.881784197001252e-16,
+          "max_vorticity": 0.7968305473286454,
+          "mean_current_magnitude": 0.2065433946696423,
+          "mean_momentum_density": 0.32075449310090515,
+          "scrambling_otoc": 0.09714758045480704,
+          "step": 6,
+          "total_population": 142.85264438929596,
+          "vortex_count": 122
+        },
+        {
+          "entanglement_entropy": 0.6883336105226429,
+          "ffs_population": 0.0,
+          "living_population": 165.67520460838603,
+          "max_norm_error": 9.992007221626409e-16,
+          "max_vorticity": 0.8794977822608092,
+          "mean_current_magnitude": 0.24422669509750114,
+          "mean_momentum_density": 0.3609339027166182,
+          "scrambling_otoc": 0.10562745600808411,
+          "step": 7,
+          "total_population": 165.67520460838603,
+          "vortex_count": 130
+        },
+        {
+          "entanglement_entropy": 0.6885520199647353,
+          "ffs_population": 0.0,
+          "living_population": 178.033595463072,
+          "max_norm_error": 1.1102230246251565e-15,
+          "max_vorticity": 0.9905343725082212,
+          "mean_current_magnitude": 0.26923170230554366,
+          "mean_momentum_density": 0.36120789946219234,
+          "scrambling_otoc": 0.10987462924233263,
+          "step": 8,
+          "total_population": 178.033595463072,
+          "vortex_count": 176
+        },
+        {
+          "entanglement_entropy": 0.6885107750285906,
+          "ffs_population": 0.0,
+          "living_population": 190.88679064816262,
+          "max_norm_error": 1.1102230246251565e-15,
+          "max_vorticity": 0.7907301956893934,
+          "mean_current_magnitude": 0.3069824516728008,
+          "mean_momentum_density": 0.4430202369102757,
+          "scrambling_otoc": 0.11499617998060006,
+          "step": 9,
+          "total_population": 190.88679064816262,
+          "vortex_count": 170
+        },
+        {
+          "entanglement_entropy": 0.6903650052122304,
+          "ffs_population": 0.0,
+          "living_population": 206.46529847868652,
+          "max_norm_error": 1.1102230246251565e-15,
+          "max_vorticity": 1.0417038514432169,
+          "mean_current_magnitude": 0.3169639133748665,
+          "mean_momentum_density": 0.44257003332982414,
+          "scrambling_otoc": 0.12104914187244922,
+          "step": 10,
+          "total_population": 206.46529847868652,
+          "vortex_count": 170
+        }
+      ],
+      "max_norm_error": 1.1102230246251565e-15,
+      "mean_momentum_density": 0.44257003332982414,
+      "scenario": "Quantum Vortex Dipole",
+      "total_steps": 10
+    },
+    {
+      "elapsed_us": 4709,
+      "entanglement_entropy": 0.6931058804182306,
+      "final_ffs_population": 0.0,
+      "final_population": 212.25559595981298,
+      "history": [
+        {
+          "entanglement_entropy": 0.6931289813507691,
+          "ffs_population": 0.0,
+          "living_population": 36.01698251849243,
+          "max_norm_error": 4.440892098500626e-16,
+          "max_vorticity": 0.09232427450212924,
+          "mean_current_magnitude": 0.011953818445334653,
+          "mean_momentum_density": 0.029383754877868325,
+          "scrambling_otoc": 0.16805787606322237,
+          "step": 1,
+          "total_population": 36.01698251849243,
+          "vortex_count": 0
+        },
+        {
+          "entanglement_entropy": 0.6926805071250299,
+          "ffs_population": 0.0,
+          "living_population": 25.641208091773212,
+          "max_norm_error": 6.661338147750939e-16,
+          "max_vorticity": 0.18369670570602203,
+          "mean_current_magnitude": 0.015245182251671678,
+          "mean_momentum_density": 0.158571131974433,
+          "scrambling_otoc": 0.17586652308463294,
+          "step": 2,
+          "total_population": 25.641208091773212,
+          "vortex_count": 2
+        },
+        {
+          "entanglement_entropy": 0.6919532217843132,
+          "ffs_population": 0.0,
+          "living_population": 36.2424141636199,
+          "max_norm_error": 8.881784197001252e-16,
+          "max_vorticity": 0.2022327383877477,
+          "mean_current_magnitude": 0.019950886748151927,
+          "mean_momentum_density": 0.03699949433269358,
+          "scrambling_otoc": 0.1736506186922825,
+          "step": 3,
+          "total_population": 36.2424141636199,
+          "vortex_count": 4
+        },
+        {
+          "entanglement_entropy": 0.6923264266158728,
+          "ffs_population": 0.0,
+          "living_population": 93.31443778143921,
+          "max_norm_error": 1.1102230246251565e-15,
+          "max_vorticity": 0.5147554152080523,
+          "mean_current_magnitude": 0.05075407523502344,
+          "mean_momentum_density": 0.23267175722788921,
+          "scrambling_otoc": 0.1671213172782062,
+          "step": 4,
+          "total_population": 93.31443778143921,
+          "vortex_count": 12
+        },
+        {
+          "entanglement_entropy": 0.6927637760560735,
+          "ffs_population": 0.0,
+          "living_population": 157.879588204806,
+          "max_norm_error": 1.1102230246251565e-15,
+          "max_vorticity": 0.45669086713684315,
+          "mean_current_magnitude": 0.09528933412627802,
+          "mean_momentum_density": 0.2027786818136752,
+          "scrambling_otoc": 0.1647093630246894,
+          "step": 5,
+          "total_population": 157.879588204806,
+          "vortex_count": 38
+        },
+        {
+          "entanglement_entropy": 0.6931242077581103,
+          "ffs_population": 0.0,
+          "living_population": 163.68000414242957,
+          "max_norm_error": 1.1102230246251565e-15,
+          "max_vorticity": 0.40457435803125813,
+          "mean_current_magnitude": 0.12888582891105949,
+          "mean_momentum_density": 0.5133227386903113,
+          "scrambling_otoc": 0.16371983525738432,
+          "step": 6,
+          "total_population": 163.68000414242957,
+          "vortex_count": 58
+        },
+        {
+          "entanglement_entropy": 0.6929536583137559,
+          "ffs_population": 0.0,
+          "living_population": 201.36829067097838,
+          "max_norm_error": 1.1102230246251565e-15,
+          "max_vorticity": 0.5568628234785797,
+          "mean_current_magnitude": 0.18529302572151707,
+          "mean_momentum_density": 0.8313638742403918,
+          "scrambling_otoc": 0.16348684461019425,
+          "step": 7,
+          "total_population": 201.36829067097838,
+          "vortex_count": 124
+        },
+        {
+          "entanglement_entropy": 0.6929826870078195,
+          "ffs_population": 0.0,
+          "living_population": 173.44545395577492,
+          "max_norm_error": 1.3322676295501878e-15,
+          "max_vorticity": 0.6515933917156193,
+          "mean_current_magnitude": 0.2224218912190569,
+          "mean_momentum_density": 0.6347407377569071,
+          "scrambling_otoc": 0.17551358025528763,
+          "step": 8,
+          "total_population": 173.44545395577492,
+          "vortex_count": 146
+        },
+        {
+          "entanglement_entropy": 0.6931444747581554,
+          "ffs_population": 0.0,
+          "living_population": 191.25372855714645,
+          "max_norm_error": 1.1102230246251565e-15,
+          "max_vorticity": 0.5322169943458497,
+          "mean_current_magnitude": 0.22035942093735766,
+          "mean_momentum_density": 0.5512998247471428,
+          "scrambling_otoc": 0.16387121191585546,
+          "step": 9,
+          "total_population": 191.25372855714645,
+          "vortex_count": 146
+        },
+        {
+          "entanglement_entropy": 0.6929016094479544,
+          "ffs_population": 0.0,
+          "living_population": 214.2189616812109,
+          "max_norm_error": 1.3322676295501878e-15,
+          "max_vorticity": 0.6686438576963076,
+          "mean_current_magnitude": 0.30291411221618697,
+          "mean_momentum_density": 0.5608608802228006,
+          "scrambling_otoc": 0.16439176992580046,
+          "step": 10,
+          "total_population": 214.2189616812109,
+          "vortex_count": 204
+        },
+        {
+          "entanglement_entropy": 0.692483914276822,
+          "ffs_population": 0.0,
+          "living_population": 203.8766422134946,
+          "max_norm_error": 1.1102230246251565e-15,
+          "max_vorticity": 0.5188567144128764,
+          "mean_current_magnitude": 0.26472086952383656,
+          "mean_momentum_density": 0.5439348364653145,
+          "scrambling_otoc": 0.1677912485469698,
+          "step": 11,
+          "total_population": 203.8766422134946,
+          "vortex_count": 180
+        },
+        {
+          "entanglement_entropy": 0.6931058804182306,
+          "ffs_population": 0.0,
+          "living_population": 212.25559595981298,
+          "max_norm_error": 1.3322676295501878e-15,
+          "max_vorticity": 0.9085990949019184,
+          "mean_current_magnitude": 0.3092616976453156,
+          "mean_momentum_density": 0.5314285211647023,
+          "scrambling_otoc": 0.16100902989665083,
+          "step": 12,
+          "total_population": 212.25559595981298,
+          "vortex_count": 180
+        }
+      ],
+      "max_norm_error": 1.3322676295501878e-15,
+      "mean_momentum_density": 0.5314285211647023,
+      "scenario": "Floquet Kicked Quantum Chaos",
+      "total_steps": 12
     }
   ],
   "timestamp": "2026-10-19T12:00:00Z"

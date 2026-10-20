@@ -188,3 +188,74 @@ fn test_scale_to_32x32_and_64x64() {
     }
 }
 
+#[test]
+fn test_multi_rule_unitarity_invariance() {
+    use t1000_conway::QcaRuleKind;
+
+    let rules = [
+        QcaRuleKind::B3S23Holonomy,
+        QcaRuleKind::HighLifeReplicator,
+        QcaRuleKind::GrossPitaevskiiBec,
+        QcaRuleKind::FloquetKickedChaos,
+        QcaRuleKind::DiracZitterbewegung,
+        QcaRuleKind::CyclicPredatorPrey,
+    ];
+
+    for &rule in &rules {
+        let mut params = HolonomyParams::default();
+        params.rule = rule;
+        params.chaos_k = 2.5;
+        params.gauge_flux = 0.25;
+        params.non_linear_g = 1.5;
+
+        for nbr in [0.0, 1.2, 2.0, 3.0, 4.5, 6.0, 7.8] {
+            let u = build_holonomy_unitary(nbr, &params);
+            let err = u.unitarity_error();
+            assert!(
+                err < 1e-12,
+                "Unitarity violated for rule {:?} at nbr {}: {:.2e}",
+                rule,
+                nbr,
+                err
+            );
+        }
+    }
+}
+
+#[test]
+fn test_quantum_vortex_dipole_current_and_circulation() {
+    let lattice = Lattice2D::new(16, 16, BoundaryCondition::Toroidal);
+    let mut sim = QuantumConwaySimulator::new(lattice, HolonomyParams::default());
+    PatternFactory::inject_pattern(PatternType::VortexDipole, &sim.lattice, &mut sim.state, 4, 8);
+
+    let telem = sim.step();
+    assert!(telem.max_norm_error < 1e-12);
+    assert!(
+        telem.max_vorticity > 0.05,
+        "Vortex dipole should produce non-zero vorticity: {:.4}",
+        telem.max_vorticity
+    );
+    assert!(
+        telem.mean_current_magnitude > 0.0,
+        "Current magnitude should be non-zero"
+    );
+}
+
+#[test]
+fn test_floquet_chaos_scrambling() {
+    let lattice = Lattice2D::new(16, 16, BoundaryCondition::Toroidal);
+    let mut params = HolonomyParams::default();
+    params.rule = t1000_conway::QcaRuleKind::FloquetKickedChaos;
+    params.chaos_k = 2.0;
+
+    let mut sim = QuantumConwaySimulator::new(lattice, params);
+    PatternFactory::inject_pattern(PatternType::Glider, &sim.lattice, &mut sim.state, 2, 2);
+
+    for _ in 0..6 {
+        let telem = sim.step();
+        assert!(telem.max_norm_error < 1e-12);
+        assert!(telem.scrambling_otoc >= 0.0);
+    }
+}
+
+

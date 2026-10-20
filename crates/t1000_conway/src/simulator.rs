@@ -30,6 +30,14 @@ pub struct StepTelemetry {
     pub entanglement_entropy: f64,
     /// Average momentum density in central Fermi sea region.
     pub mean_momentum_density: f64,
+    /// Maximum absolute local quantum vorticity |omega|.
+    pub max_vorticity: f64,
+    /// Number of identified quantized vortex cores (|omega| > 0.15).
+    pub vortex_count: usize,
+    /// Mean magnitude of quantum probability flux |j|.
+    pub mean_current_magnitude: f64,
+    /// Quantum scrambling operator non-commutativity proxy (OTOC).
+    pub scrambling_otoc: f64,
 }
 
 /// The main Quantum Conway's Game of Life simulation engine.
@@ -151,6 +159,31 @@ impl QuantumConwaySimulator {
 
         let entropy = self.compute_bipartite_entropy();
         let momentum_density = self.compute_mean_momentum_density();
+        let currents = self.compute_probability_current();
+        let vorticities = self.compute_vorticity(&currents);
+
+        let mut max_vort = 0.0f64;
+        let mut vortex_cnt = 0usize;
+        let mut current_mag_sum = 0.0f64;
+
+        for (curr, &vort) in currents.iter().zip(vorticities.iter()) {
+            let v_abs = vort.abs();
+            if v_abs > max_vort {
+                max_vort = v_abs;
+            }
+            if v_abs > 0.15 {
+                vortex_cnt += 1;
+            }
+            current_mag_sum += (curr[0] * curr[0] + curr[1] * curr[1]).sqrt();
+        }
+
+        let mean_current = if self.lattice.total_cells > 0 {
+            current_mag_sum / (self.lattice.total_cells as f64)
+        } else {
+            0.0
+        };
+
+        let scrambling = self.compute_scrambling_otoc();
 
         StepTelemetry {
             step: self.current_step,
@@ -160,6 +193,10 @@ impl QuantumConwaySimulator {
             max_norm_error: self.state.max_normalization_error(),
             entanglement_entropy: entropy,
             mean_momentum_density: momentum_density,
+            max_vorticity: max_vort,
+            vortex_count: vortex_cnt,
+            mean_current_magnitude: mean_current,
+            scrambling_otoc: scrambling,
         }
     }
 
@@ -223,6 +260,99 @@ impl QuantumConwaySimulator {
 
         if count > 0 {
             sum_density / (count as f64)
+        } else {
+            0.0
+        }
+    }
+
+    /// Compute quantum probability flux current vector field j(x,y) = [jx, jy].
+    pub fn compute_probability_current(&self) -> Vec<[f64; 2]> {
+        let w = self.lattice.width;
+        let h = self.lattice.height;
+        let mut currents = vec![[0.0, 0.0]; self.lattice.total_cells];
+
+        for y in 0..h {
+            for x in 0..w {
+                let idx = self.lattice.coord_to_idx(x, y);
+                let x_next = self.lattice.coord_to_idx((x + 1) % w, y);
+                let x_prev = self.lattice.coord_to_idx((x + w - 1) % w, y);
+                let y_next = self.lattice.coord_to_idx(x, (y + 1) % h);
+                let y_prev = self.lattice.coord_to_idx(x, (y + h - 1) % h);
+
+                let c1 = Complex64::new(self.state.re1[idx], self.state.im1[idx]);
+                let c2 = Complex64::new(self.state.re2[idx], self.state.im2[idx]);
+
+                let dc1_dx = Complex64::new(
+                    self.state.re1[x_next] - self.state.re1[x_prev],
+                    self.state.im1[x_next] - self.state.im1[x_prev],
+                ) * 0.5;
+                let dc2_dx = Complex64::new(
+                    self.state.re2[x_next] - self.state.re2[x_prev],
+                    self.state.im2[x_next] - self.state.im2[x_prev],
+                ) * 0.5;
+
+                let dc1_dy = Complex64::new(
+                    self.state.re1[y_next] - self.state.re1[y_prev],
+                    self.state.im1[y_next] - self.state.im1[y_prev],
+                ) * 0.5;
+                let dc2_dy = Complex64::new(
+                    self.state.re2[y_next] - self.state.re2[y_prev],
+                    self.state.im2[y_next] - self.state.im2[y_prev],
+                ) * 0.5;
+
+                let jx = (c1.conj() * dc1_dx + 2.0 * c2.conj() * dc2_dx).im;
+                let jy = (c1.conj() * dc1_dy + 2.0 * c2.conj() * dc2_dy).im;
+                currents[idx] = [jx, jy];
+            }
+        }
+        currents
+    }
+
+    /// Compute local quantum vorticity omega(x,y) = curl(j) = d(jy)/dx - d(jx)/dy.
+    pub fn compute_vorticity(&self, currents: &[[f64; 2]]) -> Vec<f64> {
+        let w = self.lattice.width;
+        let h = self.lattice.height;
+        let mut vort = vec![0.0; self.lattice.total_cells];
+
+        for y in 0..h {
+            for x in 0..w {
+                let idx = self.lattice.coord_to_idx(x, y);
+                let x_next = self.lattice.coord_to_idx((x + 1) % w, y);
+                let x_prev = self.lattice.coord_to_idx((x + w - 1) % w, y);
+                let y_next = self.lattice.coord_to_idx(x, (y + 1) % h);
+                let y_prev = self.lattice.coord_to_idx(x, (y + h - 1) % h);
+
+                let djy_dx = (currents[x_next][1] - currents[x_prev][1]) * 0.5;
+                let djx_dy = (currents[y_next][0] - currents[y_prev][0]) * 0.5;
+                vort[idx] = djy_dx - djx_dy;
+            }
+        }
+        vort
+    }
+
+    /// Compute quantum scrambling / operator non-commutativity proxy (OTOC).
+    pub fn compute_scrambling_otoc(&self) -> f64 {
+        let w = self.lattice.width as f64;
+        let h = self.lattice.height as f64;
+        let cx = w * 0.5;
+        let cy = h * 0.5;
+        let mut otoc_sum = 0.0f64;
+        let mut tot_weight = 0.0f64;
+
+        for y in 0..self.lattice.height {
+            for x in 0..self.lattice.width {
+                let idx = self.lattice.coord_to_idx(x, y);
+                let dens = self.state.cell_density(idx);
+                let dx = (x as f64) - cx;
+                let dy = (y as f64) - cy;
+                let r2 = dx * dx + dy * dy;
+                otoc_sum += dens * r2;
+                tot_weight += dens;
+            }
+        }
+
+        if tot_weight > 1e-9 {
+            (otoc_sum / tot_weight) / (w * h)
         } else {
             0.0
         }

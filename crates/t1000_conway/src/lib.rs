@@ -26,7 +26,7 @@ pub use collision::{
 };
 pub use holonomy::{
     build_holonomy_unitary, ffs_momentum_plateau, geometric_holonomy_phase, HolonomyParams,
-    HolonomyTransferMatrix,
+    HolonomyTransferMatrix, QcaRuleKind,
 };
 pub use lattice::{BoundaryCondition, Lattice2D};
 pub use patterns::{PatternFactory, PatternType};

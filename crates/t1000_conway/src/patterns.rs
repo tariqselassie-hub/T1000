@@ -29,6 +29,16 @@ pub enum PatternType {
     QuantumBeamSplitter,
     /// Period-15 oscillator (Pentadecathlon).
     Pentadecathlon,
+    /// Quantum Vortex Dipole: Counter-rotating phase vortex and anti-vortex pair.
+    VortexDipole,
+    /// HighLife B36/S23 Topological Replicator Seed.
+    HighLifeReplicator,
+    /// Ergodic Turbulent Quantum Soup with randomized phase distribution.
+    TurbulentSoup,
+    /// Relativistic Dirac wavepacket with momentum boost.
+    DiracWavepacket,
+    /// Belousov-Zhabotinsky spiral reaction seed.
+    BelousovSpiral,
 }
 
 /// Helper to instantiate canonical patterns onto 2D lattices.
@@ -57,6 +67,11 @@ impl PatternFactory {
                 Self::inject_glider_pair(lattice, state, x0, y0, std::f64::consts::PI * 0.5)
             }
             PatternType::Pentadecathlon => Self::inject_pentadecathlon(lattice, state, x0, y0),
+            PatternType::VortexDipole => Self::inject_vortex_dipole(lattice, state, x0, y0),
+            PatternType::HighLifeReplicator => Self::inject_highlife_replicator(lattice, state, x0, y0),
+            PatternType::TurbulentSoup => Self::inject_turbulent_soup(lattice, state, 42),
+            PatternType::DiracWavepacket => Self::inject_dirac_wavepacket(lattice, state, x0, y0),
+            PatternType::BelousovSpiral => Self::inject_belousov_spiral(lattice, state, x0, y0),
         }
     }
 
@@ -196,6 +211,165 @@ impl PatternFactory {
             let y = (y0 + dy) % lattice.height;
             let idx = lattice.coord_to_idx(x, y);
             state.set_cell_living(idx);
+        }
+    }
+
+    /// Quantum Vortex Dipole: Pair of counter-rotating phase vortices (+1 and -1).
+    pub fn inject_vortex_dipole(
+        lattice: &Lattice2D,
+        state: &mut QuantumCellStateSoA,
+        x0: usize,
+        y0: usize,
+    ) {
+        let cx1 = x0 as f64;
+        let cy1 = y0 as f64;
+        let cx2 = ((x0 + 6) % lattice.width) as f64;
+        let cy2 = y0 as f64;
+
+        for y in 0..lattice.height {
+            for x in 0..lattice.width {
+                let dx1 = (x as f64) - cx1;
+                let dy1 = (y as f64) - cy1;
+                let dx2 = (x as f64) - cx2;
+                let dy2 = (y as f64) - cy2;
+
+                let r1 = (dx1 * dx1 + dy1 * dy1).sqrt();
+                let r2 = (dx2 * dx2 + dy2 * dy2).sqrt();
+
+                if r1 < 6.0 || r2 < 6.0 {
+                    let theta1 = dy1.atan2(dx1);
+                    let theta2 = -dy2.atan2(dx2);
+                    let phase = theta1 + theta2;
+                    let envelope = ((-0.15 * r1.min(r2)).exp())
+                        * (1.0 - (-r1 * 0.8).exp())
+                        * (1.0 - (-r2 * 0.8).exp());
+
+                    let amp1 = Complex64::from_polar(envelope.clamp(0.0, 0.95), phase);
+                    let rem = (1.0 - amp1.norm_sqr()).max(0.0).sqrt();
+                    let amp0 = Complex64::new(rem, 0.0);
+
+                    let idx = lattice.coord_to_idx(x, y);
+                    state.set_cell_superposition(idx, amp0, amp1, Complex64::new(0.0, 0.0));
+                }
+            }
+        }
+    }
+
+    /// HighLife B36/S23 Topological Replicator Seed: 12-cell symmetric replicator.
+    pub fn inject_highlife_replicator(
+        lattice: &Lattice2D,
+        state: &mut QuantumCellStateSoA,
+        x0: usize,
+        y0: usize,
+    ) {
+        let coords = [
+            (1, 0), (2, 0), (3, 0),
+            (0, 1), (3, 1),
+            (0, 2), (3, 2),
+            (0, 3), (1, 3), (2, 3), (3, 3),
+            (2, 4),
+        ];
+        for (dx, dy) in coords {
+            let x = (x0 + dx) % lattice.width;
+            let y = (y0 + dy) % lattice.height;
+            let idx = lattice.coord_to_idx(x, y);
+            state.set_cell_living(idx);
+        }
+    }
+
+    /// Ergodic Turbulent Quantum Soup: Random coherent phases across lattice.
+    pub fn inject_turbulent_soup(
+        lattice: &Lattice2D,
+        state: &mut QuantumCellStateSoA,
+        seed: u64,
+    ) {
+        let mut rng = seed;
+        let mut next_f64 = || -> f64 {
+            rng = rng.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+            ((rng >> 32) as f64) / (u32::MAX as f64)
+        };
+
+        for i in 0..lattice.total_cells {
+            let p_alive = next_f64();
+            if p_alive > 0.65 {
+                let phase = next_f64() * 2.0 * std::f64::consts::PI;
+                let is_ffs = p_alive > 0.88;
+                if is_ffs {
+                    let amp2 = Complex64::from_polar(1.0, phase);
+                    state.set_cell_superposition(i, Complex64::new(0.0, 0.0), Complex64::new(0.0, 0.0), amp2);
+                } else {
+                    let amp1 = Complex64::from_polar(1.0, phase);
+                    state.set_cell_superposition(i, Complex64::new(0.0, 0.0), amp1, Complex64::new(0.0, 0.0));
+                }
+            } else {
+                state.set_cell_vacuum(i);
+            }
+        }
+    }
+
+    /// Relativistic Dirac wavepacket with momentum boost.
+    pub fn inject_dirac_wavepacket(
+        lattice: &Lattice2D,
+        state: &mut QuantumCellStateSoA,
+        x0: usize,
+        y0: usize,
+    ) {
+        let cx = x0 as f64;
+        let cy = y0 as f64;
+        let p_x = 0.8;
+        let p_y = 0.4;
+        let sigma = 3.5;
+
+        for y in 0..lattice.height {
+            for x in 0..lattice.width {
+                let dx = (x as f64) - cx;
+                let dy = (y as f64) - cy;
+                let r2 = dx * dx + dy * dy;
+                let envelope = (-r2 / (2.0 * sigma * sigma)).exp();
+
+                if envelope > 0.04 {
+                    let phase = p_x * dx + p_y * dy;
+                    let amp1 = Complex64::from_polar(envelope * 0.8, phase);
+                    let amp2 = Complex64::from_polar(envelope * 0.4, phase + std::f64::consts::PI * 0.5);
+                    let rem_sq = (1.0 - (amp1.norm_sqr() + amp2.norm_sqr())).max(0.0);
+                    let amp0 = Complex64::new(rem_sq.sqrt(), 0.0);
+
+                    let idx = lattice.coord_to_idx(x, y);
+                    state.set_cell_superposition(idx, amp0, amp1, amp2);
+                }
+            }
+        }
+    }
+
+    /// Belousov-Zhabotinsky spiral reaction seed: Cross-phase pinning.
+    pub fn inject_belousov_spiral(
+        lattice: &Lattice2D,
+        state: &mut QuantumCellStateSoA,
+        x0: usize,
+        y0: usize,
+    ) {
+        let arm_len = 5;
+        for d in 0..arm_len {
+            let x = (x0 + d) % lattice.width;
+            let y = y0 % lattice.height;
+            let idx = lattice.coord_to_idx(x, y);
+            state.set_cell_superposition(
+                idx,
+                Complex64::new(0.0, 0.0),
+                Complex64::new(1.0, 0.0),
+                Complex64::new(0.0, 0.0),
+            );
+        }
+        for d in 0..arm_len {
+            let x = x0 % lattice.width;
+            let y = (y0 + d) % lattice.height;
+            let idx = lattice.coord_to_idx(x, y);
+            state.set_cell_superposition(
+                idx,
+                Complex64::new(0.0, 0.0),
+                Complex64::new(0.0, 0.0),
+                Complex64::new(0.0, 1.0),
+            );
         }
     }
 }

@@ -31,6 +31,9 @@
             <button class="view-tab" data-view="panel-hilbert">
                 <span class="tab-idx">[3]</span> CONFINED HILBERT CHAMBER &bull; CP² SIMPLEX
             </button>
+            <button class="view-tab" data-view="panel-chaos">
+                <span class="tab-idx">[4]</span> MACRO VIEWPORT &bull; VORTEX DYNAMICS &bull; FLOW
+            </button>
         </nav>
 
         <nav class="nav-links">
@@ -88,6 +91,24 @@
                 <div class="canvas-overlay-hint">ORBITS BETWEEN |0⟩ VACUUM, |1⟩ LIVING, AND |2⟩ FFS APEX</div>
             </div>
         </section>
+
+        <!-- Panel 4: Macroscopic Chaos & Vorticity Flow Field -->
+        <section class="panel-card" id="panel-chaos">
+            <div class="panel-header">
+                <span class="title">
+                    <span>[4] MACROSCOPIC COSMIC VIEWPORT &bull; QUANTUM STREAMLINES &bull; VORTEX CIRCULATION</span>
+                </span>
+                <div class="panel-badge-group">
+                    <span class="tag-emerald" id="badge-vortices">0 VORTICES</span>
+                    <span class="tag-amber" id="badge-scrambling">OTOC: 0.0000</span>
+                    <button class="btn-ctrl flow-btn" id="btn-toggle-flow">FLOW: ON</button>
+                </div>
+            </div>
+            <div class="canvas-container">
+                <canvas id="canvas-chaos"></canvas>
+                <div class="canvas-overlay-hint">PAN &bull; COSMIC ZOOM &bull; GREEN = +1 VORTEX &bull; CRIMSON = -1 VORTEX &bull; PARTICLES = PROBABILITY FLUX j(x,y)</div>
+            </div>
+        </section>
     </main>
 
     <!-- Bottom Playback & Telemetry HUD Deck -->
@@ -100,14 +121,28 @@
             <button class="btn-ctrl probe" id="btn-born-probe" title="Trigger projective measurement collapse across lattice">BORN PROBE</button>
         </div>
 
-        <!-- Pattern Presets, Grid Scale & Phase Sliders -->
+        <!-- Pattern Presets, Grid Scale, Rules & Chaos Sliders -->
         <div class="control-group">
+            <select class="select-ctrl" id="select-rule" title="Select Quantum CA Transition Rule">
+                <option value="b3s23" selected>Rule: FFS Confinement (B3/S23 CIR)</option>
+                <option value="highlife">Rule: Quantum HighLife (B36/S23 Replicator)</option>
+                <option value="bec">Rule: Gross-Pitaevskii Superfluid BEC</option>
+                <option value="floquet">Rule: Floquet Kicked Quantum Chaos</option>
+                <option value="dirac">Rule: Relativistic Dirac-Weyl QCA</option>
+                <option value="lotka">Rule: Cyclic Lotka-Volterra Predator-Prey</option>
+            </select>
+
             <select class="select-ctrl" id="select-pattern">
                 <option value="glider">Bethe-String Glider Soliton</option>
-                <option value="glider_pair" selected>Quantum Glider Collision (Phase Tunable)</option>
+                <option value="glider_pair">Quantum Glider Collision</option>
                 <option value="beam_splitter">Mach-Zehnder Beam-Splitter (Δθ = π/2)</option>
                 <option value="ffs_bubble">Fractional Fermi Sea Bubble (l=2)</option>
-                <option value="cat_blinker">Schr&ouml;dinger Cat Blinker</option>
+                <option value="vortex_dipole" selected>Quantum Vortex Dipole (±1 Circulation)</option>
+                <option value="highlife_replicator">HighLife Replicator Seed</option>
+                <option value="turbulent_soup">Ergodic Turbulent Quantum Soup</option>
+                <option value="dirac_wavepacket">Relativistic Dirac Wavepacket</option>
+                <option value="bz_spiral">Belousov-Zhabotinsky Spiral Seed</option>
+                <option value="cat_blinker">Schrödinger Cat Blinker</option>
                 <option value="pentadecathlon">Pentadecathlon (Period-15)</option>
                 <option value="block">Quantum Block (Still-Life)</option>
                 <option value="soup">Coherent Quantum Soup</option>
@@ -115,9 +150,11 @@
 
             <select class="select-ctrl" id="select-grid-dim">
                 <option value="16">16 x 16 (256 Cells)</option>
-                <option value="24" selected>24 x 24 (576 Cells)</option>
-                <option value="32">32 x 32 (1,024 Cells)</option>
-                <option value="48">48 x 48 (2,304 Cells)</option>
+                <option value="24">24 x 24 (576 Cells)</option>
+                <option value="32" selected>32 x 32 (1,024 Cells - Macro)</option>
+                <option value="48">48 x 48 (2,304 Cells - Deep)</option>
+                <option value="64">64 x 64 (4,096 Cells - Cosmic)</option>
+                <option value="96">96 x 96 (9,216 Cells - Exascale)</option>
             </select>
 
             <div class="slider-group" id="group-phase-slider">
@@ -126,10 +163,22 @@
                 <span id="phase-val" class="val-green">90&deg; (&pi;/2)</span>
             </div>
 
+            <div class="slider-group" id="group-chaos-slider">
+                <span>CHAOS K:</span>
+                <input type="range" id="slider-chaos-k" min="0" max="500" value="120">
+                <span id="chaos-val" class="val-amber">1.20</span>
+            </div>
+
+            <div class="slider-group" id="group-gauge-slider">
+                <span>GAUGE &Phi;:</span>
+                <input type="range" id="slider-gauge-flux" min="0" max="100" value="0">
+                <span id="gauge-val" class="val-polar">0.00&Phi;₀</span>
+            </div>
+
             <div class="slider-group">
                 <span>SPEED:</span>
-                <input type="range" id="slider-speed" min="1" max="20" value="6">
-                <span id="speed-val" class="val-green">6 TPS</span>
+                <input type="range" id="slider-speed" min="1" max="25" value="8">
+                <span id="speed-val" class="val-green">8 TPS</span>
             </div>
         </div>
 
@@ -162,6 +211,18 @@
             <div class="telemetry-chip">
                 <span class="label">n(k) PLATEAU:</span>
                 <span class="val-amber" id="hud-momentum">0.0000</span>
+            </div>
+            <div class="telemetry-chip">
+                <span class="label">MAX |&omega;|:</span>
+                <span class="val-polar" id="hud-vorticity">0.0000</span>
+            </div>
+            <div class="telemetry-chip">
+                <span class="label">VORTICES:</span>
+                <span class="val-green" id="hud-vortex-count">0</span>
+            </div>
+            <div class="telemetry-chip">
+                <span class="label">SCRAMBLE OTOC:</span>
+                <span class="val-amber" id="hud-otoc">0.0000</span>
             </div>
         </div>
     </footer>

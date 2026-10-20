@@ -265,6 +265,91 @@ fn run_multi_scale_simd_benchmark() -> Vec<ScaleBenchmarkResult> {
     results
 }
 
+fn run_quantum_vortex_dipole_scenario(width: usize, height: usize) -> ScenarioTelemetry {
+    println!(
+        "\n{}[SCENARIO 5: Quantum Vortex Dipole & Circulation Flux]{}",
+        colors::POLAR_WHITE,
+        colors::RESET
+    );
+    let lattice = Lattice2D::new(width, height, BoundaryCondition::Toroidal);
+    let mut params = HolonomyParams::default();
+    params.rule = t1000_conway::QcaRuleKind::GrossPitaevskiiBec;
+    params.non_linear_g = 1.2;
+    let mut sim = QuantumConwaySimulator::new(lattice, params);
+    PatternFactory::inject_pattern(PatternType::VortexDipole, &sim.lattice, &mut sim.state, 5, 8);
+
+    println!("{}", TelemetryVisualizer::render_grid(&sim.lattice, &sim.state));
+    let start = Instant::now();
+    let mut history = Vec::new();
+
+    for _ in 0..10 {
+        let telem = sim.step();
+        history.push(telem);
+    }
+    let elapsed = start.elapsed().as_micros();
+    let last = history.last().unwrap();
+
+    println!("{}", TelemetryVisualizer::render_grid(&sim.lattice, &sim.state));
+    println!(
+        "  -> Step 10 │ Max Vorticity: {:.4} │ Vortex Cores: {} │ Mean Flux: {:.4}",
+        last.max_vorticity, last.vortex_count, last.mean_current_magnitude
+    );
+
+    ScenarioTelemetry {
+        scenario: "Quantum Vortex Dipole".to_string(),
+        total_steps: 10,
+        elapsed_us: elapsed,
+        final_population: last.total_population,
+        final_ffs_population: last.ffs_population,
+        max_norm_error: last.max_norm_error,
+        entanglement_entropy: last.entanglement_entropy,
+        mean_momentum_density: last.mean_momentum_density,
+        history,
+    }
+}
+
+fn run_floquet_chaos_scenario(width: usize, height: usize) -> ScenarioTelemetry {
+    println!(
+        "\n{}[SCENARIO 6: Floquet Kicked Quantum Chaos & Scrambling OTOC]{}",
+        colors::POLAR_WHITE,
+        colors::RESET
+    );
+    let lattice = Lattice2D::new(width, height, BoundaryCondition::Toroidal);
+    let mut params = HolonomyParams::default();
+    params.rule = t1000_conway::QcaRuleKind::FloquetKickedChaos;
+    params.chaos_k = 2.4;
+    let mut sim = QuantumConwaySimulator::new(lattice, params);
+    PatternFactory::inject_pattern(PatternType::GliderPair, &sim.lattice, &mut sim.state, 2, 2);
+
+    let start = Instant::now();
+    let mut history = Vec::new();
+
+    for _ in 0..12 {
+        let telem = sim.step();
+        history.push(telem);
+    }
+    let elapsed = start.elapsed().as_micros();
+    let last = history.last().unwrap();
+
+    println!("{}", TelemetryVisualizer::render_grid(&sim.lattice, &sim.state));
+    println!(
+        "  -> Step 12 │ OTOC Scrambling: {:.4} │ Entanglement S: {:.4} nats │ Chaos K: {:.2}",
+        last.scrambling_otoc, last.entanglement_entropy, 2.4
+    );
+
+    ScenarioTelemetry {
+        scenario: "Floquet Kicked Quantum Chaos".to_string(),
+        total_steps: 12,
+        elapsed_us: elapsed,
+        final_population: last.total_population,
+        final_ffs_population: last.ffs_population,
+        max_norm_error: last.max_norm_error,
+        entanglement_entropy: last.entanglement_entropy,
+        mean_momentum_density: last.mean_momentum_density,
+        history,
+    }
+}
+
 fn main() {
     let width = 16;
     let height = 16;
@@ -283,6 +368,8 @@ fn main() {
     let s2 = run_ffs_overpopulation_protection_scenario(width, height);
     let s3 = run_cat_blinker_scenario(width, height);
     let s4 = run_quantum_glider_collision_scenario(24, 24);
+    let s5 = run_quantum_vortex_dipole_scenario(20, 20);
+    let s6 = run_floquet_chaos_scenario(20, 20);
 
     let bench_results = run_multi_scale_simd_benchmark();
 
@@ -298,7 +385,7 @@ fn main() {
         "timestamp": "2026-10-19T12:00:00Z",
         "license": "MIT OR Apache-2.0",
         "grid_size": (width, height),
-        "scenarios": vec![s1, s2, s3, s4],
+        "scenarios": vec![s1, s2, s3, s4, s5, s6],
         "multi_scale_benchmark": bench_results,
         "interferometry_sweep": report,
     });
