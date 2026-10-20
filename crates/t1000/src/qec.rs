@@ -14,12 +14,15 @@
 use crate::state::QuantumState;
 use serde::{Deserialize, Serialize};
 
+pub mod heptal_qudit;
 pub mod lattice_surgery;
 pub mod magic_distillation;
 pub mod vnni;
 
+pub use heptal_qudit::*;
 pub use lattice_surgery::*;
 pub use magic_distillation::*;
+
 
 /// Supported quantum error correction code families.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

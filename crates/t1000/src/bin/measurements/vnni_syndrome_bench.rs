@@ -9,10 +9,14 @@
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::*;
 use std::time::Instant;
+use t1000::qec::heptal_qudit::{
+    symplectic_commutation_z7_vnni, HeptalPauliString16, Wheel7HeptalStabilizerMatrix,
+};
 use t1000::qec::vnni::{
     bench_vnni_unrolled_4x, bench_vnni_unrolled_8x, symplectic_commutation_16q, vnni_dpbusd_32,
     SurfaceCode9QVnniMatrix, VnniBackend,
 };
+
 
 fn main() {
     println!("┌────────────────────────────────────────────────────────────────────────┐");
@@ -180,7 +184,84 @@ fn main() {
     );
     println!();
 
+    // =========================================================================
+    // Benchmark 4: Z_7 Heptal 16-Qudit Symplectic Commutation Checks
+    // =========================================================================
+    let heptal_comm_iters = 5_000_000usize;
+    println!(
+        "─── [4] Z_7 HEPTAL 16-QUDIT SYMPLECTIC COMMUTATION CHECKS ({} PAIRS) ───",
+        heptal_comm_iters
+    );
+    let mut p1 = HeptalPauliString16::default();
+    let mut p2 = HeptalPauliString16::default();
+    let t3 = Instant::now();
+    let mut phase_accum = 0u64;
+    for i in 0..heptal_comm_iters {
+        p1.u[0] = ((i * 3 + 1) % 7) as u8;
+        p1.v[0] = ((i * 5 + 2) % 7) as u8;
+        p2.u[0] = ((i * 7 + 4) % 7) as u8;
+        p2.v[0] = ((i * 2 + 6) % 7) as u8;
+        let c = symplectic_commutation_z7_vnni(&p1, &p2);
+        phase_accum += u64::from(c);
+    }
+    let dur_heptal_comm = t3.elapsed();
+    let dur_heptal_comm_ns = (dur_heptal_comm.as_secs_f64() * 1e9) / (heptal_comm_iters as f64);
+    let heptal_comm_rate = (heptal_comm_iters as f64) / dur_heptal_comm.as_secs_f64();
+
+    println!("  Phase Checksum Accumulator: {}", phase_accum);
+    println!(
+        "  Mod 7 Commutation Latency : {:.3} ns / check",
+        dur_heptal_comm_ns
+    );
+    println!(
+        "  Commutation Rate          : {:.2} Million checks / sec",
+        heptal_comm_rate / 1e6
+    );
+    println!();
+
+    // =========================================================================
+    // Benchmark 5: W_7 Heptal Wheel Graph 7-Qudit Syndrome Extraction & Recovery
+    // =========================================================================
+    let w7 = Wheel7HeptalStabilizerMatrix::new();
+    let w7_iters = 5_000_000usize;
+    println!(
+        "─── [5] W_7 HEPTAL WHEEL GRAPH SYNDROME EXTRACTION & DECODE ({} RUNS) ───",
+        w7_iters
+    );
+    let t4 = Instant::now();
+    let mut decoded_faults = 0u64;
+    for i in 0..w7_iters {
+        let q = i % 7;
+        let a = ((i % 6) + 1) as u8;
+        let b = ((i >> 3) % 7) as u8;
+        let mut err_x = [0u8; 7];
+        let mut err_z = [0u8; 7];
+        err_x[q] = a;
+        err_z[q] = b;
+
+        let syn = w7.extract_syndromes_vnni(&err_x, &err_z);
+        if let Some((faulty_q, _fa, _fb)) = w7.decode_syndrome(&syn) {
+            decoded_faults += u64::from(faulty_q);
+        }
+    }
+    let dur_w7 = t4.elapsed();
+    let dur_w7_ns = (dur_w7.as_secs_f64() * 1e9) / (w7_iters as f64);
+    let w7_rate = (w7_iters as f64) / dur_w7.as_secs_f64();
+
+    println!("  Decoded Fault Checksum    : {}", decoded_faults);
+    println!("  W_7 Extraction & Decode   : {:.3} ns / run", dur_w7_ns);
+    println!(
+        "  W_7 Syndrome Rate         : {:.2} Million decodings / sec",
+        w7_rate / 1e6
+    );
+    println!(
+        "  Per-Stabilizer Evaluation : {:.3} ns / stabilizer",
+        dur_w7_ns / 7.0
+    );
+    println!();
+
     println!("────────────────────────────────────────────────────────────────────────");
     println!("-> PASS: AVX-VNNI QEC Stabilizer & Syndrome Engine verified.");
     println!("────────────────────────────────────────────────────────────────────────");
 }
+
