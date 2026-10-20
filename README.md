@@ -387,6 +387,18 @@ cargo run --release -p t1000 --bin full_qnn_suite_bench
 # Render 300 DPI Sovereign Full QNN Suite Showdown Visual
 python scripts/charting/chart_full_qnn_suite.py
 
+# Run Universal FT-QNN Training with Magic State Distillation & Transversal W7 QEC (Monograph M156)
+cargo run --release -p t1000 --bin qm9_magic_w7_ft_train
+
+# Render Sovereign Universal FT-QNN Magic State Dynamics Chart (Monograph M156)
+python scripts/charting/chart_qm9_magic_w7_training.py
+
+# Run 36-Qubit Virtual Cut-Bridge & Co-Processor Benchmark (Monograph M155)
+cargo run --release -p t1000 --bin virtual_36q_cut_bridge_bench
+
+# Render Sovereign 36-Qubit Virtual Cut-Bridge Dynamics Chart (Monograph M155)
+python scripts/charting/chart_virtual_36q_cut_bridge.py
+
 # Run 18-Qubit Transversal [[7, 1, 3]] Steane-Wheel FT-QNN Training with In-Register Ancillas
 cargo run --release -p t1000 --bin qm9_transversal_w7_train
 
@@ -415,6 +427,8 @@ python scripts/charting/chart_qm9_fault_tolerant_training.py
 python web/serve.py
 ```
 
+* **Universal Fault-Tolerant Quantum Neural Networks: Eastin-Knill Bypass via Magic State Distillation (Monograph M156):** [`docs/findings/universal_ft_qnn_magic_state_w7_injection.md`](docs/findings/universal_ft_qnn_magic_state_w7_injection.md).
+* **36-Qubit Virtual Cut-Bridge & Heterogeneous Co-Processor Pipeline (Monograph M155):** [`docs/findings/virtual_36q_cut_bridge_igpu.md`](docs/findings/virtual_36q_cut_bridge_igpu.md).
 * **Continuous-Time Topological Quantum Walk on Ab Initio Coulomb Laplacians & AVX-VNNI Zeno Confinement (Monograph M154):** [`docs/findings/qm9_continuous_topological_walk_screening.md`](docs/findings/qm9_continuous_topological_walk_screening.md).
 * **18-Qubit Transversal [[7, 1, 3]] Steane-Wheel FT-QNN & In-Register Physical Ancillas (Monograph M153):** [`docs/findings/qm9_transversal_w7_fault_tolerant_training.md`](docs/findings/qm9_transversal_w7_fault_tolerant_training.md).
 * **Non-Abelian Geometric Holonomy, Quantized Vortex Dipoles & Floquet Chaos Scrambling in Unitary QCA (Monograph M152):** [`docs/findings/qgol_geometric_holonomy_and_topological_solitons.md`](docs/findings/qgol_geometric_holonomy_and_topological_solitons.md).
@@ -442,7 +456,7 @@ python web/serve.py
 * **Zero-Allocation Dense VQC & Heptal Qudit MPS QNN Findings:** [`docs/findings/avx2_zero_allocation_and_heptal_qnn.md`](docs/findings/avx2_zero_allocation_and_heptal_qnn.md).
 * **Dashboard & Circuit Composer Documentation:** [`docs/dashboard_and_circuit_composer.md`](docs/dashboard_and_circuit_composer.md).
 * **Bloch-Zipper & MPS Derivation:** [`docs/bloch_zipper_mps_specification.md`](docs/bloch_zipper_mps_specification.md).
-* **Empirical Research & Findings Registry (Dual-Housed with Deen OS Monographs M123–M154):** [`docs/findings/README.md`](docs/findings/README.md).
+* **Empirical Research & Findings Registry (Dual-Housed with Deen OS Monographs M123–M156):** [`docs/findings/README.md`](docs/findings/README.md).
 
 ---
 

@@ -65,6 +65,10 @@ name = "cut_bridge_chsh_bench"
 path = "src/bin/measurements/cut_bridge_chsh_bench.rs"
 
 [[bin]]
+name = "virtual_36q_cut_bridge_bench"
+path = "src/bin/measurements/virtual_36q_cut_bridge_bench.rs"
+
+[[bin]]
 name = "vnni_syndrome_bench"
 path = "src/bin/measurements/vnni_syndrome_bench.rs"
 
@@ -184,6 +188,10 @@ path = "src/bin/training/qm9_fault_tolerant_train.rs"
 [[bin]]
 name = "qm9_transversal_w7_train"
 path = "src/bin/training/qm9_transversal_w7_train.rs"
+
+[[bin]]
+name = "qm9_magic_w7_ft_train"
+path = "src/bin/training/qm9_magic_w7_ft_train.rs"
 
 
 # =========================================================================

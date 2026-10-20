@@ -1,6 +1,7 @@
 pub mod cut_bridge;
 pub mod dispatch;
 pub mod reupload;
+pub mod virtual_cut_engine;
 
 pub use cut_bridge::{
     eval_36q_bipartite_bridge, eval_36q_bipartite_midcircuit, eval_cut_bridge_general,
@@ -8,6 +9,10 @@ pub use cut_bridge::{
 };
 pub use dispatch::*;
 pub use reupload::DualAxisEncoder;
+pub use virtual_cut_engine::{
+    FragmentSnapshot, Virtual36QCutEngine, Virtual36QReport, VirtualCutConfig,
+    DENSE_36Q_RAM_BYTES, FRAGMENT_DIM, FRAGMENT_QUBITS, VIRTUAL_CUT_WORKING_SET_BYTES,
+};
 
 use crate::state::QuantumState;
 use rand::{Rng, SeedableRng};

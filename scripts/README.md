@@ -11,7 +11,7 @@ This directory contains autonomous tooling, empirical benchmarking drivers, data
 
 ```
 scripts/
-├── charting/       # 36 Sovereign research charting modules & master suite (chart_all.py)
+├── charting/       # 38 Sovereign research charting modules & master suite (chart_all.py)
 ├── data/           # High-throughput dataset feature extractors (MobileNetV3 PCA)
 ├── fpga/           # Artix-7 XC7A35T hardware UART drivers & chaos verification
 ├── qec/            # Heterogeneous CPU-GPU cut-bridge pipelines (OpenCL + AVX2)
@@ -28,6 +28,8 @@ Visual telemetry suite adhering strictly to the Deen OS Sovereign Visual Specifi
 
 * **`deen_theme.py`**: Shared typography, color tokens, and card styling utilities.
 * **`chart_all.py`**: Master orchestrator executing all primary scientific visualization modules.
+* **`chart_qm9_magic_w7_training.py`**: M156 Universal FT-QNN training: magic state distillation & transversal [[7, 1, 3]] Steane-Wheel injection.
+* **`chart_virtual_36q_cut_bridge.py`**: M155 36-Qubit virtual cut-bridge & heterogeneous co-processor dynamics ($131,072\times$ L3 compression).
 * **`chart_qm9_continuous_walk.py`**: M154 Continuous topological walk on ab initio Coulomb Laplacians & AVX-VNNI Zeno confinement.
 * **`chart_qm9_transversal_w7_training.py`**: M153 Transversal [[7, 1, 3]] Steane-Wheel FT-QNN dynamics & active ancilla QEC.
 * **`chart_qgol_holonomy.py`**: M152 Unitary QCA non-Abelian holonomy, quantized vortex dipoles & Floquet chaos.
