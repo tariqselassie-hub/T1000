@@ -104,6 +104,7 @@ path = "src/bin/w7_heptal_qec_test.rs"
 # Executable Binaries: Quantum Neural Network Training
 # =========================================================================
 
+
 [[bin]]
 name = "corpus_vqc_train"
 path = "src/bin/training/corpus_vqc_train.rs"
@@ -175,6 +176,11 @@ path = "src/bin/training/qssm_quench_bench.rs"
 [[bin]]
 name = "qm9_vqc_train"
 path = "src/bin/training/qm9_vqc_train.rs"
+
+[[bin]]
+name = "qm9_fault_tolerant_train"
+path = "src/bin/training/qm9_fault_tolerant_train.rs"
+
 
 # =========================================================================
 # Executable Binaries: Benchmarks & Controls
