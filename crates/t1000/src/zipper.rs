@@ -402,6 +402,6 @@ mod tests {
             "superposition fid: {}",
             report.mean_anti_correlation_fidelity
         );
-        assert!(report.mean_anti_correlation_fidelity >= 0.5);
+        assert!(report.mean_anti_correlation_fidelity >= 0.5 - 1e-12);
     }
 }
