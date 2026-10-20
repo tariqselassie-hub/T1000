@@ -413,7 +413,8 @@ python web/serve.py
 * **Zero-Allocation Dense VQC & Heptal Qudit MPS QNN Findings:** [`docs/findings/avx2_zero_allocation_and_heptal_qnn.md`](docs/findings/avx2_zero_allocation_and_heptal_qnn.md).
 * **Dashboard & Circuit Composer Documentation:** [`docs/dashboard_and_circuit_composer.md`](docs/dashboard_and_circuit_composer.md).
 * **Bloch-Zipper & MPS Derivation:** [`docs/bloch_zipper_mps_specification.md`](docs/bloch_zipper_mps_specification.md).
-* **Empirical Research & Findings Registry (Dual-Housed with Deen OS Monographs M123–M149):** [`docs/findings/README.md`](docs/findings/README.md).
+* **QM9 Ab Initio VQC Training, Atomic Baseline Decomposition & Dual-Angle Quantum Phase Map:** [`docs/findings/qm9_ab_initio_vqc_training_and_baseline_decomposition.md`](docs/findings/qm9_ab_initio_vqc_training_and_baseline_decomposition.md).
+* **Empirical Research & Findings Registry (Dual-Housed with Deen OS Monographs M123–M150):** [`docs/findings/README.md`](docs/findings/README.md).
 
 ---
 

@@ -6,15 +6,17 @@
 //! Provides zero-allocation extended XYZ parsing, streaming ZIP archive extraction,
 //! and direct integration with T-1000's OpenSMILES and 19-dimensional quantum Hilbert spaces.
 
+use super::baseline::{
+    AtomicBaselineDecoder, AtomicReferenceTable, HARTREE_TO_EV, HARTREE_TO_KCAL_MOL,
+};
+use super::coulomb::CoulombMatrix50;
+use crate::simd::eigensystem::solve_coulomb_eigensystem_50;
 use crate::smiles::{SmilesFeaturizer, SmilesFeatures};
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{Read, Seek};
 use std::path::Path;
 use zip::ZipArchive;
-
-/// Conversion factor from Hartrees to electron-volts (CODATA standard).
-pub const HARTREE_TO_EV: f64 = 27.211386245988;
 
 /// Single atom entry from an extended XYZ geometry block.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -229,6 +231,109 @@ impl Qm9Record {
         Ok(feat.to_normalized_vector())
     }
 
+    /// Returns the atomic numbers Z for all atoms in the record.
+    pub fn atomic_numbers(&self) -> Vec<usize> {
+        self.atoms
+            .iter()
+            .map(|a| AtomicReferenceTable::symbol_to_z(&a.symbol))
+            .collect()
+    }
+
+    /// Returns the sum of non-interacting free atomic ground-state energies (Hartrees).
+    pub fn atomic_reference_energy(&self) -> f64 {
+        let z_list = self.atomic_numbers();
+        AtomicBaselineDecoder::compute_atomic_sum_by_z(&z_list)
+    }
+
+    /// Returns the true ab initio chemical atomization (binding) energy in Hartrees:
+    /// ΔU_0 = U_0 - ∑ E_atom(Z_i).
+    #[inline(always)]
+    pub fn atomization_energy(&self) -> f64 {
+        let z_list = self.atomic_numbers();
+        AtomicBaselineDecoder::compute_atomization_energy(self.u0, &z_list)
+    }
+
+    /// Returns the atomization energy in electron-volts (eV).
+    #[inline(always)]
+    pub fn atomization_energy_ev(&self) -> f64 {
+        self.atomization_energy() * HARTREE_TO_EV
+    }
+
+    /// Returns the atomization energy in kcal/mol.
+    #[inline(always)]
+    pub fn atomization_energy_kcal_mol(&self) -> f64 {
+        self.atomization_energy() * HARTREE_TO_KCAL_MOL
+    }
+
+    /// Reconstructs the 50x50 nuclear Coulomb operator matrix directly from 3D Cartesian coordinates.
+    pub fn coulomb_matrix_50(&self) -> CoulombMatrix50 {
+        let mut mat = vec![0.0; 2500];
+        let n = self.atoms.len().min(50);
+        let z_list = self.atomic_numbers();
+
+        for i in 0..n {
+            let zi = z_list[i] as f64;
+            mat[i * 50 + i] = 0.5 * zi.powf(2.4);
+
+            let pi = self.atoms[i].coords;
+            for j in (i + 1)..n {
+                let zj = z_list[j] as f64;
+                let pj = self.atoms[j].coords;
+                let dx = pi[0] - pj[0];
+                let dy = pi[1] - pj[1];
+                let dz = pi[2] - pj[2];
+                let dist = (dx * dx + dy * dy + dz * dz).sqrt();
+                if dist > 1e-6 {
+                    let val = (zi * zj) / dist;
+                    mat[i * 50 + j] = val;
+                    mat[j * 50 + i] = val;
+                }
+            }
+        }
+
+        CoulombMatrix50 { matrix: mat }
+    }
+
+    /// Computes the 50-dimensional invariant Coulomb eigenspectrum sorted descending.
+    pub fn coulomb_eigenspectrum_50(&self) -> [f64; 50] {
+        let c_mat = self.coulomb_matrix_50();
+        let arr: &[f64; 2500] = match c_mat.matrix.as_slice().try_into() {
+            Ok(a) => a,
+            Err(_) => panic!("Coulomb matrix size mismatch: expected 2500 elements"),
+        };
+        solve_coulomb_eigensystem_50(arr)
+    }
+
+    /// Extracts dual-angle continuous parameters (polar θ_q, azimuthal φ_q) for SU(2) Bloch injection:
+    /// - θ_q: normalized Coulomb eigenvalue (nuclear core geometry)
+    /// - φ_q: Mulliken partial charge phase (electrostatic polarization)
+    pub fn dual_angle_quantum_features(&self, n_qubits: usize) -> (Vec<f64>, Vec<f64>) {
+        let spectrum = self.coulomb_eigenspectrum_50();
+        let max_eig = spectrum[0].max(1e-6);
+
+        let mut thetas = Vec::with_capacity(n_qubits);
+        let mut phis = Vec::with_capacity(n_qubits);
+
+        for q in 0..n_qubits {
+            let lambda_q = if q < 50 { spectrum[q] } else { 0.0 };
+            // Map positive eigenvalue ratio to [0, π] polar angle
+            let theta = 2.0 * (lambda_q / max_eig).sqrt().atan() * std::f64::consts::FRAC_PI_2;
+            thetas.push(theta);
+
+            // Phase from Mulliken charge
+            let charge = if q < self.atoms.len() {
+                self.atoms[q].mulliken_charge
+            } else {
+                0.0
+            };
+            // Map charge in [-0.5, +0.5] to azimuthal phase [-π, +π]
+            let phi = (charge / 0.4).clamp(-1.0, 1.0) * std::f64::consts::PI;
+            phis.push(phi);
+        }
+
+        (thetas, phis)
+    }
+
     /// Streams QM9 records directly from a `.zip` archive on disk.
     pub fn stream_from_zip(
         zip_path: &Path,
@@ -312,5 +417,44 @@ InChI=1S/CH4/h1H4\tInChI=1S/CH4/h1H4
         // Verify SMILES 19-dim quantum encoding
         let q_vec = rec.quantum_feature_vector().unwrap();
         assert_eq!(q_vec.len(), 19);
+    }
+
+    #[test]
+    fn test_qm9_coulomb_eigensystem_and_atomization() {
+        let rec = Qm9Record::parse_xyz_str(METHANE_XYZ).unwrap();
+
+        // Atomization energy
+        let atomization = rec.atomization_energy();
+        assert!((atomization - (-0.631065)).abs() < 1e-4);
+        let atomization_ev = rec.atomization_energy_ev();
+        assert!((atomization_ev - (-17.172)).abs() < 0.05);
+
+        // 50x50 Coulomb matrix reconstruction
+        let c_mat = rec.coulomb_matrix_50();
+        assert_eq!(c_mat.matrix.len(), 2500);
+        // Diagonal: Carbon self-energy is 0.5 * 6^2.4 ≈ 36.825
+        assert!((c_mat.get(0, 0) - 36.825).abs() < 0.1);
+        // Diagonal: Hydrogen self-energy is 0.5 * 1^2.4 = 0.5
+        assert!((c_mat.get(1, 1) - 0.5).abs() < 1e-6);
+
+        // Eigenspectrum
+        let eig = rec.coulomb_eigenspectrum_50();
+        // Leading eigenvalue is dominant (~40.0 Ha)
+        assert!(eig[0] > 38.0);
+        // Middle eigenvalues corresponding to zero-padded empty atoms are 0.0
+        assert_eq!(eig[5], 0.0);
+        assert_eq!(eig[25], 0.0);
+        // Smallest trailing eigenvalue of the 5-atom sub-block is negative (~ -1.007 Ha)
+        assert!((eig[49] - (-1.007)).abs() < 0.01);
+
+        // Dual-angle quantum features
+        let (thetas, phis) = rec.dual_angle_quantum_features(6);
+        assert_eq!(thetas.len(), 6);
+        assert_eq!(phis.len(), 6);
+        assert!(thetas[0] > 0.0);
+        // Carbon Mulliken charge is negative (-0.535), so phi_0 should be negative
+        assert!(phis[0] < 0.0);
+        // Hydrogen Mulliken charge is positive (+0.133), so phi_1 should be positive
+        assert!(phis[1] > 0.0);
     }
 }

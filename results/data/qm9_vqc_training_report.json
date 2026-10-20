@@ -1,0 +1,42 @@
+{
+  "timestamp_utc": "2026-10-19T22:00:00Z",
+  "total_molecules_evaluated": 100,
+  "qubits": 6,
+  "layers": 4,
+  "trials": [
+    {
+      "name": "Raw Unconditioned VQC (Target: Total U_0)",
+      "description": "Direct linear readout decoding of extensive U_0 from bounded Pauli expectations",
+      "initial_loss_mse": 22290.523411216294,
+      "final_loss_mse": 1594.900991111049,
+      "loss_reduction_pct": 92.84493700893307,
+      "mae_ev": 1235.905779790818,
+      "mae_kcal_mol": 28500.664346140788,
+      "condition_number_proxy": 142.8,
+      "throughput_mols_per_sec": 40785.69564082485
+    },
+    {
+      "name": "Atomic Baseline Decomposition (Target: Delta U_0)",
+      "description": "Extensive core subtraction; VQC decodes strictly bounded chemical binding energy",
+      "initial_loss_mse": 1.9147799954116445,
+      "final_loss_mse": 0.14277219371243322,
+      "loss_reduction_pct": 92.54367634639198,
+      "mae_ev": 11.922540061483673,
+      "mae_kcal_mol": 274.94030532268846,
+      "condition_number_proxy": 1.14,
+      "throughput_mols_per_sec": 35998.67524875085
+    },
+    {
+      "name": "Ab Initio HOMO-LUMO Gap Prediction (Target: Delta epsilon)",
+      "description": "Direct optical excitation threshold prediction from Coulomb-Mulliken quantum phase state",
+      "initial_loss_mse": 31.348243870757493,
+      "final_loss_mse": 1.4477363331614628,
+      "loss_reduction_pct": 95.3817625665725,
+      "mae_ev": 1.390920980283599,
+      "mae_kcal_mol": 32.07533326582993,
+      "condition_number_proxy": 2.38,
+      "throughput_mols_per_sec": 42765.74634780526
+    }
+  ],
+  "variance_reduction_ratio": 11641.297415176003
+}

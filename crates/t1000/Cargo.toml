@@ -168,6 +168,10 @@ path = "src/bin/training/qssm_autoencoder_bench.rs"
 name = "qssm_quench_bench"
 path = "src/bin/training/qssm_quench_bench.rs"
 
+[[bin]]
+name = "qm9_vqc_train"
+path = "src/bin/training/qm9_vqc_train.rs"
+
 # =========================================================================
 # Executable Binaries: Benchmarks & Controls
 # =========================================================================

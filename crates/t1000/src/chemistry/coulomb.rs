@@ -6,6 +6,7 @@
 //! Provides dense symmetric Coulomb matrix reconstruction, atomic number recovery,
 //! invariant eigenspectrum decomposition, and high-throughput RoboBohr CSV parsing.
 
+use super::baseline::{AtomicBaselineDecoder, HARTREE_TO_EV, HARTREE_TO_KCAL_MOL};
 use crate::simd::eigensystem::solve_coulomb_eigensystem_50;
 use serde::{Deserialize, Serialize};
 use std::io::{BufRead, BufReader, Read};
@@ -180,6 +181,40 @@ impl RoboBohrRecord {
             eat_hartree,
             coulomb,
         })
+    }
+
+    /// Returns the inferred integer atomic numbers Z_i (> 0).
+    pub fn inferred_z_integers(&self) -> Vec<usize> {
+        self.coulomb
+            .inferred_atomic_numbers()
+            .iter()
+            .filter(|&&z| z >= 0.5)
+            .map(|&z| z.round() as usize)
+            .collect()
+    }
+
+    /// Returns the sum of free atomic reference energies (Hartrees).
+    pub fn atomic_reference_energy(&self) -> f64 {
+        let z_list = self.inferred_z_integers();
+        AtomicBaselineDecoder::compute_atomic_sum_by_z(&z_list)
+    }
+
+    /// Returns the reconstructed total electronic ground-state energy U_0 (Hartrees):
+    /// U_0 = E_at + ∑ E_atom(Z_i).
+    pub fn total_ground_energy(&self) -> f64 {
+        self.atomic_reference_energy() + self.eat_hartree
+    }
+
+    /// Returns the atomization energy in electron-volts (eV).
+    #[inline(always)]
+    pub fn eat_ev(&self) -> f64 {
+        self.eat_hartree * HARTREE_TO_EV
+    }
+
+    /// Returns the atomization energy in kcal/mol.
+    #[inline(always)]
+    pub fn eat_kcal_mol(&self) -> f64 {
+        self.eat_hartree * HARTREE_TO_KCAL_MOL
     }
 
     /// Streams up to `max_records` from any buffered CSV reader.
