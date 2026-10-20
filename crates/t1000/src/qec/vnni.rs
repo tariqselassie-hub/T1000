@@ -255,6 +255,234 @@ impl Default for SurfaceCode9QVnniMatrix {
     }
 }
 
+/// Minimum-weight homologous X-correction lookup table for all 16 Z-stabilizer syndromes.
+pub const LOOKUP_X_CORRECTION: [u16; 16] = [
+    0,                             // 0: ( 1,  1,  1,  1) -> No error
+    1 << 1,                        // 1: (-1,  1,  1,  1) -> X1
+    1 << 6,                        // 2: ( 1, -1,  1,  1) -> X6
+    1 << 4,                        // 3: (-1, -1,  1,  1) -> X4
+    1 << 0,                        // 4: ( 1,  1, -1,  1) -> X0
+    (1 << 0) | (1 << 1),           // 5: (-1,  1, -1,  1) -> X0 X1
+    1 << 3,                        // 6: ( 1, -1, -1,  1) -> X3
+    (1 << 1) | (1 << 3),           // 7: (-1, -1, -1,  1) -> X1 X3
+    1 << 8,                        // 8: ( 1,  1,  1, -1) -> X8
+    1 << 5,                        // 9: (-1,  1,  1, -1) -> X5
+    (1 << 6) | (1 << 8),           // 10: ( 1, -1,  1, -1) -> X6 X8
+    (1 << 4) | (1 << 8),           // 11: (-1, -1,  1, -1) -> X4 X8
+    (1 << 0) | (1 << 8),           // 12: ( 1,  1, -1, -1) -> X0 X8
+    (1 << 0) | (1 << 5),           // 13: (-1,  1, -1, -1) -> X0 X5
+    (1 << 3) | (1 << 8),           // 14: ( 1, -1, -1, -1) -> X3 X8
+    (1 << 3) | (1 << 5),           // 15: (-1, -1, -1, -1) -> X3 X5
+];
+
+/// Minimum-weight homologous Z-correction lookup table for all 16 X-stabilizer syndromes.
+pub const LOOKUP_Z_CORRECTION: [u16; 16] = [
+    0,                             // 0: ( 1,  1,  1,  1) -> No error
+    1 << 0,                        // 1: (-1,  1,  1,  1) -> Z0
+    1 << 5,                        // 2: ( 1, -1,  1,  1) -> Z5
+    1 << 4,                        // 3: (-1, -1,  1,  1) -> Z4
+    1 << 2,                        // 4: ( 1,  1, -1,  1) -> Z2
+    1 << 1,                        // 5: (-1,  1, -1,  1) -> Z1
+    (1 << 2) | (1 << 5),           // 6: ( 1, -1, -1,  1) -> Z2 Z5
+    (1 << 1) | (1 << 5),           // 7: (-1, -1, -1,  1) -> Z1 Z5
+    1 << 6,                        // 8: ( 1,  1,  1, -1) -> Z6
+    (1 << 0) | (1 << 6),           // 9: (-1,  1,  1, -1) -> Z0 Z6
+    1 << 7,                        // 10: ( 1, -1,  1, -1) -> Z7
+    (1 << 0) | (1 << 7),           // 11: (-1, -1,  1, -1) -> Z0 Z7
+    (1 << 2) | (1 << 6),           // 12: ( 1,  1, -1, -1) -> Z2 Z6
+    (1 << 1) | (1 << 6),           // 13: (-1,  1, -1, -1) -> Z1 Z6
+    (1 << 2) | (1 << 7),           // 14: ( 1, -1, -1, -1) -> Z2 Z7
+    (1 << 1) | (1 << 7),           // 15: (-1, -1, -1, -1) -> Z1 Z7
+];
+
+/// Point datum in an empirical fault-tolerant threshold curve.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct VnniThresholdPoint {
+    pub p_phys: f64,
+    pub shots: usize,
+    pub logical_errors: usize,
+    pub logical_error_rate: f64,
+    pub suppression_ratio: f64,
+    pub latency_ns_per_shot: f64,
+}
+
+/// Comprehensive telemetry report from the AVX-VNNI Monte Carlo threshold engine.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct VnniThresholdReport {
+    pub points: Vec<VnniThresholdPoint>,
+    pub empirical_threshold: Option<f64>,
+    pub fit_scaling_coefficient: f64,
+    pub total_shots: usize,
+    pub total_duration_seconds: f64,
+    pub throughput_mshots_sec: f64,
+    pub hardware_backend: String,
+}
+
+/// Real-time closed-loop QEC decoder combining 32-way VNNI syndrome extraction with O(1) table correction.
+#[derive(Debug, Clone, Default)]
+pub struct VnniQecDecoder {
+    pub matrix: SurfaceCode9QVnniMatrix,
+}
+
+impl VnniQecDecoder {
+    /// Constructs a new real-time VNNI decoder instance.
+    pub fn new() -> Self {
+        Self {
+            matrix: SurfaceCode9QVnniMatrix::new(),
+        }
+    }
+
+    /// Evaluates syndrome and retrieves minimum-weight correction `(cx, cz)` in single-cycle lookup.
+    #[inline(always)]
+    pub fn decode(&self, error_x: u16, error_z: u16) -> (u16, u16) {
+        let syn = self.matrix.extract_syndromes_vnni(error_x, error_z);
+        let syn_z_idx = ((syn[0] == -1) as usize)
+            | (((syn[1] == -1) as usize) << 1)
+            | (((syn[2] == -1) as usize) << 2)
+            | (((syn[3] == -1) as usize) << 3);
+        let syn_x_idx = ((syn[4] == -1) as usize)
+            | (((syn[5] == -1) as usize) << 1)
+            | (((syn[6] == -1) as usize) << 2)
+            | (((syn[7] == -1) as usize) << 3);
+
+        (
+            LOOKUP_X_CORRECTION[syn_z_idx],
+            LOOKUP_Z_CORRECTION[syn_x_idx],
+        )
+    }
+
+    /// Checks if residual error `R = E ^ C` causes a non-trivial logical operator flip.
+    /// Returns `(bit_flip_failure, phase_flip_failure)`.
+    #[inline(always)]
+    pub fn evaluate_logical_error(
+        &self,
+        error_x: u16,
+        error_z: u16,
+        cx: u16,
+        cz: u16,
+    ) -> (bool, bool) {
+        let rx = error_x ^ cx;
+        let rz = error_z ^ cz;
+        // Z_L = Z0 Z1 Z2 (row 0: qubits 0, 1, 2)
+        let bit_flip_fail = (rx & 0b000000111).count_ones() & 1 == 1;
+        // X_L = X0 X3 X6 (col 0: qubits 0, 3, 6)
+        let phase_flip_fail = (rz & 0b001001001).count_ones() & 1 == 1;
+        (bit_flip_fail, phase_flip_fail)
+    }
+
+    /// Executes full pipeline for error bitstrings: extract -> decode -> check logical error.
+    #[inline(always)]
+    pub fn run_trial(&self, error_x: u16, error_z: u16) -> bool {
+        let (cx, cz) = self.decode(error_x, error_z);
+        let (bf, pf) = self.evaluate_logical_error(error_x, error_z, cx, cz);
+        bf || pf
+    }
+
+    /// Simulates single Monte Carlo trial under symmetric physical depolarizing noise `p_phys`.
+    #[inline(always)]
+    pub fn simulate_trial_depolarizing<R: rand::Rng>(&self, p_phys: f64, rng: &mut R) -> bool {
+        let mut err_x = 0u16;
+        let mut err_z = 0u16;
+
+        for q in 0..9 {
+            let r: f64 = rng.gen();
+            if r < p_phys {
+                let u = r / p_phys;
+                if u < 1.0 / 3.0 {
+                    err_x |= 1 << q;
+                } else if u < 2.0 / 3.0 {
+                    err_z |= 1 << q;
+                } else {
+                    err_x |= 1 << q;
+                    err_z |= 1 << q;
+                }
+            }
+        }
+
+        self.run_trial(err_x, err_z)
+    }
+
+    /// Sweeps physical noise rates and compiles complete threshold scaling telemetry.
+    pub fn monte_carlo_threshold_sweep(
+        &self,
+        p_values: &[f64],
+        shots_per_point: usize,
+        seed: u64,
+    ) -> VnniThresholdReport {
+        use rand::SeedableRng;
+        use rand_chacha::ChaCha8Rng;
+        use std::time::Instant;
+
+        let backend = VnniBackend::detect();
+        let mut points = Vec::with_capacity(p_values.len());
+        let t_total = Instant::now();
+        let mut total_shots = 0;
+
+        for &p in p_values {
+            let mut rng = ChaCha8Rng::seed_from_u64(seed ^ (p.to_bits()));
+            let t0 = Instant::now();
+            let mut failures = 0;
+
+            for _ in 0..shots_per_point {
+                if self.simulate_trial_depolarizing(p, &mut rng) {
+                    failures += 1;
+                }
+            }
+            let dur = t0.elapsed();
+            total_shots += shots_per_point;
+
+            let p_l = failures as f64 / shots_per_point as f64;
+            let ratio = if p_l > 1e-12 { p / p_l } else { 1.0 / p };
+            let lat_ns = dur.as_nanos() as f64 / shots_per_point as f64;
+
+            points.push(VnniThresholdPoint {
+                p_phys: p,
+                shots: shots_per_point,
+                logical_errors: failures,
+                logical_error_rate: p_l,
+                suppression_ratio: ratio,
+                latency_ns_per_shot: lat_ns,
+            });
+        }
+
+        let total_dur = t_total.elapsed().as_secs_f64();
+        let throughput = (total_shots as f64 / total_dur) / 1e6;
+
+        // Find threshold crossover: where p_l crosses p_phys from below to above
+        let mut threshold = None;
+        for i in 0..points.len().saturating_sub(1) {
+            let p1 = points[i].p_phys;
+            let pl1 = points[i].logical_error_rate;
+            let p2 = points[i + 1].p_phys;
+            let pl2 = points[i + 1].logical_error_rate;
+
+            if pl1 <= p1 && pl2 >= p2 {
+                let frac = (p1 - pl1) / ((pl2 - p2) + (p1 - pl1));
+                threshold = Some(p1 + frac * (p2 - p1));
+                break;
+            }
+        }
+
+        let mut fit_a = 0.0;
+        for pt in &points {
+            if pt.logical_error_rate > 0.0 && pt.p_phys <= 0.02 {
+                fit_a = pt.logical_error_rate / (pt.p_phys * pt.p_phys);
+                break;
+            }
+        }
+
+        VnniThresholdReport {
+            points,
+            empirical_threshold: threshold,
+            fit_scaling_coefficient: fit_a,
+            total_shots,
+            total_duration_seconds: total_dur,
+            throughput_mshots_sec: throughput,
+            hardware_backend: backend.name().to_string(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -286,38 +514,54 @@ mod tests {
 
     #[test]
     fn test_symplectic_commutation() {
-        // Pauli X0 and Z0 on qubit 0: anticommute -> 1
         assert_eq!(symplectic_commutation_16q(1, 0, 0, 1), 1);
-        // Pauli X0 and X0: commute -> 0
         assert_eq!(symplectic_commutation_16q(1, 0, 1, 0), 0);
-        // Pauli X0 Z1 and Z0 X1: X0*Z0 (-1) + Z1*X1 (+1) = 0 mod 2 -> commute
         assert_eq!(symplectic_commutation_16q(0b01, 0b10, 0b10, 0b01), 0);
-        // Pauli X0 Z1 and X0 X1: X0*X0 (0) + Z1*X1 (-1) = 1 mod 2 -> anticommute
         assert_eq!(symplectic_commutation_16q(0b01, 0b10, 0b11, 0b00), 1);
     }
 
     #[test]
     fn test_surface_code_syndromes_all_single_qubit_errors() {
         let matrix = SurfaceCode9QVnniMatrix::new();
-
-        // No errors -> all +1
         let syn_clean = matrix.extract_syndromes_vnni(0, 0);
         assert_eq!(syn_clean, [1, 1, 1, 1, 1, 1, 1, 1]);
 
-        // Single X error on qubit 0 (detected by S_z3: Z0 Z3)
         let syn_x0 = matrix.extract_syndromes_vnni(1 << 0, 0);
         assert_eq!(syn_x0, [1, 1, -1, 1, 1, 1, 1, 1]);
 
-        // Single X error on qubit 4 (detected by S_z1: Z1 Z2 Z4 Z5 and S_z2: Z3 Z4 Z6 Z7)
         let syn_x4 = matrix.extract_syndromes_vnni(1 << 4, 0);
         assert_eq!(syn_x4, [-1, -1, 1, 1, 1, 1, 1, 1]);
 
-        // Single Z error on qubit 1 (detected by S_x1: X0 X1 X3 X4 and S_x3: X1 X2)
         let syn_z1 = matrix.extract_syndromes_vnni(0, 1 << 1);
         assert_eq!(syn_z1, [1, 1, 1, 1, -1, 1, -1, 1]);
 
-        // Combined Y error on qubit 4 (both X and Z on qubit 4)
         let syn_y4 = matrix.extract_syndromes_vnni(1 << 4, 1 << 4);
         assert_eq!(syn_y4, [-1, -1, 1, 1, -1, -1, 1, 1]);
     }
+
+    #[test]
+    fn test_vnni_decoder_single_error_zero_logical_failure() {
+        let decoder = VnniQecDecoder::new();
+        for q in 0..9 {
+            let failed = decoder.run_trial(1 << q, 0);
+            assert!(!failed, "Single X error on qubit {q} caused logical failure!");
+        }
+        for q in 0..9 {
+            let failed = decoder.run_trial(0, 1 << q);
+            assert!(!failed, "Single Z error on qubit {q} caused logical failure!");
+        }
+        for q in 0..9 {
+            let failed = decoder.run_trial(1 << q, 1 << q);
+            assert!(!failed, "Single Y error on qubit {q} caused logical failure!");
+        }
+    }
+
+    #[test]
+    fn test_vnni_decoder_two_qubit_logical_string_detected() {
+        let decoder = VnniQecDecoder::new();
+        let failed = decoder.run_trial((1 << 0) | (1 << 3), 0);
+        assert!(failed, "Two-qubit error along column 0 should trigger logical failure!");
+    }
 }
+
+

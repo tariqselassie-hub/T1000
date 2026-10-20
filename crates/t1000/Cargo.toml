@@ -68,6 +68,10 @@ name = "vnni_syndrome_bench"
 path = "src/bin/measurements/vnni_syndrome_bench.rs"
 
 [[bin]]
+name = "vnni_threshold_bench"
+path = "src/bin/measurements/vnni_threshold_bench.rs"
+
+[[bin]]
 name = "igpu_bridge_bench"
 path = "src/bin/measurements/igpu_bridge_bench.rs"
 
