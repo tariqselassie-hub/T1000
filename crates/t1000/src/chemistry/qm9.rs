@@ -19,7 +19,7 @@ use std::path::Path;
 use zip::ZipArchive;
 
 /// Single atom entry from an extended XYZ geometry block.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct Qm9Atom {
     /// Atomic element symbol (e.g. "C", "H", "O", "N", "F").
     pub symbol: String,
@@ -30,7 +30,7 @@ pub struct Qm9Atom {
 }
 
 /// Comprehensive quantum chemical record for a single QM9 molecule.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct Qm9Record {
     /// Molecule index within the GDB-9 space (1..133885).
     pub index: usize,
@@ -456,5 +456,19 @@ InChI=1S/CH4/h1H4\tInChI=1S/CH4/h1H4
         assert!(phis[0] < 0.0);
         // Hydrogen Mulliken charge is positive (+0.133), so phi_1 should be positive
         assert!(phis[1] > 0.0);
+    }
+
+    #[test]
+    fn test_qm9_record_and_atom_default() {
+        let rec = Qm9Record::default();
+        assert_eq!(rec.index, 0);
+        assert_eq!(rec.n_atoms, 0);
+        assert!(rec.atoms.is_empty());
+        assert_eq!(rec.u0, 0.0);
+
+        let atom = Qm9Atom::default();
+        assert_eq!(atom.symbol, "");
+        assert_eq!(atom.coords, [0.0; 3]);
+        assert_eq!(atom.mulliken_charge, 0.0);
     }
 }
