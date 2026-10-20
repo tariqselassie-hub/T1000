@@ -244,6 +244,14 @@
 * **Sovereign Publication Visual:** 4-panel showdown chart rendered at 300 DPI ([`results/plots/vnni_qec_threshold_dynamics.png`](results/plots/vnni_qec_threshold_dynamics.png)).
 * Detailed Documentation: [`docs/findings/vnni_qec_threshold_dynamics.md`](docs/findings/vnni_qec_threshold_dynamics.md).
 
+### 28. Real-Symmetric Molecular Eigensystem Engine & Zero-Allocation QM9 Streaming Ingestion (`molecular_eigensystem_bench`)
+* **50x50 Coulomb Matrix Householder-QL Eigensolver (`t1000::simd::eigensystem`, `t1000::chemistry::coulomb`):** Vectorized bare-metal symmetric reduction of dense $50 \times 50$ Coulomb matrices ($1,275$ packed upper-triangular entries) into exact 50-dimensional eigenspectra at **$14,352.5\text{ molecules/second}$** ($69.67\,\mu\text{s}$ per molecule).
+* **Machine-Precision Spectral Preservation:** Guaranteed spectral trace conservation ($\sum \lambda_i = \mathrm{Tr}(C)$) with maximum drift bounded at **$2.73 \times 10^{-12}$**, verifying exact mathematical rigor across thousands of real molecules from `roboBohr.csv`.
+* **Complete Invariance under $SO(3) \times S_N$:** Reconstructed eigenspectra are strictly invariant under molecular 3D rotation, translation, and identical atom permutation, providing an ideal coordinate-free representation for quantum VQC and QGNN training.
+* **Zero-Allocation QM9 Streaming Ingestion Substrate (`t1000::chemistry::qm9`):** Reads compressed `.xyz` structures directly from `QM9.zip` in memory without temporary disk extraction, ingesting 15 scalar B3LYP DFT properties ($U_0, \Delta\epsilon, \mu, \alpha, C_v$), Cartesian geometries, and compiling 19-dimensional quantum Hilbert feature maps at **$4,056.4\text{ molecules/second}$** ($246.53\,\mu\text{s}$ per molecule).
+* **Sovereign Publication Visual:** 4-panel showdown chart rendered at 300 DPI ([`results/plots/molecular_eigensystem_dynamics.png`](results/plots/molecular_eigensystem_dynamics.png)).
+* Detailed Documentation: [`docs/findings/molecular_eigensystem_and_qm9_ingestion.md`](docs/findings/molecular_eigensystem_and_qm9_ingestion.md).
+
 ---
 
 ## Quick Start for Developers
@@ -292,6 +300,12 @@ cargo run --release -p t1000 --bin vnni_threshold_bench
 
 # Render 300 DPI Sovereign Visual of VNNI QEC Threshold Dynamics
 python scripts/charting/chart_vnni_threshold.py
+
+# Run Real-Symmetric Molecular Eigensystem & QM9 Ingestion Benchmark
+cargo run --release -p t1000 --bin molecular_eigensystem_bench
+
+# Render 300 DPI Sovereign Visual of Molecular Eigensystem Dynamics
+python scripts/charting/chart_molecular_eigensystem.py
 
 # Run Intel Graphics (Xe iGPU) zero-copy UMA dense statevector benchmark (OpenCL)
 cargo run --release -p t1000 --bin igpu_bridge_bench
@@ -377,6 +391,7 @@ python scripts/charting/chart_full_qnn_suite.py
 python web/serve.py
 ```
 
+* **Real-Symmetric Molecular Eigensystem & Zero-Allocation QM9 Ingestion:** [`docs/findings/molecular_eigensystem_and_qm9_ingestion.md`](docs/findings/molecular_eigensystem_and_qm9_ingestion.md).
 * **Closed-Loop AVX-VNNI Real-Time Surface Code Threshold Dynamics:** [`docs/findings/vnni_qec_threshold_dynamics.md`](docs/findings/vnni_qec_threshold_dynamics.md).
 * **Fault-Tolerant Lattice Surgery & Magic State Distillation:** [`docs/findings/fault_tolerant_lattice_surgery_and_magic_distillation.md`](docs/findings/fault_tolerant_lattice_surgery_and_magic_distillation.md).
 * **Full Quantum Neural Network (QNN) Suite Benchmark & Showdown:** [`docs/findings/full_quantum_neural_network_suite_benchmarks.md`](docs/findings/full_quantum_neural_network_suite_benchmarks.md).
@@ -398,7 +413,7 @@ python web/serve.py
 * **Zero-Allocation Dense VQC & Heptal Qudit MPS QNN Findings:** [`docs/findings/avx2_zero_allocation_and_heptal_qnn.md`](docs/findings/avx2_zero_allocation_and_heptal_qnn.md).
 * **Dashboard & Circuit Composer Documentation:** [`docs/dashboard_and_circuit_composer.md`](docs/dashboard_and_circuit_composer.md).
 * **Bloch-Zipper & MPS Derivation:** [`docs/bloch_zipper_mps_specification.md`](docs/bloch_zipper_mps_specification.md).
-* **Empirical Research & Findings Registry (Dual-Housed with Deen OS Monographs M123–M148):** [`docs/findings/README.md`](docs/findings/README.md).
+* **Empirical Research & Findings Registry (Dual-Housed with Deen OS Monographs M123–M149):** [`docs/findings/README.md`](docs/findings/README.md).
 
 ---
 

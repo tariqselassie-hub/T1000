@@ -1,0 +1,22 @@
+{
+  "author": "Terrence A. Jones SR",
+  "qm9": {
+    "avg_latency_us": 246.5252,
+    "mean_dipole_debye": 2.5150940000000017,
+    "mean_gap_ev": 7.004452456827191,
+    "mean_u0_hartree": -333.93503835940004,
+    "molecules_evaluated": 5000,
+    "throughput_mols_per_sec": 4056.3804430540977,
+    "total_time_ms": 1232.626
+  },
+  "robobohr": {
+    "avg_latency_us": 69.6741,
+    "max_trace_drift": 2.7284841053187847e-12,
+    "mean_eat_hartree": -11.944058877393966,
+    "molecules_evaluated": 5000,
+    "throughput_mols_per_sec": 14352.53559070013,
+    "total_time_ms": 348.37050000000005
+  },
+  "system": "T-1000 Molecular Eigensystem & Quantum Chemistry Ingestion Engine",
+  "timestamp": "2026-10-19T21:15:00Z"
+}

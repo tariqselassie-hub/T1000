@@ -6,11 +6,15 @@
 //! Provides second-quantized spin-orbital mappings, Jordan-Wigner Hamiltonians,
 //! ground-state preparation, and orbital entanglement entropy diagnostics.
 
+pub mod coulomb;
 pub mod hamiltonian;
 pub mod molecules;
+pub mod qm9;
 
+pub use coulomb::{CoulombMatrix50, RoboBohrRecord, COULOMB_DIM_50, COULOMB_UPPER_TRI_COUNT_50};
 pub use hamiltonian::{JordanWignerHamiltonian, PauliOp, PauliTerm};
 pub use molecules::{Period12Molecule, Period12MoleculeMetadata};
+pub use qm9::{Qm9Atom, Qm9Record, HARTREE_TO_EV};
 
 use serde::{Deserialize, Serialize};
 

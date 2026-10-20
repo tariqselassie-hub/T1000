@@ -14,6 +14,7 @@
 //! - [`model`]: Strongly-typed [`SimdStateView`], [`SimdStateViewMut`], and [`SimdBackend`] domain models.
 
 pub mod algebra;
+pub mod eigensystem;
 pub mod guards;
 pub mod measurements;
 pub mod model;
@@ -21,6 +22,9 @@ pub mod rotations;
 
 // Re-export all primary kernel functions for 100% backward compatibility
 pub use algebra::{apply_rademacher_phase_kernel, inner_product_kernel, normalize_kernel};
+pub use eigensystem::{
+    solve_coulomb_eigensystem_50, solve_symmetric_eigensystem, SymmetricEigensystem,
+};
 pub use guards::{
     assert_fused_readout_width, assert_qubit, assert_qubit_pair, assert_statevector,
     MAX_FUSED_READOUT_QUBITS,
