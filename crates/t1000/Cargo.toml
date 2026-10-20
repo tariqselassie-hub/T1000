@@ -315,3 +315,7 @@ path = "src/bin/benchmarks/orthogonal_proxy_rcs_bench.rs"
 [[bin]]
 name = "igpu_fp32_proto"
 path = "src/bin/measurements/igpu_fp32_proto.rs"
+
+[[bin]]
+name = "backend_auto_bench"
+path = "src/bin/measurements/backend_auto_bench.rs"
