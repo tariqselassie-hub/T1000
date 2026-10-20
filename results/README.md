@@ -12,9 +12,9 @@ This directory stores reproducible experiment reports, benchmark telemetry JSON/
 ```
 results/
 ├── charts/         # 24 High-resolution scientific figures (Obsidian & Laser Green)
-├── plots/          # 6 High-impact sovereign monograph dynamics figures (M148–M153)
+├── plots/          # 7 High-impact sovereign monograph dynamics figures (M148–M154)
 ├── experiments/    # 38 Raw hardware & simulation JSON/CSV telemetry reports
-├── data/           # 11 Research milestone reports & molecular telemetry summaries
+├── data/           # 12 Research milestone reports & molecular telemetry summaries
 └── *.json          # Top-level benchmark telemetry (Proxy RCS, Topological Sorter, Chaos)
 ```
 
@@ -24,6 +24,7 @@ results/
 
 | Monograph | Figure Name | Subsystem & Scientific Focus | Resolution / Telemetry |
 | :---: | :--- | :--- | :--- |
+| **M154** | **`qm9_continuous_walk_screening.png`** | Continuous Topological Walk on Ab Initio Coulomb Laplacians & AVX-VNNI Zeno Confinement | 300 DPI, 4 panels (`results/data/qm9_continuous_walk_screening.json`) |
 | **M153** | **`qm9_transversal_w7_dynamics.png`** | 18-Qubit Transversal [[7, 1, 3]] Steane-Wheel FT-QNN & In-Register Physical Ancillas | 300 DPI, 4 panels (`results/data/qm9_transversal_w7_report.json`) |
 | **M152** | **`qgol_holonomy_and_solitons.png`** | Non-Abelian Geometric Holonomy, Quantized Vortex Dipoles & Floquet Chaos Scrambling | 300 DPI, 4 panels (`results/experiments/qgol_simulation_telemetry.json`) |
 | **M151** | **`qm9_fault_tolerant_dynamics.png`** | 18-Qubit Fault-Tolerant QM9 VQC Training & Mid-Circuit AVX-VNNI Syndrome Filtering | 300 DPI, 4 panels (`results/data/qm9_fault_tolerant_training_report.json`) |

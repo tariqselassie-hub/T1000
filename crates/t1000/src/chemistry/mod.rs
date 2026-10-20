@@ -11,6 +11,7 @@ pub mod coulomb;
 pub mod hamiltonian;
 pub mod molecules;
 pub mod qm9;
+pub mod topological_walk;
 
 pub use baseline::{
     AtomicBaselineDecoder, AtomicReferenceTable, B3LYP_E_ATOM_C, B3LYP_E_ATOM_F, B3LYP_E_ATOM_H,
@@ -20,6 +21,7 @@ pub use coulomb::{CoulombMatrix50, RoboBohrRecord, COULOMB_DIM_50, COULOMB_UPPER
 pub use hamiltonian::{JordanWignerHamiltonian, PauliOp, PauliTerm};
 pub use molecules::{Period12Molecule, Period12MoleculeMetadata};
 pub use qm9::{Qm9Atom, Qm9Record};
+pub use topological_walk::{ClassicalRandomWalk, ContinuousMolecularWalk, MolecularLaplacian};
 
 use serde::{Deserialize, Serialize};
 

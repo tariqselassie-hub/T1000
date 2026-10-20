@@ -393,6 +393,12 @@ cargo run --release -p t1000 --bin qm9_transversal_w7_train
 # Render Sovereign Transversal FT-QNN Dynamics Chart (Monograph M153)
 python scripts/charting/chart_qm9_transversal_w7_training.py
 
+# Run QM9 Continuous-Time Topological Quantum Walk Chemical Screener & Zeno Filter (Monograph M154)
+cargo run --release -p t1000 --bin continuous_walk_qm9_filter
+
+# Render Sovereign QM9 Continuous Topological Walk Screening Dynamics Chart (Monograph M154)
+python scripts/charting/chart_qm9_continuous_walk.py
+
 # Run Quantum Conway QCA Multi-Scale Benchmark & Soliton Interferometry
 cargo run --release -p t1000_conway --bin qgol_sim
 
@@ -409,6 +415,7 @@ python scripts/charting/chart_qm9_fault_tolerant_training.py
 python web/serve.py
 ```
 
+* **Continuous-Time Topological Quantum Walk on Ab Initio Coulomb Laplacians & AVX-VNNI Zeno Confinement (Monograph M154):** [`docs/findings/qm9_continuous_topological_walk_screening.md`](docs/findings/qm9_continuous_topological_walk_screening.md).
 * **18-Qubit Transversal [[7, 1, 3]] Steane-Wheel FT-QNN & In-Register Physical Ancillas (Monograph M153):** [`docs/findings/qm9_transversal_w7_fault_tolerant_training.md`](docs/findings/qm9_transversal_w7_fault_tolerant_training.md).
 * **Non-Abelian Geometric Holonomy, Quantized Vortex Dipoles & Floquet Chaos Scrambling in Unitary QCA (Monograph M152):** [`docs/findings/qgol_geometric_holonomy_and_topological_solitons.md`](docs/findings/qgol_geometric_holonomy_and_topological_solitons.md).
 * **18-Qubit Fault-Tolerant QM9 VQC Training & Mid-Circuit AVX-VNNI Syndrome Filtering (Monograph M151):** [`docs/findings/qm9_fault_tolerant_vqc_training_and_midcircuit_vnni_filtering.md`](docs/findings/qm9_fault_tolerant_vqc_training_and_midcircuit_vnni_filtering.md).
@@ -435,7 +442,7 @@ python web/serve.py
 * **Zero-Allocation Dense VQC & Heptal Qudit MPS QNN Findings:** [`docs/findings/avx2_zero_allocation_and_heptal_qnn.md`](docs/findings/avx2_zero_allocation_and_heptal_qnn.md).
 * **Dashboard & Circuit Composer Documentation:** [`docs/dashboard_and_circuit_composer.md`](docs/dashboard_and_circuit_composer.md).
 * **Bloch-Zipper & MPS Derivation:** [`docs/bloch_zipper_mps_specification.md`](docs/bloch_zipper_mps_specification.md).
-* **Empirical Research & Findings Registry (Dual-Housed with Deen OS Monographs M123–M153):** [`docs/findings/README.md`](docs/findings/README.md).
+* **Empirical Research & Findings Registry (Dual-Housed with Deen OS Monographs M123–M154):** [`docs/findings/README.md`](docs/findings/README.md).
 
 ---
 

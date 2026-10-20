@@ -192,7 +192,7 @@ fn householder_tridiagonalize(
                 for j in 0..l {
                     let mut g = 0.0;
                     for k in 0..l {
-                        g += v[i * n + k] * v[k * n + j];
+                        g += a[i * n + k] * v[k * n + j];
                     }
                     for k in 0..l {
                         v[k * n + j] -= g * v[k * n + i];

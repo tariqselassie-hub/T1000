@@ -63,8 +63,9 @@ pub use cascaded_tree_valve::{
     SparseCoupling, SparseSymmetricHamiltonian,
 };
 pub use chemistry::{
-    list_period_molecules, simulate_period_molecule, JordanWignerHamiltonian,
-    MolecularQuantumReport, PauliOp, PauliTerm, Period12Molecule, Period12MoleculeMetadata,
+    list_period_molecules, simulate_period_molecule, ClassicalRandomWalk, ContinuousMolecularWalk,
+    JordanWignerHamiltonian, MolecularLaplacian, MolecularQuantumReport, PauliOp, PauliTerm,
+    Period12Molecule, Period12MoleculeMetadata,
 };
 pub use clifford_t::{
     factor_to_clifford_t, lower_circuit_ops, optimize_clifford_t_sequence, synthesize_and_profile,

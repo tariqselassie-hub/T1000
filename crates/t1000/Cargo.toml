@@ -313,5 +313,9 @@ path = "src/bin/screening/zinc_topological_walk_screen.rs"
 name = "orthogonal_proxy_rcs_bench"
 path = "src/bin/benchmarks/orthogonal_proxy_rcs_bench.rs"
 
+[[bin]]
+name = "continuous_walk_qm9_filter"
+path = "src/bin/screening/continuous_walk_qm9_filter.rs"
+
 
 

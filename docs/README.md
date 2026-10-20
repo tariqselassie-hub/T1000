@@ -18,8 +18,9 @@ docs/
 ├── zinc_quantum_screening.md                 # ZINC 250k whole-library VQC screening & Pareto drug mining
 ├── bloch_zipper_mps_specification.md         # 1D Matrix Product State (MPS) linear Bloch-zipper theory
 ├── mimac_quantum_cliff_analysis.md           # Molecular activity cliffs & chemical latent space dispersion
-└── findings/                                 # Sovereign Empirical Research Registry (Monographs M123–M153)
+└── findings/                                 # Sovereign Empirical Research Registry (Monographs M123–M154)
     ├── README.md                             # Monograph index table & verification criteria
+    ├── qm9_continuous_topological_walk_screening.md                     # M154: Continuous Topological Walk Screener
     ├── qm9_transversal_w7_fault_tolerant_training.md                     # M153: [[7, 1, 3]] Steane-Wheel FT-QNN
     ├── qgol_geometric_holonomy_and_topological_solitons.md              # M152: Unitary QCA & Berry Phase Solitons
     ├── qm9_fault_tolerant_vqc_training_and_midcircuit_vnni_filtering.md  # M151: AVX-VNNI Syndrome Confinement
