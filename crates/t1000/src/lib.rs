@@ -32,6 +32,7 @@ pub mod glued_trees;
 pub mod gpu;
 pub mod heptal_qnn;
 pub mod heptal_wave;
+pub mod hostinfo;
 pub mod ingest;
 pub mod lattice;
 pub mod measurements;

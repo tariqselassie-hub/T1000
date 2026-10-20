@@ -1048,7 +1048,7 @@ fn main() {
     let report = Zinc12QubitReport {
         classical_baselines: classical_baselines.clone(),
         timestamp_rfc3339: "2026-10-13T13:15:00Z".to_string(),
-        host_cpu: "Intel Core Ultra 7 265 (20 Cores)".to_string(),
+        host_cpu: t1000::hostinfo::HostProfile::detect().label(),
         host_ram_gb: 16.0,
         n_qubits: N_QUBITS,
         state_dimension: DIM,

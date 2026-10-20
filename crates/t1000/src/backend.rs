@@ -58,6 +58,9 @@ impl BackendPolicy {
 
     pub fn from_env() -> Self {
         let mut p = Self::default();
+        if let Some(n) = crate::hostinfo::HostProfile::detect().gpu_min_qubits() {
+            p.gpu_min_qubits = n;
+        }
         let get = |k: &str| std::env::var(k).ok().map(|v| v.to_ascii_lowercase());
         match get("T1000_PRECISION").as_deref() {
             Some("fast") => p.precision = Precision::Fast,

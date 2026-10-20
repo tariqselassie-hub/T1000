@@ -9,7 +9,7 @@
 //! 3. Fused 99-Parameter Observable Rotation Kernel (72 Gates: 24 Ry, 24 Rz, 24 CZ + Read-Only AVX2 POVM Reduction)
 //! 4. Fused 98-Parameter Qubit-11 Eliminated Kernel (72 Gates + 11-Qubit AVX2 POVM Reduction, column 11 skipped)
 //!
-//! Hardware Platform: Intel Core Ultra 7 265 (20 Cores) | AVX2 + FMA SIMD | 64 KB L2 State Cache
+//! Hardware Platform: detected at runtime (`t1000::hostinfo`) | 64 KB L2 State Cache
 
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -163,7 +163,7 @@ fn main() {
     println!(" Operator Identity : <Z_q>_final = cos(θ_q) <Z_q>_L2 - sin(θ_q) <X_q>_L2");
     println!(" Memory Traffic    : 768 KB Write Traffic -> 0 KB Statevector Mutation in L3");
     println!(" State Evolution   : Stops at Gate 72 (Layer 2) | Dual AVX2 Read-Only POVM");
-    println!(" Target Hardware   : Intel Core Ultra 7 265 (20 Cores) | AVX2 + FMA SIMD");
+    println!(" Target Hardware   : {}", t1000::hostinfo::HostProfile::detect().label());
     println!("=========================================================================\n");
 
     let test_path =
@@ -264,8 +264,9 @@ fn main() {
 
     println!("[BENCHMARK CONFIGURATION]");
     println!(
-        " Concurrency     : {} Worker Threads (Intel Core Ultra 7 265)",
-        num_threads
+        " Concurrency     : {} Worker Threads ({})",
+        num_threads,
+        t1000::hostinfo::HostProfile::detect().cpu_model
     );
     println!(
         " Holdout Dataset : {} Molecules x {} Repeats = {} Total Evaluations\n",
@@ -735,7 +736,7 @@ fn main() {
     );
     let report = FusedEquivalenceReport {
         timestamp_rfc3339: "2026-10-13T20:45:00Z".to_string(),
-        host_cpu: "Intel Core Ultra 7 265 (20 Cores)".to_string(),
+        host_cpu: t1000::hostinfo::HostProfile::detect().label(),
         holdout_samples: test_samples.len(),
         full_param_count: 111,
         pruned_param_count: 99,

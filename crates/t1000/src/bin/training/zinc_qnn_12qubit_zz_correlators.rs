@@ -882,7 +882,7 @@ fn main() {
     let report = ZZCorrelatorReport {
         classical_baselines: classical_baselines.clone(),
         timestamp_rfc3339: chrono_now(),
-        host_cpu: "Intel Core Ultra 7 265 (20 Cores)".to_string(),
+        host_cpu: t1000::hostinfo::HostProfile::detect().label(),
         n_qubits: N_QUBITS,
         n_single_qubit_obs: N_QUBITS,
         n_two_body_obs: N_PAIRS,

@@ -179,7 +179,7 @@ fn main() {
 
     let report = Tn36QubitReport {
         timestamp: "2026-10-12T21:40:00Z".to_string(),
-        host_cpu: "Intel Core Ultra 7 265 (20 Cores, 256-Bit AVX2)".to_string(),
+        host_cpu: t1000::hostinfo::HostProfile::detect().label(),
         architecture: "2D Planar Tensor Network (PEPS) + Tindall-Fishman BP Gauging".to_string(),
         qubits,
         topology: format!("{}x{} Square Grid", width, height),

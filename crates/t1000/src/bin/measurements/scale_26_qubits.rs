@@ -82,7 +82,8 @@ fn main() {
     println!("=========================================================================");
     println!("     GUDDANETWORKS QNN DENSE SCALING BENCHMARK: UP TO 26 QUBITS         ");
     println!("=========================================================================");
-    println!(" Microarchitecture : 256-Bit AVX2 + FMA (Intel Core Ultra 7 265)        ");
+    let host = t1000::hostinfo::HostProfile::detect();
+    println!(" Host              : {}", host.label());
     println!(
         " Circuit Depth     : {} Layers (Ring CZ Entanglement)                    ",
         depth
@@ -203,12 +204,15 @@ fn main() {
 
     let report = QubitScaleReport {
         timestamp: "2026-10-13T11:55:00Z".to_string(),
-        host_cpu: "Intel Core Ultra 7 265 (20 Cores, 256-bit AVX2+FMA)".to_string(),
+        host_cpu: host.label(),
         target_depth: depth,
         points,
     };
 
-    let out_path = PathBuf::from("results/experiments/qnn_scaling_26_qubits.json");
+    let slug = host.slug();
+    let host_dir = PathBuf::from(format!("results/hosts/{slug}"));
+    let _ = fs::create_dir_all(&host_dir);
+    let out_path = host_dir.join("qnn_scaling_26_qubits.json");
     if let Some(parent) = out_path.parent() {
         let _ = fs::create_dir_all(parent);
     }
@@ -220,12 +224,12 @@ fn main() {
         );
     }
 
-    let csv_path = PathBuf::from("results/experiments/qnn_scaling_26_qubits.csv");
+    let csv_path = host_dir.join("qnn_scaling_26_qubits.csv");
     let mut csv_lines = Vec::new();
     csv_lines.push("qubits,num_states,ram_mb,ram_gb,total_latency_ms,total_latency_s,per_layer_ms,circuit_depth,f_xeb_with_pi,f_xeb_no_pi,f_xeb_cross_nisq,top_state_prob,uniform_prob,peak_multiplier,host_cpu,host_ram_gb,instruction_set".to_string());
     for p in &report.points {
         csv_lines.push(format!(
-            "{},{},{:.6},{:.6},{:.4},{:.6},{:.6},{},{:.6},{:.6},{:.6},{:.10e},{:.10e},{:.4},\"{}\",16.0,\"256-bit AVX2+FMA SIMD\"",
+            "{},{},{:.6},{:.6},{:.4},{:.6},{:.6},{},{:.6},{:.6},{:.6},{:.10e},{:.10e},{:.4},\"{}\",{:.1},\"{}\"",
             p.qubits,
             p.num_states,
             p.ram_mb,
@@ -240,7 +244,9 @@ fn main() {
             p.top_state_prob,
             p.uniform_prob,
             p.peak_multiplier,
-            report.host_cpu
+            report.host_cpu,
+            host.ram_gb,
+            host.isa.label()
         ));
     }
     if let Ok(()) = fs::write(&csv_path, csv_lines.join("\n")) {
@@ -248,5 +254,14 @@ fn main() {
             "[SUCCESS] Full 26-Qubit Telemetry CSV saved to : {}",
             csv_path.display()
         );
+    }
+
+    // Charts and FPGA comparison scripts read the canonical names; only the reference
+    // host may refresh them so other machines never overwrite the reference timings.
+    if host.is_reference_host() {
+        for ext in ["json", "csv"] {
+            let src = host_dir.join(format!("qnn_scaling_26_qubits.{ext}"));
+            let _ = fs::copy(src, format!("results/experiments/qnn_scaling_26_qubits.{ext}"));
+        }
     }
 }

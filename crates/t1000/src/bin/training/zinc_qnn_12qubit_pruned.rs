@@ -171,7 +171,8 @@ fn main() {
     println!(" Theorem        : Commutation Invariance [Rz(φ_i), Z_j] = 0 & [CZ, Z_j] = 0");
     println!(" Target Circuit : 12 Qubits (dim=4,096 | 64 KB L2 Cache) | Depth = 3");
     println!(" Pruning Target : 111 Parameters (108 Gates) -> 99 Parameters (84 Gates)");
-    println!(" Hardware Host  : Intel Core Ultra 7 265 (20 Cores) | 16.0 GB RAM Ceiling");
+    let host = t1000::hostinfo::HostProfile::detect();
+    println!(" Hardware Host  : {} | {:.1} GB RAM", host.label(), host.ram_gb);
     println!("=========================================================================\n");
 
     let test_path =
@@ -510,7 +511,7 @@ fn main() {
     );
     let report = EquivalenceReport {
         timestamp_rfc3339: "2026-10-13T20:15:00Z".to_string(),
-        host_cpu: "Intel Core Ultra 7 265 (20 Cores)".to_string(),
+        host_cpu: t1000::hostinfo::HostProfile::detect().label(),
         holdout_samples: test_samples.len(),
         full_param_count: 111,
         pruned_param_count: 99,

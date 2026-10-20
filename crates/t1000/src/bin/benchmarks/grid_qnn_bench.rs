@@ -142,7 +142,7 @@ fn resolve_workspace_path(rel: &str) -> PathBuf {
 fn main() {
     let hardware = HardwareProfile {
         host_ram_gb: 16.0,
-        host_cpu_model: "Intel(R) Core(TM) Ultra 7 265".to_string(),
+        host_cpu_model: t1000::hostinfo::HostProfile::detect().cpu_model,
         host_cpu_cores: 20,
         instruction_set: "Native AVX2 + FMA SIMD".to_string(),
     };
