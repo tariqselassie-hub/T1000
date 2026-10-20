@@ -1103,6 +1103,20 @@ class SovereignHandler(http.server.SimpleHTTPRequestHandler):
             except Exception as e:
                 self.send_json_response({"error": str(e)}, status=500)
                 return
+
+        qm9_file = WEB_DIR / "data" / "qm9_quantum_molecules.json"
+        if qm9_file.exists():
+            try:
+                with open(qm9_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                for m in data.get("molecules", []):
+                    if m.get("formula", "").upper() == formula or str(m.get("id")) == formula:
+                        self.send_json_response(m)
+                        return
+            except Exception as e:
+                self.send_json_response({"error": str(e)}, status=500)
+                return
+
         self.send_json_response({"error": f"Molecule {formula} not found in database"}, status=404)
 
     def send_json_response(self, data: Dict[str, Any], status: int = 200):

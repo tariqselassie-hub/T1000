@@ -335,7 +335,36 @@ class QuantumMolecularDashboard {
 
         let molecules = [];
 
-        if (data.molecules) {
+        if (data.is_qm9_dataset) {
+            // QM9 B3LYP DFT Equilibrium Geometries & Coulomb Eigenspectra
+            data.molecules.forEach(m => {
+                molecules.push({
+                    is_qm9_molecule: true,
+                    id: m.id,
+                    formula: m.formula,
+                    name: m.formula,
+                    smiles: m.smiles,
+                    u0_hartree: m.u0_hartree,
+                    u0_ev: m.u0_ev,
+                    gap_hartree: m.gap_hartree,
+                    gap_ev: m.gap_ev,
+                    homo_hartree: m.homo_hartree,
+                    lumo_hartree: m.lumo_hartree,
+                    dipole_debye: m.dipole_debye,
+                    polarizability_bohr3: m.polarizability_bohr3,
+                    zpve_hartree: m.zpve_hartree,
+                    heat_capacity_cv: m.heat_capacity_cv,
+                    n_atoms: m.n_atoms,
+                    atoms: m.atoms,
+                    bonds: m.bonds,
+                    coulomb_eigenspectrum: m.coulomb_eigenspectrum,
+                    coulomb_trace: m.coulomb_trace,
+                    z_expectations: m.z_expectations,
+                    tag: `${m.formula} (DFT)`,
+                    display_metric: `${m.gap_ev.toFixed(2)} eV Gap`
+                });
+            });
+        } else if (data.molecules) {
             // Period 1 & 2 Molecular Quantum Series (H2 to CH4, 4 to 18 Qubits)
             data.molecules.forEach(m => {
                 molecules.push({
@@ -619,6 +648,52 @@ class QuantumMolecularDashboard {
         `;
     }
 
+    renderQm9Card(meta) {
+        const compEl = document.getElementById('attractor-comparison-container');
+        const titleEl = document.getElementById('section-comparison-title');
+        if (titleEl) titleEl.textContent = 'B3LYP/6-31G(2df,p) DFT Ground State';
+        if (!compEl) return;
+
+        compEl.innerHTML = `
+            <div class="comparison-strip">
+                <div class="comparison-header">
+                    <span>${meta.formula} (#${meta.id})</span>
+                    <span style="color:var(--quantum-green);">B3LYP DFT CONVERGED</span>
+                </div>
+                <table class="comparison-table">
+                    <tr>
+                        <td>Ground State U₀</td>
+                        <td class="val-col" style="color:var(--quantum-green); font-weight:700;">${meta.u0_hartree.toFixed(5)} Ha (${meta.u0_ev.toFixed(2)} eV)</td>
+                    </tr>
+                    <tr>
+                        <td>HOMO (&epsilon;<sub>H</sub>) / LUMO (&epsilon;<sub>L</sub>)</td>
+                        <td class="val-col">${meta.homo_hartree.toFixed(4)} Ha / ${meta.lumo_hartree.toFixed(4)} Ha</td>
+                    </tr>
+                    <tr>
+                        <td>HOMO-LUMO Fundamental Gap</td>
+                        <td class="val-col" style="color:var(--hardware-gold); font-weight:700;">${meta.gap_ev.toFixed(3)} eV (${meta.gap_hartree.toFixed(4)} Ha)</td>
+                    </tr>
+                    <tr>
+                        <td>Dipole Moment &mu;</td>
+                        <td class="val-col">${meta.dipole_debye.toFixed(3)} Debye</td>
+                    </tr>
+                    <tr>
+                        <td>Static Polarizability &alpha;</td>
+                        <td class="val-col">${meta.polarizability_bohr3.toFixed(2)} a₀³</td>
+                    </tr>
+                    <tr>
+                        <td>Zero-Point Energy (ZPVE)</td>
+                        <td class="val-col">${meta.zpve_hartree.toFixed(5)} Ha</td>
+                    </tr>
+                    <tr>
+                        <td>Coulomb Matrix Trace Tr(C)</td>
+                        <td class="val-col" style="color:var(--quantum-green);">${meta.coulomb_trace ? meta.coulomb_trace.toFixed(3) : '--'} Ha</td>
+                    </tr>
+                </table>
+            </div>
+        `;
+    }
+
     renderZincAnomalyCard(meta) {
         const compEl = document.getElementById('attractor-comparison-container');
         const titleEl = document.getElementById('section-comparison-title');
@@ -688,10 +763,48 @@ class QuantumMolecularDashboard {
     loadSMILES(smiles, meta = {}) {
         this.currentMolecule = { smiles, meta };
 
+        if (meta.is_qm9_molecule) {
+            document.getElementById('input-smiles').value = meta.smiles;
+            document.getElementById('display-smiles').textContent = `${meta.formula} (#${meta.id}, B3LYP DFT)`;
+            document.getElementById('badge-id').textContent = `QM9 #${meta.id}`;
+
+            const topoBadge = document.getElementById('topology-engine-badge');
+            if (topoBadge) {
+                topoBadge.textContent = 'B3LYP DFT EQUILIBRIUM GEOMETRY';
+                topoBadge.style.color = 'var(--quantum-green)';
+            }
+
+            this.buildMolecularMesh({ atoms: meta.atoms, bonds: meta.bonds, is_qm9: true });
+
+            document.getElementById('title-m1').textContent = 'Ground State U₀';
+            document.getElementById('val-mw').textContent = `${meta.u0_hartree.toFixed(3)} Ha`;
+            document.getElementById('title-m2').textContent = 'HOMO-LUMO Gap';
+            document.getElementById('val-logp').textContent = `${meta.gap_ev.toFixed(2)} eV (${meta.gap_hartree.toFixed(3)} Ha)`;
+            document.getElementById('title-m3').textContent = 'Dipole Moment μ';
+            document.getElementById('val-tpsa').textContent = `${meta.dipole_debye.toFixed(2)} Debye`;
+            document.getElementById('title-m4').textContent = 'Polarizability α';
+            document.getElementById('val-act').textContent = `${meta.polarizability_bohr3.toFixed(2)} a₀³`;
+
+            this.renderQm9Card(meta);
+
+            if (meta.coulomb_eigenspectrum && meta.coulomb_eigenspectrum.length > 0) {
+                this.renderCoulombSpectrum(meta.coulomb_eigenspectrum, meta.coulomb_trace);
+            } else if (meta.z_expectations) {
+                this.renderQubitBars(meta.z_expectations);
+            }
+            return;
+        }
+
         if (meta.is_period_molecule) {
             document.getElementById('input-smiles').value = meta.smiles;
             document.getElementById('display-smiles').textContent = `${meta.name} (${meta.formula}, ${meta.qubits} Qubits)`;
             document.getElementById('badge-id').textContent = `${meta.qubits}Q / ${meta.electrons}e⁻`;
+
+            const topoBadge = document.getElementById('topology-engine-badge');
+            if (topoBadge) {
+                topoBadge.textContent = 'BOHR-OPPENHEIMER ELECTRONIC STRUCTURE';
+                topoBadge.style.color = 'var(--hardware-gold)';
+            }
 
             if (meta.atoms && meta.bonds) {
                 this.buildMolecularMesh({ atoms: meta.atoms, bonds: meta.bonds });
@@ -719,6 +832,12 @@ class QuantumMolecularDashboard {
             document.getElementById('display-smiles').textContent = `${meta.name} (${meta.symbol}, Z=${meta.id})`;
             document.getElementById('badge-id').textContent = `Z=${meta.id}`;
 
+            const topoBadge = document.getElementById('topology-engine-badge');
+            if (topoBadge) {
+                topoBadge.textContent = 'BOHR-SOMMERFELD ATOMIC SHELL';
+                topoBadge.style.color = 'var(--hardware-gold)';
+            }
+
             this.buildAtomicMesh(meta);
             document.getElementById('title-m1').textContent = 'Ground State E₀';
             document.getElementById('val-mw').textContent = `${meta.energy_hartree.toFixed(3)} Ha`;
@@ -736,6 +855,12 @@ class QuantumMolecularDashboard {
         document.getElementById('input-smiles').value = smiles;
         document.getElementById('display-smiles').textContent = smiles;
         document.getElementById('badge-id').textContent = meta.id ? `#${meta.id}` : '#CUSTOM';
+
+        const topoBadge = document.getElementById('topology-engine-badge');
+        if (topoBadge) {
+            topoBadge.textContent = 'DISTANCE-GEOMETRY RELAXATION';
+            topoBadge.style.color = 'var(--text-white)';
+        }
 
         const parsed = this.parseSMILES(smiles);
         this.buildMolecularMesh(parsed);
@@ -970,17 +1095,31 @@ class QuantumMolecularDashboard {
 
         const sphereGeo = new THREE.SphereGeometry(1, 32, 32);
 
+        let cx = 0, cy = 0, cz = 0;
+        const nAtoms = (parsed.atoms && parsed.atoms.length) ? parsed.atoms.length : 0;
+        if (nAtoms > 0) {
+            parsed.atoms.forEach(a => { cx += a.x; cy += a.y; cz += a.z; });
+            cx /= nAtoms; cy /= nAtoms; cz /= nAtoms;
+        }
+
         parsed.atoms.forEach((atom) => {
             const info = ELEMENT_TABLE[atom.element] || ELEMENT_TABLE['DEFAULT'];
+            const isEsp = (this.renderMode === 'esp' && atom.mulliken_charge !== undefined);
+            const initColor = isEsp ? this.getEspColor(atom.mulliken_charge) : info.color;
             const mat = new THREE.MeshStandardMaterial({
-                color: info.color,
+                color: initColor,
                 roughness: 0.25,
                 metalness: 0.2
             });
 
             const mesh = new THREE.Mesh(sphereGeo, mat);
             mesh.scale.setScalar(info.radius * 1.15);
-            mesh.position.set(atom.x, atom.y, atom.z);
+            mesh.position.set(atom.x - cx, atom.y - cy, atom.z - cz);
+            mesh.userData = {
+                element: atom.element,
+                mulliken_charge: atom.mulliken_charge,
+                originalColor: info.color
+            };
             mesh.castShadow = true;
             mesh.receiveShadow = true;
             this.molGroup.add(mesh);
@@ -997,9 +1136,10 @@ class QuantumMolecularDashboard {
         parsed.bonds.forEach(bond => {
             const a1 = parsed.atoms[bond.a1];
             const a2 = parsed.atoms[bond.a2];
+            if (!a1 || !a2) return;
 
-            const p1 = new THREE.Vector3(a1.x, a1.y, a1.z);
-            const p2 = new THREE.Vector3(a2.x, a2.y, a2.z);
+            const p1 = new THREE.Vector3(a1.x - cx, a1.y - cy, a1.z - cz);
+            const p2 = new THREE.Vector3(a2.x - cx, a2.y - cy, a2.z - cz);
             const dist = p1.distanceTo(p2);
 
             const cyl = new THREE.Mesh(cylGeo, bondMat);
@@ -1013,7 +1153,7 @@ class QuantumMolecularDashboard {
 
         // Safe orbital mesh creation (BUG FIX: check typeof THREE.ConvexGeometry first)
         if (parsed.atoms.length > 0) {
-            const points = parsed.atoms.map(a => new THREE.Vector3(a.x, a.y, a.z));
+            const points = parsed.atoms.map(a => new THREE.Vector3(a.x - cx, a.y - cy, a.z - cz));
             const hullGeo = (typeof THREE.ConvexGeometry === 'function') 
                 ? new THREE.ConvexGeometry(points) 
                 : new THREE.DodecahedronGeometry(3.5, 2);
@@ -1154,17 +1294,46 @@ class QuantumMolecularDashboard {
     }
 
     applyRenderMode() {
-        const showAtoms = (this.renderMode === 'spheres' || this.renderMode === 'hybrid');
-        const showBonds = (this.renderMode === 'spheres' || this.renderMode === 'hybrid' || this.renderMode === 'wireframe');
+        const isEsp = (this.renderMode === 'esp');
+        const showAtoms = (this.renderMode === 'spheres' || this.renderMode === 'hybrid' || isEsp);
+        const showBonds = (this.renderMode === 'spheres' || this.renderMode === 'hybrid' || this.renderMode === 'wireframe' || isEsp);
         const showMesh = (this.renderMode === 'mesh' || this.renderMode === 'hybrid' || this.renderMode === 'wireframe');
 
-        this.atomMeshes.forEach(m => m.visible = showAtoms);
+        this.atomMeshes.forEach(m => {
+            m.visible = showAtoms;
+            if (m.userData) {
+                if (isEsp && m.userData.mulliken_charge !== undefined) {
+                    m.material.color.setHex(this.getEspColor(m.userData.mulliken_charge));
+                } else if (m.userData.originalColor !== undefined) {
+                    m.material.color.setHex(m.userData.originalColor);
+                }
+            }
+        });
         this.bondMeshes.forEach(m => m.visible = showBonds);
         this.cloudMeshes.forEach(m => {
             m.visible = showMesh;
             m.material.wireframe = (this.renderMode === 'wireframe' || this.renderMode === 'hybrid');
             m.material.opacity = (this.renderMode === 'mesh') ? 0.35 : 0.18;
         });
+    }
+
+    getEspColor(charge) {
+        if (charge === undefined || isNaN(charge)) return 0x94a3b8;
+        if (charge < 0) {
+            // Negative Mulliken charge (electron-rich): Slate (#94a3b8: 148, 163, 184) -> Laser Emerald Green (#00e676: 0, 230, 118)
+            const t = Math.min(1.0, Math.abs(charge) / 0.45);
+            const r = Math.round(148 * (1 - t) + 0 * t);
+            const g = Math.round(163 * (1 - t) + 230 * t);
+            const b = Math.round(184 * (1 - t) + 118 * t);
+            return (r << 16) | (g << 8) | b;
+        } else {
+            // Positive Mulliken charge (electron-poor): Slate (#94a3b8: 148, 163, 184) -> Radiant Amber Gold (#ffb300: 255, 179, 0)
+            const t = Math.min(1.0, charge / 0.30);
+            const r = Math.round(148 * (1 - t) + 255 * t);
+            const g = Math.round(163 * (1 - t) + 179 * t);
+            const b = Math.round(184 * (1 - t) + 0 * t);
+            return (r << 16) | (g << 8) | b;
+        }
     }
 
     computeSyntheticQuantumExpectations(mw, logp, tpsa, bioactivity, atomCount) {
@@ -1188,6 +1357,14 @@ class QuantumMolecularDashboard {
     }
 
     renderQubitBars(zExps, isAtomic = false, customLabels = null) {
+        const titleEl = document.getElementById('section-spectrum-title');
+        const badgeEl = document.getElementById('spectrum-mode-badge');
+        if (titleEl) titleEl.innerHTML = '10-Qubit Pauli-Z Expectations &lang;Z_q&rang;';
+        if (badgeEl) {
+            badgeEl.textContent = 'HILBERT SPECTRUM';
+            badgeEl.style.color = 'var(--quantum-green)';
+        }
+
         const container = document.getElementById('qubit-bars');
         if (!container) return;
         container.innerHTML = '';
@@ -1219,6 +1396,51 @@ class QuantumMolecularDashboard {
             `;
             container.appendChild(row);
         });
+    }
+
+    renderCoulombSpectrum(eigenspectrum, trace) {
+        const titleEl = document.getElementById('section-spectrum-title');
+        const badgeEl = document.getElementById('spectrum-mode-badge');
+        if (titleEl) titleEl.innerHTML = 'Coulomb Eigenspectrum &lambda;<sub>k</sub> (Top 16 / 50)';
+        if (badgeEl) {
+            badgeEl.textContent = `Tr(C) = ${(trace || 0).toFixed(2)} Ha`;
+            badgeEl.style.color = 'var(--hardware-gold)';
+        }
+
+        const container = document.getElementById('qubit-bars');
+        if (!container) return;
+        container.innerHTML = '';
+
+        const top16 = eigenspectrum.slice(0, 16);
+        const maxVal = top16.length > 0 ? top16[0] : 1.0;
+
+        top16.forEach((val, k) => {
+            const row = document.createElement('div');
+            row.className = 'qubit-row';
+
+            const pct = maxVal > 0 ? Math.min(100.0, Math.max(0.0, (val / maxVal) * 100.0)) : 0.0;
+            let barColor = 'var(--quantum-green)';
+            if (k === 0) barColor = 'var(--hardware-gold)';
+            else if (val < 0.001) barColor = 'var(--text-slate)';
+
+            row.innerHTML = `
+                <span class="qubit-label" style="width:36px; font-size:9px;">&lambda;<sub>${k}</sub></span>
+                <div class="qubit-bar-bg" style="position:relative;">
+                    <div class="qubit-bar-fill" style="left:0%; width:${pct}%; background:${barColor};"></div>
+                </div>
+                <span class="qubit-val" style="width:58px;">${val.toFixed(2)} Ha</span>
+            `;
+            container.appendChild(row);
+        });
+
+        const note = document.createElement('div');
+        note.style.fontFamily = 'var(--font-mono)';
+        note.style.fontSize = '8.5px';
+        note.style.color = 'var(--text-slate)';
+        note.style.marginTop = '6px';
+        note.style.textAlign = 'center';
+        note.textContent = 'ZERO-SHIFT QL EIGENSYSTEM | 50-DIM ATOM-SORTED SOA KERNEL';
+        container.appendChild(note);
     }
 
     // -------------------------------------------------------------------------

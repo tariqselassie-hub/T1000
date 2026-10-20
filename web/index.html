@@ -112,6 +112,7 @@
                                 <optgroup label="Atomic &amp; Molecular Quantum Shells">
                                     <option value="data/period_1_2_atomic_quantum.json">Period 1 &amp; 2: Atomic Shells (Z=1-10)</option>
                                     <option value="data/period_1_2_molecules_quantum.json">Period 1 &amp; 2: Molecules (H2 to CH4, 4-18 Qubits)</option>
+                                    <option value="data/qm9_quantum_molecules.json">QM9: B3LYP DFT Equilibrium Geometries (134k DFT)</option>
                                 </optgroup>
                                 <optgroup label="ZINC Molecular Screening">
                                     <option value="data/zinc_pareto_leads.json">Search 1: ZINC Frontier Pareto Leads (250k)</option>
@@ -165,7 +166,7 @@
                             </div>
                             <div class="overlay-badge">
                                 <span style="color:var(--text-slate);">TOPOLOGY:</span>
-                                <span style="color:var(--text-white);">DISTANCE-GEOMETRY RELAXATION</span>
+                                <span id="topology-engine-badge" style="color:var(--text-white);">DISTANCE-GEOMETRY RELAXATION</span>
                             </div>
                         </div>
 
@@ -175,6 +176,7 @@
                         <div class="viewport-controls">
                             <button class="btn-secondary btn-render-mode active" data-mode="hybrid">HYBRID</button>
                             <button class="btn-secondary btn-render-mode" data-mode="spheres">ATOMIC CPK</button>
+                            <button class="btn-secondary btn-render-mode" data-mode="esp">ESP HEATMAP</button>
                             <button class="btn-secondary btn-render-mode" data-mode="mesh">DENSITY MESH</button>
                             <button class="btn-secondary btn-render-mode" data-mode="wireframe">WIREFRAME</button>
                             <button id="btn-toggle-spin" class="btn-secondary active">SPIN</button>
@@ -234,11 +236,11 @@
                             </div>
                         </div>
 
-                        <!-- 10-Qubit Statevector Observables -->
+                        <!-- 10-Qubit Statevector Observables & Coulomb Eigenspectrum -->
                         <div class="panel-section" style="flex:1;">
                             <div class="section-label">
-                                <span>10-Qubit Pauli-Z Expectations &lang;Z_q&rang;</span>
-                                <span style="color:var(--quantum-green); font-size:10px;">HILBERT SPECTRUM</span>
+                                <span id="section-spectrum-title">10-Qubit Pauli-Z Expectations &lang;Z_q&rang;</span>
+                                <span id="spectrum-mode-badge" style="color:var(--quantum-green); font-size:10px;">HILBERT SPECTRUM</span>
                             </div>
                             <div id="qubit-bars" class="qubit-bar-container">
                                 <!-- Populated dynamically via JS -->
