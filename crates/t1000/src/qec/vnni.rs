@@ -73,6 +73,102 @@ pub fn vnni_dpbusd_32(src: [i32; 8], a_u8: [u8; 32], b_i8: [i8; 32]) -> [i32; 8]
     vnni_dpbusd_scalar(src, a_u8, b_i8)
 }
 
+/// 4-way unrolled independent accumulator pipeline breaking the 5-cycle loop-carried dependency chain.
+/// Saturates dual execution ports on Intel Lion Cove (Arrow Lake) architectures.
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
+pub unsafe fn bench_vnni_unrolled_4x(
+    u8_syndrome: __m256i,
+    i8_weights: __m256i,
+    iterations: usize,
+) -> [i32; 8] {
+    let mut acc0 = _mm256_setzero_si256();
+    let mut acc1 = _mm256_setzero_si256();
+    let mut acc2 = _mm256_setzero_si256();
+    let mut acc3 = _mm256_setzero_si256();
+
+    let chunks = iterations / 4;
+    for _ in 0..chunks {
+        std::arch::asm!(
+            "{{vex}} vpdpbusd {acc0}, {u8_s}, {i8_w}",
+            "{{vex}} vpdpbusd {acc1}, {u8_s}, {i8_w}",
+            "{{vex}} vpdpbusd {acc2}, {u8_s}, {i8_w}",
+            "{{vex}} vpdpbusd {acc3}, {u8_s}, {i8_w}",
+            acc0 = inout(ymm_reg) acc0,
+            acc1 = inout(ymm_reg) acc1,
+            acc2 = inout(ymm_reg) acc2,
+            acc3 = inout(ymm_reg) acc3,
+            u8_s = in(ymm_reg) u8_syndrome,
+            i8_w = in(ymm_reg) i8_weights,
+            options(nostack, pure, nomem),
+        );
+    }
+
+    let sum01 = _mm256_add_epi32(acc0, acc1);
+    let sum23 = _mm256_add_epi32(acc2, acc3);
+    let total = _mm256_add_epi32(sum01, sum23);
+
+    let mut out = [0i32; 8];
+    _mm256_storeu_si256(out.as_mut_ptr() as *mut __m256i, total);
+    out
+}
+
+/// 8-way unrolled independent accumulator pipeline achieving full saturation of
+/// dual-issue VNNI vector execution ports (Ports 0 and 5).
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
+pub unsafe fn bench_vnni_unrolled_8x(
+    u8_syndrome: __m256i,
+    i8_weights: __m256i,
+    iterations: usize,
+) -> [i32; 8] {
+    let mut acc0 = _mm256_setzero_si256();
+    let mut acc1 = _mm256_setzero_si256();
+    let mut acc2 = _mm256_setzero_si256();
+    let mut acc3 = _mm256_setzero_si256();
+    let mut acc4 = _mm256_setzero_si256();
+    let mut acc5 = _mm256_setzero_si256();
+    let mut acc6 = _mm256_setzero_si256();
+    let mut acc7 = _mm256_setzero_si256();
+
+    let chunks = iterations / 8;
+    for _ in 0..chunks {
+        std::arch::asm!(
+            "{{vex}} vpdpbusd {acc0}, {u8_s}, {i8_w}",
+            "{{vex}} vpdpbusd {acc1}, {u8_s}, {i8_w}",
+            "{{vex}} vpdpbusd {acc2}, {u8_s}, {i8_w}",
+            "{{vex}} vpdpbusd {acc3}, {u8_s}, {i8_w}",
+            "{{vex}} vpdpbusd {acc4}, {u8_s}, {i8_w}",
+            "{{vex}} vpdpbusd {acc5}, {u8_s}, {i8_w}",
+            "{{vex}} vpdpbusd {acc6}, {u8_s}, {i8_w}",
+            "{{vex}} vpdpbusd {acc7}, {u8_s}, {i8_w}",
+            acc0 = inout(ymm_reg) acc0,
+            acc1 = inout(ymm_reg) acc1,
+            acc2 = inout(ymm_reg) acc2,
+            acc3 = inout(ymm_reg) acc3,
+            acc4 = inout(ymm_reg) acc4,
+            acc5 = inout(ymm_reg) acc5,
+            acc6 = inout(ymm_reg) acc6,
+            acc7 = inout(ymm_reg) acc7,
+            u8_s = in(ymm_reg) u8_syndrome,
+            i8_w = in(ymm_reg) i8_weights,
+            options(nostack, pure, nomem),
+        );
+    }
+
+    let s01 = _mm256_add_epi32(acc0, acc1);
+    let s23 = _mm256_add_epi32(acc2, acc3);
+    let s45 = _mm256_add_epi32(acc4, acc5);
+    let s67 = _mm256_add_epi32(acc6, acc7);
+    let s0123 = _mm256_add_epi32(s01, s23);
+    let s4567 = _mm256_add_epi32(s45, s67);
+    let total = _mm256_add_epi32(s0123, s4567);
+
+    let mut out = [0i32; 8];
+    _mm256_storeu_si256(out.as_mut_ptr() as *mut __m256i, total);
+    out
+}
+
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx2")]
 unsafe fn vnni_dpbusd_native(src: [i32; 8], a_u8: [u8; 32], b_i8: [i8; 32]) -> [i32; 8] {
@@ -562,6 +658,34 @@ mod tests {
         let failed = decoder.run_trial((1 << 0) | (1 << 3), 0);
         assert!(failed, "Two-qubit error along column 0 should trigger logical failure!");
     }
+
+    #[test]
+    #[cfg(target_arch = "x86_64")]
+    fn test_vnni_unrolled_numerical_equivalence() {
+        if is_x86_feature_detected!("avxvnni") {
+            let mut a = [0u8; 32];
+            let mut b = [0i8; 32];
+            for i in 0..32 {
+                a[i] = ((i * 3 + 1) % 15) as u8;
+                b[i] = (((i * 7 + 2) % 11) as i8) - 5;
+            }
+            let iters = 80usize;
+            let u8_syn = unsafe { _mm256_loadu_si256(a.as_ptr() as *const __m256i) };
+            let i8_w = unsafe { _mm256_loadu_si256(b.as_ptr() as *const __m256i) };
+
+            let mut serial = [0i32; 8];
+            for _ in 0..iters {
+                serial = vnni_dpbusd_32(serial, a, b);
+            }
+
+            let res_4x = unsafe { bench_vnni_unrolled_4x(u8_syn, i8_w, iters) };
+            let res_8x = unsafe { bench_vnni_unrolled_8x(u8_syn, i8_w, iters) };
+
+            assert_eq!(serial, res_4x, "4x unrolled VNNI output must match serial accumulation");
+            assert_eq!(serial, res_8x, "8x unrolled VNNI output must match serial accumulation");
+        }
+    }
 }
+
 
 
