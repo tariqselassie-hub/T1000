@@ -35,6 +35,7 @@ pub mod heptal_wave;
 pub mod hostinfo;
 pub mod ingest;
 pub mod lattice;
+pub mod layer_fusion;
 pub mod measurements;
 pub mod memory;
 pub mod molecular_walk_screener;

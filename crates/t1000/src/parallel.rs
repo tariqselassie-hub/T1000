@@ -71,7 +71,7 @@ fn parallel_max_dim() -> usize {
     })
 }
 
-fn use_parallel(dim: usize) -> bool {
+pub(crate) fn use_parallel(dim: usize) -> bool {
     (PARALLEL_MIN_DIM..=parallel_max_dim()).contains(&dim) && num_threads() > 1
 }
 
