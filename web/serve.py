@@ -1199,6 +1199,30 @@ class SovereignHandler(http.server.SimpleHTTPRequestHandler):
             except Exception:
                 pass
 
+        # 6. 36Q Virtual Cut-Bridge Telemetry (M155)
+        bridge_path = data_dir / "virtual_36q_cut_bridge_report.json"
+        if bridge_path.exists():
+            try:
+                summary["virtual_cut_bridge"] = json.loads(bridge_path.read_text(encoding="utf-8"))
+            except Exception:
+                pass
+
+        # 7. Fault-Tolerant Magic W7 Distillation Telemetry (M156)
+        magic_path = data_dir / "qm9_magic_w7_training_report.json"
+        if magic_path.exists():
+            try:
+                summary["magic_w7_training"] = json.loads(magic_path.read_text(encoding="utf-8"))
+            except Exception:
+                pass
+
+        # 8. Continuous-Time Topological Quantum Walk (M154)
+        ctqw_path = data_dir / "qm9_continuous_walk_screening.json"
+        if ctqw_path.exists():
+            try:
+                summary["continuous_walk"] = json.loads(ctqw_path.read_text(encoding="utf-8"))
+            except Exception:
+                pass
+
         self.send_json_response(summary)
 
     def handle_api_run_circuit(self):

@@ -1,0 +1,122 @@
+{
+  "points": [
+    {
+      "p_phys": 0.001,
+      "shots": 250000,
+      "logical_errors": 6,
+      "logical_error_rate": 0.000024,
+      "suppression_ratio": 41.666666666666664,
+      "latency_ns_per_shot": 43.7408
+    },
+    {
+      "p_phys": 0.002,
+      "shots": 250000,
+      "logical_errors": 16,
+      "logical_error_rate": 0.000064,
+      "suppression_ratio": 31.250000000000004,
+      "latency_ns_per_shot": 55.9284
+    },
+    {
+      "p_phys": 0.005,
+      "shots": 250000,
+      "logical_errors": 93,
+      "logical_error_rate": 0.000372,
+      "suppression_ratio": 13.440860215053764,
+      "latency_ns_per_shot": 42.5144
+    },
+    {
+      "p_phys": 0.008,
+      "shots": 250000,
+      "logical_errors": 247,
+      "logical_error_rate": 0.000988,
+      "suppression_ratio": 8.097165991902834,
+      "latency_ns_per_shot": 42.2824
+    },
+    {
+      "p_phys": 0.01,
+      "shots": 250000,
+      "logical_errors": 389,
+      "logical_error_rate": 0.001556,
+      "suppression_ratio": 6.426735218508997,
+      "latency_ns_per_shot": 51.7908
+    },
+    {
+      "p_phys": 0.015,
+      "shots": 250000,
+      "logical_errors": 793,
+      "logical_error_rate": 0.003172,
+      "suppression_ratio": 4.7288776796973515,
+      "latency_ns_per_shot": 43.1208
+    },
+    {
+      "p_phys": 0.02,
+      "shots": 250000,
+      "logical_errors": 1535,
+      "logical_error_rate": 0.00614,
+      "suppression_ratio": 3.257328990228013,
+      "latency_ns_per_shot": 43.8916
+    },
+    {
+      "p_phys": 0.03,
+      "shots": 250000,
+      "logical_errors": 3242,
+      "logical_error_rate": 0.012968,
+      "suppression_ratio": 2.313386798272671,
+      "latency_ns_per_shot": 45.0732
+    },
+    {
+      "p_phys": 0.04,
+      "shots": 250000,
+      "logical_errors": 5680,
+      "logical_error_rate": 0.02272,
+      "suppression_ratio": 1.7605633802816902,
+      "latency_ns_per_shot": 45.8944
+    },
+    {
+      "p_phys": 0.05,
+      "shots": 250000,
+      "logical_errors": 8495,
+      "logical_error_rate": 0.03398,
+      "suppression_ratio": 1.4714537963507945,
+      "latency_ns_per_shot": 47.5064
+    },
+    {
+      "p_phys": 0.075,
+      "shots": 250000,
+      "logical_errors": 17548,
+      "logical_error_rate": 0.070192,
+      "suppression_ratio": 1.0684978345110552,
+      "latency_ns_per_shot": 48.7528
+    },
+    {
+      "p_phys": 0.1,
+      "shots": 250000,
+      "logical_errors": 28481,
+      "logical_error_rate": 0.113924,
+      "suppression_ratio": 0.8777781679014081,
+      "latency_ns_per_shot": 50.3012
+    },
+    {
+      "p_phys": 0.125,
+      "shots": 250000,
+      "logical_errors": 40978,
+      "logical_error_rate": 0.163912,
+      "suppression_ratio": 0.7626043242715603,
+      "latency_ns_per_shot": 52.186
+    },
+    {
+      "p_phys": 0.15,
+      "shots": 250000,
+      "logical_errors": 53859,
+      "logical_error_rate": 0.215436,
+      "suppression_ratio": 0.6962624630980895,
+      "latency_ns_per_shot": 62.642
+    }
+  ],
+  "empirical_threshold": 0.08141682682041426,
+  "fit_scaling_coefficient": 24.0,
+  "total_shots": 3500000,
+  "total_duration_seconds": 0.168912,
+  "throughput_mshots_sec": 20.720848725963815,
+  "hardware_backend": "Native AVX-VNNI (_mm256_dpbusd_epi32)"
+}

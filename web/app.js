@@ -58,10 +58,12 @@ class QuantumMolecularDashboard {
     // Dual-Page & Sub-View Navigation
     // -------------------------------------------------------------------------
     initPageNavigation() {
-        // 1. Primary Page Switching: Page 1 (Neural) vs Page 2 (Simulator)
+        // Primary 4-Deck Sovereign Navigation
         const pageTabs = document.querySelectorAll('.page-tab');
         pageTabs.forEach(tab => {
-            tab.addEventListener('click', () => {
+            tab.addEventListener('click', (e) => {
+                if (tab.tagName === 'A') return; // Allow normal link routing for external pages like qgol.html
+
                 pageTabs.forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
 
@@ -74,25 +76,23 @@ class QuantumMolecularDashboard {
                     targetView.classList.add('active');
                 }
 
-                // Trigger appropriate refresh depending on active sub-view
-                if (targetPageId === 'page-neural') {
-                    const activeSub = targetView.querySelector('.sub-view.active, .sub-view-fullscreen.active');
-                    if (activeSub && activeSub.id === 'sub-neural-manifold') {
-                        setTimeout(() => this.onWindowResize(), 50);
-                    }
-                } else if (targetPageId === 'page-simulator') {
-                    const activeSub = targetView.querySelector('.sub-view.active, .sub-view-fullscreen.active');
-                    if (activeSub && activeSub.id === 'sub-sim-composer') {
-                        this.renderCircuitGrid();
-                        this.executeCircuit();
-                    } else if (activeSub && activeSub.id === 'sub-sim-hardware') {
-                        this.loadTelemetryMatrix();
-                    }
+                // Trigger appropriate canvas/telemetry initialization per deck
+                if (targetPageId === 'page-deck-1' || targetPageId === 'page-neural') {
+                    setTimeout(() => this.onWindowResize(), 50);
+                } else if (targetPageId === 'page-deck-2' || targetPageId === 'page-simulator') {
+                    this.renderCircuitGrid();
+                    this.executeCircuit();
+                } else if (targetPageId === 'page-deck-3') {
+                    // Deck 3: Fault-Tolerant QEC & Magic State Distillation
+                } else if (targetPageId === 'page-deck-4') {
+                    // Deck 4: 36Q Virtual Cut-Bridge & Plaquette Matrix
+                    this.loadPlaquetteTelemetry();
+                    this.loadTelemetryMatrix();
                 }
             });
         });
 
-        // 2. Sub-Tab Navigation inside each Page
+        // Sub-Tab Navigation inside any sub-views (if present)
         const subTabs = document.querySelectorAll('.sub-tab');
         subTabs.forEach(tab => {
             tab.addEventListener('click', () => {
