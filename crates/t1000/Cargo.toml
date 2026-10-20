@@ -96,6 +96,10 @@ path = "src/bin/measurements/nighthawk_r2_bench.rs"
 name = "rcs_coherence_chaos_bench"
 path = "src/bin/measurements/rcs_coherence_chaos_bench.rs"
 
+[[bin]]
+name = "w7_heptal_qec_test"
+path = "src/bin/w7_heptal_qec_test.rs"
+
 # =========================================================================
 # Executable Binaries: Quantum Neural Network Training
 # =========================================================================
