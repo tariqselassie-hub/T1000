@@ -100,6 +100,21 @@ impl HostProfile {
     }
 }
 
+impl HostProfile {
+    /// Largest register (qubits) worth multithreading on this host, if measured.
+    ///
+    /// `None` means unmeasured: keep threading at every size.
+    pub fn parallel_max_qubits(&self) -> Option<usize> {
+        match self.known {
+            KnownHost::I3_1115G4 => Some(PARALLEL_MAX_QUBITS_I3),
+            _ => None,
+        }
+    }
+}
+
+/// i3-1115G4: parallel Ry beats serial at 18 qubits (4 MB) and loses from 20 (16 MB).
+const PARALLEL_MAX_QUBITS_I3: usize = 18;
+
 fn classify(model: &str) -> KnownHost {
     let m = model.to_ascii_lowercase();
     if m.contains("ultra 7 265") {
