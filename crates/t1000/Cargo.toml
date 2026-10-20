@@ -181,6 +181,10 @@ path = "src/bin/training/qm9_vqc_train.rs"
 name = "qm9_fault_tolerant_train"
 path = "src/bin/training/qm9_fault_tolerant_train.rs"
 
+[[bin]]
+name = "qm9_transversal_w7_train"
+path = "src/bin/training/qm9_transversal_w7_train.rs"
+
 
 # =========================================================================
 # Executable Binaries: Benchmarks & Controls
