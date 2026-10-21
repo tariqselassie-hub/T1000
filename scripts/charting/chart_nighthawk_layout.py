@@ -375,12 +375,14 @@ def create_nighthawk_visualization():
     plt.savefig(out_results, dpi=300, facecolor=fig.get_facecolor(), bbox_inches="tight")
     print(f"[SUCCESS] Saved results chart to {out_results}")
 
-    # Copy to artifact dir
-    artifact_dir = Path(r"C:\Users\zoddj\.gemini\antigravity-ide\brain\fed4fa38-13d8-476a-b869-db7c6fe7eb08")
-    if artifact_dir.exists():
-        out_artifact = artifact_dir / "nighthawk_r2_kagome_layout.png"
-        plt.savefig(out_artifact, dpi=300, facecolor=fig.get_facecolor(), bbox_inches="tight")
-        print(f"[SUCCESS] Saved artifact to {out_artifact}")
+    # Copy to artifact dir if configured
+    artifact_env = os.environ.get("ARTIFACT_DIR")
+    if artifact_env:
+        artifact_dir = Path(artifact_env)
+        if artifact_dir.exists():
+            out_artifact = artifact_dir / "nighthawk_r2_kagome_layout.png"
+            plt.savefig(out_artifact, dpi=300, facecolor=fig.get_facecolor(), bbox_inches="tight")
+            print(f"[SUCCESS] Saved artifact to {out_artifact}")
 
     plt.close()
 

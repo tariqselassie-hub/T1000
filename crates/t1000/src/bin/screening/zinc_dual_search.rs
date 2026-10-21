@@ -329,9 +329,14 @@ fn main() {
     println!("    T-1000 SOVEREIGN ZINC 250k DUAL SEARCH: ANOMALIES (3) & PARETO (1)   ");
     println!("=========================================================================");
 
-    let raw_csv_path = PathBuf::from(
+    let default_raw_path = PathBuf::from(
         r"C:\Users\zoddj\zenith_workspace_divizion\GuddaLM\data\zinc_250\250k_rndm_zinc_drugs_clean_3.csv",
     );
+    let raw_csv_path = if default_raw_path.exists() {
+        default_raw_path
+    } else {
+        resolve_path("data/zinc_250k.csv")
+    };
     let raw_mols = match parse_zinc_csv(&raw_csv_path) {
         Ok(m) => m,
         Err(e) => {

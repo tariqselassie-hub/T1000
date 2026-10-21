@@ -20,7 +20,18 @@ import torch
 import torchvision.transforms as T
 import torchvision.models as models
 
-ZIP_PATH = r"C:\Users\zoddj\Downloads\birds_dataset.zip"
+def _find_zip_path():
+    candidates = [
+        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data", "birds_dataset.zip"),
+        os.path.expanduser("~/Downloads/birds_dataset.zip"),
+        r"C:\Users\zoddj\Downloads\birds_dataset.zip",
+    ]
+    for c in candidates:
+        if os.path.isfile(c):
+            return c
+    return candidates[0]
+
+ZIP_PATH = _find_zip_path()
 OUT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data", "birds")
 N_QUBITS = 10
 BATCH_SIZE = 64

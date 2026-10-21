@@ -133,7 +133,9 @@ def parse_qm9_xyz(content):
     }
 
 def main():
-    qm9_zip = Path(r"C:\Users\zoddj\Downloads\QM9.zip")
+    qm9_zip = Path("data/QM9.zip")
+    if not qm9_zip.exists():
+        qm9_zip = Path.home() / "Downloads" / "QM9.zip"
     if not qm9_zip.exists():
         print(f"Error: {qm9_zip} not found.")
         return

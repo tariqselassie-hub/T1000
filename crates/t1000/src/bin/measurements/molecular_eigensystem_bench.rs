@@ -9,7 +9,7 @@
 
 use std::fs::{self, File};
 use std::io::BufReader;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::Instant;
 use t1000::chemistry::coulomb::{CoulombMatrix50, RoboBohrRecord};
 use t1000::chemistry::qm9::Qm9Record;
@@ -22,7 +22,15 @@ fn main() {
     println!("│ Author: Terrence A. Jones SR (2026)                                    │");
     println!("└────────────────────────────────────────────────────────────────────────┘");
 
-    let downloads_dir = Path::new(r"C:\Users\zoddj\Downloads");
+    let default_downloads = std::env::var("USERPROFILE")
+        .or_else(|_| std::env::var("HOME"))
+        .map(|h| PathBuf::from(h).join("Downloads"))
+        .unwrap_or_else(|_| PathBuf::from(r"C:\Users\zoddj\Downloads"));
+    let downloads_dir = if default_downloads.exists() {
+        default_downloads
+    } else {
+        PathBuf::from("data")
+    };
     let robobohr_zip = downloads_dir.join("Ground_state_energies.zip");
     let qm9_zip = downloads_dir.join("QM9.zip");
 
