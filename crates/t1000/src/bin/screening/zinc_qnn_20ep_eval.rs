@@ -790,6 +790,10 @@ fn main() {
             train_samples.len(),
             test_samples.len()
         );
+        println!(
+            "\n  Recording score : holdout relative MSE {:.4} | mean Pearson r {:.4}",
+            holdout.relative_mse, holdout.mean_pearson_r
+        );
         match t1000::results::write_scored(&out_json_path, json_str, &holdout.score(&settings)) {
             Ok(t1000::results::Outcome::KeptBest) => {
                 println!("[=] Saved 20-epoch report kept: this run did not improve it");

@@ -175,9 +175,7 @@ put several variants side by side in one file, so there is no single score to ke
 
 Caveats: the birds and MNIST trainers could not be run on the i3 (their data files are not in the
 repository), so their recording path is compile-checked only. The birds trainers pick the "best
-checkpoint" by test-set worst-group accuracy, so their test numbers are optimistic. The source
-file `src/bin/screening/zinc_qnn_20ep_eval.rs` is not registered in `Cargo.toml`, so it is not
-built by `cargo build`.
+checkpoint" by test-set worst-group accuracy, so their test numbers are optimistic.
 
 ### Examples
 
