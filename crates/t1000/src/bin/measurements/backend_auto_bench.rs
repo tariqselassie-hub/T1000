@@ -3,7 +3,7 @@
 //! backend and the FP32 iGPU backend, and shows what the Fast policy would pick.
 //! Usage: backend_auto_bench [min_q] [max_q] [depth]
 
-use t1000::backend::{BackendKind, BackendPolicy, BackendSelector};
+use t1000::backend::{BackendKind, BackendPolicy, BackendSelector, Precision};
 use t1000::compiler::CircuitBuilder;
 use t1000::state::QuantumState;
 
@@ -26,7 +26,7 @@ fn main() {
 
     let cpu = BackendSelector::new(BackendPolicy::default());
     let gpu = BackendSelector::new(BackendPolicy { force: Some(BackendKind::IGpuFp32), ..BackendPolicy::fast() });
-    let auto = BackendPolicy::fast();
+    let auto = BackendPolicy { precision: Precision::Fast, ..BackendPolicy::from_env() };
     println!("GPU: {} | depth {depth}\n", gpu.gpu_device().unwrap_or("none"));
     println!("{:>3} {:>9} {:>10} {:>10} {:>8} {:>10} {:>9}", "N", "state_MB", "cpu64_ms", "gpu32_ms", "speedup", "max|diff|", "auto→");
 

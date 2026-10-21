@@ -37,9 +37,10 @@ pub enum BackendKind {
 pub struct BackendPolicy {
     pub precision: Precision,
     /// Smallest register routed to the GPU in `Fast` mode.
-    /// Default 16: on the i3-1115G4 + UHD, `backend_auto_bench` shows the GPU first wins
-    /// clearly (>2x, transfers included) at 16 qubits and is marginal (1.2x) at 14.
-    /// Machine-specific; override with `T1000_GPU_MIN_QUBITS`.
+    /// Default 16 for unmeasured hosts. On the i3-1115G4 + UHD the layer-fused FP64 CPU
+    /// executor beats the FP32 GPU at every size (0.43-0.89x GPU speedup, 12-26 qubits), so
+    /// `HostProfile::gpu_min_qubits` disables automatic GPU routing there.
+    /// Override with `T1000_GPU_MIN_QUBITS`.
     pub gpu_min_qubits: usize,
     /// Pin a backend regardless of size (GPU pin still requires `Fast`).
     pub force: Option<BackendKind>,

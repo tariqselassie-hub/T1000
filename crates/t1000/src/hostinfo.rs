@@ -92,9 +92,12 @@ impl HostProfile {
     }
 
     /// Measured iGPU crossover (qubits) for this host, if one exists.
+    ///
+    /// `Some(usize::MAX)` means the cache-blocked FP64 CPU executor beat the FP32 iGPU at every
+    /// measured size (12-26 qubits), so `Fast` precision never routes to the GPU on its own.
     pub fn gpu_min_qubits(&self) -> Option<usize> {
         match self.known {
-            KnownHost::I3_1115G4 => Some(16),
+            KnownHost::I3_1115G4 => Some(usize::MAX),
             _ => None,
         }
     }

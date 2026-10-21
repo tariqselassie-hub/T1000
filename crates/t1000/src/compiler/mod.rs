@@ -6,6 +6,7 @@
 pub mod dag;
 pub mod executor;
 pub mod fusion;
+pub(crate) mod layered;
 pub mod op;
 pub mod scheduler;
 
