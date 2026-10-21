@@ -60,9 +60,84 @@ fn parse_row(line: &str) -> Option<ZincMolecule> {
     })
 }
 
+/// How raw molecule features are rescaled before amplitude encoding.
+///
+/// Amplitude encoding L2-normalises the vector, so one large column (molecular weight is in the
+/// hundreds next to counts below 25) can carry almost all of the norm. Z and ZZ readouts depend
+/// only on squared amplitudes, so the scaled inputs must stay non-negative.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub enum InputScaling {
+    /// Use the features as they are.
+    Raw,
+    /// `(x - min) / (max - min)` per feature, clamped to `[0, 1]`.
+    MinMax,
+    /// `x / max` per feature (features are non-negative), clamped to `[0, 1]`.
+    MaxAbs,
+}
+
+/// A fitted rescaling of feature vectors (statistics from the training set only).
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct Scaler {
+    pub kind: InputScaling,
+    pub offset: Vec<f64>,
+    pub range: Vec<f64>,
+}
+
+impl Scaler {
+    pub fn fit(kind: InputScaling, rows: &[ZincMolecule]) -> Self {
+        let d = rows[0].features.len();
+        let stat = |j: usize, f: fn(f64, f64) -> f64, init: f64| {
+            rows.iter().map(|m| m.features[j]).fold(init, f)
+        };
+        let (mut offset, mut range) = (vec![0.0; d], vec![1.0; d]);
+        for j in 0..d {
+            let (lo, hi) = (stat(j, f64::min, f64::INFINITY), stat(j, f64::max, f64::NEG_INFINITY));
+            match kind {
+                InputScaling::Raw => {}
+                InputScaling::MinMax => (offset[j], range[j]) = (lo, hi - lo),
+                InputScaling::MaxAbs => range[j] = hi.abs().max(lo.abs()),
+            }
+            if range[j] <= 1e-12 {
+                range[j] = 1.0;
+            }
+        }
+        Self { kind, offset, range }
+    }
+
+    /// Rescales one feature vector; `Raw` returns it unchanged.
+    pub fn apply(&self, features: &[f64]) -> Vec<f64> {
+        if self.kind == InputScaling::Raw {
+            return features.to_vec();
+        }
+        features
+            .iter()
+            .zip(self.offset.iter().zip(&self.range))
+            .map(|(v, (o, r))| ((v - o) / r).clamp(0.0, 1.0))
+            .collect()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn molecule(features: Vec<f64>) -> ZincMolecule {
+        ZincMolecule { smiles: String::new(), features, log_p: 0.0, qed: 0.0, sas: 0.0 }
+    }
+
+    #[test]
+    fn scalers_map_training_data_into_the_unit_interval() {
+        let rows = vec![molecule(vec![2.0, 100.0, 5.0]), molecule(vec![4.0, 300.0, 5.0]), molecule(vec![3.0, 200.0, 5.0])];
+        let minmax = Scaler::fit(InputScaling::MinMax, &rows);
+        assert_eq!(minmax.apply(&rows[0].features), vec![0.0, 0.0, 0.0]);
+        assert_eq!(minmax.apply(&rows[1].features), vec![1.0, 1.0, 0.0]);
+        let maxabs = Scaler::fit(InputScaling::MaxAbs, &rows);
+        assert_eq!(maxabs.apply(&rows[2].features), vec![0.75, 2.0 / 3.0, 1.0]);
+        // Values outside the training range are clamped, never negative.
+        assert_eq!(minmax.apply(&[1.0, 400.0, 9.0]), vec![0.0, 1.0, 1.0]);
+        let raw = Scaler::fit(InputScaling::Raw, &rows);
+        assert_eq!(raw.apply(&[7.0, 8.0, 9.0]), vec![7.0, 8.0, 9.0]);
+    }
 
     #[test]
     fn parses_a_row_and_skips_short_ones() {

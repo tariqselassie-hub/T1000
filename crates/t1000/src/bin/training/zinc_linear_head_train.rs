@@ -10,14 +10,14 @@
 //! in a `zinc_qnn_train` report, and the head is exactly reproducible.
 //!
 //! Usage: `zinc_linear_head_train [--depth N] [--weights report.json] [--observables z|all]
-//!         [--samples N] [--eval-samples N] [--record]`
+//!         [--scale maxabs|minmax|raw] [--samples N] [--eval-samples N] [--record]`
 
 use serde::{Deserialize, Serialize};
 use std::{env, fs, time::Instant};
 use t1000::baselines::{print_comparison, regression_metrics, zinc_baselines, BaselineResult, QnnScore, TargetMetrics, ZINC_TARGETS};
 use t1000::holdout_score::ZincHoldout;
-use t1000::linear_head::{weights_fingerprint, CircuitFeatureMap, LinearHead, Observables};
-use t1000::zinc_data::{self, ZincMolecule};
+use t1000::linear_head::{feature_spreads, shots_for_noise_equal_to, weights_fingerprint, CircuitFeatureMap, LinearHead, Observables};
+use t1000::zinc_data::{self, InputScaling, Scaler, ZincMolecule};
 use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind};
 
 const N_QUBITS: usize = 10;
@@ -40,6 +40,11 @@ struct LinearHeadReport {
     feature_time_ms: f64,
     fit_time_ms: f64,
     per_molecule_latency_us: f64,
+    /// Median standard deviation of the readout features across training molecules.
+    median_feature_spread: f64,
+    /// Shots per molecule at which sampling noise equals that spread (an estimate).
+    shots_for_median_spread: f64,
+    scaler: Scaler,
     metrics: Vec<TargetMetrics>,
     relative_mse: f64,
     mean_pearson_r: f64,
@@ -52,6 +57,7 @@ struct Options {
     depth: usize,
     weights_path: Option<String>,
     observables: Observables,
+    scaling: InputScaling,
     samples: usize,
     eval_samples: usize,
 }
@@ -63,6 +69,11 @@ fn options() -> Options {
         depth: value("--depth").and_then(|v| v.parse().ok()).unwrap_or(4),
         weights_path: value("--weights"),
         observables: if value("--observables").as_deref() == Some("z") { Observables::SingleZ } else { Observables::ZAndZz },
+        scaling: match value("--scale").as_deref() {
+            Some("raw") => InputScaling::Raw,
+            Some("minmax") => InputScaling::MinMax,
+            _ => InputScaling::MaxAbs,
+        },
         samples: value("--samples").and_then(|v| v.parse().ok()).unwrap_or(10_000),
         eval_samples: value("--eval-samples").and_then(|v| v.parse().ok()).unwrap_or(2_000),
     }
@@ -101,10 +112,14 @@ fn main() {
     let map = CircuitFeatureMap { encoding: &encoding, ansatz: &ansatz, weights: &weights, observables: opts.observables };
     println!(" Circuit         : {N_QUBITS} qubits, depth {}, {source}", opts.depth);
     println!(" Readout         : {} observables ({:?}), ridge head fitted in closed form", map.n_features(), opts.observables);
+    println!(" Input scaling   : {:?}", opts.scaling);
     println!(" Molecules       : {} training, {} held-out\n", train.len(), test.len());
 
     let t = Instant::now();
-    let train_x = map.feature_matrix(train.iter().map(|m| m.features.as_slice()));
+    let scaler = Scaler::fit(opts.scaling, &train);
+    let scaled_train: Vec<Vec<f64>> = train.iter().map(|m| scaler.apply(&m.features)).collect();
+    let scaled_test: Vec<Vec<f64>> = test.iter().map(|m| scaler.apply(&m.features)).collect();
+    let train_x = map.feature_matrix(scaled_train.iter().map(Vec::as_slice));
     let train_ms = t.elapsed().as_secs_f64() * 1e3;
     let train_y: Vec<Vec<f64>> = train.iter().map(|m| m.targets().to_vec()).collect();
 
@@ -113,7 +128,7 @@ fn main() {
     let fit_ms = t.elapsed().as_secs_f64() * 1e3;
 
     let t = Instant::now();
-    let test_x = map.feature_matrix(test.iter().map(|m| m.features.as_slice()));
+    let test_x = map.feature_matrix(scaled_test.iter().map(Vec::as_slice));
     let preds = head.predict(&test_x);
     let eval_ms = t.elapsed().as_secs_f64() * 1e3;
     let test_y: Vec<Vec<f64>> = test.iter().map(|m| m.targets().to_vec()).collect();
@@ -129,6 +144,11 @@ fn main() {
     println!("  Feature extraction : {train_ms:>8.1} ms for {} training molecules", train.len());
     println!("  Head fit           : {fit_ms:>8.1} ms (ridge lambda {:e})", head.lambda());
     println!("  Held-out inference : {eval_ms:>8.1} ms ({:.1} us/molecule including the circuit)", eval_ms * 1e3 / test.len() as f64);
+    let mut spreads = feature_spreads(&train_x);
+    spreads.sort_by(f64::total_cmp);
+    let median_spread = spreads[spreads.len() / 2];
+    let shots = shots_for_noise_equal_to(median_spread);
+    println!("  Feature spread     : median {median_spread:.2e} (min {:.1e}, max {:.1e}); sampling noise equals it at ~{shots:.1e} shots", spreads[0], spreads[spreads.len() - 1]);
     println!("\n  Target    MAE       MSE       R2      Pearson r");
     for m in &metrics {
         println!("  {:<6} {:>8.4}  {:>8.4}  {:>7.4}  {:>8.4}", m.target, m.mae, m.mse, m.r2, m.pearson_r);
@@ -161,6 +181,9 @@ fn main() {
         feature_time_ms: train_ms,
         fit_time_ms: fit_ms,
         per_molecule_latency_us: eval_ms * 1e3 / test.len() as f64,
+        median_feature_spread: median_spread,
+        shots_for_median_spread: shots,
+        scaler,
         metrics,
         relative_mse: holdout.relative_mse,
         mean_pearson_r: holdout.mean_pearson_r,
@@ -169,10 +192,11 @@ fn main() {
         head,
     };
     let settings = format!(
-        "qubits={N_QUBITS};depth={};weights={};obs={:?};train={};test={}",
+        "qubits={N_QUBITS};depth={};weights={};obs={:?};scale={:?};train={};test={}",
         opts.depth,
         weights_fingerprint(&weights),
         opts.observables,
+        opts.scaling,
         train.len(),
         test.len()
     );

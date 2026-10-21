@@ -434,7 +434,8 @@ Options: `--depth N` (default 4), `--weights report.json`, `--observables z|all`
 `CircuitFeatureMap`, `LinearHead`), `t1000::zinc_data` (CSV loader).
 
 Held-out results on 2,000 molecules, 10,000 training molecules, i3-1115G4 (relative MSE as in
-section 5; the first row is the saved run):
+section 5). Rows 1 to 2 use the raw features as the circuit input, which is the original
+behaviour; section 5.4 shows that rescaling the inputs improves on them:
 
 | Model | Relative MSE | Mean r | R2 logP / QED / SAS |
 | :--- | :--- | :--- | :--- |
@@ -470,11 +471,73 @@ penalty. `LinearHead` therefore standardises the features before the ridge fit; 
 worked before give identical results. The chosen penalty sits at the lower edge of the grid
 (1e-7) for the default circuit, so a smaller penalty might help slightly.
 
-**Hardware caveat, measured.** The 55 outputs vary across molecules with a median standard
-deviation of 2.2e-3 (25th percentile 1.5e-3, maximum 1.0e-2, minimum 6e-5). Shot noise falls as
-1/sqrt(shots), so matching the median spread takes roughly 2e5 shots per molecule (4e5 for the 25th
-percentile) and a comfortable signal-to-noise ratio several million. This is an estimate from the
-measured spreads, not a simulation of sampling. The small spread comes from raw features with one
-dominant column (molecular weight carries 99.1% of the squared norm); better-conditioned
-non-negative inputs may help, but standardised (signed) inputs hurt (section 5.2).
+**Hardware caveat.** The 55 outputs vary across molecules with a median standard deviation of only
+2.2e-3 for raw inputs. An earlier estimate here (about 2e5 shots, "several million" for a comfortable
+margin) was a bound from those spreads alone and is superseded by the sampling simulation in section
+5.5, which shows the head amplifies sampling noise much more than the spreads suggest.
+
+### 5.4 Input scaling for the amplitude encoding
+
+Amplitude encoding L2-normalises the feature vector, and one raw feature (molecular weight, in the
+hundreds next to counts below 25) carries 99.1% of the squared norm. The Z and ZZ readouts depend
+only on squared amplitudes, so signed (standardised) inputs lose information (section 5.2), but
+non-negative rescaling is safe. `--scale` on `zinc_linear_head_train` fits the scaling on the
+training molecules only and clamps held-out values to [0, 1]: `maxabs` is `x / max`, `minmax` is
+`(x - min) / (max - min)`, `raw` is the original behaviour. Depth 4, 55 observables, default
+circuit, 10,000 training and 2,000 held-out molecules:
+
+| Input scaling | Relative MSE | Mean r | Median feature spread |
+| :--- | :--- | :--- | :--- |
+| raw | 0.4655 | 0.727 | 2.2e-3 |
+| minmax | 0.4415 | 0.745 | 4.3e-2 |
+| maxabs (default) | **0.4312** | **0.752** | 3.9e-2 |
+
+Depth sweep with `maxabs`:
+
+| Depth | 1 | 2 | 3 | 4 | 6 | 8 |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| Relative MSE | 0.6430 | 0.5226 | 0.4546 | 0.4312 | 0.4463 | 0.4550 |
+| Mean r | 0.591 | 0.686 | 0.736 | 0.752 | 0.742 | 0.736 |
+| Median feature spread | 7.4e-2 | 5.1e-2 | 5.1e-2 | 3.9e-2 | 1.8e-2 | 1.5e-2 |
+
+Depth 4 is the best, and deeper circuits shrink the feature spreads. With only the 10 single-qubit Z
+observables the result is 0.6188. The saved result for this host is the `maxabs`, depth-4 run; the
+raw-input runs (depths 4 and 6) are saved beside it as variants.
+
+### 5.5 Shot noise (`zinc_shot_noise`)
+
+`zinc_shot_noise` samples each molecule's circuit output `N` times in the computational basis,
+rebuilds the 55 Z and ZZ values from the sampled bitstrings, and predicts from them. Two heads are
+compared: one fitted on exact (noise-free) features and applied to sampled ones, and one fitted on
+features sampled with the same `N`. Depth 4, `maxabs` inputs, noisy-trained head fitted on all 10,000
+training molecules, 2 seeds per row (relative MSE; the mean predictor is 1.0 and the noise-free
+reference is 0.4312):
+
+| Shots per molecule | Exact-trained head | Noisy-trained head | Mean r (noisy-trained) |
+| :--- | :--- | :--- | :--- |
+| 30 | 19,437 | 0.942 | 0.232 |
+| 100 | 5,567 | 0.872 | 0.344 |
+| 300 | 1,865 | 0.787 | 0.445 |
+| 1,000 | 563 | 0.685 | 0.544 |
+| 3,000 | 183 | 0.611 | 0.610 |
+| 10,000 | 58 | 0.555 | 0.657 |
+| 30,000 | 19.1 | 0.523 | 0.682 |
+| 100,000 | 6.3 | 0.499 | 0.701 |
+
+* **A head fitted on exact simulation cannot be deployed on sampled features.** It puts large
+  weights on nearly cancelling features and amplifies the sampling noise by orders of magnitude
+  (still 6.3 at 100,000 shots). The head has to be fitted on features with the deployment noise.
+* **A noisy-trained head degrades gracefully.** It beats the mean predictor from about 30 shots, beats
+  the best gradient-trained simulator model (0.7985) from about 300 shots, and reaches 0.499 at
+  100,000 shots, close to linear ridge on the raw features (0.4952) but still short of the
+  noise-free 0.4312. Approaching the noise-free value takes well over 100,000 shots per molecule.
+* **Input scaling matters on hardware.** With raw inputs the same experiment (2,000 noisy training
+  molecules, 3 seeds) gives 0.865 at 10,000 shots and 0.715 at 100,000 shots, against 0.565 and
+  0.509 for `maxabs`.
+* The training-size effect is small: the noise-free fit on 2,000 molecules scores 0.4383 against
+  0.4312 on 10,000, and the noisy-trained head at 100,000 shots scores 0.509 with 2,000 training
+  molecules against 0.499 with 10,000.
+
+This models only sampling noise on an ideal device. Gate errors, decoherence and readout errors are
+not included, and the circuit is simulated exactly.
 

@@ -137,6 +137,22 @@ impl LinearHead {
     }
 }
 
+/// Standard deviation of every feature column across the rows.
+pub fn feature_spreads(rows: &[Vec<f64>]) -> Vec<f64> {
+    let n = rows.len() as f64;
+    (0..rows[0].len())
+        .map(|j| {
+            let mean = rows.iter().map(|r| r[j]).sum::<f64>() / n;
+            (rows.iter().map(|r| (r[j] - mean).powi(2)).sum::<f64>() / n).sqrt()
+        })
+        .collect()
+}
+
+/// Shots per molecule at which sampling noise `1 / sqrt(shots)` equals `spread`.
+pub fn shots_for_noise_equal_to(spread: f64) -> f64 {
+    1.0 / (spread * spread).max(1e-300)
+}
+
 /// Short stable fingerprint of a weight vector (FNV-1a over the bit patterns).
 pub fn weights_fingerprint(weights: &[f64]) -> String {
     let hash = weights
@@ -183,6 +199,13 @@ mod tests {
         z_features_into(&s, Observables::ZAndZz, &mut full);
         z_features_into(&s, Observables::SingleZ, &mut z);
         assert_eq!(&full[..n], &z[..]);
+    }
+
+    #[test]
+    fn spreads_and_shot_estimate() {
+        let rows = vec![vec![1.0, 5.0], vec![3.0, 5.0]];
+        assert_eq!(feature_spreads(&rows), vec![1.0, 0.0]);
+        assert_eq!(shots_for_noise_equal_to(0.01), 1.0e4);
     }
 
     #[test]
