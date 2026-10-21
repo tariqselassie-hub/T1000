@@ -1,0 +1,242 @@
+[
+  {
+    "feature_set": "raw features",
+    "n_features": 19,
+    "model": "linear ridge",
+    "relative_mse": 0.4952061659752387,
+    "r2": [
+      0.6008201687683485,
+      0.3450267303088095,
+      0.5685346029971259
+    ],
+    "pearson_r": [
+      0.7755051059624998,
+      0.5874278734984913,
+      0.7540596382419446
+    ]
+  },
+  {
+    "feature_set": "raw features",
+    "n_features": 19,
+    "model": "quadratic ridge",
+    "relative_mse": 0.3861736607385001,
+    "r2": [
+      0.6342118847631318,
+      0.5609230637928257,
+      0.646344069228542
+    ],
+    "pearson_r": [
+      0.7967370022786391,
+      0.7493266125620837,
+      0.8041177313461503
+    ]
+  },
+  {
+    "feature_set": "encoded amplitudes, raw inputs",
+    "n_features": 19,
+    "model": "linear ridge",
+    "relative_mse": 0.5034321978037151,
+    "r2": [
+      0.588147054029445,
+      0.33073550345682146,
+      0.5708208491025886
+    ],
+    "pearson_r": [
+      0.7672958728886262,
+      0.575474799035903,
+      0.7556692364616832
+    ]
+  },
+  {
+    "feature_set": "encoded amplitudes, raw inputs",
+    "n_features": 19,
+    "model": "quadratic ridge",
+    "relative_mse": 0.4142332749586076,
+    "r2": [
+      0.6284650672857826,
+      0.4954842415191495,
+      0.6333508663192453
+    ],
+    "pearson_r": [
+      0.7932167074411199,
+      0.7059047031410741,
+      0.7959725129293682
+    ]
+  },
+  {
+    "feature_set": "encoded amplitudes, standardized inputs",
+    "n_features": 19,
+    "model": "linear ridge",
+    "relative_mse": 0.5250657265567844,
+    "r2": [
+      0.557941666774999,
+      0.33054409290149334,
+      0.5363170606531544
+    ],
+    "pearson_r": [
+      0.7472899864457486,
+      0.57500516404567,
+      0.7323668805348267
+    ]
+  },
+  {
+    "feature_set": "encoded amplitudes, standardized inputs",
+    "n_features": 19,
+    "model": "quadratic ridge",
+    "relative_mse": 0.4157798287113277,
+    "r2": [
+      0.6201924628451488,
+      0.5093091504857886,
+      0.6231589005350795
+    ],
+    "pearson_r": [
+      0.7878606600738216,
+      0.7151233023931558,
+      0.7895250059760418
+    ]
+  },
+  {
+    "feature_set": "Z/ZZ of encoded state, raw inputs",
+    "n_features": 55,
+    "model": "linear ridge",
+    "relative_mse": 0.6192854248292439,
+    "r2": [
+      0.4854796234394546,
+      0.18327771710450824,
+      0.47338638496830543
+    ],
+    "pearson_r": [
+      0.6972849363181571,
+      0.4286397680546209,
+      0.6880441702447446
+    ]
+  },
+  {
+    "feature_set": "Z/ZZ after untrained circuit, raw inputs",
+    "n_features": 55,
+    "model": "linear ridge",
+    "relative_mse": 0.4710945588819978,
+    "r2": [
+      0.6049913591511625,
+      0.36304033024654125,
+      0.6186846339563029
+    ],
+    "pearson_r": [
+      0.7784491721435259,
+      0.6025321702046277,
+      0.7870157553821983
+    ]
+  },
+  {
+    "feature_set": "Z/ZZ after trained circuit, raw inputs",
+    "n_features": 55,
+    "model": "linear ridge",
+    "relative_mse": 0.4726823021347947,
+    "r2": [
+      0.6034584673187058,
+      0.35811435060830665,
+      0.6203802756686038
+    ],
+    "pearson_r": [
+      0.7774330448879323,
+      0.5985116666507623,
+      0.7880791394602196
+    ]
+  },
+  {
+    "feature_set": "Z0..Z2 only, untrained circuit, raw inputs",
+    "n_features": 3,
+    "model": "linear ridge",
+    "relative_mse": 0.7855720786279159,
+    "r2": [
+      0.2598158552611698,
+      0.05945214892254125,
+      0.3240157599325414
+    ],
+    "pearson_r": [
+      0.5105289535240954,
+      0.2448549071361407,
+      0.5694850917424521
+    ]
+  },
+  {
+    "feature_set": "all 10 single-qubit Z, untrained circuit, raw inputs",
+    "n_features": 10,
+    "model": "linear ridge",
+    "relative_mse": 0.584456157097496,
+    "r2": [
+      0.5043184445723621,
+      0.19689835665724753,
+      0.5454147274779024
+    ],
+    "pearson_r": [
+      0.7106600873124697,
+      0.4439219451741074,
+      0.7387520478929559
+    ]
+  },
+  {
+    "feature_set": "Z0..Z2 only, trained circuit, raw inputs",
+    "n_features": 3,
+    "model": "linear ridge",
+    "relative_mse": 0.7325174484820074,
+    "r2": [
+      0.23104147446981615,
+      0.08901021016465704,
+      0.4823959699195046
+    ],
+    "pearson_r": [
+      0.4818347416635097,
+      0.30070686544532144,
+      0.6947959976096602
+    ]
+  },
+  {
+    "feature_set": "all 10 single-qubit Z, trained circuit, raw inputs",
+    "n_features": 10,
+    "model": "linear ridge",
+    "relative_mse": 0.6002420354681415,
+    "r2": [
+      0.5349686164173342,
+      0.10498736115090856,
+      0.5593179160273329
+    ],
+    "pearson_r": [
+      0.7318364864858403,
+      0.32506291550265165,
+      0.7481923008845177
+    ]
+  },
+  {
+    "feature_set": "Z/ZZ of encoded state, standardized inputs",
+    "n_features": 55,
+    "model": "linear ridge",
+    "relative_mse": 0.9001781180805115,
+    "r2": [
+      0.09429623695163636,
+      0.14128529927119204,
+      0.06388410953563706
+    ],
+    "pearson_r": [
+      0.3088543271783103,
+      0.37591099776888964,
+      0.25412128273191076
+    ]
+  },
+  {
+    "feature_set": "Z/ZZ after untrained circuit, standardized inputs",
+    "n_features": 55,
+    "model": "linear ridge",
+    "relative_mse": 0.7798142351657389,
+    "r2": [
+      0.24395352767999312,
+      0.23207518757235446,
+      0.18452857925043575
+    ],
+    "pearson_r": [
+      0.49422430107829457,
+      0.4818041303600071,
+      0.43138174530724044
+    ]
+  }
+]

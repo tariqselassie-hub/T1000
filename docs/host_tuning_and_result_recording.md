@@ -357,3 +357,60 @@ and the training loss stays flat (4.21 at epoch 1, 4.13 at epoch 20). And the co
 sign between settings (SAS r from +0.60 to -0.56), which points to a poorly conditioned
 optimization and not a capacity limit. A wider readout alone is therefore not the missing piece.
 
+### 5.2 Where the ZINC signal is lost (`zinc_feature_probe`)
+
+`cargo run --release --bin zinc_feature_probe -- --weights <zinc_qnn_train report>` fits the same
+ridge regression (penalty chosen on a validation split) to several feature sets on the identical
+10,000 / 2,000 split, so differences come from the features alone. The trained circuit is the
+`--calibrated-head`, lr 0.01, 20-epoch model of section 5 (weights are stored in the report as
+`final_weights`). Relative MSE is `1 - mean(R2)`; lower is better.
+
+| Feature set | n | Model | Relative MSE | R2 logP | R2 QED | R2 SAS |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| raw features | 19 | linear ridge | 0.495 | 0.601 | 0.345 | 0.569 |
+| raw features | 19 | quadratic ridge | 0.386 | 0.634 | 0.561 | 0.646 |
+| encoded amplitudes, raw inputs | 19 | linear ridge | 0.503 | 0.588 | 0.331 | 0.571 |
+| encoded amplitudes, raw inputs | 19 | quadratic ridge | 0.414 | 0.628 | 0.495 | 0.633 |
+| encoded amplitudes, standardized inputs | 19 | linear ridge | 0.525 | 0.558 | 0.331 | 0.536 |
+| encoded amplitudes, standardized inputs | 19 | quadratic ridge | 0.416 | 0.620 | 0.509 | 0.623 |
+| Z/ZZ of encoded state, raw inputs | 55 | linear ridge | 0.619 | 0.485 | 0.183 | 0.473 |
+| Z/ZZ after untrained circuit, raw inputs | 55 | linear ridge | 0.471 | 0.605 | 0.363 | 0.619 |
+| Z/ZZ after trained circuit, raw inputs | 55 | linear ridge | 0.473 | 0.603 | 0.358 | 0.620 |
+| Z0..Z2 only, untrained circuit, raw inputs | 3 | linear ridge | 0.786 | 0.260 | 0.059 | 0.324 |
+| all 10 single-qubit Z, untrained circuit, raw inputs | 10 | linear ridge | 0.584 | 0.504 | 0.197 | 0.545 |
+| Z0..Z2 only, trained circuit, raw inputs | 3 | linear ridge | 0.733 | 0.231 | 0.089 | 0.482 |
+| all 10 single-qubit Z, trained circuit, raw inputs | 10 | linear ridge | 0.600 | 0.535 | 0.105 | 0.559 |
+| Z/ZZ of encoded state, standardized inputs | 55 | linear ridge | 0.900 | 0.094 | 0.141 | 0.064 |
+| Z/ZZ after untrained circuit, standardized inputs | 55 | linear ridge | 0.780 | 0.244 | 0.232 | 0.185 |
+
+Saved for this host in `results/hosts/i3-1115g4/experiments/zinc_feature_probe.json`.
+
+What the rows say:
+
+* **The encoding is not the problem.** The circuit receives 19 amplitudes (the L2-normalised
+  features). A ridge fitted to those scores almost the same as on the raw features (0.503 against
+  0.495 linear, 0.414 against 0.386 quadratic), although one feature (molecular weight) carries
+  99.1% of the squared norm. Normalising away the scale costs almost nothing.
+* **The circuit is not destroying information.** A linear ridge on the 55 Z and ZZ expectation
+  values of the circuit output scores 0.471 for an untrained circuit and 0.473 for the trained one,
+  slightly better than linear ridge on the raw features (0.495).
+* **The readout width is the bottleneck.** The same trained circuit read through 3 observables
+  (Z0 to Z2, all the training model uses) gives 0.733, through the 10 single-qubit Z values 0.600,
+  and through all 55 Z and ZZ values 0.473. The model's own readout, one number per property,
+  reaches 0.7985.
+* **Gradient training of the circuit adds little to what a linear head can already extract.** For
+  the 55 features the trained and untrained circuits score the same (0.473 and 0.471). Training
+  helps the narrow readouts (3 observables: 0.786 untrained to 0.733 trained) by concentrating
+  information into them.
+* **Standardising the inputs hurts** (0.78 to 0.90). Z and ZZ depend only on the squared
+  amplitudes, and standardised features are signed, so their sign is lost. Keep the inputs
+  non-negative (the raw features are) or read the state in more than one basis.
+
+**Implication.** A fixed circuit with a closed-form linear head over all Z and ZZ values should
+reach a relative MSE near 0.47 with no gradient training, against 0.7985 for the best trained
+single-readout model. The probe fits that head on the training set only and scores it on
+held-out molecules, so the comparison is fair; it has not been turned into a trainer yet.
+Caveat: on hardware the 55 values come from one set of computational-basis shots, but the
+informative variation in each is small (raw-input Z values sit near -1), so the shot count needed
+has not been measured.
+

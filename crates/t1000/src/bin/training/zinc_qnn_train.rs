@@ -71,6 +71,9 @@ pub struct Zinc10kRunReport {
     pub unitary_norm: f64,
     #[serde(default)]
     pub classical_baselines: Vec<t1000::baselines::BaselineResult>,
+    /// Trained circuit weights (reloadable by analysis tools such as `zinc_feature_probe`).
+    #[serde(default)]
+    pub final_weights: Vec<f64>,
 }
 
 /// Fused single-pass expectation value evaluation for Z0, Z1, Z2 across state amplitudes.
@@ -681,6 +684,7 @@ fn main() {
     );
     let report = Zinc10kRunReport {
         classical_baselines: classical_baselines.clone(),
+        final_weights: opt_weights.clone(),
         timestamp_rfc3339: "2026-10-13T12:35:00Z".to_string(),
         host_cpu: t1000::hostinfo::HostProfile::detect().label(),
         host_ram_gb: 16.0,
