@@ -9,7 +9,7 @@
 //! no gradient training: the circuit is either the default initialisation or the weights stored
 //! in a `zinc_qnn_train` report, and the head is exactly reproducible.
 //!
-//! Usage: `zinc_linear_head_train [--depth N] [--weights report.json] [--observables z|all]
+//! Usage: `zinc_linear_head_train [--depth N] [--weights report.json] [--observables w4|wK|all|z]
 //!         [--scale maxabs|minmax|raw] [--samples N] [--eval-samples N] [--record]`
 
 use serde::{Deserialize, Serialize};
@@ -68,7 +68,12 @@ fn options() -> Options {
     Options {
         depth: value("--depth").and_then(|v| v.parse().ok()).unwrap_or(4),
         weights_path: value("--weights"),
-        observables: if value("--observables").as_deref() == Some("z") { Observables::SingleZ } else { Observables::ZAndZz },
+        observables: match value("--observables").as_deref() {
+            Some("z") => Observables::SingleZ,
+            Some("all") => Observables::ZAndZz,
+            Some(w) if w.starts_with('w') => Observables::ParityUpTo(w[1..].parse().unwrap_or(4)),
+            _ => Observables::ParityUpTo(4),
+        },
         scaling: match value("--scale").as_deref() {
             Some("raw") => InputScaling::Raw,
             Some("minmax") => InputScaling::MinMax,

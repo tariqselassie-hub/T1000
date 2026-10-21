@@ -429,7 +429,8 @@ cargo run --release --bin zinc_linear_head_train                    # scratch co
 cargo run --release --bin zinc_linear_head_train -- --depth 6 --record
 ```
 
-Options: `--depth N` (default 4), `--weights report.json`, `--observables z|all` (default `all`),
+Options: `--depth N` (default 4), `--weights report.json`, `--observables w4|wK|all|z` (default `w4`,
+section 5.6; `all` is the 55 Z and ZZ values of this section, `z` the 10 single-qubit values),
 `--samples N`, `--eval-samples N`. Library code: `t1000::linear_head` (`z_features_into`,
 `CircuitFeatureMap`, `LinearHead`), `t1000::zinc_data` (CSV loader).
 
@@ -501,8 +502,8 @@ Depth sweep with `maxabs`:
 | Median feature spread | 7.4e-2 | 5.1e-2 | 5.1e-2 | 3.9e-2 | 1.8e-2 | 1.5e-2 |
 
 Depth 4 is the best, and deeper circuits shrink the feature spreads. With only the 10 single-qubit Z
-observables the result is 0.6188. The saved result for this host is the `maxabs`, depth-4 run; the
-raw-input runs (depths 4 and 6) are saved beside it as variants.
+observables the result is 0.6188. The default is now `maxabs` with weight-4 parities (section 5.6);
+the 55-observable `maxabs` run and the raw-input runs are saved beside it as variants.
 
 ### 5.5 Shot noise (`zinc_shot_noise`)
 
@@ -540,4 +541,63 @@ reference is 0.4312):
 
 This models only sampling noise on an ideal device. Gate errors, decoherence and readout errors are
 not included, and the circuit is simulated exactly.
+
+### 5.6 Noise-aware head: what helps and what does not
+
+Section 5.5 showed that the head must be fitted on sampled features and that 100,000 shots only
+reach 0.499. Three ideas were tested on identical sampled data (`zinc_shot_noise --sweep`, depth 4,
+`maxabs`, 3,000 noisy training molecules, 2 seeds; relative MSE):
+
+| Configuration | Noise-free | 300 shots | 1,000 | 3,000 | 10,000 | 100,000 |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| all 55, penalty grid to 10 | 0.4312 | 0.7821 | 0.6826 | 0.6070 | 0.5636 | 0.5027 |
+| all 55, penalty grid to 1e4 | 0.4312 | 0.7821 | 0.6826 | 0.6070 | 0.5636 | 0.5039 |
+| top 30 by correlation | 0.4757 | 0.8229 | 0.7384 | 0.6708 | 0.6245 | 0.5491 |
+| top 20 by correlation | 0.5210 | 0.8504 | 0.7985 | 0.7727 | 0.7242 | 0.6058 |
+| top 10 by correlation | 0.6893 | 0.8954 | 0.8500 | 0.7954 | 0.7664 | 0.7150 |
+| 10 single-qubit Z | 0.6188 | 0.9009 | 0.8477 | 0.7954 | 0.7422 | 0.6654 |
+
+* **A stronger ridge penalty does not help.** Widening the grid changes nothing: the validation
+  split never picks a penalty above 1e-2, even at 300 shots.
+* **Fewer features hurt at every shot count.** The information is spread over many features, and
+  the head's averaging over many noisy values is what keeps it stable.
+* **More features from the same shots help.** One set of computational-basis samples yields every
+  parity (Z-string) over any subset of the qubits, and a fast Walsh-Hadamard transform computes all
+  1,023 of them. `Observables::ParityUpTo(k)` uses those of weight at most `k`.
+
+Noise-free held-out accuracy by maximum parity weight (depth 4, `maxabs`; weight 2 is the 55 Z and ZZ
+values):
+
+| Maximum weight | 1 | 2 | 3 | 4 | 5 | 10 (all) |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| Features | 10 | 55 | 175 | 385 | 637 | 1,023 |
+| Relative MSE | 0.6188 | 0.4312 | 0.3963 | **0.3959** | 0.4008 | 0.4099 |
+| Mean r | 0.604 | 0.752 | 0.777 | 0.777 | 0.774 | 0.768 |
+
+Weight 4 (385 features) is the default. It is within 0.01 of quadratic ridge on the raw features
+(0.386) and well ahead of linear ridge (0.4952). Under sampling noise the head fitted on sampled
+features, using all 10,000 training molecules and 2 seeds (saved for this host as
+`zinc_shot_noise_maxabs_w4.json` and `_w6.json`):
+
+| Shots per molecule | 55 features (w2) | 385 features (w4) | 847 features (w6) |
+| :--- | :--- | :--- | :--- |
+| 30 | 0.942 | 0.892 | 0.886 |
+| 100 | 0.872 | 0.768 | 0.752 |
+| 300 | 0.787 | 0.666 | 0.653 |
+| 1,000 | 0.685 | 0.573 | 0.563 |
+| 3,000 | 0.611 | 0.523 | 0.510 |
+| 10,000 | 0.555 | 0.484 | 0.476 |
+| 30,000 | 0.523 | 0.458 | 0.453 |
+| 100,000 | 0.499 | 0.442 | 0.435 |
+
+* **Roughly 7 to 8 times fewer shots for the same accuracy** (by log interpolation: relative MSE
+  0.555 takes 10,000 shots with 55 features, about 1,500 with 385 and about 1,200 with 847).
+* **Linear ridge on the raw features (0.4952) is reached at about 7,000 shots** with 385 features
+  and about 5,000 with 847, against more than 100,000 with 55.
+* Higher weights keep helping under noise even though they stop helping noise-free (weight 6 is
+  worse than weight 4 without noise), because the extra features average the noise out. Weight 10
+  gives the same as weight 6 and costs more to fit.
+* Quadratic ridge (0.386) is not reached at 100,000 shots (0.435 with 847 features).
+
+This still models only sampling noise on an ideal device with the circuit simulated exactly.
 
