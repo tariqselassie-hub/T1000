@@ -287,7 +287,10 @@ fn sidecar_path(file: &Path) -> PathBuf {
 }
 
 /// `<stem>.<8 hex digits of the settings hash>.<ext>` next to `file`.
-fn variant_path(file: &Path, settings: &str) -> PathBuf {
+///
+/// Companion files of a result (a CSV next to a JSON) use this when [`Outcome::WrittenVariant`]
+/// was returned, so both land under the same variant name.
+pub fn variant_path(file: &Path, settings: &str) -> PathBuf {
     let hash = settings
         .bytes()
         .fold(0xcbf2_9ce4_8422_2325u64, |h, b| (h ^ u64::from(b)).wrapping_mul(0x0100_0000_01b3));

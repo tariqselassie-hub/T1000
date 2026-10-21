@@ -158,10 +158,26 @@ replaces the saved run unconditionally. Metrics must be held-out numbers, not tr
 | Binary | Deciding metric (lower is better) | Guard |
 | :--- | :--- | :--- |
 | `qnn_train` | holdout loss on 96 unseen phase-shifted points | holdout accuracy may drop at most 1 point |
-| `zinc_qnn_train` | held-out MSE divided by target variance, mean of logP, QED, SAS (1.0 means no better than the mean) | mean Pearson r may drop at most 0.02 |
+| `zinc_qnn_train`, `zinc_qnn_12qubit_hybrid`, `zinc_qnn_20ep_eval` | held-out MSE divided by target variance, mean of logP, QED, SAS (1.0 means no better than the mean); shared code in `t1000::holdout_score` | mean Pearson r may drop at most 0.02 |
+| `birds_qnn_train`, `birds_hybrid_qnn_train` | test loss of the best checkpoint | worst-group accuracy may drop at most 1 point |
+| `mnist_qnn_train` | final test loss | test accuracy may drop at most 1 point |
 | `scale_26_qubits` | 26-qubit latency | none |
 
-All other binaries use the plain scratch-or-record behavior (no keep-best yet).
+Companion files follow the report. `zinc_qnn_12qubit_hybrid` skips rewriting its default checkpoint
+when the report is kept, and writes it under the variant name when the report becomes a variant;
+`mnist_qnn_train` does the same for its CSV. An explicit `--save-weights` path is always written.
+
+All other binaries use the plain scratch-or-record behavior. The ablation reports
+(`zinc_qnn_12qubit_fused`, `_pruned`, `_midcircuit`, `_qng`, `_reuploading`, `_zz_correlators`)
+put several variants side by side in one file, so there is no single score to keep-best on.
+`mnist_ultrametric_sorter` reports accuracy only, and `qm9_*`, `corpus_vqc_train`,
+`qnn_protocol_train` and `qgnn_molecular_bench` report no clearly held-out number.
+
+Caveats: the birds and MNIST trainers could not be run on the i3 (their data files are not in the
+repository), so their recording path is compile-checked only. The birds trainers pick the "best
+checkpoint" by test-set worst-group accuracy, so their test numbers are optimistic. The source
+file `src/bin/screening/zinc_qnn_20ep_eval.rs` is not registered in `Cargo.toml`, so it is not
+built by `cargo build`.
 
 ### Examples
 

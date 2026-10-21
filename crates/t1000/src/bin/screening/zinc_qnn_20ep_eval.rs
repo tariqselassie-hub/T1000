@@ -775,7 +775,30 @@ fn main() {
     }
 
     if let Ok(json_str) = serde_json::to_string_pretty(&report) {
-        let _ = t1000::results::write(&out_json_path, json_str);
-        println!("[SAVED] Complete 20-Epoch Evaluation Report exported to: {}", out_json_path.display());
+        let holdout = t1000::holdout_score::ZincHoldout::new(
+            [report.logp_metrics.tuned_mse, report.qed_metrics.tuned_mse, report.sas_metrics.tuned_mse],
+            [report.logp_metrics.pearson_r, report.qed_metrics.pearson_r, report.sas_metrics.pearson_r],
+            [&targets_logp, &targets_qed, &targets_sas],
+        );
+        let settings = format!(
+            "qubits={};depth={};epochs={};batch={};lr={};train={};test={}",
+            report.n_qubits,
+            report.circuit_depth,
+            report.epochs_trained,
+            report.batch_size,
+            report.learning_rate,
+            train_samples.len(),
+            test_samples.len()
+        );
+        match t1000::results::write_scored(&out_json_path, json_str, &holdout.score(&settings)) {
+            Ok(t1000::results::Outcome::KeptBest) => {
+                println!("[=] Saved 20-epoch report kept: this run did not improve it");
+            }
+            Ok(t1000::results::Outcome::Scratch) => {
+                println!("[~] 20-epoch report written to a scratch copy only (use --record to save)");
+            }
+            Ok(_) => println!("[SAVED] Complete 20-Epoch Evaluation Report exported to: {}", out_json_path.display()),
+            Err(e) => eprintln!("[!] Could not write the report: {e}"),
+        }
     }
 }
