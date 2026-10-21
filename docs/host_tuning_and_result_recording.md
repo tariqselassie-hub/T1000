@@ -216,7 +216,7 @@ replaces the saved run unconditionally. Metrics must be held-out numbers, not tr
 | Binary | Deciding metric (lower is better) | Guard |
 | :--- | :--- | :--- |
 | `qnn_train` | holdout loss on 96 unseen phase-shifted points | holdout accuracy may drop at most 1 point |
-| `zinc_qnn_train`, `zinc_qnn_12qubit_hybrid`, `zinc_qnn_20ep_eval` | held-out MSE divided by target variance, mean of logP, QED, SAS (1.0 means no better than the mean); shared code in `t1000::holdout_score` | mean Pearson r may drop at most 0.02 |
+| `zinc_qnn_train` (settings include the head mode), `zinc_qnn_12qubit_hybrid`, `zinc_qnn_20ep_eval` | held-out MSE divided by target variance, mean of logP, QED, SAS (1.0 means no better than the mean); shared code in `t1000::holdout_score` | mean Pearson r may drop at most 0.02 |
 | `birds_qnn_train`, `birds_hybrid_qnn_train` | test loss of the best checkpoint | worst-group accuracy may drop at most 1 point |
 | `mnist_qnn_train` | final test loss | test accuracy may drop at most 1 point |
 | `scale_26_qubits` | 26-qubit latency | none |
@@ -287,3 +287,51 @@ match t1000::results::write_scored(&out_path, json, &score)? {
 5. Leave the build profile alone: fat LTO with one codegen unit measured no difference.
 6. Keep the default thread count (all logical CPUs); on the i3, 4 threads were best or equal in a
    1/2/3/4-thread sweep.
+
+---
+
+## 5. ZINC readout calibration (`t1000::calibration`)
+
+`zinc_qnn_train` predicts logP, QED and SAS as `mu + sigma * <Z_k>` on qubits 0 to 2, with `mu`
+and `sigma` fixed from the data. After 20 epochs the circuit outputs correlate with the targets
+(Pearson r 0.46, 0.21, 0.41) but the squared error stays at the level of predicting the mean,
+because `<Z>` is tiny (it has a spread of order 1e-3 to 1e-2) so `sigma * <Z>` barely moves the
+prediction. Two tests, both scored on the 2,000 held-out molecules:
+
+* **Post-hoc affine fit** (always printed): fit `y ~ slope * <Z> + intercept` per property by least
+  squares on the 10,000 training molecules only. It recovers about r squared and no more.
+* **Calibrated-head training** (`--calibrated-head`, off by default): refit that line on 2,000
+  training molecules at the start of every epoch and train the circuit against it. The adjoint
+  gradient uses `slope / sigma` as the coefficient of each readout, which is exactly 1 for the
+  default head, so the default path is bit-for-bit unchanged.
+
+Held-out results, 20 epochs, i3-1115G4 (R squared is `1 - MSE / variance`):
+
+| Model | Relative MSE | Mean r | R2 logP | R2 QED | R2 SAS |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| Default head (saved run) | 0.9915 | 0.359 | 0.021 | 0.002 | 0.003 |
+| Default head + post-hoc affine fit | 0.860 | 0.359 | 0.209 | 0.043 | 0.169 |
+| `--calibrated-head`, lr 0.03 | 0.828 | 0.435 | 0.141 | 0.080 | 0.298 |
+| `--calibrated-head`, lr 0.01 (saved variant) | 0.7985 | 0.436 | 0.126 | 0.064 | 0.415 |
+| Quadratic ridge (same features) | 0.386 | n/a | 0.634 | 0.561 | 0.646 |
+
+The two saved rows are computed from the saved JSON files; the others are from single runs
+printed to the terminal.
+
+Learning rate 0.1 and 40 epochs gave 0.83 and 0.84, so tuning does not change the picture. The
+calibrated head helps (every property now beats the mean predictor) but the circuit still
+explains only 13%, 6% and 42% of the held-out variance of logP, QED and SAS, against 63%, 56% and
+65% for quadratic ridge regression.
+
+**Caveats**
+
+* The fitted slopes are in the hundreds (logP's is negative): the head amplifies a wiggle of order
+  1e-3 around a learned mean of `<Z>`. This is exact in the simulator. On hardware the readout
+  would have to resolve that wiggle against shot noise of about `1 / sqrt(shots)`, which suggests
+  of the order of a million shots per readout (an estimate, not measured).
+* Training is deterministic for a given setting, but different learning rates move the
+  per-property R squared by several hundredths (logP 0.13 to 0.26, SAS 0.20 to 0.42 across the
+  sweep), so treat single-property differences as noisy.
+* Saved on this host: `results/hosts/i3-1115g4/tests/benchmarks/zinc_molecular/outputs/`
+  `zinc_qnn_10k_results.json` (default head, 20 epochs) and the `.50641bcc.json` variant
+  (calibrated head, lr 0.01, 20 epochs).

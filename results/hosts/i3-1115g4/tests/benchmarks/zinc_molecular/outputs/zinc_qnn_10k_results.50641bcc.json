@@ -1,0 +1,268 @@
+{
+  "timestamp_rfc3339": "2026-10-13T12:35:00Z",
+  "host_cpu": "Intel Core i3-1115G4 (4 threads, 512-bit AVX-512F kernels (AVX2+FMA elsewhere))",
+  "host_ram_gb": 16.0,
+  "n_qubits": 10,
+  "state_dimension": 1024,
+  "state_memory_bytes": 16384,
+  "circuit_depth": 4,
+  "num_parameters": 80,
+  "train_sample_count": 10000,
+  "test_sample_count": 2000,
+  "epochs_trained": 20,
+  "batch_size": 50,
+  "learning_rate": 0.01,
+  "epoch_history": [
+    {
+      "epoch": 1,
+      "batch_count": 200,
+      "train_loss": 3.293423922474563,
+      "grad_norm": 80.66817671892595,
+      "epoch_time_ms": 811.233431
+    },
+    {
+      "epoch": 2,
+      "batch_count": 200,
+      "train_loss": 3.0426350921555767,
+      "grad_norm": 78.47310606432927,
+      "epoch_time_ms": 810.144966
+    },
+    {
+      "epoch": 3,
+      "batch_count": 200,
+      "train_loss": 3.1156645153984135,
+      "grad_norm": 103.30093837630386,
+      "epoch_time_ms": 808.475789
+    },
+    {
+      "epoch": 4,
+      "batch_count": 200,
+      "train_loss": 3.1851418032508696,
+      "grad_norm": 135.3549559401447,
+      "epoch_time_ms": 813.640766
+    },
+    {
+      "epoch": 5,
+      "batch_count": 200,
+      "train_loss": 3.154948073289132,
+      "grad_norm": 150.05725043962218,
+      "epoch_time_ms": 814.695619
+    },
+    {
+      "epoch": 6,
+      "batch_count": 200,
+      "train_loss": 3.131387072920931,
+      "grad_norm": 166.09103439155132,
+      "epoch_time_ms": 812.959227
+    },
+    {
+      "epoch": 7,
+      "batch_count": 200,
+      "train_loss": 3.104291685714477,
+      "grad_norm": 175.771545417974,
+      "epoch_time_ms": 819.3637249999999
+    },
+    {
+      "epoch": 8,
+      "batch_count": 200,
+      "train_loss": 3.1216957477304224,
+      "grad_norm": 211.669629741314,
+      "epoch_time_ms": 809.438974
+    },
+    {
+      "epoch": 9,
+      "batch_count": 200,
+      "train_loss": 3.1910054751626937,
+      "grad_norm": 259.91684880115446,
+      "epoch_time_ms": 813.835584
+    },
+    {
+      "epoch": 10,
+      "batch_count": 200,
+      "train_loss": 3.2178373930012416,
+      "grad_norm": 301.46018840524965,
+      "epoch_time_ms": 803.651114
+    },
+    {
+      "epoch": 11,
+      "batch_count": 200,
+      "train_loss": 3.075539645563322,
+      "grad_norm": 303.30998164266805,
+      "epoch_time_ms": 804.568574
+    },
+    {
+      "epoch": 12,
+      "batch_count": 200,
+      "train_loss": 3.1399493551410864,
+      "grad_norm": 355.0236196255386,
+      "epoch_time_ms": 811.748997
+    },
+    {
+      "epoch": 13,
+      "batch_count": 200,
+      "train_loss": 3.106660324877301,
+      "grad_norm": 381.11544194791037,
+      "epoch_time_ms": 811.054812
+    },
+    {
+      "epoch": 14,
+      "batch_count": 200,
+      "train_loss": 2.9794761662763842,
+      "grad_norm": 381.09658438764774,
+      "epoch_time_ms": 806.470461
+    },
+    {
+      "epoch": 15,
+      "batch_count": 200,
+      "train_loss": 2.928898270227507,
+      "grad_norm": 399.60743928507304,
+      "epoch_time_ms": 808.2789769999999
+    },
+    {
+      "epoch": 16,
+      "batch_count": 200,
+      "train_loss": 2.988203995312822,
+      "grad_norm": 474.72836702164494,
+      "epoch_time_ms": 813.837429
+    },
+    {
+      "epoch": 17,
+      "batch_count": 200,
+      "train_loss": 3.144186013643355,
+      "grad_norm": 631.6607712001645,
+      "epoch_time_ms": 814.746387
+    },
+    {
+      "epoch": 18,
+      "batch_count": 200,
+      "train_loss": 3.277341182799327,
+      "grad_norm": 813.1290852808715,
+      "epoch_time_ms": 811.8366510000001
+    },
+    {
+      "epoch": 19,
+      "batch_count": 200,
+      "train_loss": 3.243270424136636,
+      "grad_norm": 882.2595554619667,
+      "epoch_time_ms": 809.811171
+    },
+    {
+      "epoch": 20,
+      "batch_count": 200,
+      "train_loss": 3.242656492586805,
+      "grad_norm": 931.5950808034705,
+      "epoch_time_ms": 809.346636
+    }
+  ],
+  "test_eval_time_ms": 72.478687,
+  "per_molecule_latency_us": 36.239343500000004,
+  "throughput_molecules_per_sec": 27594.318865075467,
+  "logp_metrics": {
+    "initial_mse": 2.7058680070838124,
+    "tuned_mse": 1.893393832925226,
+    "tuned_mae": 1.1094644502485065,
+    "pearson_r": 0.4024926156300777,
+    "error_reduction_pct": 30.026378671523297
+  },
+  "qed_metrics": {
+    "initial_mse": 0.022793157311217758,
+    "tuned_mse": 0.01819837271771741,
+    "tuned_mae": 0.10870450906568357,
+    "pearson_r": 0.2555839470475242,
+    "error_reduction_pct": 20.158613968056997
+  },
+  "sas_metrics": {
+    "initial_mse": 0.7474674453041815,
+    "tuned_mse": 0.4019388309487434,
+    "tuned_mae": 0.4874274843991194,
+    "pearson_r": 0.6508723891791816,
+    "error_reduction_pct": 46.22657702702028
+  },
+  "unitary_norm": 1.0000000000000002,
+  "classical_baselines": [
+    {
+      "model": "Mean predictor",
+      "n_features": 0,
+      "lambda": null,
+      "metrics": [
+        {
+          "target": "logP",
+          "mae": 1.1679349253399953,
+          "mse": 2.1658115969828264,
+          "r2": -0.0004063746345421837,
+          "pearson_r": 1.900249809333326e-15
+        },
+        {
+          "target": "QED",
+          "mae": 0.11180358006562369,
+          "mse": 0.019448056676708146,
+          "r2": -0.00018228220503102577,
+          "pearson_r": 5.917147975903657e-15
+        },
+        {
+          "target": "SAS",
+          "mae": 0.6598574464095874,
+          "mse": 0.6864985340884788,
+          "r2": -0.0000829697744040292,
+          "pearson_r": 1.4589306600631395e-15
+        }
+      ]
+    },
+    {
+      "model": "Ridge (linear)",
+      "n_features": 19,
+      "lambda": 1e-7,
+      "metrics": [
+        {
+          "target": "logP",
+          "mae": 0.7062190516418819,
+          "mse": 0.8641892920672776,
+          "r2": 0.6008237845436784,
+          "pearson_r": 0.7755073761244781
+        },
+        {
+          "target": "QED",
+          "mae": 0.08664291997630016,
+          "mse": 0.012735652371008143,
+          "r2": 0.34502587762095527,
+          "pearson_r": 0.5874272769996243
+        },
+        {
+          "target": "SAS",
+          "mae": 0.41941203682174,
+          "mse": 0.2961753748530487,
+          "r2": 0.5685352061962179,
+          "pearson_r": 0.75406003604063
+        }
+      ]
+    },
+    {
+      "model": "Ridge (quadratic)",
+      "n_features": 209,
+      "lambda": 0.0001,
+      "metrics": [
+        {
+          "target": "logP",
+          "mae": 0.6713804806746146,
+          "mse": 0.7919063313724964,
+          "r2": 0.6342118847631318,
+          "pearson_r": 0.7967370022786391
+        },
+        {
+          "target": "QED",
+          "mae": 0.06885083296955387,
+          "mse": 0.008537636881515974,
+          "r2": 0.5609230637928257,
+          "pearson_r": 0.7493266125620837
+        },
+        {
+          "target": "SAS",
+          "mae": 0.3745015485908897,
+          "mse": 0.24276413596070837,
+          "r2": 0.646344069228542,
+          "pearson_r": 0.8041177313461503
+        }
+      ]
+    }
+  ]
+}

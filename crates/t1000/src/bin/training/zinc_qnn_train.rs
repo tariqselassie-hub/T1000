@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use t1000::calibration::AffineFit;
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -101,29 +102,22 @@ fn compute_state_norm(state: &QuantumState) -> f64 {
         .sqrt()
 }
 
-fn compute_pearson_r(preds: &[f64], targets: &[f64]) -> f64 {
-    let n = preds.len() as f64;
-    if n < 2.0 {
-        return 0.0;
-    }
-    let mean_p = preds.iter().sum::<f64>() / n;
-    let mean_t = targets.iter().sum::<f64>() / n;
-    let mut cov = 0.0;
-    let mut var_p = 0.0;
-    let mut var_t = 0.0;
-    for (&p, &t) in preds.iter().zip(targets) {
-        let dp = p - mean_p;
-        let dt = t - mean_t;
-        cov += dp * dt;
-        var_p += dp * dp;
-        var_t += dt * dt;
-    }
-    let denom = (var_p * var_t).sqrt();
-    if denom > 1e-12 {
-        cov / denom
-    } else {
-        0.0
-    }
+/// `<Z_0>, <Z_1>, <Z_2>` of the circuit output for every molecule.
+fn collect_readouts(
+    samples: &[MoleculeSample],
+    encoding: &DataEncodingLayer,
+    ansatz: &CircuitAnsatz,
+    weights: &[f64],
+    state: &mut QuantumState,
+) -> Vec<[f64; 3]> {
+    samples
+        .iter()
+        .map(|m| {
+            ansatz.forward_into(&encoding.encode(&m.features), weights, state);
+            let (z0, z1, z2) = eval_z0_z1_z2(state);
+            [z0, z1, z2]
+        })
+        .collect()
 }
 
 fn parse_zinc_csv(csv_path: &Path, max_rows: usize) -> Result<Vec<MoleculeSample>, String> {
@@ -197,6 +191,7 @@ fn main() {
     let mut max_train = 10000;
     let mut max_eval = 2000;
     let mut max_batches = 0; // 0 = all batches
+    let mut calibrated_head = false; // refit an affine readout on the training set every epoch
     let mut num_threads = std::thread::available_parallelism()
         .map(|n| n.get().min(12))
         .unwrap_or(8);
@@ -240,6 +235,7 @@ fn main() {
                     i += 1;
                 }
             }
+            "--calibrated-head" => calibrated_head = true,
             "--max-batches" => {
                 if i + 1 < args.len() {
                     max_batches = args[i + 1].parse().unwrap_or(0);
@@ -398,6 +394,20 @@ fn main() {
 
     let mut epoch_telemetry = Vec::new();
     let total_train_start = Instant::now();
+    // Readout head: prediction_k = intercept_k + slope_k * <Z_k>. The default is the fixed
+    // (mu, sigma) head; --calibrated-head refits it by least squares on the training set.
+    let fixed_head = [
+        AffineFit { slope: SIGMA_LOGP, intercept: MU_LOGP },
+        AffineFit { slope: SIGMA_QED, intercept: MU_QED },
+        AffineFit { slope: SIGMA_SAS, intercept: MU_SAS },
+    ];
+    let mut head = fixed_head;
+    let fit_head = |weights: &[f64], state: &mut QuantumState, n: usize| -> [AffineFit; 3] {
+        let subset = &train_samples[..n.min(train_samples.len())];
+        let z = collect_readouts(subset, &encoding, &ansatz, weights, state);
+        let y: Vec<[f64; 3]> = subset.iter().map(|m| [m.log_p, m.qed, m.sas]).collect();
+        t1000::calibration::fit_columns(&z, &y)
+    };
 
     println!(
         "Starting {} training epochs across {} molecules in batches of {}...",
@@ -407,6 +417,9 @@ fn main() {
     );
     for epoch in 1..=num_epochs {
         let t_epoch = Instant::now();
+        if calibrated_head {
+            head = fit_head(&opt_weights, &mut out_state, 2000);
+        }
         let mut total_epoch_loss = 0.0;
         let mut total_grad_norm = 0.0;
         let mut batches_run = 0;
@@ -426,6 +439,7 @@ fn main() {
                     let ansatz_ref = &ansatz;
                     let encoding_ref = &encoding;
                     let weights_ref = &opt_weights;
+                    let head_ref = &head;
 
                     handles.push(s.spawn(move || {
                         let z_obs = [
@@ -441,9 +455,18 @@ fn main() {
                             // Scaled errors e_k = (pred_k - y_k) / sigma_k with pred_k = mu_k + sigma_k <Z_k>.
                             let errors = |z: &[f64]| {
                                 [
-                                    (MU_LOGP + SIGMA_LOGP * z[0] - sample.log_p) / SIGMA_LOGP,
-                                    (MU_QED + SIGMA_QED * z[1] - sample.qed) / SIGMA_QED,
-                                    (MU_SAS + SIGMA_SAS * z[2] - sample.sas) / SIGMA_SAS,
+                                    (head_ref[0].apply(z[0]) - sample.log_p) / SIGMA_LOGP,
+                                    (head_ref[1].apply(z[1]) - sample.qed) / SIGMA_QED,
+                                    (head_ref[2].apply(z[2]) - sample.sas) / SIGMA_SAS,
+                                ]
+                            };
+                            // d e_k / d<Z_k> = slope_k / sigma_k (exactly 1 for the fixed head).
+                            let coefficients = |z: &[f64]| {
+                                let e = errors(z);
+                                [
+                                    e[0] * head_ref[0].slope / SIGMA_LOGP,
+                                    e[1] * head_ref[1].slope / SIGMA_QED,
+                                    e[2] * head_ref[2].slope / SIGMA_SAS,
                                 ]
                             };
                             // One adjoint sweep gives d/dθ of sum_k e_k <Z_k> (e_k held at the current
@@ -451,7 +474,7 @@ fn main() {
                             // parameter-shift accumulation.
                             let res =
                                 adjoint_gradient(ansatz_ref, &state_in, weights_ref, &z_obs, |z| {
-                                    errors(z).to_vec()
+                                    coefficients(z).to_vec()
                                 });
                             let e = errors(&res.expectations);
                             thread_loss += e[0] * e[0] + e[1] * e[1] + e[2] * e[2];
@@ -533,9 +556,9 @@ fn main() {
         ansatz.forward_into(&state_in, &opt_weights, &mut out_state);
         let (z0, z1, z2) = eval_z0_z1_z2(&out_state);
 
-        let p_logp = MU_LOGP + SIGMA_LOGP * z0;
-        let p_qed = MU_QED + SIGMA_QED * z1;
-        let p_sas = MU_SAS + SIGMA_SAS * z2;
+        let p_logp = head[0].apply(z0);
+        let p_qed = head[1].apply(z1);
+        let p_sas = head[2].apply(z2);
 
         tuned_preds_logp.push(p_logp);
         tuned_preds_qed.push(p_qed);
@@ -560,7 +583,7 @@ fn main() {
         .map(|(p, t)| (p - t).abs())
         .sum::<f64>()
         / n_eval;
-    let r_logp = compute_pearson_r(&tuned_preds_logp, &targets_logp);
+    let r_logp = t1000::calibration::pearson_r(&tuned_preds_logp, &targets_logp);
 
     let tuned_mse_qed = tuned_preds_qed
         .iter()
@@ -574,7 +597,7 @@ fn main() {
         .map(|(p, t)| (p - t).abs())
         .sum::<f64>()
         / n_eval;
-    let r_qed = compute_pearson_r(&tuned_preds_qed, &targets_qed);
+    let r_qed = t1000::calibration::pearson_r(&tuned_preds_qed, &targets_qed);
 
     let tuned_mse_sas = tuned_preds_sas
         .iter()
@@ -588,7 +611,15 @@ fn main() {
         .map(|(p, t)| (p - t).abs())
         .sum::<f64>()
         / n_eval;
-    let r_sas = compute_pearson_r(&tuned_preds_sas, &targets_sas);
+    let r_sas = t1000::calibration::pearson_r(&tuned_preds_sas, &targets_sas);
+
+    // Post-hoc affine calibration of the circuit readouts: fit on training molecules only.
+    let train_z = collect_readouts(&train_samples, &encoding, &ansatz, &opt_weights, &mut out_state);
+    let test_z = collect_readouts(&test_samples, &encoding, &ansatz, &opt_weights, &mut out_state);
+    let train_y: Vec<[f64; 3]> = train_samples.iter().map(|m| [m.log_p, m.qed, m.sas]).collect();
+    let test_y: Vec<[f64; 3]> = test_samples.iter().map(|m| [m.log_p, m.qed, m.sas]).collect();
+    t1000::calibration::calibrate(&train_z, &train_y, &test_z, &test_y)
+        .print_table([tuned_mse_logp, tuned_mse_qed, tuned_mse_sas], train_samples.len());
 
     println!(
         "  Evaluation Time      : {:>8.2} ms ({} molecules)",
@@ -724,7 +755,8 @@ fn main() {
         );
         let settings = format!(
             "qubits={n_qubits};depth={depth};epochs={num_epochs};batch={batch_size};lr={lr};\
-             train={};test={}",
+             head={};train={};test={}",
+            if calibrated_head { "calibrated" } else { "fixed" },
             train_samples.len(),
             test_samples.len()
         );

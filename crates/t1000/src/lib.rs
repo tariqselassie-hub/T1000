@@ -18,6 +18,7 @@ pub mod adjoint;
 pub mod adjoint_fusion;
 pub mod backend;
 pub mod ansatz;
+pub mod calibration;
 pub mod baselines;
 pub mod canonical;
 pub mod cascaded_tree_valve;
