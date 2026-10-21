@@ -167,6 +167,8 @@
                     <div class="viewport-controls">
                         <button id="btn-toggle-spin" class="btn-tiny active">AUTO-ROTATION</button>
                         <button id="btn-reset-cam" class="btn-tiny">RESET CAMERA</button>
+                        <button id="btn-mol-zoom-in" class="btn-tiny" title="Zoom In (+ or =)">[+] ZOOM IN (+)</button>
+                        <button id="btn-mol-zoom-out" class="btn-tiny" title="Zoom Out (- or _)">[-] ZOOM OUT (_)</button>
                     </div>
                 </main>
 
@@ -1119,6 +1121,44 @@
                             <input type="range" id="bloch-decoherence-slider" min="0" max="1" step="0.01" value="0" style="flex:1;">
                             <span id="bloch-decoherence-val" style="font-family:var(--font-mono); font-size:11px; color:var(--hardware-gold); min-width:40px; font-weight:700;">0.00</span>
                         </div>
+                    </div>
+
+                    <!-- 2026 Piecewise Planckian Bound Controls -->
+                    <div style="display:flex; flex-wrap:wrap; gap:16px; align-items:center; padding:10px 14px; background:var(--bg-canvas); border:1px solid var(--border-color); border-radius:4px; margin-top:16px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-family:var(--font-mono); font-size:11px; color:var(--hardware-gold); font-weight:700;">PLANCKIAN DISSIPATION CHAMBER:</span>
+                            <label style="font-family:var(--font-mono); font-size:10px; color:var(--text-slate);">k_B*T:</label>
+                            <input type="number" id="planckian-kbt" value="0.40" min="0.01" max="5.0" step="0.05" style="width:65px; padding:4px 6px; background:var(--bg-card); color:var(--text-white); border:1px solid var(--border-bright); font-family:var(--font-mono); font-size:11px; border-radius:4px;">
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <label style="font-family:var(--font-mono); font-size:10px; color:var(--text-slate);">Gap Δ:</label>
+                            <input type="number" id="planckian-gap" value="1.00" min="0.1" max="10.0" step="0.1" style="width:65px; padding:4px 6px; background:var(--bg-card); color:var(--text-white); border:1px solid var(--border-bright); font-family:var(--font-mono); font-size:11px; border-radius:4px;">
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <label style="font-family:var(--font-mono); font-size:10px; color:var(--text-slate);">Step δt:</label>
+                            <input type="number" id="planckian-dt" value="0.20" min="0.01" max="2.0" step="0.05" style="width:65px; padding:4px 6px; background:var(--bg-card); color:var(--text-white); border:1px solid var(--border-bright); font-family:var(--font-mono); font-size:11px; border-radius:4px;">
+                        </div>
+                        <button id="btn-apply-planckian-step" class="btn-tiny" style="color:var(--quantum-green); border-color:var(--quantum-green);">STEP THERMAL DISSIPATION (δt)</button>
+                        <div style="display:flex; align-items:center; gap:12px; margin-left:auto;">
+                            <span style="font-family:var(--font-mono); font-size:10px; color:var(--text-slate);">Regime:</span>
+                            <span id="planckian-regime-badge" class="badge" style="background:rgba(0,230,118,0.15); color:var(--quantum-green); border:1px solid var(--quantum-green); font-size:10px; font-weight:700; padding:2px 8px; border-radius:3px;">HIGH-T (2 k_B T)</span>
+                            <span style="font-family:var(--font-mono); font-size:10px; color:var(--text-slate);">Γ_max: <b id="planckian-gamma-val" style="color:var(--text-polar);">0.800</b></span>
+                            <span style="font-family:var(--font-mono); font-size:10px; color:var(--text-slate);">Retention Factor: <b id="planckian-retention-val" style="color:var(--hardware-gold);">0.8521</b></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3D Viewport Zoom Toolbar -->
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding:8px 12px; background:var(--bg-card); border:1px solid var(--border-color); border-radius:4px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-family:var(--font-mono); font-size:11px; color:var(--text-slate); font-weight:700;">ARRAY 3D CAMERA ZOOM:</span>
+                        <button id="btn-bloch-zoom-in" class="btn-tiny" title="Zoom In (+ or =)">[+] ZOOM IN (+)</button>
+                        <button id="btn-bloch-zoom-out" class="btn-tiny" title="Zoom Out (- or _)">[-] ZOOM OUT (_)</button>
+                        <button id="btn-bloch-zoom-reset" class="btn-tiny" title="Reset Camera (R)">[R] RESET ALL</button>
+                        <span id="bloch-zoom-indicator" style="font-family:var(--font-mono); font-size:11px; color:var(--quantum-green); font-weight:700; margin-left:6px;">1.00x</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:16px;">
+                        <span style="font-family:var(--font-mono); font-size:10px; color:var(--text-slate);">KEYBOARD: Press <b style="color:var(--text-polar);">+</b> to Zoom In, <b style="color:var(--text-polar);">-</b> or <b style="color:var(--text-polar);">_</b> to Zoom Out, <b style="color:var(--text-polar);">R</b> to Reset</span>
                     </div>
                 </div>
 

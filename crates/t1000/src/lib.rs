@@ -86,11 +86,6 @@ pub use glued_trees::{
 pub use gpu::{IGpuBridge, IGpuBridgeConfig, IGpuExecutionReport};
 pub use qgnn::{EquivariantGraphConvLayer, GeometricQgnn, MolecularGraph};
 pub use simd::{SimdBackend, SimdStateView, SimdStateViewMut};
-pub use hopf_s4::{
-    bell_rotation_state, compute_entanglement_invariants, compute_qubit_pair_hopf_s4,
-    evaluate_werner_state, project_state_s7_to_s4, EntanglementInvariant, HopfS4Coordinate,
-};
-pub use quaternion::Quaternion;
 pub use simd_bloch::{
     compute_all_bloch_vectors, compute_bloch_restoring_weights, compute_qubit_bloch, BlochVector,
 };
@@ -158,11 +153,20 @@ pub use plaquette::{
     PlaquetteNode, PlaquetteZipper2D, PlaquetteZipperReport, PlaquetteZipperWindow,
     StokesPressureReport, WilsonFluxTableau, NUM_COUPLERS, NUM_PLAQUETTES, NUM_VERTICES,
 };
+pub use hopf_s4::{
+    bell_rotation_state, compute_entanglement_invariants, compute_qubit_pair_hopf_s4,
+    damp_b5_bloch_vector, damp_werner_state_planckian, evaluate_werner_state,
+    planckian_damping_step, project_state_s7_to_s4, verify_planckian_bures_bound,
+    EntanglementInvariant, HopfS4Coordinate,
+};
 pub use qec::{
     detect_and_recover, encode_logical_state, extract_syndrome, inject_pauli_error, PauliErrorKind,
     QecCodeKind, QecRecoveryResult, SyndromeReport,
 };
-pub use qssm::{QssmConfig, QssmForwardReport, QuantumStateSpaceAutoencoder};
+pub use qssm::{
+    planckian_ssm_discretization, QssmConfig, QssmForwardReport, QuantumStateSpaceAutoencoder,
+};
+pub use quaternion::Quaternion;
 pub use rcs::{
     DistributionMetrics, NoisyRcsConfig, NoisyRcsRunReport, RcsConfig, RcsLayerTrajectory,
     RcsRunReport, RcsSimulator, StabilizationStrategy,

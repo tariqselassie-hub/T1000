@@ -227,6 +227,79 @@ pub fn compute_qubit_pair_hopf_s4(
     (coord, inv)
 }
 
+/// Computes the 2026 piecewise Planckian dissipation rate bound:
+/// $\Gamma_{\max}(T, \Delta) = \min\left(\frac{2 k_B T}{\hbar}, \frac{\Delta}{\hbar}\right)$
+/// and returns the exact lower-bound survival retention factor $\exp(-\Gamma_{\max} \cdot \delta t)$.
+///
+/// In natural units ($\hbar = 1, k_B = 1$):
+/// - High-T Planckian rate: $2 k_B T / \hbar = 2 T$
+/// - Low-T Gapped adiabatic limit: $\Delta / \hbar = \Delta$
+/// - Piecewise crossover at $\beta \Delta = 2$ ($2 T = \Delta$).
+#[inline(always)]
+pub fn planckian_damping_step(
+    temp_kbt: f64,      // Thermal energy scale (k_B * T) in natural units (\hbar = 1)
+    spectral_gap: f64,  // Lowest excitation gap \Delta
+    dt: f64,            // Discrete evolution step \delta t
+) -> (f64, f64) {
+    let rate_planckian = (2.0 * temp_kbt).max(0.0);
+    let rate_gapped = spectral_gap.max(0.0);
+    let gamma_bound = rate_planckian.min(rate_gapped);
+    let min_retention_factor = (-gamma_bound * dt.max(0.0)).exp();
+    (gamma_bound, min_retention_factor)
+}
+
+/// Applies Planckian-bounded contraction to a 5D Bloch ball ($B^5$) state vector.
+///
+/// Returns the new contracted $B^5$ radius $r(t + \delta t) \le 1.0$.
+#[inline(always)]
+pub fn damp_b5_bloch_vector(
+    b5_vec: &mut [f64; 5],
+    temp_kbt: f64,
+    spectral_gap: f64,
+    dt: f64,
+) -> f64 {
+    let (_gamma, retention) = planckian_damping_step(temp_kbt, spectral_gap, dt);
+    let mut norm_sq = 0.0;
+    for comp in b5_vec.iter_mut() {
+        *comp *= retention;
+        norm_sq += (*comp) * (*comp);
+    }
+    norm_sq.sqrt()
+}
+
+/// Evolves a Werner mixed state under Planckian-bounded dissipation over interval $\delta t$.
+///
+/// Initial mixing parameter $p_0$ contracts as $p(t + \delta t) = p_0 \cdot \exp(-\Gamma_{\max} \cdot \delta t)$.
+pub fn damp_werner_state_planckian(
+    p_initial: f64,
+    temp_kbt: f64,
+    spectral_gap: f64,
+    dt: f64,
+) -> (HopfS4Coordinate, EntanglementInvariant) {
+    let (_gamma, retention) = planckian_damping_step(temp_kbt, spectral_gap, dt);
+    let p_decayed = (p_initial.clamp(0.0, 1.0) * retention).clamp(0.0, 1.0);
+    evaluate_werner_state(p_decayed)
+}
+
+/// Verifies whether a discrete state evolution step obeys the Bures / Fubini-Study geodesic speed limit:
+/// $\Delta \theta_{\text{step}} \le \delta t \cdot \min\left(\frac{\pi k_B T}{\hbar}, \frac{\Delta}{\hbar}\right)$.
+///
+/// Returns `true` if causal Planckian speed limit is respected; `false` on Planckian causality violation.
+#[inline(always)]
+pub fn verify_planckian_bures_bound(
+    theta_step: f64,
+    dt: f64,
+    temp_kbt: f64,
+    spectral_gap: f64,
+) -> bool {
+    if dt <= 0.0 {
+        return theta_step.abs() < 1e-12;
+    }
+    let max_angular_velocity = (std::f64::consts::PI * temp_kbt.max(0.0)).min(spectral_gap.max(0.0));
+    let allowable_theta = max_angular_velocity * dt;
+    theta_step.abs() <= allowable_theta + 1e-12
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -311,5 +384,64 @@ mod tests {
         let (h_mixed, inv_mixed) = evaluate_werner_state(0.0);
         assert!(h_mixed.radius < 1e-12);
         assert!(inv_mixed.concurrence < 1e-12);
+    }
+
+    #[test]
+    fn test_planckian_piecewise_crossover_and_scaling() {
+        let spectral_gap = 1.0; // \Delta = 1.0
+
+        // 1. Low-T regime: 2 * T < \Delta (e.g. T = 0.25 -> 2T = 0.5 < 1.0)
+        let temp_low = 0.25;
+        let (gamma_low, ret_low) = planckian_damping_step(temp_low, spectral_gap, 0.1);
+        assert!((gamma_low - 0.5).abs() < 1e-12);
+        assert!((ret_low - (-0.05f64).exp()).abs() < 1e-12);
+
+        // 2. Crossover point: 2 * T = \Delta (T = 0.5 -> \beta \Delta = 2)
+        let temp_cross = 0.5;
+        let (gamma_cross, _) = planckian_damping_step(temp_cross, spectral_gap, 0.1);
+        assert!((gamma_cross - 1.0).abs() < 1e-12);
+
+        // 3. High-T regime: 2 * T > \Delta (e.g. T = 2.0 -> 2T = 4.0 > 1.0, saturates at \Delta)
+        let temp_high = 2.0;
+        let (gamma_high, ret_high) = planckian_damping_step(temp_high, spectral_gap, 0.1);
+        assert!((gamma_high - 1.0).abs() < 1e-12);
+        assert!((ret_high - (-0.1f64).exp()).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_b5_planckian_contraction_and_werner() {
+        // Pure Bell vector on S4: radius = 1.0
+        let mut b5 = [0.0, 0.0, 0.0, -1.0, 0.0];
+        let r_init = damp_b5_bloch_vector(&mut b5, 1.0, 0.8, 0.0);
+        assert!((r_init - 1.0).abs() < 1e-12);
+
+        // Step under Planckian dissipation: gamma = min(2 * 0.3, 0.8) = 0.6
+        let r_step = damp_b5_bloch_vector(&mut b5, 0.3, 0.8, 1.0);
+        let expected_r = (-0.6f64).exp();
+        assert!((r_step - expected_r).abs() < 1e-12);
+        assert!(r_step < 1.0);
+
+        // Werner state Planckian damping
+        let (h_w, inv_w) = damp_werner_state_planckian(1.0, 0.3, 0.8, 1.0);
+        assert!((h_w.radius - expected_r).abs() < 1e-12);
+        assert!(inv_w.concurrence < 1.0);
+    }
+
+    #[test]
+    fn test_planckian_bures_speed_limit_guardrail() {
+        let temp = 0.5;
+        let gap = 1.0;
+        let dt = 0.1;
+        // max_angular_velocity = min(pi * 0.5, 1.0) = 1.0
+        // max_step = 1.0 * 0.1 = 0.1 rad
+
+        // Sub-Planckian rotation: 0.05 rad <= 0.1 rad -> valid
+        assert!(verify_planckian_bures_bound(0.05, dt, temp, gap));
+
+        // Exact boundary: 0.10 rad <= 0.1 rad -> valid
+        assert!(verify_planckian_bures_bound(0.10, dt, temp, gap));
+
+        // Super-Planckian scrambling violation: 0.25 rad > 0.1 rad -> violation
+        assert!(!verify_planckian_bures_bound(0.25, dt, temp, gap));
     }
 }

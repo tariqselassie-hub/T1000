@@ -151,6 +151,28 @@ fn softmax(logits: &[f64]) -> Vec<f64> {
     exps.into_iter().map(|e| e / (sum + 1e-12)).collect()
 }
 
+/// Computes the 2026 piecewise Planckian dissipation rate bound for state-space model (SSM) discretization:
+/// $-\Delta_t A_n \le \min\left(2 T_{\text{eff}}(x_t), \Delta_n\right) \cdot \delta t_{\text{phys}}$.
+///
+/// In natural units ($\hbar = 1, k_B = 1$):
+/// - $T_{\text{eff}}(x_t) = \text{scale} \cdot \|x_t\|_2$ (effective thermal bath temperature from input surprise).
+/// - $\Delta_n$: local mode excitation gap (eigenvalue of $-A_n$).
+/// - Piecewise crossover occurs at $2 T_{\text{eff}} = \Delta_n$.
+/// - Returns `(gamma_decay, zoh_retention_factor)`.
+#[inline(always)]
+pub fn planckian_ssm_discretization(
+    input_norm: f64,
+    temp_scale: f64,
+    spectral_gap: f64,
+    dt_phys: f64,
+) -> (f64, f64) {
+    let t_eff = (input_norm * temp_scale).max(0.0);
+    let gap = spectral_gap.max(0.0);
+    let gamma_decay = (2.0 * t_eff).min(gap);
+    let zoh_retention = (-gamma_decay * dt_phys.max(0.0)).exp();
+    (gamma_decay, zoh_retention)
+}
+
 /// Quantum State-Space Autoencoder (Q-SSM) Engine.
 #[derive(Debug, Clone)]
 pub struct QuantumStateSpaceAutoencoder {
@@ -169,6 +191,14 @@ pub struct QuantumStateSpaceAutoencoder {
     pub cls_weights: Vec<Vec<f64>>,
     /// Classifier head biases: `[num_classes]`
     pub cls_biases: Vec<f64>,
+    /// Whether to clamp recurrent memory retention via the 2026 piecewise Planckian bound.
+    pub use_planckian_clamp: bool,
+    /// Effective continuous time step $\delta t_{\text{phys}}$ for ZOH state-space discretization.
+    pub planckian_dt: f64,
+    /// Effective temperature scaling parameter for input surprise $T_{\text{eff}} = \text{scale} \cdot \|x_t\|_2$.
+    pub planckian_temp_scale: f64,
+    /// Mode excitation spectral gaps $\Delta_n$ for latent wires.
+    pub planckian_gaps: Vec<f64>,
 }
 
 impl QuantumStateSpaceAutoencoder {
@@ -212,7 +242,20 @@ impl QuantumStateSpaceAutoencoder {
             dec_biases,
             cls_weights,
             cls_biases,
+            use_planckian_clamp: false,
+            planckian_dt: 0.1,
+            planckian_temp_scale: 1.0,
+            planckian_gaps: vec![1.0, 1.5, 2.0],
         }
+    }
+
+    /// Enables the 2026 piecewise Planckian dissipation clamp on state-space memory retention:
+    /// $-\Delta_t A_n \le \min(2 T_{\text{eff}}, \Delta_n) \cdot \delta t_{\text{phys}}$.
+    pub fn enable_planckian_clamp(&mut self, dt_phys: f64, temp_scale: f64, spectral_gaps: Vec<f64>) {
+        self.use_planckian_clamp = true;
+        self.planckian_dt = dt_phys;
+        self.planckian_temp_scale = temp_scale;
+        self.planckian_gaps = spectral_gaps;
     }
 
     /// Single recurrent step of the 1D MPS Quantum State-Space Encoder.
@@ -232,10 +275,33 @@ impl QuantumStateSpaceAutoencoder {
             apply_ry_3q(state, q, angle);
         }
 
-        // 2. Continuous Bloch steering: anti-correlate adjacent wires along the 1D zipper
+        // 2. Continuous Bloch steering: anti-correlate adjacent wires along the 1D zipper,
+        // damped by the selective Planckian retention factor if enabled
+        let input_norm = if self.use_planckian_clamp {
+            input_token.iter().map(|&x| x * x).sum::<f64>().sqrt()
+        } else {
+            0.0
+        };
+
         for q in 0..(d_lat - 1) {
             apply_anticnot_3q(state, q, q + 1);
-            apply_rz_3q(state, q + 1, self.rec_phases[q]);
+            let phase = if self.use_planckian_clamp {
+                let gap = if q < self.planckian_gaps.len() {
+                    self.planckian_gaps[q]
+                } else {
+                    1.0
+                };
+                let (_gamma, retention) = planckian_ssm_discretization(
+                    input_norm,
+                    self.planckian_temp_scale,
+                    gap,
+                    self.planckian_dt,
+                );
+                self.rec_phases[q] * retention
+            } else {
+                self.rec_phases[q]
+            };
+            apply_rz_3q(state, q + 1, phase);
         }
     }
 
@@ -574,5 +640,38 @@ mod tests {
             initial_recon_loss,
             final_recon_loss
         );
+    }
+
+    #[test]
+    fn test_qssm_planckian_discretization_and_memory_retention() {
+        let gap = 1.0;
+        let dt = 0.1;
+
+        // 1. Low energy input (T_eff = 0.25 -> 2 * T_eff = 0.5 < 1.0)
+        let (gamma_low, ret_low) = planckian_ssm_discretization(0.25, 1.0, gap, dt);
+        assert!((gamma_low - 0.5).abs() < 1e-12);
+        assert!((ret_low - (-0.05f64).exp()).abs() < 1e-12);
+
+        // 2. High surprise input (T_eff = 2.0 -> 2 * T_eff = 4.0 > 1.0, saturates at spectral gap \Delta = 1.0)
+        let (gamma_high, ret_high) = planckian_ssm_discretization(2.0, 1.0, gap, dt);
+        assert!((gamma_high - 1.0).abs() < 1e-12);
+        assert!((ret_high - (-0.1f64).exp()).abs() < 1e-12);
+
+        // 3. Forward pass with Planckian clamp enabled
+        let config = QssmConfig {
+            input_dim: 4,
+            latent_dim: 3,
+            num_classes: 2,
+            lambda_recon: 0.5,
+            learning_rate: 0.05,
+            anchor_boundary: false,
+        };
+        let mut qssm = QuantumStateSpaceAutoencoder::new(config);
+        qssm.enable_planckian_clamp(0.1, 1.0, vec![0.8, 1.2, 1.6]);
+
+        let seq = vec![vec![0.1, 0.2, -0.1, 0.05]; 10];
+        let rep = qssm.forward(&seq);
+        assert_eq!(rep.sequence_length, 10);
+        assert!(rep.classification_confidence > 0.0);
     }
 }

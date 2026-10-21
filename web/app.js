@@ -47,6 +47,8 @@ class QuantumMolecularDashboard {
         this.blochSpheresInitialized = false;
         this.blochDecoherence = 0.0;
         this.lastBlochVectors = null;
+        this.blochZoomLevel = 1.0;
+        this.activePage = 'page-deck-1';
 
         this.initPageNavigation();
         this.initThree();
@@ -58,6 +60,7 @@ class QuantumMolecularDashboard {
         this.loadTelemetryMatrix();
         this.loadPlaquetteTelemetry();
         this.initBlochControls();
+        this.initKeyboardShortcuts();
     }
 
     // -------------------------------------------------------------------------
@@ -74,6 +77,7 @@ class QuantumMolecularDashboard {
                 tab.classList.add('active');
 
                 const targetPageId = tab.dataset.page;
+                this.activePage = targetPageId;
                 document.querySelectorAll('.page-view').forEach(view => {
                     view.classList.remove('active');
                 });
@@ -324,6 +328,26 @@ class QuantumMolecularDashboard {
                 this.camera.position.set(0, 0, 16);
                 this.controls.target.set(0, 0, 0);
                 this.controls.update();
+            });
+        }
+
+        const btnMolZoomIn = document.getElementById('btn-mol-zoom-in');
+        if (btnMolZoomIn) {
+            btnMolZoomIn.addEventListener('click', () => {
+                if (this.camera) {
+                    this.camera.position.multiplyScalar(0.85);
+                    if (this.controls) this.controls.update();
+                }
+            });
+        }
+
+        const btnMolZoomOut = document.getElementById('btn-mol-zoom-out');
+        if (btnMolZoomOut) {
+            btnMolZoomOut.addEventListener('click', () => {
+                if (this.camera) {
+                    this.camera.position.multiplyScalar(1.15);
+                    if (this.controls) this.controls.update();
+                }
             });
         }
 
@@ -3049,6 +3073,170 @@ class QuantumMolecularDashboard {
         const qbSel = document.getElementById('hopf-qb-select');
         if (qaSel) qaSel.addEventListener('change', () => this.updateHopfS4Telemetry());
         if (qbSel) qbSel.addEventListener('change', () => this.updateHopfS4Telemetry());
+
+        // Deck 5 Viewport Zoom Controls (+ / - / R)
+        const blochZoomIn = document.getElementById('btn-bloch-zoom-in');
+        if (blochZoomIn) {
+            blochZoomIn.addEventListener('click', () => {
+                this.zoomBlochSpheres(0.85);
+            });
+        }
+
+        const blochZoomOut = document.getElementById('btn-bloch-zoom-out');
+        if (blochZoomOut) {
+            blochZoomOut.addEventListener('click', () => {
+                this.zoomBlochSpheres(1.15);
+            });
+        }
+
+        const blochZoomReset = document.getElementById('btn-bloch-zoom-reset');
+        if (blochZoomReset) {
+            blochZoomReset.addEventListener('click', () => {
+                this.resetBlochSpheresZoom();
+            });
+        }
+
+        // Initialize 2026 Piecewise Planckian Chamber
+        this.initPlanckianChamber();
+    }
+
+    zoomBlochSpheres(factor) {
+        this.blochZoomLevel = (this.blochZoomLevel || 1.0) / factor;
+        if (this.blochScenes) {
+            this.blochScenes.forEach(s => {
+                if (s.camera) {
+                    s.camera.position.multiplyScalar(factor);
+                    if (s.controls) s.controls.update();
+                }
+            });
+        }
+        const ind = document.getElementById('bloch-zoom-indicator');
+        if (ind) ind.textContent = (this.blochZoomLevel || 1.0).toFixed(2) + 'x';
+    }
+
+    resetBlochSpheresZoom() {
+        this.blochZoomLevel = 1.0;
+        if (this.blochScenes) {
+            this.blochScenes.forEach(s => {
+                if (s.camera) {
+                    s.camera.position.set(2.2, 1.8, 2.5);
+                    s.camera.lookAt(0, 0, 0);
+                    if (s.controls) s.controls.update();
+                }
+            });
+        }
+        const ind = document.getElementById('bloch-zoom-indicator');
+        if (ind) ind.textContent = '1.00x';
+    }
+
+    initPlanckianChamber() {
+        const kbtInput = document.getElementById('planckian-kbt');
+        const gapInput = document.getElementById('planckian-gap');
+        const dtInput = document.getElementById('planckian-dt');
+        const btnApply = document.getElementById('btn-apply-planckian-step');
+
+        const updatePlanckianBadge = () => {
+            const kbt = parseFloat(kbtInput?.value || '0.40');
+            const gap = parseFloat(gapInput?.value || '1.00');
+            const dt = parseFloat(dtInput?.value || '0.20');
+
+            const ratePlanckian = 2.0 * kbt;
+            const gamma = Math.min(ratePlanckian, gap);
+            const retention = Math.exp(-gamma * dt);
+
+            const badge = document.getElementById('planckian-regime-badge');
+            if (badge) {
+                if (ratePlanckian <= gap) {
+                    badge.textContent = 'HIGH-T (2 k_B T)';
+                    badge.style.color = 'var(--quantum-green)';
+                    badge.style.borderColor = 'var(--quantum-green)';
+                    badge.style.background = 'rgba(0,230,118,0.15)';
+                } else {
+                    badge.textContent = 'LOW-T GAPPED (Δ)';
+                    badge.style.color = 'var(--hardware-gold)';
+                    badge.style.borderColor = 'var(--hardware-gold)';
+                    badge.style.background = 'rgba(255,179,0,0.15)';
+                }
+            }
+
+            const gammaEl = document.getElementById('planckian-gamma-val');
+            if (gammaEl) gammaEl.textContent = gamma.toFixed(3);
+
+            const retEl = document.getElementById('planckian-retention-val');
+            if (retEl) retEl.textContent = retention.toFixed(4);
+
+            return { kbt, gap, dt, gamma, retention };
+        };
+
+        if (kbtInput) kbtInput.addEventListener('input', updatePlanckianBadge);
+        if (gapInput) gapInput.addEventListener('input', updatePlanckianBadge);
+        if (dtInput) dtInput.addEventListener('input', updatePlanckianBadge);
+
+        if (btnApply) {
+            btnApply.addEventListener('click', () => {
+                const p = updatePlanckianBadge();
+                // Apply piecewise Planckian damping step to decoherence chamber
+                const currentRetention = 1.0 - (this.blochDecoherence || 0.0);
+                const nextRetention = Math.max(0.0, currentRetention * p.retention);
+                this.blochDecoherence = 1.0 - nextRetention;
+
+                const decoSlider = document.getElementById('bloch-decoherence-slider');
+                if (decoSlider) decoSlider.value = this.blochDecoherence.toFixed(2);
+                const decoVal = document.getElementById('bloch-decoherence-val');
+                if (decoVal) decoVal.textContent = this.blochDecoherence.toFixed(2);
+
+                if (this.lastBlochVectors) {
+                    this.updateBlochTelemetry(this.lastBlochVectors);
+                }
+                this.updateHopfS4Telemetry();
+            });
+        }
+
+        updatePlanckianBadge();
+    }
+
+    initKeyboardShortcuts() {
+        window.addEventListener('keydown', (e) => {
+            // Ignore keystrokes when editing inputs or textareas
+            if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName)) {
+                return;
+            }
+
+            const key = e.key;
+            if (key === '+' || key === '=' || key === 'Add') {
+                e.preventDefault();
+                if (this.activePage === 'page-deck-5') {
+                    this.zoomBlochSpheres(0.85);
+                } else {
+                    if (this.camera) {
+                        this.camera.position.multiplyScalar(0.85);
+                        if (this.controls) this.controls.update();
+                    }
+                }
+            } else if (key === '-' || key === '_' || key === 'Subtract') {
+                e.preventDefault();
+                if (this.activePage === 'page-deck-5') {
+                    this.zoomBlochSpheres(1.15);
+                } else {
+                    if (this.camera) {
+                        this.camera.position.multiplyScalar(1.15);
+                        if (this.controls) this.controls.update();
+                    }
+                }
+            } else if (key === 'r' || key === 'R') {
+                if (this.activePage === 'page-deck-5') {
+                    this.resetBlochSpheresZoom();
+                } else {
+                    if (this.camera) {
+                        this.camera.position.set(0, 0, 16);
+                        if (this.controls) {
+                            this.controls.target.set(0, 0, 0);
+                            this.controls.update();
+                        }
+                    }
+                }
+            }
+        });
     }
 
     initBlochSphereDeck() {
@@ -3108,7 +3296,8 @@ class QuantumMolecularDashboard {
             if (controls) {
                 controls.enableDamping = true;
                 controls.dampingFactor = 0.08;
-                controls.enableZoom = false;
+                controls.enableZoom = true;
+                controls.zoomSpeed = 1.0;
                 controls.rotateSpeed = 0.8;
             }
 
