@@ -601,3 +601,66 @@ features, using all 10,000 training molecules and 2 seeds (saved for this host a
 
 This still models only sampling noise on an ideal device with the circuit simulated exactly.
 
+### 5.7 Device errors on top of sampling noise (`t1000::device_noise`)
+
+`zinc_shot_noise` can add device errors to the sampled distribution: `--gate-error p2` (a global
+depolarizing channel with fidelity `F = (1 - p2/10)^80 (1 - p2)^40` for the depth-4, 10-qubit
+ansatz), `--readout-error e` (a measured bit flips with `P(0 to 1) = e/2` and `P(1 to 0) = e`, as an
+exact per-qubit confusion matrix) and `--mitigate-readout` (invert that matrix on the measured
+frequencies). Analytic checks are in the tests: under symmetric readout error `e` a weight-`w` parity
+shrinks by `(1 - 2e)^w`, and every non-trivial parity scales by `F` under depolarizing.
+
+Three regimes, with error rates in the range usually quoted for current hardware (the exact
+numbers are illustrative, not measurements of a device):
+
+| Scenario | Two-qubit error | Circuit fidelity F | Readout error (P(1 to 0)) |
+| :--- | :--- | :--- | :--- |
+| Good (ion-trap-like) | 1e-3 | 0.953 | 0.5% |
+| Typical (superconducting-like) | 5e-3 | 0.786 | 2% |
+| Poor | 1e-2 | 0.618 | 4% |
+
+Relative MSE of the head fitted on the noisy features (depth 4, `maxabs`, 5,000 noisy training
+molecules, 2 seeds; the mean predictor is 1.0). The noise-free values are 0.4312 (55 features), 0.3959
+(385) and 0.4086 (847):
+
+| Scenario | Shots | 55 features (w2) | 385 features (w4) | 847 features (w6) |
+| :--- | :--- | :--- | :--- | :--- |
+| Ideal device | 1,000 | 0.688 | 0.587 | 0.571 |
+| | 10,000 | 0.559 | 0.491 | 0.489 |
+| | 100,000 | 0.501 | 0.448 | 0.445 |
+| Good | 1,000 | 0.701 | 0.605 | 0.583 |
+| | 10,000 | 0.561 | 0.494 | 0.496 |
+| | 100,000 | 0.504 | 0.453 | 0.448 |
+| Typical | 1,000 | 0.733 | 0.631 | 0.614 |
+| | 10,000 | 0.581 | 0.519 | 0.512 |
+| | 100,000 | 0.517 | 0.467 | 0.454 |
+| Poor | 1,000 | 0.797 | 0.690 | 0.672 |
+| | 10,000 | 0.625 | 0.552 | 0.537 |
+| | 100,000 | 0.531 | 0.477 | 0.476 |
+
+* **The advantage of higher-order parities survives device errors.** At 10,000 shots 385 features
+  beat 55 by 0.07 on a good device, 0.06 on a typical one and 0.07 on a poor one.
+* **Readout mitigation is unnecessary** when the head is fitted on data from the same device. On the
+  poor device, weight-4 gives 0.6892 / 0.5512 / 0.4764 with mitigation against 0.6899 / 0.5521 /
+  0.4766 without. The head standardises every feature, and readout error maps each parity onto itself
+  plus lower-weight parities, which are all in the feature set, so the distortion is absorbed by the
+  fit. (This relies on the head being trained on device data; a head fitted on a simulator would
+  still be unusable, section 5.5.)
+* **The cost of device errors is an effective loss of shots.** For weight 4 at 10,000 shots, a good
+  device behaves like an ideal one at about 9,000 shots, a typical one like about 4,400 and a poor one
+  like about 2,000 (log interpolation). That is worse than the `F^2` expected from the gate error alone
+  (0.91, 0.62, 0.38) because readout error also shrinks the weight-4 and weight-6 parities (by
+  `(1 - 2e)^w` for symmetric error `e`).
+* **Linear ridge on the raw features (0.4952) is still reached at 100,000 shots in every scenario**
+  with 385 or 847 features (0.453, 0.467, 0.477 for 385), and at 10,000 shots only on the good device
+  with 385 features (0.494; 847 features give 0.496).
+* Saved for this host: `zinc_shot_noise_maxabs_w4_g<p2>_r<e>.json` for each scenario.
+
+**What is not modelled.** The circuit is simulated from an ideal amplitude-encoded input. On hardware
+the 19-amplitude state would have to be prepared by a circuit of its own, plausibly of the order of a
+hundred two-qubit gates; at the typical error rate that alone would roughly halve the fidelity again
+(the "poor" scenario's F of 0.62 is about what typical gate errors plus such a preparation would
+give, but that is an estimate, not a compiled circuit). Gate errors are modelled as a global
+depolarizing channel, not as the structured errors a device has; crosstalk, drift and decoherence
+during measurement are not included.
+

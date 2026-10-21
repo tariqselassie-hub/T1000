@@ -26,6 +26,7 @@ pub mod chemistry;
 pub mod clifford_t;
 pub mod coherence;
 pub mod compiler;
+pub mod device_noise;
 pub mod diagonal;
 pub mod engine;
 pub mod feature_map;

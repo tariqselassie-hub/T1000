@@ -10,6 +10,11 @@
 //! * **exact-trained head**: fitted on noise-free simulated features, applied to sampled ones;
 //! * **noisy-trained head**: fitted on features sampled with the same shot count.
 //!
+//! Device errors can be added to the sampled distribution: `--gate-error p2` (global depolarizing,
+//! fidelity from the ansatz gate counts with single-qubit error `p2 / 10`), `--readout-error e`
+//! (`P(read 0 | 1) = e`, `P(read 1 | 0) = e / 2`) and `--mitigate-readout` (invert the confusion
+//! matrix on the measured frequencies).
+//!
 //! `--sweep` instead compares noise-aware head settings (wider ridge-penalty grid, feature subsets)
 //! on identical sampled data.
 //!
@@ -19,7 +24,8 @@ use serde::Serialize;
 use std::env;
 use t1000::baselines::{regression_metrics, ZINC_TARGETS};
 use t1000::baselines::RIDGE_LAMBDAS;
-use t1000::linear_head::{project, select_features, z_features_into, LinearHead, Observables, NOISE_LAMBDAS};
+use t1000::device_noise::{ansatz_fidelity, apply_readout, depolarize, invert_readout, ReadoutError};
+use t1000::linear_head::{probability_features_into, project, select_features, LinearHead, Observables, NOISE_LAMBDAS};
 use t1000::zinc_data::{self, InputScaling, Scaler, ZincMolecule};
 use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState};
 
@@ -46,21 +52,37 @@ fn probabilities(state: &QuantumState) -> Vec<f64> {
     state.real.iter().zip(&state.imag).map(|(r, i)| r * r + i * i).collect()
 }
 
-/// Z/ZZ features estimated from `shots` samples of the distribution `cdf`.
-fn sampled_features(cdf: &[f64], shots: usize, rng: &mut Rng, scratch: &mut QuantumState, counts: &mut [u32], kind: Observables) -> Vec<f64> {
+/// How measured frequencies become features.
+struct Plan {
+    kind: Observables,
+    /// If set, the confusion matrix of this readout error is inverted on the frequencies.
+    mitigate: Option<ReadoutError>,
+}
+
+/// Features estimated from `shots` samples of the distribution `cdf`.
+fn sampled_features(cdf: &[f64], shots: usize, rng: &mut Rng, counts: &mut [u32], plan: &Plan) -> Vec<f64> {
     counts.fill(0);
     for _ in 0..shots {
         let u = rng.next_f64() * cdf[cdf.len() - 1];
         counts[cdf.partition_point(|&c| c <= u).min(cdf.len() - 1)] += 1;
     }
-    // z_features_into uses |amplitude|^2, so amplitude sqrt(frequency) gives the empirical mean.
-    for (r, &c) in scratch.real.iter_mut().zip(counts.iter()) {
-        *r = (f64::from(c) / shots as f64).sqrt();
+    let mut freq: Vec<f64> = counts.iter().map(|&c| f64::from(c) / shots as f64).collect();
+    if let Some(e) = plan.mitigate {
+        invert_readout(&mut freq, N_QUBITS, e);
     }
-    scratch.imag.fill(0.0);
-    let mut row = vec![0.0; kind.count(N_QUBITS)];
-    z_features_into(scratch, kind, &mut row);
+    let mut row = vec![0.0; plan.kind.count(N_QUBITS)];
+    probability_features_into(&freq, plan.kind, &mut row);
     row
+}
+
+/// The distribution a noisy device measures for the ideal output distribution `p`.
+fn device_distribution(p: &[f64], fidelity: f64, readout: Option<ReadoutError>) -> Vec<f64> {
+    let mut noisy = p.to_vec();
+    depolarize(&mut noisy, fidelity);
+    if let Some(e) = readout {
+        apply_readout(&mut noisy, N_QUBITS, e);
+    }
+    noisy
 }
 
 fn cumulative(p: &[f64]) -> Vec<f64> {
@@ -116,9 +138,8 @@ fn run_config(cfg: &Config, train_x: &[Vec<f64>], train_y: &[Vec<f64>], test_x: 
     (score(&head, &project(test_x, &columns), test_y).0, head.lambda())
 }
 
-fn run_sweep(exact: (&[Vec<f64>], &[Vec<f64>]), y: (&[Vec<f64>], &[Vec<f64>]), cdfs: (&[Vec<f64>], &[Vec<f64>]), seeds: usize, dim: usize, kind: Observables) {
+fn run_sweep(exact: (&[Vec<f64>], &[Vec<f64>]), y: (&[Vec<f64>], &[Vec<f64>]), cdfs: (&[Vec<f64>], &[Vec<f64>]), seeds: usize, dim: usize, plan: &Plan) {
     let ((train_exact, test_exact), (train_y, test_y), (train_cdf, test_cdf)) = (exact, y, cdfs);
-    let mut scratch = QuantumState::new(dim);
     let mut counts = vec![0u32; dim];
     let free: Vec<f64> = CONFIGS.iter().map(|c| run_config(c, train_exact, train_y, test_exact, test_y).0).collect();
     let mut mse = vec![vec![Vec::new(); SWEEP_SHOTS.len()]; CONFIGS.len()];
@@ -126,8 +147,8 @@ fn run_sweep(exact: (&[Vec<f64>], &[Vec<f64>]), y: (&[Vec<f64>], &[Vec<f64>]), c
     for (si, &shots) in SWEEP_SHOTS.iter().enumerate() {
         for seed in 0..seeds {
             let mut rng = Rng(0xDEC0_DE00 ^ (shots as u64) << 8 ^ seed as u64);
-            let train_x: Vec<Vec<f64>> = train_cdf.iter().map(|c| sampled_features(c, shots, &mut rng, &mut scratch, &mut counts, kind)).collect();
-            let test_x: Vec<Vec<f64>> = test_cdf.iter().map(|c| sampled_features(c, shots, &mut rng, &mut scratch, &mut counts, kind)).collect();
+            let train_x: Vec<Vec<f64>> = train_cdf.iter().map(|c| sampled_features(c, shots, &mut rng, &mut counts, plan)).collect();
+            let test_x: Vec<Vec<f64>> = test_cdf.iter().map(|c| sampled_features(c, shots, &mut rng, &mut counts, plan)).collect();
             for (ci, cfg) in CONFIGS.iter().enumerate() {
                 let (m, l) = run_config(cfg, &train_x, &train_y[..train_x.len()], &test_x, test_y);
                 mse[ci][si].push(m);
@@ -176,6 +197,11 @@ fn main() {
         Some(w) if w.starts_with('w') => Observables::ParityUpTo(w[1..].parse().unwrap_or(2)),
         _ => Observables::ZAndZz,
     };
+    let readout = value("--readout-error").and_then(|v| v.parse::<f64>().ok()).map(ReadoutError::typical);
+    let p2: f64 = value("--gate-error").and_then(|v| v.parse().ok()).unwrap_or(0.0);
+    let fidelity = ansatz_fidelity(N_QUBITS, value("--depth").and_then(|v| v.parse().ok()).unwrap_or(4), p2 / 10.0, p2);
+    let mitigate = args.iter().any(|a| a == "--mitigate-readout");
+    let plan = Plan { kind, mitigate: if mitigate { readout } else { None } };
     let noisy_train: usize = value("--noisy-train").and_then(|v| v.parse().ok()).unwrap_or(2_000);
 
     let train = zinc_data::load(TRAIN_CSV, 10_000).expect("load training set");
@@ -184,6 +210,9 @@ fn main() {
     let encoding = DataEncodingLayer::new(N_QUBITS, EncodingKind::Amplitude);
     let ansatz = CircuitAnsatz::new(N_QUBITS, depth).with_pi_layer(true);
 
+    if p2 > 0.0 || readout.is_some() {
+        println!("Device errors: circuit fidelity {fidelity:.3} (two-qubit error {p2}), readout {readout:?}, mitigation {mitigate}");
+    }
     println!("Simulating the circuit (depth {depth}, {scaling:?} inputs, {kind:?}) for {} + {} molecules...", train.len(), test.len());
     let mut state = QuantumState::new(encoding.dim);
     let mut outputs = |rows: &[ZincMolecule]| -> Vec<Vec<f64>> {
@@ -197,13 +226,10 @@ fn main() {
     let train_p = outputs(&train);
     let test_p = outputs(&test);
     let exact = |p: &[Vec<f64>]| -> Vec<Vec<f64>> {
-        let mut s = QuantumState::new(encoding.dim);
         p.iter()
             .map(|probs| {
-                for (r, &v) in s.real.iter_mut().zip(probs) { *r = v.sqrt(); }
-                s.imag.fill(0.0);
                 let mut row = vec![0.0; kind.count(N_QUBITS)];
-                z_features_into(&s, kind, &mut row);
+                probability_features_into(probs, kind, &mut row);
                 row
             })
             .collect()
@@ -215,14 +241,13 @@ fn main() {
     let (ref_mse, ref_r) = score(&exact_head, &test_exact, &test_y);
     println!("Noise-free reference: relative MSE {ref_mse:.4}, mean r {ref_r:.4}\n");
 
-    let test_cdf: Vec<Vec<f64>> = test_p.iter().map(|p| cumulative(p)).collect();
-    let train_cdf: Vec<Vec<f64>> = train_p.iter().take(noisy_train).map(|p| cumulative(p)).collect();
+    let test_cdf: Vec<Vec<f64>> = test_p.iter().map(|p| cumulative(&device_distribution(p, fidelity, readout))).collect();
+    let train_cdf: Vec<Vec<f64>> = train_p.iter().take(noisy_train).map(|p| cumulative(&device_distribution(p, fidelity, readout))).collect();
     if args.iter().any(|a| a == "--sweep") {
         println!("Sweeping noise-aware head settings ({seeds} seeds, {} noisy training molecules)...", train_cdf.len());
-        run_sweep((&train_exact, &test_exact), (&train_y, &test_y), (&train_cdf, &test_cdf), seeds, encoding.dim, kind);
+        run_sweep((&train_exact, &test_exact), (&train_y, &test_y), (&train_cdf, &test_cdf), seeds, encoding.dim, &plan);
         return;
     }
-    let mut scratch = QuantumState::new(encoding.dim);
     let mut counts = vec![0u32; encoding.dim];
     let mut rows = Vec::new();
     println!("┌─────────┬───────────────────────────────┬───────────────────────────────┐");
@@ -236,11 +261,11 @@ fn main() {
         let (mut a_mse, mut a_r, mut b_mse, mut b_r) = (vec![], vec![], vec![], vec![]);
         for seed in 0..seeds {
             let mut rng = Rng(0xC0FF_EE00 ^ (shots as u64) << 8 ^ seed as u64);
-            let noisy_test: Vec<Vec<f64>> = test_cdf.iter().map(|c| sampled_features(c, shots, &mut rng, &mut scratch, &mut counts, kind)).collect();
+            let noisy_test: Vec<Vec<f64>> = test_cdf.iter().map(|c| sampled_features(c, shots, &mut rng, &mut counts, &plan)).collect();
             let (m, r) = score(&exact_head, &noisy_test, &test_y);
             a_mse.push(m);
             a_r.push(r);
-            let noisy_train_x: Vec<Vec<f64>> = train_cdf.iter().map(|c| sampled_features(c, shots, &mut rng, &mut scratch, &mut counts, kind)).collect();
+            let noisy_train_x: Vec<Vec<f64>> = train_cdf.iter().map(|c| sampled_features(c, shots, &mut rng, &mut counts, &plan)).collect();
             let head = LinearHead::fit(&noisy_train_x, &train_y[..noisy_train_x.len()]);
             let (m, r) = score(&head, &noisy_test, &test_y);
             b_mse.push(m);
@@ -254,13 +279,18 @@ fn main() {
     println!("└─────────┴───────────────────────────────┴───────────────────────────────┘");
     println!("Noise-free: relative MSE {ref_mse:.4}. Mean predictor = 1.0. {seeds} seeds per row; noisy-trained head uses {} training molecules.", train_cdf.len());
 
-    let report = serde_json::json!({ "scaling": format!("{scaling:?}"), "observables": format!("{kind:?}"), "depth": depth, "noise_free_relative_mse": ref_mse, "noise_free_mean_r": ref_r, "seeds": seeds, "noisy_train_molecules": train_cdf.len(), "rows": rows });
+    let report = serde_json::json!({ "scaling": format!("{scaling:?}"), "observables": format!("{kind:?}"), "depth": depth, "gate_error_p2": p2, "circuit_fidelity": fidelity, "readout_p10": readout.map(|e| e.p10), "readout_mitigated": mitigate, "noise_free_relative_mse": ref_mse, "noise_free_mean_r": ref_r, "seeds": seeds, "noisy_train_molecules": train_cdf.len(), "rows": rows });
     let obs_tag = match kind {
         Observables::ParityUpTo(k) => format!("w{k}"),
         Observables::ZAndZz => "w2".to_string(),
         Observables::SingleZ => "w1".to_string(),
     };
-    let path = format!("results/experiments/zinc_shot_noise_{}_{obs_tag}.json", format!("{scaling:?}").to_lowercase());
+    let device_tag = if p2 > 0.0 || readout.is_some() {
+        format!("_g{p2}_r{}{}", readout.map_or(0.0, |e| e.p10), if mitigate { "_m" } else { "" })
+    } else {
+        String::new()
+    };
+    let path = format!("results/experiments/zinc_shot_noise_{}_{obs_tag}{device_tag}.json", format!("{scaling:?}").to_lowercase());
     let _ = t1000::results::write(path, serde_json::to_string_pretty(&report).unwrap_or_default());
 }
 
@@ -286,8 +316,9 @@ mod tests {
         p[0] = 0.7;
         p[1] = 0.3;
         let cdf = cumulative(&p);
-        let (mut scratch, mut counts) = (QuantumState::new(1 << N_QUBITS), vec![0u32; 1 << N_QUBITS]);
-        let row = sampled_features(&cdf, 400_000, &mut Rng(1), &mut scratch, &mut counts, Observables::ZAndZz);
+        let mut counts = vec![0u32; 1 << N_QUBITS];
+        let plan = Plan { kind: Observables::ZAndZz, mitigate: None };
+        let row = sampled_features(&cdf, 400_000, &mut Rng(1), &mut counts, &plan);
         // Z0 = +1 on index 0 and -1 on index 1: 0.7 - 0.3 = 0.4; all other Z are +1.
         let sigma = (1.0f64 - 0.16).sqrt() / 400_000f64.sqrt();
         assert!((row[0] - 0.4).abs() < 5.0 * sigma, "Z0 = {}", row[0]);

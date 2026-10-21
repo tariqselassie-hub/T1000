@@ -43,8 +43,8 @@ fn binomial(n: usize, k: usize) -> usize {
 }
 
 /// Expectation of every Z-string over at most `max_weight` qubits, in ascending mask order.
-fn parity_features_into(state: &QuantumState, n: usize, max_weight: usize, out: &mut [f64]) {
-    let mut w: Vec<f64> = state.real.iter().zip(&state.imag).map(|(r, i)| r * r + i * i).collect();
+fn parity_features_into(p: &[f64], n: usize, max_weight: usize, out: &mut [f64]) {
+    let mut w = p.to_vec();
     // In-place Walsh-Hadamard transform: w[m] = sum_x p[x] * (-1)^popcount(x & m).
     let mut half = 1;
     while half < w.len() {
@@ -66,28 +66,36 @@ fn parity_features_into(state: &QuantumState, n: usize, max_weight: usize, out: 
 
 /// Writes the expectation values of `state` into `out` (`out.len() == kind.count(n)`).
 pub fn z_features_into(state: &QuantumState, kind: Observables, out: &mut [f64]) {
-    let n = state.dim.trailing_zeros() as usize;
-    assert!(n <= MAX_QUBITS && 1usize << n == state.dim, "state must hold 2^n amplitudes");
+    let p: Vec<f64> = state.real.iter().zip(&state.imag).map(|(r, i)| r * r + i * i).collect();
+    probability_features_into(&p, kind, out);
+}
+
+/// As [`z_features_into`] for a distribution `p` over the `2^n` computational-basis outcomes.
+///
+/// `p` need not be non-negative or normalised: every feature is linear in `p`, so measured
+/// frequencies after readout mitigation (which can dip below zero) are valid input.
+pub fn probability_features_into(p: &[f64], kind: Observables, out: &mut [f64]) {
+    let n = p.len().trailing_zeros() as usize;
+    assert!(n <= MAX_QUBITS && 1usize << n == p.len(), "distribution must have 2^n entries");
     assert_eq!(out.len(), kind.count(n), "feature buffer has the wrong length");
     out.fill(0.0);
     if let Observables::ParityUpTo(k) = kind {
-        return parity_features_into(state, n, k, out);
+        return parity_features_into(p, n, k, out);
     }
     let mut sign = [0.0f64; MAX_QUBITS];
-    for i in 0..state.dim {
-        let p = state.real[i] * state.real[i] + state.imag[i] * state.imag[i];
-        if p == 0.0 {
+    for (i, &weight) in p.iter().enumerate() {
+        if weight == 0.0 {
             continue;
         }
         for (q, s) in sign.iter_mut().enumerate().take(n) {
             *s = 1.0 - 2.0 * ((i >> q) & 1) as f64;
         }
-        out[..n].iter_mut().zip(&sign).for_each(|(o, s)| *o += p * s);
+        out[..n].iter_mut().zip(&sign).for_each(|(o, s)| *o += weight * s);
         if matches!(kind, Observables::ZAndZz) {
             let mut k = n;
             for q in 0..n {
                 for r in q + 1..n {
-                    out[k] += p * sign[q] * sign[r];
+                    out[k] += weight * sign[q] * sign[r];
                     k += 1;
                 }
             }
@@ -282,6 +290,21 @@ mod tests {
         let mut full = vec![0.0; Observables::ParityUpTo(1).count(n)];
         z_features_into(&s, Observables::ParityUpTo(1), &mut full);
         assert!(z.iter().all(|v| full.iter().any(|f| (f - v).abs() < 1e-12)));
+    }
+
+    #[test]
+    fn probability_input_may_be_unnormalised_and_negative() {
+        // Features are linear in the distribution: scaling p scales every feature, and a
+        // distribution with a negative entry (as after readout mitigation) is accepted.
+        let p = vec![0.5, 0.3, 0.25, -0.05];
+        let mut base = vec![0.0; Observables::ZAndZz.count(2)];
+        probability_features_into(&p, Observables::ZAndZz, &mut base);
+        let doubled: Vec<f64> = p.iter().map(|v| 2.0 * v).collect();
+        let mut twice = vec![0.0; base.len()];
+        probability_features_into(&doubled, Observables::ZAndZz, &mut twice);
+        assert!(base.iter().zip(&twice).all(|(a, b)| (2.0 * a - b).abs() < 1e-12));
+        // Z0 = p0 - p1 + p2 - p3 = 0.5 - 0.3 + 0.25 + 0.05.
+        assert!((base[0] - 0.5).abs() < 1e-12);
     }
 
     #[test]
