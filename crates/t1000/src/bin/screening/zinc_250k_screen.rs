@@ -836,13 +836,13 @@ fn main() {
     let leads_path = out_dir.join("zinc_250k_top_pareto_leads.json");
     let sample_path = out_dir.join("zinc_250k_manifold_sample.json");
 
-    fs::write(
+    t1000::results::write(
         &metrics_path,
         serde_json::to_string_pretty(&metrics).expect("Failed to serialize metrics"),
     )
     .expect("Failed to write metrics");
 
-    fs::write(
+    t1000::results::write(
         &leads_path,
         serde_json::to_string_pretty(&top_100_leads).expect("Failed to serialize leads"),
     )
@@ -861,7 +861,7 @@ fn main() {
         points: compact_points,
     };
 
-    fs::write(
+    t1000::results::write(
         &sample_path,
         serde_json::to_string(&manifold_export).expect("Failed to serialize manifold sample"),
     )

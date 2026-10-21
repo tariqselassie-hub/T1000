@@ -133,7 +133,7 @@ fn main() {
                 }
                 None => {
                     let s = make_split(&name, &smiles, Some(&keys), method, seed, fractions);
-                    fs::write(
+                    t1000::results::write(
                         &path,
                         serde_json::to_string_pretty(&s).expect("serialize split"),
                     )
@@ -285,7 +285,7 @@ fn main() {
         summary,
     };
     let out = workspace("tests/benchmarks/zinc_molecular/reports/zinc_protocol_baselines.json");
-    fs::write(
+    t1000::results::write(
         &out,
         serde_json::to_string_pretty(&report).expect("serialize report"),
     )

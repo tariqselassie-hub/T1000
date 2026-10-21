@@ -723,7 +723,7 @@ fn main() {
         fused_hybrid_params_98: fused_98_params,
     };
     if let Ok(json_str) = serde_json::to_string_pretty(&fused_checkpoint) {
-        let _ = fs::write(&fused_ckpt_path, json_str);
+        let _ = t1000::results::write(&fused_ckpt_path, json_str);
         println!(
             "[SAVED] Fused 98-Parameter Checkpoint: {}",
             fused_ckpt_path.display()
@@ -783,7 +783,7 @@ fn main() {
         ],
     };
     if let Ok(json_str) = serde_json::to_string_pretty(&report) {
-        let _ = fs::write(&report_path, json_str);
+        let _ = t1000::results::write(&report_path, json_str);
         println!(
             "[SAVED] Fused Verification & Telemetry Report: {}",
             report_path.display()

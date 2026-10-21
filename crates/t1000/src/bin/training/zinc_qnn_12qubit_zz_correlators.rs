@@ -942,7 +942,7 @@ fn main() {
     }
 
     if let Ok(json_str) = serde_json::to_string_pretty(&report) {
-        let _ = fs::write(&report_file, json_str);
+        let _ = t1000::results::write(&report_file, json_str);
         println!("[SAVED] ZZ Correlator Report: {}", report_file.display());
     }
 
@@ -978,7 +978,7 @@ fn main() {
     });
 
     if let Ok(json_str) = serde_json::to_string_pretty(&enhanced_ckpt) {
-        let _ = fs::write(&enhanced_ckpt_path, json_str);
+        let _ = t1000::results::write(&enhanced_ckpt_path, json_str);
         println!(
             "[SAVED] Enhanced 78-Observable Checkpoint: {}",
             enhanced_ckpt_path.display()

@@ -787,7 +787,7 @@ fn main() {
 
     let out_path = PathBuf::from("results/experiments/path_a_vs_c_comparison_report.json");
     if let Ok(json_str) = serde_json::to_string_pretty(&report) {
-        let _ = fs::write(&out_path, json_str);
+        let _ = t1000::results::write(&out_path, json_str);
         println!("\nReport saved to: {}", out_path.display());
     }
 }

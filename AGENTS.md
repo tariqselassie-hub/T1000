@@ -81,6 +81,7 @@ Every newly created Rust source file (`.rs`), script, or core module MUST includ
 2. **Action-First Execution:** Implement full, working, drop-in solutions without placeholders, mock stubs, or unfinished `todo!()` blocks in production crates.
 3. **Zero-Warning Hygiene:** Code must compile cleanly with zero compiler warnings and zero broken documentation links.
 4. **Performance Integrity:** Avoid unnecessary allocations, clone calls on statevector buffers, or dynamic dispatch on hot inner-loop butterfly kernels.
+5. **Result Recording:** Binaries must write results through `t1000::results::{write, create, write_if_better}`, never `std::fs::write` or `File::create`. By default output goes to `target/bench-scratch/<host>/` and saved results are untouched. Pass `--record` (or set `T1000_RECORD=1`) to save: the reference host writes the canonical path, any other host writes `results/hosts/<host>/`. Benches with a clear metric should use `write_if_better` so a record only replaces the saved run when it improves (`--force` or `T1000_RECORD_FORCE=1` overrides).
 
 ---
 

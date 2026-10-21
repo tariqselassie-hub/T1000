@@ -202,7 +202,7 @@ fn main() {
     };
 
     if let Ok(json) = serde_json::to_string_pretty(&full_report) {
-        let _ = fs::write(out_file, json);
+        let _ = t1000::results::write(out_file, json);
         println!(" [SUCCESS] Telemetry recorded to results/data/nighthawk_r2_bench_report.json");
     }
     println!("================================================================================");

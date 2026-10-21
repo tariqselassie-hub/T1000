@@ -387,13 +387,13 @@ fn main() {
     if let Some(parent) = out1.parent() {
         let _ = fs::create_dir_all(parent);
     }
-    fs::write(out1, &serialized).expect("Failed to write experiment telemetry");
+    t1000::results::write(out1, &serialized).expect("Failed to write experiment telemetry");
     println!("\n [SAVED] Experiment Telemetry: {}", out1.display());
 
     let out2 = Path::new("results/data/cepheus_glued_trees_telemetry.json");
     if let Some(parent) = out2.parent() {
         let _ = fs::create_dir_all(parent);
     }
-    fs::write(out2, &serialized).expect("Failed to write results telemetry");
+    t1000::results::write(out2, &serialized).expect("Failed to write results telemetry");
     println!(" [SAVED] Central Telemetry: {}", out2.display());
 }

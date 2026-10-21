@@ -954,7 +954,7 @@ fn main() {
         fs::create_dir_all(parent).ok();
     }
     let ckpt_json = serde_json::to_string_pretty(&checkpoint).expect("Serialize checkpoint");
-    fs::write(&ckpt_save_path, ckpt_json).expect("Write checkpoint");
+    t1000::results::write(&ckpt_save_path, ckpt_json).expect("Write checkpoint");
     println!("  [OK] Saved QNG Checkpoint: {}", ckpt_save_path.display());
 
     // Classical reference: ridge regression on the same raw features and train/test split.
@@ -1037,7 +1037,7 @@ fn main() {
     }
 
     let report_json = serde_json::to_string_pretty(&report).expect("Serialize report");
-    fs::write(&report_save_path, report_json).expect("Write report");
+    t1000::results::write(&report_save_path, report_json).expect("Write report");
     println!(
         "  [OK] Saved Machine-Readable Report: {}",
         report_save_path.display()

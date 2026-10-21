@@ -456,7 +456,7 @@ fn main() {
     };
 
     let report_json = serde_json::to_string_pretty(&report).unwrap();
-    if let Ok(mut f) = File::create(REPORT_PATH) {
+    if let Ok(mut f) = t1000::results::create(REPORT_PATH) {
         let _ = f.write_all(report_json.as_bytes());
         println!("║ Telemetry ledger written to: {}", REPORT_PATH);
     }

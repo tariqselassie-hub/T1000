@@ -427,13 +427,13 @@ fn main() {
     if let Some(parent) = p1.parent() {
         let _ = fs::create_dir_all(parent);
     }
-    fs::write(p1, &json_content).expect("Failed to write results/data JSON");
+    t1000::results::write(p1, &json_content).expect("Failed to write results/data JSON");
     println!(" [SAVED] Disk Telemetry: {}", p1.display());
 
     let p2 = Path::new("web/data/nighthawk_99_plaquette_telemetry.json");
     if let Some(parent) = p2.parent() {
         let _ = fs::create_dir_all(parent);
     }
-    fs::write(p2, &json_content).expect("Failed to write web/data JSON");
+    t1000::results::write(p2, &json_content).expect("Failed to write web/data JSON");
     println!(" [SAVED] Web Telemetry:  {}", p2.display());
 }

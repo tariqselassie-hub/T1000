@@ -192,7 +192,7 @@ fn main() {
     fs::create_dir_all(&out_dir).expect("failed to create results dir");
     let out_file = out_dir.join("qnn_scaling_36_qubits_tn.json");
     let json_str = serde_json::to_string_pretty(&report).expect("failed to serialize report");
-    fs::write(&out_file, json_str).expect("failed to write 36-qubit report");
+    t1000::results::write(&out_file, json_str).expect("failed to write 36-qubit report");
 
     println!(" Report persisted to: {}", out_file.display());
 }

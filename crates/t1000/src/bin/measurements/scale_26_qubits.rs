@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::fs;
 use std::path::PathBuf;
 use std::time::Instant;
 use t1000::{CircuitAnsatz, QuantumState};
@@ -209,22 +208,29 @@ fn main() {
         points,
     };
 
-    let slug = host.slug();
-    let host_dir = PathBuf::from(format!("results/hosts/{slug}"));
-    let _ = fs::create_dir_all(&host_dir);
-    let out_path = host_dir.join("qnn_scaling_26_qubits.json");
-    if let Some(parent) = out_path.parent() {
-        let _ = fs::create_dir_all(parent);
-    }
+    // Keep-best: when recording, a run only replaces the saved result if its 26-qubit latency
+    // is lower. Without --record the files go to a scratch directory (see t1000::results).
+    let out_path = PathBuf::from("results/experiments/qnn_scaling_26_qubits.json");
+    let top_latency_ms = report.points.last().map_or(f64::MAX, |p| p.total_latency_ms);
     if let Ok(json) = serde_json::to_string_pretty(&report) {
-        let _ = fs::write(&out_path, json);
+        let outcome = t1000::results::write_if_better(
+            &out_path,
+            json,
+            "latency_ms_26q",
+            top_latency_ms,
+            t1000::results::Better::Lower,
+        );
+        if !matches!(outcome, Ok(t1000::results::Outcome::Written)) {
+            println!("\n[KEPT] Saved 26-Qubit run is faster ({top_latency_ms:.1} ms is not an improvement)");
+            return;
+        }
         println!(
             "\n[SUCCESS] Full 26-Qubit Telemetry JSON saved to: {}",
             out_path.display()
         );
     }
 
-    let csv_path = host_dir.join("qnn_scaling_26_qubits.csv");
+    let csv_path = PathBuf::from("results/experiments/qnn_scaling_26_qubits.csv");
     let mut csv_lines = Vec::new();
     csv_lines.push("qubits,num_states,ram_mb,ram_gb,total_latency_ms,total_latency_s,per_layer_ms,circuit_depth,f_xeb_with_pi,f_xeb_no_pi,f_xeb_cross_nisq,top_state_prob,uniform_prob,peak_multiplier,host_cpu,host_ram_gb,instruction_set".to_string());
     for p in &report.points {
@@ -249,19 +255,10 @@ fn main() {
             host.isa.label()
         ));
     }
-    if let Ok(()) = fs::write(&csv_path, csv_lines.join("\n")) {
+    if let Ok(()) = t1000::results::write(&csv_path, csv_lines.join("\n")) {
         println!(
             "[SUCCESS] Full 26-Qubit Telemetry CSV saved to : {}",
             csv_path.display()
         );
-    }
-
-    // Charts and FPGA comparison scripts read the canonical names; only the reference
-    // host may refresh them so other machines never overwrite the reference timings.
-    if host.is_reference_host() {
-        for ext in ["json", "csv"] {
-            let src = host_dir.join(format!("qnn_scaling_26_qubits.{ext}"));
-            let _ = fs::copy(src, format!("results/experiments/qnn_scaling_26_qubits.{ext}"));
-        }
     }
 }

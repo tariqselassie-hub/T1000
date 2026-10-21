@@ -498,7 +498,7 @@ fn main() {
         pruned_hybrid_params: pruned_params,
     };
     if let Ok(json_str) = serde_json::to_string_pretty(&pruned_checkpoint) {
-        let _ = fs::write(&pruned_ckpt_path, json_str);
+        let _ = t1000::results::write(&pruned_ckpt_path, json_str);
         println!(
             "[SAVED] Canonical 99-parameter checkpoint: {}",
             pruned_ckpt_path.display()
@@ -530,7 +530,7 @@ fn main() {
         throughput_speedup_x: speedup_x,
     };
     if let Ok(json_str) = serde_json::to_string_pretty(&report) {
-        let _ = fs::write(&report_path, json_str);
+        let _ = t1000::results::write(&report_path, json_str);
         println!(
             "[SAVED] Pruned Equivalence Report: {}",
             report_path.display()

@@ -232,7 +232,7 @@ fn main() {
         "tests/benchmarks/zinc_molecular/reports/zinc_classical_baselines.json",
     );
     match serde_json::to_string_pretty(&reports) {
-        Ok(json) => match fs::write(&out, json) {
+        Ok(json) => match t1000::results::write(&out, json) {
             Ok(()) => println!("\n[OK] Baselines written to {}", out.display()),
             Err(e) => eprintln!("[-] could not write {}: {e}", out.display()),
         },

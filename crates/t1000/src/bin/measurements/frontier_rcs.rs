@@ -421,7 +421,7 @@ fn export_circuit(
         "gates": gates,
     });
     fs::create_dir_all(dir).expect("create export directory");
-    fs::write(
+    t1000::results::write(
         dir.join("circuit.json"),
         serde_json::to_string(&circuit).expect("serialize circuit"),
     )
@@ -431,7 +431,7 @@ fn export_circuit(
         bytes.extend_from_slice(&state.real[i].to_le_bytes());
         bytes.extend_from_slice(&state.imag[i].to_le_bytes());
     }
-    fs::write(dir.join("state.bin"), bytes).expect("write state.bin");
+    t1000::results::write(dir.join("state.bin"), bytes).expect("write state.bin");
     println!(
         "[EXPORT] circuit.json and state.bin written to {}",
         dir.display()
@@ -725,7 +725,7 @@ fn main() {
         let _ = fs::create_dir_all(parent);
     }
     match serde_json::to_string_pretty(&report) {
-        Ok(json) => match fs::write(&out_path, json) {
+        Ok(json) => match t1000::results::write(&out_path, json) {
             Ok(()) => println!("\n[SAVED] {}", out_path.display()),
             Err(e) => eprintln!("[-] could not write {}: {e}", out_path.display()),
         },

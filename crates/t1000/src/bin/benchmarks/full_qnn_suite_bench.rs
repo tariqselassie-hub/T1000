@@ -321,6 +321,6 @@ fn main() {
     fs::create_dir_all(out_dir).expect("results/data creation");
     let out_file = out_dir.join("full_qnn_suite_telemetry.json");
     let json_text = serde_json::to_string_pretty(&summary).expect("JSON serialize");
-    fs::write(&out_file, json_text).expect("Write telemetry JSON");
+    t1000::results::write(&out_file, json_text).expect("Write telemetry JSON");
     println!("\n[+] Full QNN Suite Telemetry Persisted: {}", out_file.display());
 }

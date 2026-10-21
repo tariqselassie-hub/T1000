@@ -719,7 +719,7 @@ fn main() {
         let _ = fs::create_dir_all(parent);
     }
     if let Ok(json_str) = serde_json::to_string_pretty(&suite_report) {
-        let _ = fs::write(&suite_json_path, json_str);
+        let _ = t1000::results::write(&suite_json_path, json_str);
         println!(
             "\n[SAVED] Suite telemetry exported to: {}",
             suite_json_path.display()
@@ -740,7 +740,7 @@ fn main() {
     let pegase_json_path =
         resolve_workspace_path("results/experiments/pegase1354_qnn_telemetry.json");
     if let Ok(json_str) = serde_json::to_string_pretty(&pegase_report) {
-        let _ = fs::write(&pegase_json_path, json_str);
+        let _ = t1000::results::write(&pegase_json_path, json_str);
         println!(
             "[SAVED] PEGASE 1354 dedicated telemetry exported to: {}",
             pegase_json_path.display()

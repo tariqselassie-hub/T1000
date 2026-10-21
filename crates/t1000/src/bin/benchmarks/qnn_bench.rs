@@ -423,7 +423,7 @@ fn main() {
         let _ = fs::create_dir_all(parent);
     }
     if let Ok(json_str) = serde_json::to_string_pretty(&summary) {
-        let _ = fs::write(&out_path, json_str);
+        let _ = t1000::results::write(&out_path, json_str);
         println!("\n[+] Benchmark metrics saved to: {}", out_path.display());
     }
 }

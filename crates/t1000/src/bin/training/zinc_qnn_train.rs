@@ -716,7 +716,7 @@ fn main() {
     }
 
     if let Ok(json_str) = serde_json::to_string_pretty(&report) {
-        let _ = fs::write(&out_json_path, json_str);
+        let _ = t1000::results::write(&out_json_path, json_str);
         println!(
             "\n[SAVED] 10k Training and Evaluation Report exported to: {}",
             out_json_path.display()

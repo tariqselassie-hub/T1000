@@ -9,7 +9,7 @@
 
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::fs::{self, File};
+use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
@@ -604,7 +604,7 @@ fn main() {
 
     let report_path = PathBuf::from("data/birds/birds_hybrid_qnn_report.json");
     if let Ok(json_str) = serde_json::to_string_pretty(&report) {
-        if let Ok(mut f) = File::create(&report_path) {
+        if let Ok(mut f) = t1000::results::create(&report_path) {
             let _ = f.write_all(json_str.as_bytes());
             println!(
                 "\nReport successfully persisted to: {}",

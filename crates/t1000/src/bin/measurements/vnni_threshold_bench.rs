@@ -91,7 +91,7 @@ fn main() {
     let out_path = out_dir.join("vnni_qec_threshold_report.json");
     match serde_json::to_string_pretty(&report) {
         Ok(json_str) => {
-            if let Err(e) = fs::write(&out_path, json_str) {
+            if let Err(e) = t1000::results::write(&out_path, json_str) {
                 eprintln!("Warning: Failed to write {}: {e}", out_path.display());
             } else {
                 println!("[SAVED] {}", out_path.display());

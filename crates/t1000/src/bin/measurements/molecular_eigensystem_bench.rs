@@ -233,7 +233,7 @@ fn main() {
     let results_dir = Path::new("results/data");
     let _ = fs::create_dir_all(results_dir);
     let report_path = results_dir.join("molecular_eigensystem_report.json");
-    fs::write(
+    t1000::results::write(
         &report_path,
         serde_json::to_string_pretty(&json_output).unwrap(),
     )

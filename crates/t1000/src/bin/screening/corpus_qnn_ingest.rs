@@ -145,7 +145,7 @@ fn main() {
     }
     match serde_json::to_string_pretty(&telemetry) {
         Ok(json_str) => {
-            if let Err(e) = fs::write(&out_path, json_str) {
+            if let Err(e) = t1000::results::write(&out_path, json_str) {
                 eprintln!("[-] Failed to export telemetry: {}", e);
             } else {
                 println!(

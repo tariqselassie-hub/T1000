@@ -9,7 +9,7 @@
 
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::fs::{self, File};
+use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
@@ -677,9 +677,9 @@ fn main() {
     let csv_path = results_dir.join("mnist_qnn_training.csv");
 
     let json_str = serde_json::to_string_pretty(&report).unwrap();
-    fs::write(&json_path, json_str).unwrap();
+    t1000::results::write(&json_path, json_str).unwrap();
 
-    let mut csv_file = File::create(&csv_path).unwrap();
+    let mut csv_file = t1000::results::create(&csv_path).unwrap();
     writeln!(csv_file, "epoch,train_loss,train_acc_pct,test_loss,test_acc_pct,mean_coherence_l1,intra_interf,inter_interf,epoch_time_ms").unwrap();
     for h in &history {
         writeln!(

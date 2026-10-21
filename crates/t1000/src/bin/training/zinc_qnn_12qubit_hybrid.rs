@@ -1135,7 +1135,7 @@ fn main() {
     }
 
     if let Ok(json_str) = serde_json::to_string_pretty(&report) {
-        let _ = fs::write(&out_json_path, json_str);
+        let _ = t1000::results::write(&out_json_path, json_str);
         println!(
             "[SAVED] 12-Qubit Hybrid Report exported to: {}",
             out_json_path.display()
@@ -1167,7 +1167,7 @@ fn main() {
         if let Some(parent) = target_ckpt_path.parent() {
             let _ = fs::create_dir_all(parent);
         }
-        let _ = fs::write(&target_ckpt_path, ckpt_str);
+        let _ = t1000::results::write(&target_ckpt_path, ckpt_str);
         println!(
             "[CHECKPOINT] 111 Hybrid Parameters saved to: {}",
             target_ckpt_path.display()
