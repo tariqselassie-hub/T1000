@@ -32,7 +32,7 @@ pub enum IsaTier {
 impl IsaTier {
     pub fn label(self) -> &'static str {
         match self {
-            Self::Avx512 => "512-bit AVX-512 (engine kernels: 256-bit AVX2+FMA)",
+            Self::Avx512 => "512-bit AVX-512F kernels (AVX2+FMA elsewhere)",
             Self::Avx2Fma => "256-bit AVX2+FMA SIMD",
             Self::Scalar => "scalar",
         }
@@ -170,7 +170,8 @@ fn read_ram_gb() -> f64 {
 
 #[cfg(target_arch = "x86_64")]
 fn detect_isa() -> IsaTier {
-    if is_x86_feature_detected!("avx512f") {
+    // `T1000_SIMD=avx2` turns the 512-bit kernels off, so the label follows what actually runs.
+    if crate::simd::avx512::enabled() {
         IsaTier::Avx512
     } else if is_x86_feature_detected!("avx2") && is_x86_feature_detected!("fma") {
         IsaTier::Avx2Fma

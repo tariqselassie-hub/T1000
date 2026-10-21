@@ -17,9 +17,6 @@
 //! A 26-qubit layer drops from 26 DRAM passes to 1 + 4. Per-element arithmetic is the same as
 //! the per-gate kernels, so results agree to rounding.
 
-#[cfg(target_arch = "x86_64")]
-use std::arch::x86_64::*;
-
 use crate::compiler::Unitary2x2;
 use rayon::prelude::*;
 
@@ -94,7 +91,7 @@ fn apply_low_block(real: &mut [f64], imag: &mut [f64], gates: &[LayerGate], para
         for &(q, gate) in gates {
             match gate {
                 Gate1Q::Ry(theta) => crate::simd::apply_ry_kernel(re, im, q, theta),
-                Gate1Q::U(u) => apply_u_block(re, im, q, &u),
+                Gate1Q::U(u) => crate::simd::unitary::u_block(re, im, q, &u),
             }
         }
     };
@@ -106,17 +103,6 @@ fn apply_low_block(real: &mut [f64], imag: &mut [f64], gates: &[LayerGate], para
         });
     } else {
         real.chunks_mut(block).zip(imag.chunks_mut(block)).for_each(|(re, im)| run(re, im));
-    }
-}
-
-/// Complex 2x2 on qubit `q` of an in-cache block, pairing the two halves of each sub-block.
-fn apply_u_block(re: &mut [f64], im: &mut [f64], q: usize, u: &Unitary2x2) {
-    let half = 1usize << q;
-    for (re_b, im_b) in re.chunks_mut(2 * half).zip(im.chunks_mut(2 * half)) {
-        let (r0, r1) = re_b.split_at_mut(half);
-        let (i0, i1) = im_b.split_at_mut(half);
-        // SAFETY: the four slices are disjoint and each holds `half` elements.
-        unsafe { u_pair(r0.as_mut_ptr(), r1.as_mut_ptr(), i0.as_mut_ptr(), i1.as_mut_ptr(), half, u) };
     }
 }
 
@@ -193,93 +179,11 @@ pub(crate) fn pair_op(gate: Gate1Q) -> PairOp {
 /// # Safety
 /// The four pointers must be valid for `CHUNK` reads and writes, and the ranges must not overlap.
 pub(crate) unsafe fn chunk_pair(r0: *mut f64, r1: *mut f64, i0: *mut f64, i1: *mut f64, op: &PairOp) {
+    use crate::simd::unitary::{rot_pair, u_pair};
     match op {
         PairOp::Mat(u) => u_pair(r0, r1, i0, i1, CHUNK, u),
-        PairOp::Rot { s, c } => {
-            #[cfg(target_arch = "x86_64")]
-            if is_x86_feature_detected!("avx2") && is_x86_feature_detected!("fma") {
-                return rot_pair_avx2(r0, r1, i0, i1, *s, *c);
-            }
-            for (x0, x1) in [(r0, r1), (i0, i1)] {
-                for k in 0..CHUNK {
-                    let (a, b) = (*x0.add(k), *x1.add(k));
-                    *x0.add(k) = c * a - s * b;
-                    *x1.add(k) = s * a + c * b;
-                }
-            }
-        }
+        PairOp::Rot { s, c } => rot_pair(r0, r1, i0, i1, CHUNK, *s, *c),
     }
-}
-
-#[cfg(target_arch = "x86_64")]
-#[target_feature(enable = "avx2", enable = "fma")]
-unsafe fn rot_pair_avx2(r0: *mut f64, r1: *mut f64, i0: *mut f64, i1: *mut f64, s: f64, c: f64) {
-    let (vc, vs) = (_mm256_set1_pd(c), _mm256_set1_pd(s));
-    for (x0, x1) in [(r0, r1), (i0, i1)] {
-        for k in (0..CHUNK).step_by(4) {
-            let a = _mm256_loadu_pd(x0.add(k));
-            let b = _mm256_loadu_pd(x1.add(k));
-            _mm256_storeu_pd(x0.add(k), _mm256_fmsub_pd(vc, a, _mm256_mul_pd(vs, b)));
-            _mm256_storeu_pd(x1.add(k), _mm256_fmadd_pd(vs, a, _mm256_mul_pd(vc, b)));
-        }
-    }
-}
-
-/// `[x0; x1] <- U [x0; x1]` over `len` amplitudes of each plane.
-///
-/// # Safety
-/// The four pointers must be valid for `len` reads and writes, and the ranges must not overlap.
-unsafe fn u_pair(r0: *mut f64, r1: *mut f64, i0: *mut f64, i1: *mut f64, len: usize, u: &Unitary2x2) {
-    #[cfg(target_arch = "x86_64")]
-    if len >= 4 && is_x86_feature_detected!("avx2") && is_x86_feature_detected!("fma") {
-        return u_pair_avx2(r0, r1, i0, i1, len, u);
-    }
-    u_pair_scalar(r0, r1, i0, i1, 0, len, u);
-}
-
-unsafe fn u_pair_scalar(
-    r0: *mut f64,
-    r1: *mut f64,
-    i0: *mut f64,
-    i1: *mut f64,
-    from: usize,
-    len: usize,
-    u: &Unitary2x2,
-) {
-    for k in from..len {
-        let (ar, ai, br, bi) = (*r0.add(k), *i0.add(k), *r1.add(k), *i1.add(k));
-        *r0.add(k) = u.u00_re * ar - u.u00_im * ai + u.u01_re * br - u.u01_im * bi;
-        *i0.add(k) = u.u00_re * ai + u.u00_im * ar + u.u01_re * bi + u.u01_im * br;
-        *r1.add(k) = u.u10_re * ar - u.u10_im * ai + u.u11_re * br - u.u11_im * bi;
-        *i1.add(k) = u.u10_re * ai + u.u10_im * ar + u.u11_re * bi + u.u11_im * br;
-    }
-}
-
-#[cfg(target_arch = "x86_64")]
-#[target_feature(enable = "avx2", enable = "fma")]
-unsafe fn u_pair_avx2(r0: *mut f64, r1: *mut f64, i0: *mut f64, i1: *mut f64, len: usize, u: &Unitary2x2) {
-    let v = |x: f64| _mm256_set1_pd(x);
-    let (a_r, a_i, b_r, b_i) = (v(u.u00_re), v(u.u00_im), v(u.u01_re), v(u.u01_im));
-    let (c_r, c_i, d_r, d_i) = (v(u.u10_re), v(u.u10_im), v(u.u11_re), v(u.u11_im));
-    let vec_len = len - len % 4;
-    for k in (0..vec_len).step_by(4) {
-        let (xr, xi) = (_mm256_loadu_pd(r0.add(k)), _mm256_loadu_pd(i0.add(k)));
-        let (yr, yi) = (_mm256_loadu_pd(r1.add(k)), _mm256_loadu_pd(i1.add(k)));
-        // new0 = a*x + b*y ; new1 = c*x + d*y  (complex)
-        let n0r = _mm256_fnmadd_pd(b_i, yi, _mm256_fmsub_pd(a_r, xr, _mm256_mul_pd(a_i, xi)));
-        let n0r = _mm256_fmadd_pd(b_r, yr, n0r);
-        let n0i = _mm256_fmadd_pd(b_i, yr, _mm256_fmadd_pd(a_r, xi, _mm256_mul_pd(a_i, xr)));
-        let n0i = _mm256_fmadd_pd(b_r, yi, n0i);
-        let n1r = _mm256_fnmadd_pd(d_i, yi, _mm256_fmsub_pd(c_r, xr, _mm256_mul_pd(c_i, xi)));
-        let n1r = _mm256_fmadd_pd(d_r, yr, n1r);
-        let n1i = _mm256_fmadd_pd(d_i, yr, _mm256_fmadd_pd(c_r, xi, _mm256_mul_pd(c_i, xr)));
-        let n1i = _mm256_fmadd_pd(d_r, yi, n1i);
-        _mm256_storeu_pd(r0.add(k), n0r);
-        _mm256_storeu_pd(i0.add(k), n0i);
-        _mm256_storeu_pd(r1.add(k), n1r);
-        _mm256_storeu_pd(i1.add(k), n1i);
-    }
-    u_pair_scalar(r0, r1, i0, i1, vec_len, len, u);
 }
 
 #[cfg(test)]

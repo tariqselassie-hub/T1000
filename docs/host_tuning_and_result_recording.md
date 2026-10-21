@@ -27,7 +27,8 @@ Two machines are first-class (`KnownHost`): the Core Ultra 7 265 (the reference 
 i3-1115G4. Any other machine is reported as `Other` with its real values, and gets a file-name
 slug derived from its CPU model.
 
-The engine's kernels are 256-bit AVX2+FMA even when the CPU reports AVX-512; the label says so.
+When the CPU supports AVX-512F the hot kernels use 512-bit vectors (section 2.1); the label says
+which width is active, and follows `T1000_SIMD`.
 
 ### Per-host tuning
 
@@ -45,6 +46,7 @@ Environment overrides:
 | :--- | :--- |
 | `GUDDALM_QNN_THREADS` | Worker thread count (default: all logical CPUs) |
 | `GUDDALM_QNN_PAR_MAX_QUBITS` | Largest register split across threads |
+| `T1000_SIMD` | `avx2` forces the 256-bit kernels on an AVX-512 machine (for comparison); default uses AVX-512F when present |
 | `T1000_PRECISION` | `exact` (default) or `fast` |
 | `T1000_BACKEND` | `auto`, `cpu` or `gpu` (`gpu` implies fast) |
 | `T1000_GPU_MIN_QUBITS` | Crossover for automatic GPU routing |
@@ -69,23 +71,23 @@ The block, chunk and group sizes were swept (ten combinations) and are flat with
 
 ### Measured results (i3-1115G4)
 
-Forward ansatz, `scale_26_qubits` (depth 12):
+Forward ansatz, `scale_26_qubits` (depth 12, with the AVX-512 kernels of section 2.1):
 
 | Qubits | Session start | Now |
 | :--- | :--- | :--- |
-| 20 | 954 ms | 158 ms |
-| 22 | 4.85 s | 829 ms |
-| 24 | 21.2 s | 3.06 s |
-| 26 | 92.1 s | 14.4 s |
+| 20 | 954 ms | 125 ms |
+| 22 | 4.85 s | 603 ms |
+| 24 | 21.2 s | 2.52 s |
+| 26 | 92.1 s | 12.1 s |
 
-Compiled-circuit executor, CPU FP64 against the FP32 iGPU (`backend_auto_bench`):
+Compiled-circuit executor, CPU FP64 against the FP32 iGPU (`backend_auto_bench`, AVX-512 build):
 
 | Qubits | CPU | iGPU | iGPU speed relative to CPU |
 | :--- | :--- | :--- | :--- |
-| 16 | 6.6 ms | 10.3 ms | 0.64x |
-| 20 | 170 ms | 233 ms | 0.73x |
-| 24 | 3.4 s | 7.5 s | 0.45x |
-| 26 | 15.7 s | 34.7 s | 0.45x |
+| 16 | 5.0 ms | 9.6 ms | 0.52x |
+| 20 | 123 ms | 423 ms | 0.29x |
+| 24 | 3.0 s | 8.4 s | 0.35x |
+| 26 | 14.7 s | 30.7 s | 0.48x |
 
 Adjoint gradient, depth 6:
 
@@ -110,13 +112,69 @@ The last row did not change: that binary uses its own fused observable path.
 
 Single benchmark runs on this laptop vary by roughly 15 to 30%; compare best-of-N numbers.
 
+### 2.1 Low-qubit and AVX-512 kernels
+
+Two separate improvements, measured on the i3-1115G4 (AVX-512F, 48 KB L1, 1.25 MB L2 per core):
+
+* **Qubits 0 and 1 were scalar.** The AVX2 Ry/Rz kernels vectorized only qubit 2 and up. The
+  block-local pass applies qubits 0 to 11 to every 4096-amplitude block, so those two scalar
+  qubits cost nearly half of that pass. `simd::lowq` now splits each pair of vectors into the
+  elements with the qubit bit 0 and 1 (one unpack or 128-bit permute), rotates them as ordinary
+  vectors and merges back. This helps any AVX2 machine, not only AVX-512 ones.
+* **AVX-512F kernels** (`simd::avx512`, `simd::unitary`): Ry, Rz, real and complex pair rotations,
+  complex gates on qubits 0 to 2 (two `vpermt2pd` per vector pair), and the gradient cross-sum.
+  Single-gate Ry/Rz use them for states up to 2^21 amplitudes; larger states keep the AVX2
+  kernels with streaming stores. Block and chunk kernels always use them when available.
+
+Ry on one cache-resident 4096-amplitude block, time per call:
+
+| Qubit | Before | AVX2 + low-qubit fix | AVX-512 |
+| :--- | :--- | :--- | :--- |
+| 0 | 4605 ns | 1085 ns | 955 ns |
+| 1 | 4068 ns | 1108 ns | 961 ns |
+| 2 | 876 ns | 872 ns | 953 ns |
+| 5 | 987 ns | 984 ns | 900 ns |
+| 11 | 996 ns | 982 ns | 835 ns |
+
+For qubit 3 and up AVX-512 gains 0 to 17% over AVX2: a 4096-amplitude block is 64 KB, which does
+not fit the 48 KB L1, so the loop is limited by L2 bandwidth, not by vector width.
+
+Best of N, previous commit against the new code (same machine, same inputs):
+
+| Path | Qubits | Previous | AVX2 + fix | AVX-512 |
+| :--- | :--- | :--- | :--- | :--- |
+| Forward ansatz, depth 12 | 14 | 1.40 ms | 1.09 ms | 0.98 ms |
+| | 18 | 13.84 ms | 11.94 ms | 11.23 ms |
+| | 20 | 141 ms | 126 ms | 123 ms |
+| Adjoint gradient, depth 6 | 12 | 0.78 ms | 0.69 ms | 0.64 ms |
+| | 16 | 9.7 ms | 8.6 ms | 8.3 ms |
+| | 20 | 490 ms | 420 ms | 302 ms |
+| Compiled-circuit executor, depth 12 | 14 | 1.61 ms | 1.22 ms | 1.07 ms |
+| | 18 | 16.1 ms | 13.3 ms | 10.5 ms |
+| | 20 | 237 ms | 206 ms | 163 ms |
+
+End-to-end trainers (best of 3, includes the held-out evaluation; results identical to every
+printed digit with `T1000_SIMD=avx2` and with AVX-512):
+
+| Workload | Previous | Now |
+| :--- | :--- | :--- |
+| `qnn_train` 12 qubits, 20 epochs | 0.20 s | 0.17 s |
+| `qnn_train` 16 qubits, 3 epochs | 0.66 s | 0.59 s |
+| `qnn_train` 20 qubits, 1 epoch | 14.20 s | 8.99 s |
+| `zinc_qnn_train`, 10k molecules, 3 epochs | 2.73 s | 2.42 s |
+
+The Rz/CZ diagonal pass was not ported: it is about 15% of a layer at 18 qubits, so a wider
+vector would gain a few percent at most. The Ry layer runs at about 69 GB/s at 18 qubits, which is
+L3 bandwidth, so little SIMD headroom remains there.
+
 ### Known limits
 
 * CNOT, SWAP, controlled-phase and Rademacher ops are barriers inside the layered executor, so
   each is still its own pass. On CNOT-heavy circuits the iGPU is about even with the CPU
   (22 qubits, CNOT ladder: 1.78 s iGPU, 2.24 s CPU).
 * A 26-qubit layer still costs about 9 memory passes.
-* Nothing here was measured on the Core Ultra 7 265.
+* Nothing here was measured on the Core Ultra 7 265. It has no AVX-512, so it runs the AVX2
+  kernels, which gain the qubit-0/1 fix but not the 512-bit paths.
 
 ---
 

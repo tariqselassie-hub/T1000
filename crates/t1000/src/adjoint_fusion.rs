@@ -218,6 +218,10 @@ unsafe fn high_group(joint: Joint, b: usize, qs: &[usize], ops: &[PairOp], acc: 
 /// Each argument is `[lambda_re, lambda_im, phi_re, phi_im]` for the |0> / |1> half.
 unsafe fn cross(x0: [*mut f64; 4], x1: [*mut f64; 4], len: usize) -> f64 {
     #[cfg(target_arch = "x86_64")]
+    if len >= 8 && crate::simd::avx512::enabled() {
+        return cross_avx512(x0, x1, len);
+    }
+    #[cfg(target_arch = "x86_64")]
     if len >= 4 && is_x86_feature_detected!("avx2") && is_x86_feature_detected!("fma") {
         return cross_avx2(x0, x1, len);
     }
@@ -253,6 +257,23 @@ unsafe fn cross_avx2(x0: [*mut f64; 4], x1: [*mut f64; 4], len: usize) -> f64 {
     let mut lanes = [0.0f64; 4];
     _mm256_storeu_pd(lanes.as_mut_ptr(), acc);
     (lanes[0] + lanes[1]) + (lanes[2] + lanes[3]) + cross_scalar(x0, x1, vec_len, len)
+}
+
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx512f")]
+unsafe fn cross_avx512(x0: [*mut f64; 4], x1: [*mut f64; 4], len: usize) -> f64 {
+    let [lr0, li0, pr0, pi0] = x0;
+    let [lr1, li1, pr1, pi1] = x1;
+    let mut acc = _mm512_setzero_pd();
+    let vec_len = len - len % 8;
+    for k in (0..vec_len).step_by(8) {
+        let ld = |p: *mut f64| _mm512_loadu_pd(p.add(k));
+        acc = _mm512_fmadd_pd(ld(lr1), ld(pr0), acc);
+        acc = _mm512_fmadd_pd(ld(li1), ld(pi0), acc);
+        acc = _mm512_fnmadd_pd(ld(lr0), ld(pr1), acc);
+        acc = _mm512_fnmadd_pd(ld(li0), ld(pi1), acc);
+    }
+    _mm512_reduce_add_pd(acc) + cross_scalar(x0, x1, vec_len, len)
 }
 
 #[cfg(test)]

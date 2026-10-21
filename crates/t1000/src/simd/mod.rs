@@ -13,12 +13,17 @@
 //! - [`measurements`]: Pauli reductions, dual ZX accumulation, and fused observable readouts.
 //! - [`model`]: Strongly-typed [`SimdStateView`], [`SimdStateViewMut`], and [`SimdBackend`] domain models.
 
+#[cfg(target_arch = "x86_64")]
+pub(crate) mod avx512;
 pub mod algebra;
 pub mod eigensystem;
 pub mod guards;
+#[cfg(target_arch = "x86_64")]
+mod lowq;
 pub mod measurements;
 pub mod model;
 pub mod rotations;
+pub(crate) mod unitary;
 
 // Re-export all primary kernel functions for 100% backward compatibility
 pub use algebra::{apply_rademacher_phase_kernel, inner_product_kernel, normalize_kernel};
