@@ -38,6 +38,7 @@ pub mod holdout_score;
 pub mod hostinfo;
 pub mod ingest;
 pub mod lattice;
+pub mod linear_head;
 pub mod layer_fusion;
 pub mod measurements;
 pub mod memory;
@@ -62,6 +63,7 @@ pub mod tiled_butterfly;
 pub mod topological_sorter;
 pub mod trainer;
 pub mod ultrametric_tree;
+pub mod zinc_data;
 pub mod zipper;
 
 pub use cascaded_tree_valve::{

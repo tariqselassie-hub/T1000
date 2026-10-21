@@ -216,7 +216,7 @@ replaces the saved run unconditionally. Metrics must be held-out numbers, not tr
 | Binary | Deciding metric (lower is better) | Guard |
 | :--- | :--- | :--- |
 | `qnn_train` | holdout loss on 96 unseen phase-shifted points | holdout accuracy may drop at most 1 point |
-| `zinc_qnn_train` (settings include the head mode), `zinc_qnn_12qubit_hybrid`, `zinc_qnn_20ep_eval` | held-out MSE divided by target variance, mean of logP, QED, SAS (1.0 means no better than the mean); shared code in `t1000::holdout_score` | mean Pearson r may drop at most 0.02 |
+| `zinc_qnn_train` (settings include the head mode), `zinc_linear_head_train` (settings include depth and a fingerprint of the circuit weights), `zinc_qnn_12qubit_hybrid`, `zinc_qnn_20ep_eval` | held-out MSE divided by target variance, mean of logP, QED, SAS (1.0 means no better than the mean); shared code in `t1000::holdout_score` | mean Pearson r may drop at most 0.02 |
 | `birds_qnn_train`, `birds_hybrid_qnn_train` | test loss of the best checkpoint | worst-group accuracy may drop at most 1 point |
 | `mnist_qnn_train` | final test loss | test accuracy may drop at most 1 point |
 | `scale_26_qubits` | 26-qubit latency | none |
@@ -413,4 +413,68 @@ held-out molecules, so the comparison is fair; it has not been turned into a tra
 Caveat: on hardware the 55 values come from one set of computational-basis shots, but the
 informative variation in each is small (raw-input Z values sit near -1), so the shot count needed
 has not been measured.
+
+### 5.3 Circuit feature map with a closed-form linear head (`zinc_linear_head_train`)
+
+Section 5.2 showed that the circuit's 55 Z and ZZ outputs hold the signal and that the
+single-readout models lose it. `zinc_linear_head_train` turns that into a trainer: amplitude-encode
+each molecule, run the circuit, read out all Z and ZZ expectation values (one computational-basis
+measurement gives all of them), and fit a ridge regression on the training molecules. There is no
+gradient training. The circuit is either the default initialisation or the weights stored in a
+`zinc_qnn_train` report (`--weights report.json`). The fitted head (standardisation plus ridge) and
+the circuit weights are stored in the report, so the model is reproducible and reloadable.
+
+```bash
+cargo run --release --bin zinc_linear_head_train                    # scratch copy
+cargo run --release --bin zinc_linear_head_train -- --depth 6 --record
+```
+
+Options: `--depth N` (default 4), `--weights report.json`, `--observables z|all` (default `all`),
+`--samples N`, `--eval-samples N`. Library code: `t1000::linear_head` (`z_features_into`,
+`CircuitFeatureMap`, `LinearHead`), `t1000::zinc_data` (CSV loader).
+
+Held-out results on 2,000 molecules, 10,000 training molecules, i3-1115G4 (relative MSE as in
+section 5; the first row is the saved run):
+
+| Model | Relative MSE | Mean r | R2 logP / QED / SAS |
+| :--- | :--- | :--- | :--- |
+| Circuit (depth 4, default init) + linear head, 55 observables | 0.4655 | 0.727 | 0.611 / 0.368 / 0.625 |
+| Same, circuit trained by `zinc_qnn_train` (calibrated head) | 0.4684 | 0.725 | 0.606 / 0.366 / 0.623 |
+| Same, 10 single-qubit Z observables only | 0.5845 | 0.631 | n/a |
+| Best gradient-trained single-readout model (section 5) | 0.7985 | 0.436 | 0.126 / 0.064 / 0.415 |
+| Linear ridge on the raw features | 0.4952 | n/a | 0.601 / 0.345 / 0.569 |
+| Quadratic ridge on the raw features | 0.386 | n/a | 0.634 / 0.561 / 0.646 |
+
+Circuit depth (default initialisation, 55 observables):
+
+| Depth | 1 | 2 | 3 | 4 | 6 | 8 |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| Relative MSE | 0.5520 | 0.5275 | 0.4818 | 0.4655 | 0.4562 | 0.4621 |
+| Mean r | 0.659 | 0.679 | 0.715 | 0.727 | 0.733 | 0.729 |
+
+Depth 6 is saved as a variant for this host. Findings:
+
+* **It beats linear ridge on the raw features** (0.4655 against 0.4952; logP MSE 0.843 against
+  0.864, QED 0.0123 against 0.0127, SAS 0.258 against 0.296) but not quadratic ridge (0.386).
+* **Cost.** Feature extraction takes 0.78 s for 10,000 molecules, the head fit 32 ms, and
+  inference is 78 us per molecule including the circuit, against about 16 s for 20 epochs of
+  gradient training. The result is bit-reproducible.
+* **Training the circuit does not help** (0.4684 against 0.4655), consistent with section 5.2.
+* **Depth saturates** around 4 to 6.
+* **Width matters:** 10 observables give 0.5845, 55 give 0.4655.
+
+**Numerical note.** The shared ridge solver forms its Gram matrix from raw second moments, which
+loses precision for near-constant columns, and circuit outputs are exactly that (a Z value near -1
+with a spread of 1e-4). At depths 2 and 3 this made the Cholesky factorisation fail for the smallest
+penalty. `LinearHead` therefore standardises the features before the ridge fit; the depths that
+worked before give identical results. The chosen penalty sits at the lower edge of the grid
+(1e-7) for the default circuit, so a smaller penalty might help slightly.
+
+**Hardware caveat, measured.** The 55 outputs vary across molecules with a median standard
+deviation of 2.2e-3 (25th percentile 1.5e-3, maximum 1.0e-2, minimum 6e-5). Shot noise falls as
+1/sqrt(shots), so matching the median spread takes roughly 2e5 shots per molecule (4e5 for the 25th
+percentile) and a comfortable signal-to-noise ratio several million. This is an estimate from the
+measured spreads, not a simulation of sampling. The small spread comes from raw features with one
+dominant column (molecular weight carries 99.1% of the squared norm); better-conditioned
+non-negative inputs may help, but standardised (signed) inputs hurt (section 5.2).
 

@@ -310,6 +310,10 @@ name = "zinc_feature_probe"
 path = "src/bin/measurements/zinc_feature_probe.rs"
 
 [[bin]]
+name = "zinc_linear_head_train"
+path = "src/bin/training/zinc_linear_head_train.rs"
+
+[[bin]]
 name = "zinc_topological_walk_screen"
 path = "src/bin/screening/zinc_topological_walk_screen.rs"
 

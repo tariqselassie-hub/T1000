@@ -14,6 +14,8 @@
 use serde::Serialize;
 use std::{env, fs};
 use t1000::baselines::{fit_ridge_validated, quadratic_features, regression_metrics};
+use t1000::linear_head::{z_features_into, Observables};
+use t1000::zinc_data::{self, ZincMolecule};
 use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState};
 
 const N_QUBITS: usize = 10;
@@ -28,11 +30,6 @@ type Matrix = Vec<Vec<f64>>;
 /// A named feature set: train rows, held-out rows, and whether to also fit a quadratic expansion.
 type FeatureSet = (String, Matrix, Matrix, bool);
 
-struct Molecule {
-    features: Vec<f64>,
-    targets: Vec<f64>,
-}
-
 #[derive(Serialize)]
 struct Row {
     feature_set: String,
@@ -43,23 +40,8 @@ struct Row {
     pearson_r: [f64; 3],
 }
 
-fn load(path: &str, max_rows: usize) -> Vec<Molecule> {
-    let text = fs::read_to_string(path).unwrap_or_else(|e| panic!("cannot read {path}: {e}"));
-    text.lines()
-        .skip(1)
-        .filter_map(|line| {
-            let p: Vec<&str> = line.split(',').map(str::trim).collect();
-            (p.len() >= 23).then(|| Molecule {
-                features: p[1..20].iter().map(|v| v.parse().unwrap_or(0.0)).collect(),
-                targets: p[20..23].iter().map(|v| v.parse().unwrap_or(0.0)).collect(),
-            })
-        })
-        .take(max_rows)
-        .collect()
-}
-
 /// Per-feature mean and standard deviation of the training set.
-fn moments(rows: &[Molecule]) -> (Vec<f64>, Vec<f64>) {
+fn moments(rows: &[ZincMolecule]) -> (Vec<f64>, Vec<f64>) {
     let n = rows.len() as f64;
     let k = rows[0].features.len();
     let mean: Vec<f64> = (0..k).map(|j| rows.iter().map(|m| m.features[j]).sum::<f64>() / n).collect();
@@ -74,24 +56,9 @@ fn moments(rows: &[Molecule]) -> (Vec<f64>, Vec<f64>) {
 
 /// `Z_q` (10 values) followed by `Z_q Z_r` for `q < r` (45 values) of a state.
 fn z_zz_features(state: &QuantumState) -> Vec<f64> {
-    let n = N_QUBITS;
-    let mut out = vec![0.0; n + n * (n - 1) / 2];
-    for i in 0..state.dim {
-        let p = state.real[i] * state.real[i] + state.imag[i] * state.imag[i];
-        if p == 0.0 {
-            continue;
-        }
-        let s: Vec<f64> = (0..n).map(|q| 1.0 - 2.0 * ((i >> q) & 1) as f64).collect();
-        let mut k = n;
-        for q in 0..n {
-            out[q] += p * s[q];
-            for r in q + 1..n {
-                out[k] += p * s[q] * s[r];
-                k += 1;
-            }
-        }
-    }
-    out
+    let mut row = vec![0.0; Observables::ZAndZz.count(N_QUBITS)];
+    z_features_into(state, Observables::ZAndZz, &mut row);
+    row
 }
 
 /// Fraction of the squared norm carried by the largest feature, averaged over molecules.
@@ -108,17 +75,17 @@ fn main() {
     let value = |flag: &str| args.iter().position(|a| a == flag).and_then(|i| args.get(i + 1));
     let n_train: usize = value("--samples").and_then(|v| v.parse().ok()).unwrap_or(10_000);
     let n_test: usize = value("--eval-samples").and_then(|v| v.parse().ok()).unwrap_or(2_000);
-    let train = load(TRAIN_CSV, n_train);
-    let test = load(TEST_CSV, n_test);
-    let train_y: Vec<Vec<f64>> = train.iter().map(|m| m.targets.clone()).collect();
-    let test_y: Vec<Vec<f64>> = test.iter().map(|m| m.targets.clone()).collect();
+    let train = zinc_data::load(TRAIN_CSV, n_train).expect("load training set");
+    let test = zinc_data::load(TEST_CSV, n_test).expect("load held-out set");
+    let train_y: Vec<Vec<f64>> = train.iter().map(|m| m.targets().to_vec()).collect();
+    let test_y: Vec<Vec<f64>> = test.iter().map(|m| m.targets().to_vec()).collect();
 
     let (mean, std) = moments(&train);
-    let standardize = |m: &Molecule| -> Vec<f64> {
+    let standardize = |m: &ZincMolecule| -> Vec<f64> {
         m.features.iter().enumerate().map(|(j, v)| (v - mean[j]) / std[j]).collect()
     };
-    let raw = |m: &Molecule| m.features.clone();
-    let std_inputs = |m: &Molecule| standardize(m);
+    let raw = |m: &ZincMolecule| m.features.clone();
+    let std_inputs = |m: &ZincMolecule| standardize(m);
 
     let encoding = DataEncodingLayer::new(N_QUBITS, EncodingKind::Amplitude);
     let ansatz = CircuitAnsatz::new(N_QUBITS, DEPTH).with_pi_layer(true);
@@ -131,7 +98,7 @@ fn main() {
     });
 
     println!("Preparing feature sets for {} training and {} held-out molecules...", train.len(), test.len());
-    let amplitudes = |input: &dyn Fn(&Molecule) -> Vec<f64>, rows: &[Molecule]| -> Vec<Vec<f64>> {
+    let amplitudes = |input: &dyn Fn(&ZincMolecule) -> Vec<f64>, rows: &[ZincMolecule]| -> Vec<Vec<f64>> {
         rows.iter()
             .map(|m| {
                 let state = encoding.encode(&input(m));
@@ -139,7 +106,7 @@ fn main() {
             })
             .collect()
     };
-    let circuit = |input: &dyn Fn(&Molecule) -> Vec<f64>, weights: Option<&[f64]>, rows: &[Molecule]| -> Vec<Vec<f64>> {
+    let circuit = |input: &dyn Fn(&ZincMolecule) -> Vec<f64>, weights: Option<&[f64]>, rows: &[ZincMolecule]| -> Vec<Vec<f64>> {
         let mut out = QuantumState::new(encoding.dim);
         rows.iter()
             .map(|m| {
