@@ -335,3 +335,25 @@ explains only 13%, 6% and 42% of the held-out variance of logP, QED and SAS, aga
 * Saved on this host: `results/hosts/i3-1115g4/tests/benchmarks/zinc_molecular/outputs/`
   `zinc_qnn_10k_results.json` (default head, 20 epochs) and the `.50641bcc.json` variant
   (calibrated head, lr 0.01, 20 epochs).
+
+### 5.1 Wider learned readout (`zinc_qnn_12qubit_hybrid`)
+
+The hybrid trainer uses 12 qubits and a learned classical readout over the circuit's observables
+(111 parameters: 72 quantum rotations and 39 readout weights). It does not close the gap that
+calibration leaves, and it is unstable. Fresh runs (no `--resume`), 10,000 training and 2,000
+held-out molecules, relative MSE as in section 5 (computed from the printed held-out MSE):
+
+| Run | MSE logP / QED / SAS | r logP / QED / SAS | Relative MSE |
+| :--- | :--- | :--- | :--- |
+| defaults, 20 epochs | 2.134 / 0.0199 / 0.669 | 0.28 / 0.21 / 0.48 | 0.994 |
+| defaults, 10 epochs | 2.192 / 0.0202 / 0.662 | -0.25 / 0.17 / 0.56 | 1.005 |
+| `--max-norm 100`, 10 epochs | 2.132 / 0.0177 / 0.724 | 0.43 / 0.33 / -0.56 | 0.983 |
+| `--lr 0.005`, 10 epochs | 2.169 / 0.0181 / 0.684 | -0.10 / 0.29 / 0.15 | 0.976 |
+| `--lr 0.002 --max-norm 100`, 10 epochs | 2.120 / 0.0187 / 0.655 | 0.47 / 0.23 / 0.60 | 0.965 |
+
+For comparison, the 10-qubit trainer with `--calibrated-head` reaches 0.7985 and quadratic ridge
+0.386. Two things stand out. With the default `--max-norm 6`, 39% to 65% of batches are clipped
+and the training loss stays flat (4.21 at epoch 1, 4.13 at epoch 20). And the correlation changes
+sign between settings (SAS r from +0.60 to -0.56), which points to a poorly conditioned
+optimization and not a capacity limit. A wider readout alone is therefore not the missing piece.
+
