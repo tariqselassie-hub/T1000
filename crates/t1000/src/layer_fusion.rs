@@ -24,12 +24,12 @@ use crate::compiler::Unitary2x2;
 use rayon::prelude::*;
 
 /// Qubits applied together on one in-cache block (`2^12` amplitudes = 64 KB of re + im).
-const LOW_BITS: usize = 12;
+pub(crate) const LOW_BITS: usize = 12;
 /// Chunk length (amplitudes) streamed per group member; a multiple of 4.
-const CHUNK_BITS: usize = 9;
-const CHUNK: usize = 1 << CHUNK_BITS;
+pub(crate) const CHUNK_BITS: usize = 9;
+pub(crate) const CHUNK: usize = 1 << CHUNK_BITS;
 /// Maximum high qubits fused into one pass (`2^4` chunks resident).
-const GROUP_QUBITS: usize = 4;
+pub(crate) const GROUP_QUBITS: usize = 4;
 /// Largest layer accepted (one gate per qubit).
 pub const MAX_LAYER_QUBITS: usize = 64;
 
@@ -141,7 +141,7 @@ fn apply_high_group(real: &mut [f64], imag: &mut [f64], group: &[LayerGate], par
 
 /// Inserts a zero bit at final bit position `p` of `x`.
 #[inline(always)]
-fn insert_zero_bit(x: usize, p: usize) -> usize {
+pub(crate) fn insert_zero_bit(x: usize, p: usize) -> usize {
     let low = x & ((1usize << p) - 1);
     ((x ^ low) << 1) | low
 }
@@ -172,13 +172,13 @@ fn apply_group(p: Planes, b: usize, qs: &[usize], ops: &[PairOp]) {
 
 /// A gate with its trigonometry resolved, ready for the pair kernels.
 #[derive(Clone, Copy)]
-enum PairOp {
+pub(crate) enum PairOp {
     /// Real rotation `[c -s; s c]`: half the arithmetic of the complex kernel.
     Rot { s: f64, c: f64 },
     Mat(Unitary2x2),
 }
 
-fn pair_op(gate: Gate1Q) -> PairOp {
+pub(crate) fn pair_op(gate: Gate1Q) -> PairOp {
     match gate {
         Gate1Q::U(u) => PairOp::Mat(u),
         Gate1Q::Ry(theta) => {
@@ -192,7 +192,7 @@ fn pair_op(gate: Gate1Q) -> PairOp {
 ///
 /// # Safety
 /// The four pointers must be valid for `CHUNK` reads and writes, and the ranges must not overlap.
-unsafe fn chunk_pair(r0: *mut f64, r1: *mut f64, i0: *mut f64, i1: *mut f64, op: &PairOp) {
+pub(crate) unsafe fn chunk_pair(r0: *mut f64, r1: *mut f64, i0: *mut f64, i1: *mut f64, op: &PairOp) {
     match op {
         PairOp::Mat(u) => u_pair(r0, r1, i0, i1, CHUNK, u),
         PairOp::Rot { s, c } => {

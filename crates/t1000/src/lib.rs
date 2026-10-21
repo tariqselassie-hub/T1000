@@ -15,6 +15,7 @@
 //!    concurrent Intel Arc OpenCL iGPU syndrome offload (`scripts/qec/heterogeneous_bridge_pipeline.py`).
 
 pub mod adjoint;
+pub mod adjoint_fusion;
 pub mod backend;
 pub mod ansatz;
 pub mod baselines;

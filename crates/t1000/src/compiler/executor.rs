@@ -225,24 +225,7 @@ pub fn apply_unitary2x2_op(real: &mut [f64], imag: &mut [f64], qubit: usize, u: 
 pub fn apply_cnot_op(real: &mut [f64], imag: &mut [f64], control: usize, target: usize) {
     let n_qubits = crate::simd::assert_statevector(real, imag);
     crate::simd::assert_qubit_pair(control, target, n_qubits);
-    let dim = real.len();
-    let ctrl_mask = 1 << control;
-    let target_mask = 1 << target;
-
-    for i in 0..dim {
-        if (i & ctrl_mask) != 0 && (i & target_mask) == 0 {
-            let partner = i | target_mask;
-            let r0 = real[i];
-            let i0 = imag[i];
-            let r1 = real[partner];
-            let i1 = imag[partner];
-
-            real[i] = r1;
-            imag[i] = i1;
-            real[partner] = r0;
-            imag[partner] = i0;
-        }
-    }
+    super::permute::cnot(real, imag, control, target);
 }
 
 /// Applies Hadamard gate: H = (1/√2) [1, 1; 1, -1]
@@ -273,48 +256,14 @@ pub fn apply_hadamard_op(real: &mut [f64], imag: &mut [f64], qubit: usize) {
 pub fn apply_anticnot_op(real: &mut [f64], imag: &mut [f64], control: usize, target: usize) {
     let n_qubits = crate::simd::assert_statevector(real, imag);
     crate::simd::assert_qubit_pair(control, target, n_qubits);
-    let dim = real.len();
-    let ctrl_mask = 1 << control;
-    let target_mask = 1 << target;
-
-    for i in 0..dim {
-        if (i & ctrl_mask) == 0 && (i & target_mask) == 0 {
-            let partner = i | target_mask;
-            let r0 = real[i];
-            let i0 = imag[i];
-            let r1 = real[partner];
-            let i1 = imag[partner];
-
-            real[i] = r1;
-            imag[i] = i1;
-            real[partner] = r0;
-            imag[partner] = i0;
-        }
-    }
+    super::permute::anticnot(real, imag, control, target);
 }
 
 /// Applies two-qubit SWAP gate.
 pub fn apply_swap_op(real: &mut [f64], imag: &mut [f64], q1: usize, q2: usize) {
     let n_qubits = crate::simd::assert_statevector(real, imag);
     crate::simd::assert_qubit_pair(q1, q2, n_qubits);
-    let dim = real.len();
-    let m1 = 1 << q1;
-    let m2 = 1 << q2;
-
-    for i in 0..dim {
-        if (i & m1) != 0 && (i & m2) == 0 {
-            let partner = (i ^ m1) | m2;
-            let r0 = real[i];
-            let i0 = imag[i];
-            let r1 = real[partner];
-            let i1 = imag[partner];
-
-            real[i] = r1;
-            imag[i] = i1;
-            real[partner] = r0;
-            imag[partner] = i0;
-        }
-    }
+    super::permute::swap(real, imag, q1, q2);
 }
 
 /// Applies two-qubit Controlled-Phase gate: multiplies state |11> by exp(i theta).
@@ -327,22 +276,7 @@ pub fn apply_controlled_phase_op(
 ) {
     let n_qubits = crate::simd::assert_statevector(real, imag);
     crate::simd::assert_qubit_pair(control, target, n_qubits);
-    let dim = real.len();
-    let ctrl_mask = 1 << control;
-    let target_mask = 1 << target;
-    let both_mask = ctrl_mask | target_mask;
-
-    let cos_t = theta.cos();
-    let sin_t = theta.sin();
-
-    for i in 0..dim {
-        if (i & both_mask) == both_mask {
-            let r = real[i];
-            let im = imag[i];
-            real[i] = r * cos_t - im * sin_t;
-            imag[i] = r * sin_t + im * cos_t;
-        }
-    }
+    super::permute::controlled_phase(real, imag, control, target, theta);
 }
 
 #[cfg(test)]
