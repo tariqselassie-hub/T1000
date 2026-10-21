@@ -256,6 +256,14 @@
 
 ## Quick Start for Developers
 
+> **Where results go.** Benchmark and training binaries write to a git-ignored scratch
+> directory (`target/bench-scratch/<host>/`) by default, so a run never overwrites a saved
+> result. Add `--record` (or set `T1000_RECORD=1`) to save: the reference machine writes the
+> canonical `results/` path, any other machine writes `results/hosts/<host>/`. Trainers keep a
+> recorded run only if its held-out metric improves. See
+> [docs/host_tuning_and_result_recording.md](docs/host_tuning_and_result_recording.md) for host
+> tuning, the fused execution paths, measured numbers and how to onboard a new machine.
+
 Clone and build the entire workspace with standard Cargo tools:
 
 ```bash
