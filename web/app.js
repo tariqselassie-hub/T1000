@@ -43,6 +43,11 @@ class QuantumMolecularDashboard {
         this.activeSelectedGate = null; // { q, l, gate }
         this.circuit = this.createEmptyCircuit(this.qubitCount, this.layerCount);
 
+        this.blochScenes = [];
+        this.blochSpheresInitialized = false;
+        this.blochDecoherence = 0.0;
+        this.lastBlochVectors = null;
+
         this.initPageNavigation();
         this.initThree();
         this.initEventListeners();
@@ -52,6 +57,7 @@ class QuantumMolecularDashboard {
         this.checkHardwareStatus();
         this.loadTelemetryMatrix();
         this.loadPlaquetteTelemetry();
+        this.initBlochControls();
     }
 
     // -------------------------------------------------------------------------
@@ -88,9 +94,22 @@ class QuantumMolecularDashboard {
                     // Deck 4: 36Q Virtual Cut-Bridge & Plaquette Matrix
                     this.loadPlaquetteTelemetry();
                     this.loadTelemetryMatrix();
+                } else if (targetPageId === 'page-deck-5') {
+                    // Deck 5: 3D Multi-Qubit Bloch Sphere Array & Hopf S4
+                    this.initBlochSphereDeck();
+                    this.executeCircuit();
                 }
             });
         });
+
+        // Quick Jump Button from Composer to Deck 5
+        const btnJumpBloch = document.getElementById('btn-jump-bloch');
+        if (btnJumpBloch) {
+            btnJumpBloch.addEventListener('click', () => {
+                const deck5Tab = document.querySelector('.page-tab[data-page="page-deck-5"]');
+                if (deck5Tab) deck5Tab.click();
+            });
+        }
 
         // Sub-Tab Navigation inside any sub-views (if present)
         const subTabs = document.querySelectorAll('.sub-tab');
@@ -778,10 +797,19 @@ class QuantumMolecularDashboard {
     loadSMILES(smiles, meta = {}) {
         this.currentMolecule = { smiles, meta };
 
+        const safeSet = (id, text) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = text;
+        };
+        const safeVal = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.value = val;
+        };
+
         if (meta.is_qm9_molecule) {
-            document.getElementById('input-smiles').value = meta.smiles;
-            document.getElementById('display-smiles').textContent = `${meta.formula} (#${meta.id}, B3LYP DFT)`;
-            document.getElementById('badge-id').textContent = `QM9 #${meta.id}`;
+            safeVal('input-smiles', meta.smiles);
+            safeSet('display-smiles', `${meta.formula} (#${meta.id}, B3LYP DFT)`);
+            safeSet('badge-id', `QM9 #${meta.id}`);
 
             const topoBadge = document.getElementById('topology-engine-badge');
             if (topoBadge) {
@@ -791,14 +819,14 @@ class QuantumMolecularDashboard {
 
             this.buildMolecularMesh({ atoms: meta.atoms, bonds: meta.bonds, is_qm9: true });
 
-            document.getElementById('title-m1').textContent = 'Ground State U₀';
-            document.getElementById('val-mw').textContent = `${meta.u0_hartree.toFixed(3)} Ha`;
-            document.getElementById('title-m2').textContent = 'HOMO-LUMO Gap';
-            document.getElementById('val-logp').textContent = `${meta.gap_ev.toFixed(2)} eV (${meta.gap_hartree.toFixed(3)} Ha)`;
-            document.getElementById('title-m3').textContent = 'Dipole Moment μ';
-            document.getElementById('val-tpsa').textContent = `${meta.dipole_debye.toFixed(2)} Debye`;
-            document.getElementById('title-m4').textContent = 'Polarizability α';
-            document.getElementById('val-act').textContent = `${meta.polarizability_bohr3.toFixed(2)} a₀³`;
+            safeSet('title-m1', 'Ground State U₀');
+            safeSet('val-mw', `${meta.u0_hartree.toFixed(3)} Ha`);
+            safeSet('title-m2', 'HOMO-LUMO Gap');
+            safeSet('val-logp', `${meta.gap_ev.toFixed(2)} eV (${meta.gap_hartree.toFixed(3)} Ha)`);
+            safeSet('title-m3', 'Dipole Moment μ');
+            safeSet('val-tpsa', `${meta.dipole_debye.toFixed(2)} Debye`);
+            safeSet('title-m4', 'Polarizability α');
+            safeSet('val-act', `${meta.polarizability_bohr3.toFixed(2)} a₀³`);
 
             this.renderQm9Card(meta);
 
@@ -811,9 +839,9 @@ class QuantumMolecularDashboard {
         }
 
         if (meta.is_period_molecule) {
-            document.getElementById('input-smiles').value = meta.smiles;
-            document.getElementById('display-smiles').textContent = `${meta.name} (${meta.formula}, ${meta.qubits} Qubits)`;
-            document.getElementById('badge-id').textContent = `${meta.qubits}Q / ${meta.electrons}e⁻`;
+            safeVal('input-smiles', meta.smiles);
+            safeSet('display-smiles', `${meta.name} (${meta.formula}, ${meta.qubits} Qubits)`);
+            safeSet('badge-id', `${meta.qubits}Q / ${meta.electrons}e⁻`);
 
             const topoBadge = document.getElementById('topology-engine-badge');
             if (topoBadge) {
@@ -828,14 +856,14 @@ class QuantumMolecularDashboard {
                 this.buildMolecularMesh(parsed);
             }
 
-            document.getElementById('title-m1').textContent = 'Ground State E₀';
-            document.getElementById('val-mw').textContent = `${meta.energy_hartree.toFixed(3)} Ha`;
-            document.getElementById('title-m2').textContent = 'Symmetry / R_e';
-            document.getElementById('val-logp').textContent = `${meta.symmetry_group} (${meta.equilibrium_distance_angstrom.toFixed(2)} Å)`;
-            document.getElementById('title-m3').textContent = 'Correlation ΔE';
-            document.getElementById('val-tpsa').textContent = `${meta.correlation_energy_ev.toFixed(2)} eV`;
-            document.getElementById('title-m4').textContent = 'Orbital Entropy';
-            document.getElementById('val-act').textContent = `${meta.total_orbital_entropy.toFixed(3)} nats`;
+            safeSet('title-m1', 'Ground State E₀');
+            safeSet('val-mw', `${meta.energy_hartree.toFixed(3)} Ha`);
+            safeSet('title-m2', 'Symmetry / R_e');
+            safeSet('val-logp', `${meta.symmetry_group} (${meta.equilibrium_distance_angstrom.toFixed(2)} Å)`);
+            safeSet('title-m3', 'Correlation ΔE');
+            safeSet('val-tpsa', `${meta.correlation_energy_ev.toFixed(2)} eV`);
+            safeSet('title-m4', 'Orbital Entropy');
+            safeSet('val-act', `${meta.total_orbital_entropy.toFixed(3)} nats`);
 
             this.renderPeriodMoleculeCard(meta);
             this.renderQubitBars(meta.z_expectations, true, meta.spin_orbitals);
@@ -843,9 +871,9 @@ class QuantumMolecularDashboard {
         }
 
         if (meta.is_atom) {
-            document.getElementById('input-smiles').value = smiles;
-            document.getElementById('display-smiles').textContent = `${meta.name} (${meta.symbol}, Z=${meta.id})`;
-            document.getElementById('badge-id').textContent = `Z=${meta.id}`;
+            safeVal('input-smiles', smiles);
+            safeSet('display-smiles', `${meta.name} (${meta.symbol}, Z=${meta.id})`);
+            safeSet('badge-id', `Z=${meta.id}`);
 
             const topoBadge = document.getElementById('topology-engine-badge');
             if (topoBadge) {
@@ -854,22 +882,22 @@ class QuantumMolecularDashboard {
             }
 
             this.buildAtomicMesh(meta);
-            document.getElementById('title-m1').textContent = 'Ground State E₀';
-            document.getElementById('val-mw').textContent = `${meta.energy_hartree.toFixed(3)} Ha`;
-            document.getElementById('title-m2').textContent = 'Term Symbol';
-            document.getElementById('val-logp').textContent = meta.term_symbol;
-            document.getElementById('title-m3').textContent = '1st Ionization';
-            document.getElementById('val-tpsa').textContent = `${meta.ionization_ev.toFixed(2)} eV`;
-            document.getElementById('title-m4').textContent = 'Electronegativity';
-            document.getElementById('val-act').textContent = meta.electronegativity > 0 ? meta.electronegativity.toFixed(2) : '0.00 (Inert)';
+            safeSet('title-m1', 'Ground State E₀');
+            safeSet('val-mw', `${meta.energy_hartree.toFixed(3)} Ha`);
+            safeSet('title-m2', 'Term Symbol');
+            safeSet('val-logp', meta.term_symbol);
+            safeSet('title-m3', '1st Ionization');
+            safeSet('val-tpsa', `${meta.ionization_ev.toFixed(2)} eV`);
+            safeSet('title-m4', 'Electronegativity');
+            safeSet('val-act', meta.electronegativity > 0 ? meta.electronegativity.toFixed(2) : '0.00 (Inert)');
             this.renderAtomicMatrixCard(meta);
             this.renderQubitBars(meta.z_expectations || [0,0,0,0,0,0,0,0,0,0], true);
             return;
         }
 
-        document.getElementById('input-smiles').value = smiles;
-        document.getElementById('display-smiles').textContent = smiles;
-        document.getElementById('badge-id').textContent = meta.id ? `#${meta.id}` : '#CUSTOM';
+        safeVal('input-smiles', smiles);
+        safeSet('display-smiles', smiles);
+        safeSet('badge-id', meta.id ? `#${meta.id}` : '#CUSTOM');
 
         const topoBadge = document.getElementById('topology-engine-badge');
         if (topoBadge) {
@@ -881,24 +909,24 @@ class QuantumMolecularDashboard {
         this.buildMolecularMesh(parsed);
 
         if (meta.qcd_anomaly !== undefined || meta.total_anomaly_score !== undefined) {
-            document.getElementById('title-m1').textContent = 'True LogP';
-            document.getElementById('val-mw').textContent = (meta.true_logp || 0).toFixed(2);
-            document.getElementById('title-m2').textContent = 'Pred LogP (VQC)';
-            document.getElementById('val-logp').textContent = (meta.pred_logp || 0).toFixed(2);
-            document.getElementById('title-m3').textContent = 'QED Drug Score';
-            document.getElementById('val-tpsa').textContent = meta.true_qed ? meta.true_qed.toFixed(3) : '--';
-            document.getElementById('title-m4').textContent = 'Anomaly Score';
-            document.getElementById('val-act').textContent = (meta.total_anomaly_score || meta.qcd_anomaly).toFixed(2);
+            safeSet('title-m1', 'True LogP');
+            safeSet('val-mw', (meta.true_logp || 0).toFixed(2));
+            safeSet('title-m2', 'Pred LogP (VQC)');
+            safeSet('val-logp', (meta.pred_logp || 0).toFixed(2));
+            safeSet('title-m3', 'QED Drug Score');
+            safeSet('val-tpsa', meta.true_qed ? meta.true_qed.toFixed(3) : '--');
+            safeSet('title-m4', 'Anomaly Score');
+            safeSet('val-act', (meta.total_anomaly_score || meta.qcd_anomaly).toFixed(2));
             this.renderZincAnomalyCard(meta);
         } else if (meta.pareto_score !== undefined) {
-            document.getElementById('title-m1').textContent = 'True LogP';
-            document.getElementById('val-mw').textContent = (meta.true_logp || 0).toFixed(2);
-            document.getElementById('title-m2').textContent = 'QED Drug Score';
-            document.getElementById('val-logp').textContent = meta.true_qed ? meta.true_qed.toFixed(3) : '--';
-            document.getElementById('title-m3').textContent = 'SAS Feasibility';
-            document.getElementById('val-tpsa').textContent = meta.true_sas ? meta.true_sas.toFixed(2) : '--';
-            document.getElementById('title-m4').textContent = 'Pareto Rank';
-            document.getElementById('val-act').textContent = `#${meta.id}`;
+            safeSet('title-m1', 'True LogP');
+            safeSet('val-mw', (meta.true_logp || 0).toFixed(2));
+            safeSet('title-m2', 'QED Drug Score');
+            safeSet('val-logp', meta.true_qed ? meta.true_qed.toFixed(3) : '--');
+            safeSet('title-m3', 'SAS Feasibility');
+            safeSet('val-tpsa', meta.true_sas ? meta.true_sas.toFixed(2) : '--');
+            safeSet('title-m4', 'Pareto Rank');
+            safeSet('val-act', `#${meta.id}`);
             this.renderZincParetoCard(meta);
         } else {
             const molwt = meta.molwt || parsed.estimatedMW;
@@ -906,14 +934,14 @@ class QuantumMolecularDashboard {
             const tpsa = meta.tpsa !== undefined ? meta.tpsa : parsed.estimatedTPSA;
             const bioactivity = meta.bioactivity !== undefined ? meta.bioactivity : 5.0;
 
-            document.getElementById('title-m1').textContent = 'Mol Weight';
-            document.getElementById('val-mw').textContent = `${molwt.toFixed(2)} g/mol`;
-            document.getElementById('title-m2').textContent = 'LogP (Lipophilicity)';
-            document.getElementById('val-logp').textContent = logp.toFixed(2);
-            document.getElementById('title-m3').textContent = 'TPSA Polar Surface';
-            document.getElementById('val-tpsa').textContent = `${tpsa.toFixed(1)} Å²`;
-            document.getElementById('title-m4').textContent = 'Bioactivity Score';
-            document.getElementById('val-act').textContent = bioactivity.toFixed(2);
+            safeSet('title-m1', 'Mol Weight');
+            safeSet('val-mw', `${molwt.toFixed(2)} g/mol`);
+            safeSet('title-m2', 'LogP (Lipophilicity)');
+            safeSet('val-logp', logp.toFixed(2));
+            safeSet('title-m3', 'TPSA Polar Surface');
+            safeSet('val-tpsa', `${tpsa.toFixed(1)} Å²`);
+            safeSet('title-m4', 'Bioactivity Score');
+            safeSet('val-act', bioactivity.toFixed(2));
 
             if (this.currentExperiment && this.currentExperiment.lead_molecule) {
                 this.renderAttractorComparison(this.currentExperiment);
@@ -2295,6 +2323,79 @@ class QuantumMolecularDashboard {
                         }
                     }
                     totalGates++;
+                } else if (g.type === 'RX') {
+                    const c = Math.cos(theta / 2.0);
+                    const s = Math.sin(theta / 2.0);
+                    for (let i = 0; i < dim; i += step) {
+                        for (let j = 0; j < stride; j++) {
+                            const idx0 = i + j;
+                            const idx1 = idx0 + stride;
+                            const r0 = real[idx0], r1 = real[idx1];
+                            const i0 = imag[idx0], i1 = imag[idx1];
+                            real[idx0] = c * r0 + s * i1;
+                            imag[idx0] = c * i0 - s * r1;
+                            real[idx1] = c * r1 + s * i0;
+                            imag[idx1] = c * i1 - s * r0;
+                        }
+                    }
+                    totalGates++;
+                } else if (g.type === 'RZ') {
+                    const c = Math.cos(theta / 2.0);
+                    const s = Math.sin(theta / 2.0);
+                    for (let i = 0; i < dim; i += step) {
+                        for (let j = 0; j < stride; j++) {
+                            const idx0 = i + j;
+                            const idx1 = idx0 + stride;
+                            const r0 = real[idx0], r1 = real[idx1];
+                            const i0 = imag[idx0], i1 = imag[idx1];
+                            real[idx0] = c * r0 + s * i0;
+                            imag[idx0] = c * i0 - s * r0;
+                            real[idx1] = c * r1 - s * i1;
+                            imag[idx1] = c * i1 + s * r1;
+                        }
+                    }
+                    totalGates++;
+                } else if (g.type === 'X') {
+                    for (let i = 0; i < dim; i += step) {
+                        for (let j = 0; j < stride; j++) {
+                            const idx0 = i + j;
+                            const idx1 = idx0 + stride;
+                            const r0 = real[idx0], i0 = imag[idx0];
+                            real[idx0] = real[idx1]; imag[idx0] = imag[idx1];
+                            real[idx1] = r0; imag[idx1] = i0;
+                        }
+                    }
+                    totalGates++;
+                } else if (g.type === 'Z') {
+                    for (let i = 0; i < dim; i += step) {
+                        for (let j = 0; j < stride; j++) {
+                            const idx1 = i + j + stride;
+                            real[idx1] = -real[idx1];
+                            imag[idx1] = -imag[idx1];
+                        }
+                    }
+                    totalGates++;
+                } else if (g.type === 'S') {
+                    for (let i = 0; i < dim; i += step) {
+                        for (let j = 0; j < stride; j++) {
+                            const idx1 = i + j + stride;
+                            const r1 = real[idx1];
+                            real[idx1] = -imag[idx1];
+                            imag[idx1] = r1;
+                        }
+                    }
+                    totalGates++;
+                } else if (g.type === 'T') {
+                    const inv = 1.0 / Math.SQRT2;
+                    for (let i = 0; i < dim; i += step) {
+                        for (let j = 0; j < stride; j++) {
+                            const idx1 = i + j + stride;
+                            const r1 = real[idx1], i1 = imag[idx1];
+                            real[idx1] = inv * (r1 - i1);
+                            imag[idx1] = inv * (r1 + i1);
+                        }
+                    }
+                    totalGates++;
                 } else if (g.type === 'CZ' && g.control !== undefined) {
                     const mask = (1 << q) | (1 << g.control);
                     for (let i = 0; i < dim; i++) {
@@ -2320,21 +2421,49 @@ class QuantumMolecularDashboard {
             });
         });
 
-        // Compute probabilities and Pauli-Z
+        // Cache local statevector for Hopf S4 projection
+        this.lastLocalStateReal = real;
+        this.lastLocalStateImag = imag;
+
+        // Compute probabilities, Pauli-Z, and 3D Bloch Vectors (rx, ry, rz)
         const probs = new Float64Array(dim);
         for (let i = 0; i < dim; i++) {
             probs[i] = real[i] * real[i] + imag[i] * imag[i];
         }
 
         const pauli_z = [];
+        const bloch_vectors = [];
         for (let q = 0; q < n_qubits; q++) {
-            const mask = 1 << q;
-            let p0 = 0.0, p1 = 0.0;
-            for (let i = 0; i < dim; i++) {
-                if ((i & mask) === 0) p0 += probs[i];
-                else p1 += probs[i];
+            const stride = 1 << q;
+            const step = stride << 1;
+            let rx = 0.0, ry = 0.0, rz = 0.0;
+            for (let base = 0; base < dim; base += step) {
+                for (let offset = 0; offset < stride; offset++) {
+                    const i0 = base + offset;
+                    const i1 = i0 + stride;
+                    const r0 = real[i0], i0_im = imag[i0];
+                    const r1 = real[i1], i1_im = imag[i1];
+                    rz += (r0 * r0 + i0_im * i0_im) - (r1 * r1 + i1_im * i1_im);
+                    rx += 2.0 * (r0 * r1 + i0_im * i1_im);
+                    ry += 2.0 * (r0 * i1_im - i0_im * r1);
+                }
             }
-            pauli_z.push(round(p0 - p1, 4));
+            pauli_z.push(round(rz, 4));
+            const r2 = Math.min(1.0, rx * rx + ry * ry + rz * rz);
+            const radius = Math.sqrt(r2);
+            const purity = 0.5 * (1.0 + r2);
+            const theta = Math.acos(Math.max(-1.0, Math.min(1.0, rz / Math.max(radius, 1e-6))));
+            const phi = Math.atan2(ry, rx);
+            bloch_vectors.push({
+                qubit: q,
+                rx: Math.round(rx * 10000) / 10000,
+                ry: Math.round(ry * 10000) / 10000,
+                rz: Math.round(rz * 10000) / 10000,
+                radius: Math.round(radius * 10000) / 10000,
+                purity: Math.round(purity * 10000) / 10000,
+                theta_deg: Math.round((theta * 180 / Math.PI) * 100) / 100,
+                phi_deg: Math.round((phi * 180 / Math.PI) * 100) / 100,
+            });
         }
 
         const topStates = [];
@@ -2367,6 +2496,7 @@ class QuantumMolecularDashboard {
             shannon_entropy: 5.64,
             attestation_hash: `0x1000_QPU_${(cycles & 0xFFFF).toString(16).toUpperCase()}_EE`,
             pauli_z: pauli_z,
+            bloch_vectors: bloch_vectors,
             top_states: topStates
         };
     }
@@ -2464,6 +2594,11 @@ class QuantumMolecularDashboard {
                 `;
                 basisList.appendChild(row);
             });
+        }
+
+        if (data.bloch_vectors) {
+            this.lastBlochVectors = data.bloch_vectors;
+            this.updateBlochTelemetry(data.bloch_vectors);
         }
     }
 
@@ -2815,6 +2950,401 @@ class QuantumMolecularDashboard {
         updateBar('bar-val-stabilizer', 'bar-fill-stabilizer', p.fid_dual_stabilizer || p.fid_teleport_pauli, p.keep_dual_stabilizer || (p.keep_teleport_pauli * 0.5));
         updateBar('bar-val-bridge', 'bar-fill-bridge', p.fid_symmetric_bridge, p.keep_symmetric_bridge);
         updateBar('bar-val-teleport', 'bar-fill-teleport', p.fid_teleport_pauli, p.keep_teleport_pauli);
+    }
+
+    // -------------------------------------------------------------------------
+    // DECK 5: 3D REAL-TIME MULTI-QUBIT BLOCH SPHERE ARRAY & HOPF S4 CONTROLLER
+    // -------------------------------------------------------------------------
+    initBlochControls() {
+        // Direct Pulse Injector buttons
+        document.querySelectorAll('.bloch-gate-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const gateType = btn.dataset.gate;
+                const qubitSelect = document.getElementById('bloch-qubit-select');
+                const q = qubitSelect ? parseInt(qubitSelect.value) : 0;
+
+                if (gateType === 'RESET') {
+                    // Clear gates for target qubit
+                    this.circuit.layers.forEach(layer => {
+                        layer.gates = (layer.gates || []).filter(g => g.target !== q && g.control !== q);
+                    });
+                } else {
+                    // Find first layer with an empty slot for target qubit
+                    let targetLayer = this.circuit.layers.find(layer => {
+                        return !(layer.gates || []).some(g => g.target === q || g.control === q);
+                    });
+                    if (!targetLayer) {
+                        targetLayer = this.circuit.layers[0];
+                        targetLayer.gates = (targetLayer.gates || []).filter(g => g.target !== q && g.control !== q);
+                    }
+
+                    if (gateType === 'H') {
+                        targetLayer.gates.push({ target: q, type: 'H' });
+                    } else if (gateType === 'X') {
+                        targetLayer.gates.push({ target: q, type: 'X' });
+                    } else if (gateType === 'Y') {
+                        targetLayer.gates.push({ target: q, type: 'RY', theta: Math.PI });
+                    } else if (gateType === 'Z') {
+                        targetLayer.gates.push({ target: q, type: 'Z' });
+                    } else if (gateType === 'RX_PI4') {
+                        targetLayer.gates.push({ target: q, type: 'RX', theta: Math.PI / 4.0 });
+                    } else if (gateType === 'RY_PI4') {
+                        targetLayer.gates.push({ target: q, type: 'RY', theta: Math.PI / 4.0 });
+                    } else if (gateType === 'RZ_PI4') {
+                        targetLayer.gates.push({ target: q, type: 'RZ', theta: Math.PI / 4.0 });
+                    } else if (gateType === 'S') {
+                        targetLayer.gates.push({ target: q, type: 'S' });
+                    } else if (gateType === 'T') {
+                        targetLayer.gates.push({ target: q, type: 'T' });
+                    }
+                }
+
+                this.renderCircuitGrid();
+                this.executeCircuit();
+            });
+        });
+
+        // Decoherence Chamber Slider
+        const decoSlider = document.getElementById('bloch-decoherence-slider');
+        const decoVal = document.getElementById('bloch-decoherence-val');
+        if (decoSlider) {
+            decoSlider.addEventListener('input', (e) => {
+                this.blochDecoherence = parseFloat(e.target.value);
+                if (decoVal) decoVal.textContent = this.blochDecoherence.toFixed(2);
+                if (this.lastBlochVectors) {
+                    this.updateBlochTelemetry(this.lastBlochVectors);
+                }
+            });
+        }
+
+        // Second Hopf Fibration Bipartite State Presets
+        const btnBell = document.getElementById('btn-hopf-bell-prep');
+        if (btnBell) {
+            btnBell.addEventListener('click', () => {
+                const qa = parseInt(document.getElementById('hopf-qa-select').value);
+                const qb = parseInt(document.getElementById('hopf-qb-select').value);
+                if (qa === qb) return;
+
+                // Clear and synthesize Bell state |Phi+> = (|00> + |11>) / sqrt(2)
+                this.circuit = this.createEmptyCircuit(this.qubitCount, this.layerCount);
+                this.circuit.layers[0].gates = [{ target: qa, type: 'H' }];
+                this.circuit.layers[1].gates = [{ target: qb, control: qa, type: 'CX' }];
+                this.renderCircuitGrid();
+                this.executeCircuit();
+            });
+        }
+
+        const btnSep = document.getElementById('btn-hopf-sep-prep');
+        if (btnSep) {
+            btnSep.addEventListener('click', () => {
+                // Clear and prepare pure product ground state |00>
+                this.circuit = this.createEmptyCircuit(this.qubitCount, this.layerCount);
+                this.renderCircuitGrid();
+                this.executeCircuit();
+            });
+        }
+
+        // Qubit Pair Change Listeners
+        const qaSel = document.getElementById('hopf-qa-select');
+        const qbSel = document.getElementById('hopf-qb-select');
+        if (qaSel) qaSel.addEventListener('change', () => this.updateHopfS4Telemetry());
+        if (qbSel) qbSel.addEventListener('change', () => this.updateHopfS4Telemetry());
+    }
+
+    initBlochSphereDeck() {
+        if (this.blochSpheresInitialized) return;
+        const container = document.getElementById('bloch-array-container');
+        if (!container) return;
+
+        container.innerHTML = '';
+        this.blochScenes = [];
+
+        // Build 12 3D Bloch Sphere Card Viewports
+        const totalSpheres = 12;
+        for (let q = 0; q < totalSpheres; q++) {
+            const card = document.createElement('div');
+            card.className = 'bloch-card';
+            card.id = `bloch-card-q${q}`;
+            card.innerHTML = `
+                <div class="bloch-card-header">
+                    <span class="bloch-card-title">QUBIT q${q}</span>
+                    <span class="bloch-card-angles" id="bloch-angles-q${q}">θ: 0.0° | φ: 0.0°</span>
+                </div>
+                <div class="bloch-canvas-wrap" id="bloch-canvas-wrap-q${q}"></div>
+                <div class="bloch-card-telemetry">
+                    <div class="bloch-telemetry-row">
+                        <span class="bloch-telemetry-label">⟨X_q⟩, ⟨Y_q⟩, ⟨Z_q⟩</span>
+                        <span class="bloch-telemetry-val" id="bloch-coords-q${q}">0.00, 0.00, +1.00</span>
+                    </div>
+                    <div class="bloch-telemetry-row">
+                        <span class="bloch-telemetry-label">Radius ||r||</span>
+                        <span class="bloch-telemetry-val green" id="bloch-radius-q${q}">1.0000</span>
+                    </div>
+                    <div class="bloch-telemetry-row">
+                        <span class="bloch-telemetry-label">Purity γ_q</span>
+                        <span class="bloch-telemetry-val gold" id="bloch-purity-q${q}">1.0000</span>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+
+            const wrap = document.getElementById(`bloch-canvas-wrap-q${q}`);
+            const width = wrap.clientWidth || 250;
+            const height = 180;
+
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 50);
+            camera.position.set(2.2, 1.8, 2.5);
+            camera.lookAt(0, 0, 0);
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(width, height);
+            renderer.setClearColor(0x080c14, 1);
+            wrap.appendChild(renderer.domElement);
+
+            const controls = (typeof THREE.OrbitControls === 'function')
+                ? new THREE.OrbitControls(camera, renderer.domElement)
+                : null;
+            if (controls) {
+                controls.enableDamping = true;
+                controls.dampingFactor = 0.08;
+                controls.enableZoom = false;
+                controls.rotateSpeed = 0.8;
+            }
+
+            // 1. Transparent Wireframe Sphere Shell
+            const sphereGeo = new THREE.SphereGeometry(1.0, 18, 12);
+            const sphereMat = new THREE.MeshBasicMaterial({
+                wireframe: true,
+                color: 0x1e293b,
+                transparent: true,
+                opacity: 0.85
+            });
+            const sphereMesh = new THREE.Mesh(sphereGeo, sphereMat);
+            scene.add(sphereMesh);
+
+            // 2. Equatorial Circle in XZ plane (Y = 0 in Three.js coordinate system)
+            const eqPoints = [];
+            for (let a = 0; a <= Math.PI * 2 + 0.05; a += 0.1) {
+                eqPoints.push(new THREE.Vector3(Math.cos(a), 0, Math.sin(a)));
+            }
+            const eqGeo = new THREE.BufferGeometry().setFromPoints(eqPoints);
+            const eqLine = new THREE.Line(eqGeo, new THREE.LineBasicMaterial({ color: 0x334155, linewidth: 1.5 }));
+            scene.add(eqLine);
+
+            // 3. Coordinate Axes
+            // Z Axis (Vertical: |0> at +Y, |1> at -Y)
+            const zLineGeo = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(0, -1.25, 0),
+                new THREE.Vector3(0, 1.25, 0)
+            ]);
+            scene.add(new THREE.Line(zLineGeo, new THREE.LineBasicMaterial({ color: 0xf8fafc })));
+
+            // X Axis (+X Green)
+            const xLineGeo = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(-1.25, 0, 0),
+                new THREE.Vector3(1.25, 0, 0)
+            ]);
+            scene.add(new THREE.Line(xLineGeo, new THREE.LineBasicMaterial({ color: 0x00e676 })));
+
+            // Y Axis (+Z Gold in Three.js representation)
+            const yLineGeo = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(0, 0, -1.25),
+                new THREE.Vector3(0, 0, 1.25)
+            ]);
+            scene.add(new THREE.Line(yLineGeo, new THREE.LineBasicMaterial({ color: 0xffb300 })));
+
+            // 4. State Vector Arrow (Default: Ground State |0> along +Y)
+            const dir = new THREE.Vector3(0, 1, 0);
+            const arrow = new THREE.ArrowHelper(dir, new THREE.Vector3(0, 0, 0), 1.0, 0x00e676, 0.22, 0.12);
+            scene.add(arrow);
+
+            // Glowing Tip Mesh at Arrow Head
+            const tipMesh = new THREE.Mesh(
+                new THREE.SphereGeometry(0.045, 8, 8),
+                new THREE.MeshBasicMaterial({ color: 0x00ff88 })
+            );
+            tipMesh.position.set(0, 1.0, 0);
+            scene.add(tipMesh);
+
+            // 5. Mixed-State Damping Shell (Visualizes radial contraction r < 1.0)
+            const mixedMesh = new THREE.Mesh(
+                new THREE.SphereGeometry(1.0, 16, 12),
+                new THREE.MeshBasicMaterial({ color: 0xffb300, transparent: true, opacity: 0.15 })
+            );
+            mixedMesh.visible = false;
+            scene.add(mixedMesh);
+
+            this.blochScenes.push({
+                q,
+                scene,
+                camera,
+                renderer,
+                controls,
+                arrow,
+                tipMesh,
+                mixedMesh
+            });
+        }
+
+        this.blochSpheresInitialized = true;
+        this.animateBlochSpheres();
+
+        if (this.lastBlochVectors) {
+            this.updateBlochTelemetry(this.lastBlochVectors);
+        }
+    }
+
+    animateBlochSpheres() {
+        const loop = () => {
+            requestAnimationFrame(loop);
+
+            const deck5 = document.getElementById('page-deck-5');
+            if (!deck5 || !deck5.classList.contains('active')) return;
+
+            this.blochScenes.forEach(s => {
+                if (s.controls) s.controls.update();
+                s.renderer.render(s.scene, s.camera);
+            });
+        };
+        requestAnimationFrame(loop);
+    }
+
+    updateBlochTelemetry(blochVectors) {
+        if (!blochVectors || !Array.isArray(blochVectors)) return;
+
+        const f = Math.max(0.0, 1.0 - this.blochDecoherence);
+
+        this.blochScenes.forEach(s => {
+            const bv = blochVectors[s.q] || { rx: 0, ry: 0, rz: 1.0, radius: 1.0, purity: 1.0, theta_deg: 0, phi_deg: 0 };
+            const rx = bv.rx;
+            const ry = bv.ry;
+            const rz = bv.rz;
+
+            // Map Physics Bloch coordinates to Three.js world (Y is UP / Pauli-Z, X is Pauli-X, -Z is Pauli-Y)
+            const vx = rx * f;
+            const vy = rz * f;
+            const vz = -ry * f;
+            const rad = Math.sqrt(vx * vx + vy * vy + vz * vz);
+
+            if (rad > 0.005) {
+                const normDir = new THREE.Vector3(vx, vy, vz).normalize();
+                s.arrow.setDirection(normDir);
+                s.arrow.setLength(Math.max(0.01, rad), 0.20 * Math.min(1.0, rad), 0.10 * Math.min(1.0, rad));
+                s.arrow.visible = true;
+                s.tipMesh.position.set(vx, vy, vz);
+                s.tipMesh.visible = true;
+            } else {
+                s.arrow.visible = false;
+                s.tipMesh.position.set(0, 0, 0);
+                s.tipMesh.visible = true;
+            }
+
+            if (f < 0.99) {
+                s.mixedMesh.visible = true;
+                s.mixedMesh.scale.set(Math.max(0.01, rad), Math.max(0.01, rad), Math.max(0.01, rad));
+            } else {
+                s.mixedMesh.visible = false;
+            }
+
+            // Update Card Readouts
+            const elAngles = document.getElementById(`bloch-angles-q${s.q}`);
+            if (elAngles) elAngles.textContent = `θ: ${bv.theta_deg.toFixed(1)}° | φ: ${bv.phi_deg.toFixed(1)}°`;
+
+            const elCoords = document.getElementById(`bloch-coords-q${s.q}`);
+            if (elCoords) elCoords.textContent = `${vx.toFixed(2)}, ${(-vz).toFixed(2)}, ${vy.toFixed(2)}`;
+
+            const elRadius = document.getElementById(`bloch-radius-q${s.q}`);
+            if (elRadius) elRadius.textContent = rad.toFixed(4);
+
+            const elPurity = document.getElementById(`bloch-purity-q${s.q}`);
+            if (elPurity) elPurity.textContent = (0.5 * (1.0 + rad * rad)).toFixed(4);
+        });
+
+        const globalPurityEl = document.getElementById('bloch-global-purity');
+        if (globalPurityEl && blochVectors.length > 0) {
+            const meanPurity = blochVectors.reduce((acc, bv) => acc + bv.purity, 0) / blochVectors.length;
+            globalPurityEl.textContent = (meanPurity * (0.5 + 0.5 * f * f)).toFixed(4);
+        }
+
+        this.updateHopfS4Telemetry();
+    }
+
+    updateHopfS4Telemetry() {
+        const qaSel = document.getElementById('hopf-qa-select');
+        const qbSel = document.getElementById('hopf-qb-select');
+        if (!qaSel || !qbSel) return;
+
+        const qa = parseInt(qaSel.value);
+        const qb = parseInt(qbSel.value);
+        if (qa === qb) return;
+
+        let y0 = 1.0, y1 = 0.0, y2 = 0.0, y3 = 0.0, y4 = 0.0;
+        let concurrence = 0.0, bell_chsh = 2.0;
+
+        if (this.lastLocalStateReal && this.lastLocalStateImag) {
+            const re = this.lastLocalStateReal;
+            const im = this.lastLocalStateImag;
+            const dim = re.length;
+
+            // Compute 2-qubit partial trace density matrix rho_{row, col}
+            let rho00_re = 0.0, rho11_re = 0.0, rho01_re = 0.0, rho01_im = 0.0;
+            let rho10_re = 0.0, rho10_im = 0.0, rho_cross_re = 0.0, rho_cross_im = 0.0;
+
+            for (let idx = 0; idx < dim; idx++) {
+                const bA = (idx >> qa) & 1;
+                const bB = (idx >> qb) & 1;
+                const p = re[idx] * re[idx] + im[idx] * im[idx];
+
+                if (bA === 0 && bB === 0) rho00_re += p;
+                else if (bA === 1 && bB === 1) rho11_re += p;
+                else if (bA === 0 && bB === 1) rho01_re += p;
+                else if (bA === 1 && bB === 0) rho10_re += p;
+
+                // Off-diagonal cross term (00 with 11) for Bell |Phi+>
+                if (bA === 0 && bB === 0) {
+                    const pairIdx = idx | (1 << qa) | (1 << qb);
+                    if (pairIdx < dim) {
+                        rho_cross_re += re[idx] * re[pairIdx] + im[idx] * im[pairIdx];
+                        rho_cross_im += im[idx] * re[pairIdx] - re[idx] * im[pairIdx];
+                    }
+                }
+            }
+
+            // Quaternionic Cayley-Dickson 2-spinor (qA, qB)
+            // qA = sqrt(rho00) + sqrt(rho01) j
+            // qB = sqrt(rho10) + sqrt(rho11) j
+            const normA = rho00_re + rho01_re;
+            const normB = rho10_re + rho11_re;
+            y0 = normA - normB;
+
+            // Real cross terms
+            y1 = 2.0 * rho_cross_re;
+            y2 = 2.0 * rho_cross_im;
+            y3 = 2.0 * Math.sqrt(Math.max(0.0, rho01_re * rho10_re));
+            y4 = 0.0;
+
+            const cross_mag = Math.sqrt(rho_cross_re * rho_cross_re + rho_cross_im * rho_cross_im);
+            concurrence = Math.max(0.0, Math.min(1.0, 2.0 * (cross_mag - Math.sqrt(Math.max(0.0, rho01_re * rho10_re)))));
+            bell_chsh = 2.0 * Math.sqrt(1.0 + concurrence * concurrence);
+        }
+
+        const safeSet = (id, text) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = text;
+        };
+
+        safeSet('hopf-concurrence', concurrence.toFixed(4));
+        safeSet('hopf-bell-chsh', bell_chsh.toFixed(4));
+        safeSet('hopf-dist-equator', Math.abs(y0).toFixed(4));
+        const rad5d = Math.sqrt(y0 * y0 + y1 * y1 + y2 * y2 + y3 * y3 + y4 * y4);
+        safeSet('hopf-radius', rad5d.toFixed(4));
+
+        safeSet('hopf-val-y0', (y0 >= 0 ? '+' : '') + y0.toFixed(4));
+        safeSet('hopf-val-y1', (y1 >= 0 ? '+' : '') + y1.toFixed(4));
+        safeSet('hopf-val-y2', (y2 >= 0 ? '+' : '') + y2.toFixed(4));
+        safeSet('hopf-val-y3', (y3 >= 0 ? '+' : '') + y3.toFixed(4));
+        safeSet('hopf-val-y4', (y4 >= 0 ? '+' : '') + y4.toFixed(4));
     }
 }
 

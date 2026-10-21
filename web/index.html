@@ -36,8 +36,11 @@
             <button class="page-tab" data-page="page-deck-4">
                 <span class="tab-idx">[4]</span> 36Q VIRTUAL BRIDGE
             </button>
+            <button class="page-tab" data-page="page-deck-5">
+                <span class="tab-idx" style="color:var(--quantum-green);">[5]</span> 3D BLOCH &amp; HOPF S4
+            </button>
             <a href="qgol.html" class="page-tab">
-                <span class="tab-idx" style="color:var(--quantum-green);">[5]</span> QUANTUM LIFE
+                <span class="tab-idx" style="color:var(--hardware-gold);">[6]</span> QUANTUM LIFE
             </a>
         </nav>
 
@@ -364,8 +367,13 @@
                         <div style="font-family:var(--font-mono); font-size:12px; color:var(--text-white); font-weight:700;">
                             12-WIRE QUANTUM REGISTER &bull; 16 CIRCUIT LAYERS
                         </div>
-                        <div class="badge-green" id="composer-mode-badge">
-                            AVX2 + FMA REAL/IMAG SOA
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <button id="btn-jump-bloch" class="btn-secondary" style="padding: 3px 10px; font-size: 11px; color: var(--quantum-green); border-color: var(--quantum-green);">
+                                [+] 3D BLOCH ARRAY (q0..q11)
+                            </button>
+                            <div class="badge-green" id="composer-mode-badge">
+                                AVX2 + FMA REAL/IMAG SOA
+                            </div>
                         </div>
                     </div>
 
@@ -1019,6 +1027,209 @@
                                         <td>0.3980</td>
                                         <td style="color:var(--alert-red);">0.6020</td>
                                         <td style="color:var(--quantum-green); font-weight:700;">VALID NON-ARCHIMEDEAN</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- DECK 5: 3D REAL-TIME MULTI-QUBIT BLOCH SPHERE ARRAY & HOPF S4       -->
+        <!-- =================================================================== -->
+        <div id="page-deck-5" class="page-view">
+            <div class="deck-scroll-container">
+                <div class="deck-section-header">
+                    <div>
+                        <h2>3D REAL-TIME MULTI-QUBIT BLOCH SPHERE ARRAY &amp; HOPF S4 ENTANGLEMENT HUD</h2>
+                        <p>AVX2 Vectorized Single-Qubit Density Matrices (q0..q11), 3D State Evolution Trajectories, and the Second Hopf Fibration S4 Entanglement Sphere.</p>
+                    </div>
+                    <div class="badge-green">MONOGRAPHS M129 &amp; M157 VERIFIED</div>
+                </div>
+
+                <!-- Hero KPI Telemetry Banner Strip -->
+                <div class="hero-kpi-strip">
+                    <div class="hero-kpi-card">
+                        <div class="kpi-label">Bloch Array Capacity</div>
+                        <div class="kpi-value">12 Qubits (3D WebGL)</div>
+                        <div class="kpi-sub">Reduced Subsystem Density Matrices Tr_{\q}(|ψ⟩⟨ψ|)</div>
+                    </div>
+                    <div class="hero-kpi-card">
+                        <div class="kpi-label">Vectorized Purity Metric</div>
+                        <div class="kpi-value highlight" id="bloch-global-purity">1.0000</div>
+                        <div class="kpi-sub">Single-Qubit Purity γ_q = (1 + r_q²) / 2</div>
+                    </div>
+                    <div class="hero-kpi-card">
+                        <div class="kpi-label">Second Hopf Base S⁴</div>
+                        <div class="kpi-value gold">S⁴ ⊂ ℝ⁵ (HP¹)</div>
+                        <div class="kpi-sub">Equator y₀ = 0 (Bell C=1) vs Poles y₀ = ±1 (C=0)</div>
+                    </div>
+                    <div class="hero-kpi-card">
+                        <div class="kpi-label">AVX2 Quaternionic Engine</div>
+                        <div class="kpi-value">47.66 M evals/s</div>
+                        <div class="kpi-sub">20.98 ns Latency • Error ≤ 7.77×10⁻¹⁶</div>
+                    </div>
+                </div>
+
+                <!-- Interactive Quantum Control Deck -->
+                <div class="section-card" style="margin-bottom: 24px;">
+                    <div class="section-card-header">
+                        <span>[+] Interactive Quantum State Pulse Injector &amp; Decoherence Chamber</span>
+                        <span style="color:var(--hardware-gold);">DECK 5 CONTROLS</span>
+                    </div>
+
+                    <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center; justify-content: space-between;">
+                        <!-- Target Qubit Selector -->
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <label style="font-family:var(--font-mono); font-size:12px; color:var(--text-polar);">Target Qubit:</label>
+                            <select id="bloch-qubit-select" style="width:110px; padding:6px 10px; background:var(--bg-canvas); color:var(--quantum-green); border:1px solid var(--border-bright); font-family:var(--font-mono); font-weight:700; border-radius:4px;">
+                                <option value="0">q0</option>
+                                <option value="1">q1</option>
+                                <option value="2">q2</option>
+                                <option value="3">q3</option>
+                                <option value="4">q4</option>
+                                <option value="5">q5</option>
+                                <option value="6">q6</option>
+                                <option value="7">q7</option>
+                                <option value="8">q8</option>
+                                <option value="9">q9</option>
+                                <option value="10">q10</option>
+                                <option value="11">q11</option>
+                            </select>
+                        </div>
+
+                        <!-- Direct Pulse Buttons -->
+                        <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                            <button class="btn-secondary bloch-gate-btn" data-gate="RESET" style="color:var(--alert-red); border-color:var(--alert-red);">|0⟩ RESET</button>
+                            <button class="btn-secondary bloch-gate-btn" data-gate="H">H (Hadamard)</button>
+                            <button class="btn-secondary bloch-gate-btn" data-gate="X">X (Pauli-X)</button>
+                            <button class="btn-secondary bloch-gate-btn" data-gate="Y" style="color:var(--hardware-gold); border-color:var(--hardware-gold);">Y (Pauli-Y)</button>
+                            <button class="btn-secondary bloch-gate-btn" data-gate="Z">Z (Pauli-Z)</button>
+                            <button class="btn-secondary bloch-gate-btn" data-gate="RX_PI4">Rx(π/4)</button>
+                            <button class="btn-secondary bloch-gate-btn" data-gate="RY_PI4">Ry(π/4)</button>
+                            <button class="btn-secondary bloch-gate-btn" data-gate="RZ_PI4">Rz(π/4)</button>
+                            <button class="btn-secondary bloch-gate-btn" data-gate="S">S Gate</button>
+                            <button class="btn-secondary bloch-gate-btn" data-gate="T">T Gate</button>
+                        </div>
+
+                        <!-- Decoherence Damping Slider -->
+                        <div style="display:flex; align-items:center; gap:12px; min-width:280px;">
+                            <label style="font-family:var(--font-mono); font-size:11px; color:var(--text-slate); white-space:nowrap;">Decoherence (T₁/T₂*):</label>
+                            <input type="range" id="bloch-decoherence-slider" min="0" max="1" step="0.01" value="0" style="flex:1;">
+                            <span id="bloch-decoherence-val" style="font-family:var(--font-mono); font-size:11px; color:var(--hardware-gold); min-width:40px; font-weight:700;">0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 12-Qubit 3D Bloch Sphere Canvas Array -->
+                <div class="bloch-sphere-array-grid" id="bloch-array-container">
+                    <!-- 12 individual 3D Bloch Sphere Cards injected / rendered -->
+                </div>
+
+                <!-- Second Hopf Fibration S4 Entanglement Card -->
+                <div class="section-card" style="margin-top: 24px;">
+                    <div class="section-card-header">
+                        <span>[+] Second Hopf Fibration S⁷ → S⁴ (HP¹) Bipartite Entanglement Analyzer (Monograph M157)</span>
+                        <span style="color:var(--quantum-green);">4D QUATERNIONIC BASE</span>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 320px 1fr; gap:24px;">
+                        <!-- Qubit Pair Selector -->
+                        <div style="background:var(--bg-canvas); padding:16px; border:1px solid var(--border-color); border-radius:6px;">
+                            <div style="font-family:var(--font-mono); font-size:12px; color:var(--text-polar); font-weight:700; margin-bottom:12px;">
+                                SELECT PAIR (q_A, q_B):
+                            </div>
+                            <div style="display:flex; gap:12px; margin-bottom:16px;">
+                                <div style="flex:1;">
+                                    <label style="font-size:10px; color:var(--text-slate); font-family:var(--font-mono);">Qubit A:</label>
+                                    <select id="hopf-qa-select" style="width:100%; padding:6px; background:var(--bg-card); color:var(--text-white); border:1px solid var(--border-bright); font-family:var(--font-mono); border-radius:4px;">
+                                        <option value="0" selected>q0</option>
+                                        <option value="1">q1</option>
+                                        <option value="2">q2</option>
+                                        <option value="3">q3</option>
+                                        <option value="4">q4</option>
+                                        <option value="5">q5</option>
+                                    </select>
+                                </div>
+                                <div style="flex:1;">
+                                    <label style="font-size:10px; color:var(--text-slate); font-family:var(--font-mono);">Qubit B:</label>
+                                    <select id="hopf-qb-select" style="width:100%; padding:6px; background:var(--bg-card); color:var(--text-white); border:1px solid var(--border-bright); font-family:var(--font-mono); border-radius:4px;">
+                                        <option value="0">q0</option>
+                                        <option value="1" selected>q1</option>
+                                        <option value="2">q2</option>
+                                        <option value="3">q3</option>
+                                        <option value="4">q4</option>
+                                        <option value="5">q5</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div style="display:flex; flex-direction:column; gap:8px;">
+                                <button class="btn-secondary" id="btn-hopf-bell-prep" style="width:100%; font-size:11px;">PREPARE BELL |Φ⁺⟩ ON (qA, qB)</button>
+                                <button class="btn-secondary" id="btn-hopf-sep-prep" style="width:100%; font-size:11px;">PREPARE PRODUCT |00⟩ ON (qA, qB)</button>
+                            </div>
+                        </div>
+
+                        <!-- 5D Hopf Coordinate & Concurrence Readout Table -->
+                        <div style="background:var(--bg-canvas); padding:16px; border:1px solid var(--border-color); border-radius:6px;">
+                            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom:16px;">
+                                <div class="metric-card">
+                                    <div class="metric-title">Wootters Concurrence C</div>
+                                    <div id="hopf-concurrence" class="metric-value highlight">0.0000</div>
+                                </div>
+                                <div class="metric-card">
+                                    <div class="metric-title">Bell-CHSH Witness S</div>
+                                    <div id="hopf-bell-chsh" class="metric-value gold">2.0000</div>
+                                </div>
+                                <div class="metric-card">
+                                    <div class="metric-title">Bell Equator Dist |y₀|</div>
+                                    <div id="hopf-dist-equator" class="metric-value">1.0000</div>
+                                </div>
+                                <div class="metric-card">
+                                    <div class="metric-title">Quaternionic Radius ||Y||</div>
+                                    <div id="hopf-radius" class="metric-value highlight">1.0000</div>
+                                </div>
+                            </div>
+
+                            <table class="comparison-table" style="font-family:var(--font-mono); font-size:11px;">
+                                <thead>
+                                    <tr>
+                                        <th>Hopf Component</th>
+                                        <th>Algebraic Formula</th>
+                                        <th>Numerical Readout</th>
+                                        <th>Geometric Manifold Role</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>y₀ (5th Scalar)</td>
+                                        <td>|q_A|² - |q_B|²</td>
+                                        <td id="hopf-val-y0" style="color:var(--text-white); font-weight:700;">+1.0000</td>
+                                        <td>Pole Distance (±1: Separable, 0: Bell Equator)</td>
+                                    </tr>
+                                    <tr>
+                                        <td>y₁ (Re cross)</td>
+                                        <td>2 Re(q_A q_B*)_w</td>
+                                        <td id="hopf-val-y1" style="color:var(--quantum-green); font-weight:700;">0.0000</td>
+                                        <td>Quaternionic Real Phase Correlator</td>
+                                    </tr>
+                                    <tr>
+                                        <td>y₂ (Im i cross)</td>
+                                        <td>2 (q_A q_B*)_x</td>
+                                        <td id="hopf-val-y2" style="color:var(--quantum-green); font-weight:700;">0.0000</td>
+                                        <td>Quaternionic i Imaginary Generator</td>
+                                    </tr>
+                                    <tr>
+                                        <td>y₃ (Im j cross)</td>
+                                        <td>2 (q_A q_B*)_y</td>
+                                        <td id="hopf-val-y3" style="color:var(--hardware-gold); font-weight:700;">0.0000</td>
+                                        <td>Quaternionic j Transversal Entangler</td>
+                                    </tr>
+                                    <tr>
+                                        <td>y₄ (Im k cross)</td>
+                                        <td>2 (q_A q_B*)_z</td>
+                                        <td id="hopf-val-y4" style="color:var(--hardware-gold); font-weight:700;">0.0000</td>
+                                        <td>Quaternionic k Non-Abelian Holonomy</td>
                                     </tr>
                                 </tbody>
                             </table>

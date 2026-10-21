@@ -1,0 +1,1254 @@
+{
+  "timestamp": "2026-10-20T21:40:00Z",
+  "bell_basis_states": [
+    {
+      "name": "|00>",
+      "hopf_coord": {
+        "y0": 1.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": 0.0,
+        "y4": 0.0,
+        "radius": 1.0,
+        "sphere_residual": 0.0
+      },
+      "invariants": {
+        "concurrence": 0.0,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 1.0,
+        "bell_plane_distance": 1.0
+      }
+    },
+    {
+      "name": "|01>",
+      "hopf_coord": {
+        "y0": 1.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": 0.0,
+        "y4": 0.0,
+        "radius": 1.0,
+        "sphere_residual": 0.0
+      },
+      "invariants": {
+        "concurrence": 0.0,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 1.0,
+        "bell_plane_distance": 1.0
+      }
+    },
+    {
+      "name": "|10>",
+      "hopf_coord": {
+        "y0": -1.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": 0.0,
+        "y4": 0.0,
+        "radius": 1.0,
+        "sphere_residual": 0.0
+      },
+      "invariants": {
+        "concurrence": 0.0,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 1.0,
+        "bell_plane_distance": 1.0
+      }
+    },
+    {
+      "name": "|11>",
+      "hopf_coord": {
+        "y0": -1.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": 0.0,
+        "y4": 0.0,
+        "radius": 1.0,
+        "sphere_residual": 0.0
+      },
+      "invariants": {
+        "concurrence": 0.0,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 1.0,
+        "bell_plane_distance": 1.0
+      }
+    },
+    {
+      "name": "|Phi+>",
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -1.0000000000000002,
+        "y4": 0.0,
+        "radius": 1.0000000000000002,
+        "sphere_residual": 2.220446049250313e-16
+      },
+      "invariants": {
+        "concurrence": 1.0,
+        "bell_chsh": 2.8284271247461903,
+        "subsystem_purity": 0.5,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "name": "|Phi->",
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": 1.0000000000000002,
+        "y4": 0.0,
+        "radius": 1.0000000000000002,
+        "sphere_residual": 2.220446049250313e-16
+      },
+      "invariants": {
+        "concurrence": 1.0,
+        "bell_chsh": 2.8284271247461903,
+        "subsystem_purity": 0.5,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "name": "|Psi+>",
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": 1.0000000000000002,
+        "y4": 0.0,
+        "radius": 1.0000000000000002,
+        "sphere_residual": 2.220446049250313e-16
+      },
+      "invariants": {
+        "concurrence": 1.0,
+        "bell_chsh": 2.8284271247461903,
+        "subsystem_purity": 0.5,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "name": "|Psi->",
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -1.0000000000000002,
+        "y4": 0.0,
+        "radius": 1.0000000000000002,
+        "sphere_residual": 2.220446049250313e-16
+      },
+      "invariants": {
+        "concurrence": 1.0,
+        "bell_chsh": 2.8284271247461903,
+        "subsystem_purity": 0.5,
+        "bell_plane_distance": 0.0
+      }
+    }
+  ],
+  "rotation_sweep": [
+    {
+      "theta_rad": 0.0,
+      "theta_deg": 0.0,
+      "hopf_coord": {
+        "y0": 1.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": 0.0,
+        "y4": 0.0,
+        "radius": 1.0,
+        "sphere_residual": 0.0
+      },
+      "invariants": {
+        "concurrence": 0.0,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 1.0,
+        "bell_plane_distance": 1.0
+      }
+    },
+    {
+      "theta_rad": 0.07853981633974483,
+      "theta_deg": 4.5,
+      "hopf_coord": {
+        "y0": 0.9876883405951378,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.15643446504023087,
+        "y4": 0.0,
+        "radius": 1.0,
+        "sphere_residual": 0.0
+      },
+      "invariants": {
+        "concurrence": 0.15643446504023087,
+        "bell_chsh": 2.0243238296798496,
+        "subsystem_purity": 0.9877641290737884,
+        "bell_plane_distance": 0.9876883405951378
+      }
+    },
+    {
+      "theta_rad": 0.15707963267948966,
+      "theta_deg": 9.0,
+      "hopf_coord": {
+        "y0": 0.9510565162951536,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.30901699437494745,
+        "y4": 0.0,
+        "radius": 1.0,
+        "sphere_residual": 0.0
+      },
+      "invariants": {
+        "concurrence": 0.30901699437494745,
+        "bell_chsh": 2.0933145992062694,
+        "subsystem_purity": 0.9522542485937369,
+        "bell_plane_distance": 0.9510565162951536
+      }
+    },
+    {
+      "theta_rad": 0.23561944901923448,
+      "theta_deg": 13.5,
+      "hopf_coord": {
+        "y0": 0.8910065241883678,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.45399049973954675,
+        "y4": 0.0,
+        "radius": 0.9999999999999999,
+        "sphere_residual": 1.1102230246251565e-16
+      },
+      "invariants": {
+        "concurrence": 0.45399049973954675,
+        "bell_chsh": 2.196458398289176,
+        "subsystem_purity": 0.8969463130731183,
+        "bell_plane_distance": 0.8910065241883678
+      }
+    },
+    {
+      "theta_rad": 0.3141592653589793,
+      "theta_deg": 18.0,
+      "hopf_coord": {
+        "y0": 0.8090169943749473,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.587785252292473,
+        "y4": 0.0,
+        "radius": 0.9999999999999999,
+        "sphere_residual": 1.1102230246251565e-16
+      },
+      "invariants": {
+        "concurrence": 0.587785252292473,
+        "bell_chsh": 2.3199064660563593,
+        "subsystem_purity": 0.8272542485937369,
+        "bell_plane_distance": 0.8090169943749473
+      }
+    },
+    {
+      "theta_rad": 0.39269908169872414,
+      "theta_deg": 22.5,
+      "hopf_coord": {
+        "y0": 0.7071067811865475,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.7071067811865476,
+        "y4": 0.0,
+        "radius": 1.0,
+        "sphere_residual": 0.0
+      },
+      "invariants": {
+        "concurrence": 0.7071067811865476,
+        "bell_chsh": 2.449489742783178,
+        "subsystem_purity": 0.75,
+        "bell_plane_distance": 0.7071067811865475
+      }
+    },
+    {
+      "theta_rad": 0.47123889803846897,
+      "theta_deg": 27.0,
+      "hopf_coord": {
+        "y0": 0.5877852522924732,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.8090169943749473,
+        "y4": 0.0,
+        "radius": 1.0,
+        "sphere_residual": 0.0
+      },
+      "invariants": {
+        "concurrence": 0.8090169943749473,
+        "bell_chsh": 2.572553981697934,
+        "subsystem_purity": 0.6727457514062631,
+        "bell_plane_distance": 0.5877852522924732
+      }
+    },
+    {
+      "theta_rad": 0.5497787143782138,
+      "theta_deg": 31.5,
+      "hopf_coord": {
+        "y0": 0.45399049973954697,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.8910065241883678,
+        "y4": 0.0,
+        "radius": 1.0,
+        "sphere_residual": 0.0
+      },
+      "invariants": {
+        "concurrence": 0.8910065241883678,
+        "bell_chsh": 2.678725537374993,
+        "subsystem_purity": 0.6030536869268818,
+        "bell_plane_distance": 0.45399049973954697
+      }
+    },
+    {
+      "theta_rad": 0.6283185307179586,
+      "theta_deg": 36.0,
+      "hopf_coord": {
+        "y0": 0.30901699437494745,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.9510565162951536,
+        "y4": 0.0,
+        "radius": 1.0,
+        "sphere_residual": 0.0
+      },
+      "invariants": {
+        "concurrence": 0.9510565162951536,
+        "bell_chsh": 2.760078620030577,
+        "subsystem_purity": 0.5477457514062631,
+        "bell_plane_distance": 0.30901699437494745
+      }
+    },
+    {
+      "theta_rad": 0.7068583470577035,
+      "theta_deg": 40.5,
+      "hopf_coord": {
+        "y0": 0.1564344650402309,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.9876883405951378,
+        "y4": 0.0,
+        "radius": 1.0,
+        "sphere_residual": 0.0
+      },
+      "invariants": {
+        "concurrence": 0.9876883405951378,
+        "bell_chsh": 2.811069731008163,
+        "subsystem_purity": 0.5122358709262116,
+        "bell_plane_distance": 0.1564344650402309
+      }
+    },
+    {
+      "theta_rad": 0.7853981633974483,
+      "theta_deg": 45.0,
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -1.0000000000000002,
+        "y4": 0.0,
+        "radius": 1.0000000000000002,
+        "sphere_residual": 2.220446049250313e-16
+      },
+      "invariants": {
+        "concurrence": 1.0,
+        "bell_chsh": 2.8284271247461903,
+        "subsystem_purity": 0.5,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "theta_rad": 0.863937979737193,
+      "theta_deg": 49.49999999999999,
+      "hopf_coord": {
+        "y0": -0.15643446504023056,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.9876883405951378,
+        "y4": 0.0,
+        "radius": 0.9999999999999999,
+        "sphere_residual": 1.1102230246251565e-16
+      },
+      "invariants": {
+        "concurrence": 0.9876883405951378,
+        "bell_chsh": 2.811069731008163,
+        "subsystem_purity": 0.5122358709262116,
+        "bell_plane_distance": 0.15643446504023056
+      }
+    },
+    {
+      "theta_rad": 0.9424777960769379,
+      "theta_deg": 54.0,
+      "hopf_coord": {
+        "y0": -0.30901699437494745,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.9510565162951536,
+        "y4": 0.0,
+        "radius": 1.0,
+        "sphere_residual": 0.0
+      },
+      "invariants": {
+        "concurrence": 0.9510565162951536,
+        "bell_chsh": 2.760078620030577,
+        "subsystem_purity": 0.5477457514062631,
+        "bell_plane_distance": 0.30901699437494745
+      }
+    },
+    {
+      "theta_rad": 1.0210176124166828,
+      "theta_deg": 58.5,
+      "hopf_coord": {
+        "y0": -0.45399049973954675,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.8910065241883679,
+        "y4": 0.0,
+        "radius": 1.0,
+        "sphere_residual": 0.0
+      },
+      "invariants": {
+        "concurrence": 0.8910065241883679,
+        "bell_chsh": 2.6787255373749934,
+        "subsystem_purity": 0.6030536869268817,
+        "bell_plane_distance": 0.45399049973954675
+      }
+    },
+    {
+      "theta_rad": 1.0995574287564276,
+      "theta_deg": 63.0,
+      "hopf_coord": {
+        "y0": -0.587785252292473,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.8090169943749473,
+        "y4": 0.0,
+        "radius": 0.9999999999999999,
+        "sphere_residual": 1.1102230246251565e-16
+      },
+      "invariants": {
+        "concurrence": 0.8090169943749473,
+        "bell_chsh": 2.572553981697934,
+        "subsystem_purity": 0.6727457514062631,
+        "bell_plane_distance": 0.587785252292473
+      }
+    },
+    {
+      "theta_rad": 1.1780972450961724,
+      "theta_deg": 67.5,
+      "hopf_coord": {
+        "y0": -0.7071067811865475,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.7071067811865477,
+        "y4": 0.0,
+        "radius": 1.0,
+        "sphere_residual": 0.0
+      },
+      "invariants": {
+        "concurrence": 0.7071067811865477,
+        "bell_chsh": 2.4494897427831783,
+        "subsystem_purity": 0.7499999999999999,
+        "bell_plane_distance": 0.7071067811865475
+      }
+    },
+    {
+      "theta_rad": 1.2566370614359172,
+      "theta_deg": 72.0,
+      "hopf_coord": {
+        "y0": -0.8090169943749473,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.5877852522924731,
+        "y4": 0.0,
+        "radius": 0.9999999999999999,
+        "sphere_residual": 1.1102230246251565e-16
+      },
+      "invariants": {
+        "concurrence": 0.5877852522924731,
+        "bell_chsh": 2.3199064660563593,
+        "subsystem_purity": 0.8272542485937369,
+        "bell_plane_distance": 0.8090169943749473
+      }
+    },
+    {
+      "theta_rad": 1.335176877775662,
+      "theta_deg": 76.5,
+      "hopf_coord": {
+        "y0": -0.8910065241883678,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.4539904997395469,
+        "y4": 0.0,
+        "radius": 1.0,
+        "sphere_residual": 0.0
+      },
+      "invariants": {
+        "concurrence": 0.4539904997395469,
+        "bell_chsh": 2.1964583982891766,
+        "subsystem_purity": 0.8969463130731182,
+        "bell_plane_distance": 0.8910065241883678
+      }
+    },
+    {
+      "theta_rad": 1.413716694115407,
+      "theta_deg": 81.0,
+      "hopf_coord": {
+        "y0": -0.9510565162951536,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.30901699437494756,
+        "y4": 0.0,
+        "radius": 1.0,
+        "sphere_residual": 0.0
+      },
+      "invariants": {
+        "concurrence": 0.30901699437494756,
+        "bell_chsh": 2.0933145992062694,
+        "subsystem_purity": 0.9522542485937369,
+        "bell_plane_distance": 0.9510565162951536
+      }
+    },
+    {
+      "theta_rad": 1.4922565104551517,
+      "theta_deg": 85.5,
+      "hopf_coord": {
+        "y0": -0.9876883405951378,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.15643446504023098,
+        "y4": 0.0,
+        "radius": 1.0,
+        "sphere_residual": 0.0
+      },
+      "invariants": {
+        "concurrence": 0.15643446504023098,
+        "bell_chsh": 2.0243238296798496,
+        "subsystem_purity": 0.9877641290737884,
+        "bell_plane_distance": 0.9876883405951378
+      }
+    },
+    {
+      "theta_rad": 1.5707963267948966,
+      "theta_deg": 90.0,
+      "hopf_coord": {
+        "y0": -1.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -1.2246467991473532e-16,
+        "y4": 0.0,
+        "radius": 1.0,
+        "sphere_residual": 0.0
+      },
+      "invariants": {
+        "concurrence": 1.2246467991473532e-16,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 1.0,
+        "bell_plane_distance": 1.0
+      }
+    }
+  ],
+  "werner_sweep": [
+    {
+      "p": 0.0,
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.0,
+        "y4": 0.0,
+        "radius": 0.0,
+        "sphere_residual": 1.0
+      },
+      "invariants": {
+        "concurrence": 0.0,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 0.5,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "p": 0.05,
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.05,
+        "y4": 0.0,
+        "radius": 0.05,
+        "sphere_residual": 0.95
+      },
+      "invariants": {
+        "concurrence": 0.0,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 0.50125,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "p": 0.1,
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.1,
+        "y4": 0.0,
+        "radius": 0.1,
+        "sphere_residual": 0.9
+      },
+      "invariants": {
+        "concurrence": 0.0,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 0.505,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "p": 0.15,
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.15,
+        "y4": 0.0,
+        "radius": 0.15,
+        "sphere_residual": 0.85
+      },
+      "invariants": {
+        "concurrence": 0.0,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 0.51125,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "p": 0.2,
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.2,
+        "y4": 0.0,
+        "radius": 0.2,
+        "sphere_residual": 0.8
+      },
+      "invariants": {
+        "concurrence": 0.0,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 0.52,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "p": 0.25,
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.25,
+        "y4": 0.0,
+        "radius": 0.25,
+        "sphere_residual": 0.75
+      },
+      "invariants": {
+        "concurrence": 0.0,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 0.53125,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "p": 0.3,
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.3,
+        "y4": 0.0,
+        "radius": 0.3,
+        "sphere_residual": 0.7
+      },
+      "invariants": {
+        "concurrence": 0.0,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 0.545,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "p": 0.35,
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.35,
+        "y4": 0.0,
+        "radius": 0.35,
+        "sphere_residual": 0.65
+      },
+      "invariants": {
+        "concurrence": 0.02499999999999991,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 0.56125,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "p": 0.4,
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.4,
+        "y4": 0.0,
+        "radius": 0.4,
+        "sphere_residual": 0.6
+      },
+      "invariants": {
+        "concurrence": 0.10000000000000009,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 0.5800000000000001,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "p": 0.45,
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.45,
+        "y4": 0.0,
+        "radius": 0.45,
+        "sphere_residual": 0.55
+      },
+      "invariants": {
+        "concurrence": 0.17500000000000004,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 0.6012500000000001,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "p": 0.5,
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.5,
+        "y4": 0.0,
+        "radius": 0.5,
+        "sphere_residual": 0.5
+      },
+      "invariants": {
+        "concurrence": 0.25,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 0.625,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "p": 0.55,
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.55,
+        "y4": 0.0,
+        "radius": 0.55,
+        "sphere_residual": 0.44999999999999996
+      },
+      "invariants": {
+        "concurrence": 0.32500000000000007,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 0.65125,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "p": 0.6,
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.6,
+        "y4": 0.0,
+        "radius": 0.6,
+        "sphere_residual": 0.4
+      },
+      "invariants": {
+        "concurrence": 0.3999999999999999,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 0.6799999999999999,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "p": 0.65,
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.65,
+        "y4": 0.0,
+        "radius": 0.65,
+        "sphere_residual": 0.35
+      },
+      "invariants": {
+        "concurrence": 0.4750000000000001,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 0.71125,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "p": 0.7,
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.7,
+        "y4": 0.0,
+        "radius": 0.7,
+        "sphere_residual": 0.30000000000000004
+      },
+      "invariants": {
+        "concurrence": 0.5499999999999998,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 0.745,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "p": 0.75,
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.75,
+        "y4": 0.0,
+        "radius": 0.75,
+        "sphere_residual": 0.25
+      },
+      "invariants": {
+        "concurrence": 0.625,
+        "bell_chsh": 2.121320343559643,
+        "subsystem_purity": 0.78125,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "p": 0.8,
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.8,
+        "y4": 0.0,
+        "radius": 0.8,
+        "sphere_residual": 0.19999999999999996
+      },
+      "invariants": {
+        "concurrence": 0.7000000000000002,
+        "bell_chsh": 2.2627416997969525,
+        "subsystem_purity": 0.8200000000000001,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "p": 0.85,
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.85,
+        "y4": 0.0,
+        "radius": 0.85,
+        "sphere_residual": 0.15000000000000002
+      },
+      "invariants": {
+        "concurrence": 0.7749999999999999,
+        "bell_chsh": 2.4041630560342617,
+        "subsystem_purity": 0.86125,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "p": 0.9,
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.9,
+        "y4": 0.0,
+        "radius": 0.9,
+        "sphere_residual": 0.09999999999999998
+      },
+      "invariants": {
+        "concurrence": 0.8500000000000001,
+        "bell_chsh": 2.5455844122715714,
+        "subsystem_purity": 0.905,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "p": 0.95,
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.95,
+        "y4": 0.0,
+        "radius": 0.95,
+        "sphere_residual": 0.050000000000000044
+      },
+      "invariants": {
+        "concurrence": 0.9249999999999998,
+        "bell_chsh": 2.6870057685088806,
+        "subsystem_purity": 0.9512499999999999,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "p": 1.0,
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -1.0,
+        "y4": 0.0,
+        "radius": 1.0,
+        "sphere_residual": 0.0
+      },
+      "invariants": {
+        "concurrence": 1.0,
+        "bell_chsh": 2.8284271247461903,
+        "subsystem_purity": 1.0,
+        "bell_plane_distance": 0.0
+      }
+    }
+  ],
+  "throughput": {
+    "iterations": 1000000,
+    "elapsed_ms": 20.981199999999998,
+    "latency_ns_per_eval": 20.9812,
+    "throughput_m_evals_sec": 47.66171620307705,
+    "max_norm_error": 7.771561172376096e-16
+  },
+  "molecular_pairwise": [
+    {
+      "qubit_pair": [
+        0,
+        1
+      ],
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.9999999999999998,
+        "y4": 0.0,
+        "radius": 0.9999999999999998,
+        "sphere_residual": 2.220446049250313e-16
+      },
+      "invariants": {
+        "concurrence": 0.9999999999999998,
+        "bell_chsh": 2.82842712474619,
+        "subsystem_purity": 0.9999999999999996,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "qubit_pair": [
+        0,
+        2
+      ],
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": 0.0,
+        "y4": 0.0,
+        "radius": 0.0,
+        "sphere_residual": 1.0
+      },
+      "invariants": {
+        "concurrence": 0.0,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 0.2499999999999999,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "qubit_pair": [
+        0,
+        3
+      ],
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": 0.0,
+        "y4": 0.0,
+        "radius": 0.0,
+        "sphere_residual": 1.0
+      },
+      "invariants": {
+        "concurrence": 0.0,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 0.2499999999999999,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "qubit_pair": [
+        0,
+        4
+      ],
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": 0.0,
+        "y4": 0.0,
+        "radius": 0.0,
+        "sphere_residual": 1.0
+      },
+      "invariants": {
+        "concurrence": 0.0,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 0.2499999999999999,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "qubit_pair": [
+        0,
+        5
+      ],
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": 0.0,
+        "y4": 0.0,
+        "radius": 0.0,
+        "sphere_residual": 1.0
+      },
+      "invariants": {
+        "concurrence": 0.0,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 0.2499999999999999,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "qubit_pair": [
+        1,
+        2
+      ],
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": 0.0,
+        "y4": 0.0,
+        "radius": 0.0,
+        "sphere_residual": 1.0
+      },
+      "invariants": {
+        "concurrence": 0.0,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 0.2499999999999999,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "qubit_pair": [
+        1,
+        3
+      ],
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": 0.0,
+        "y4": 0.0,
+        "radius": 0.0,
+        "sphere_residual": 1.0
+      },
+      "invariants": {
+        "concurrence": 0.0,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 0.2499999999999999,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "qubit_pair": [
+        1,
+        4
+      ],
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": 0.0,
+        "y4": 0.0,
+        "radius": 0.0,
+        "sphere_residual": 1.0
+      },
+      "invariants": {
+        "concurrence": 0.0,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 0.2499999999999999,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "qubit_pair": [
+        1,
+        5
+      ],
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": 0.0,
+        "y4": 0.0,
+        "radius": 0.0,
+        "sphere_residual": 1.0
+      },
+      "invariants": {
+        "concurrence": 0.0,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 0.2499999999999999,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "qubit_pair": [
+        2,
+        3
+      ],
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.9999999999999998,
+        "y4": 0.0,
+        "radius": 0.9999999999999998,
+        "sphere_residual": 2.220446049250313e-16
+      },
+      "invariants": {
+        "concurrence": 0.9999999999999998,
+        "bell_chsh": 2.82842712474619,
+        "subsystem_purity": 0.9999999999999996,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "qubit_pair": [
+        2,
+        4
+      ],
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": 0.0,
+        "y4": 0.0,
+        "radius": 0.0,
+        "sphere_residual": 1.0
+      },
+      "invariants": {
+        "concurrence": 0.0,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 0.2499999999999999,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "qubit_pair": [
+        2,
+        5
+      ],
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": 0.0,
+        "y4": 0.0,
+        "radius": 0.0,
+        "sphere_residual": 1.0
+      },
+      "invariants": {
+        "concurrence": 0.0,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 0.2499999999999999,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "qubit_pair": [
+        3,
+        4
+      ],
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": 0.0,
+        "y4": 0.0,
+        "radius": 0.0,
+        "sphere_residual": 1.0
+      },
+      "invariants": {
+        "concurrence": 0.0,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 0.2499999999999999,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "qubit_pair": [
+        3,
+        5
+      ],
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": 0.0,
+        "y4": 0.0,
+        "radius": 0.0,
+        "sphere_residual": 1.0
+      },
+      "invariants": {
+        "concurrence": 0.0,
+        "bell_chsh": 2.0,
+        "subsystem_purity": 0.2499999999999999,
+        "bell_plane_distance": 0.0
+      }
+    },
+    {
+      "qubit_pair": [
+        4,
+        5
+      ],
+      "hopf_coord": {
+        "y0": 0.0,
+        "y1": 0.0,
+        "y2": 0.0,
+        "y3": -0.9999999999999998,
+        "y4": 0.0,
+        "radius": 0.9999999999999998,
+        "sphere_residual": 2.220446049250313e-16
+      },
+      "invariants": {
+        "concurrence": 0.9999999999999998,
+        "bell_chsh": 2.82842712474619,
+        "subsystem_purity": 0.9999999999999996,
+        "bell_plane_distance": 0.0
+      }
+    }
+  ]
+}

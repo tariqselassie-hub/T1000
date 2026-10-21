@@ -216,18 +216,43 @@ def simulate_quantum_circuit(n_qubits: int, layers: List[Dict[str, Any]]) -> Dic
     p_a = rho_a_diag[rho_a_diag > 1e-15]
     bipartite_entropy = float(-np.sum(p_a * np.log2(p_a))) if len(p_a) > 0 else 0.0
 
-    # Compute Pauli-Z expectations: <Z_q> = P(q=0) - P(q=1)
+    # Compute 3D Bloch vectors and Pauli-Z expectations: (rx, ry, rz)
     pauli_z = []
+    bloch_vectors = []
     for q in range(n_qubits):
-        q_mask = 1 << q
-        p0 = 0.0
-        p1 = 0.0
-        for i in range(dim):
-            if (i & q_mask) == 0:
-                p0 += probabilities[i]
-            else:
-                p1 += probabilities[i]
-        pauli_z.append(round(float(p0 - p1), 4))
+        stride = 1 << q
+        step = stride << 1
+        rx = 0.0
+        ry = 0.0
+        rz = 0.0
+        for base in range(0, dim, step):
+            for offset in range(stride):
+                i0 = base + offset
+                i1 = i0 + stride
+                a0 = psi[i0]
+                a1 = psi[i1]
+                # <Z_q> = |a0|^2 - |a1|^2
+                rz += (a0.real * a0.real + a0.imag * a0.imag) - (a1.real * a1.real + a1.imag * a1.imag)
+                # <X_q> = 2 * Re(a0 * conj(a1)) = 2 * (a0.real * a1.real + a0.imag * a1.imag)
+                rx += 2.0 * (a0.real * a1.real + a0.imag * a1.imag)
+                # <Y_q> = 2 * Im(conj(a0) * a1) = 2 * (a0.real * a1.imag - a0.imag * a1.real)
+                ry += 2.0 * (a0.real * a1.imag - a0.imag * a1.real)
+        pauli_z.append(round(float(rz), 4))
+        r2 = min(1.0, rx * rx + ry * ry + rz * rz)
+        radius = math.sqrt(r2)
+        purity_q = 0.5 * (1.0 + r2)
+        theta = math.acos(max(-1.0, min(1.0, rz / max(radius, 1e-6))))
+        phi = math.atan2(ry, rx)
+        bloch_vectors.append({
+            "qubit": q,
+            "rx": round(float(rx), 4),
+            "ry": round(float(ry), 4),
+            "rz": round(float(rz), 4),
+            "radius": round(float(radius), 4),
+            "purity": round(float(purity_q), 4),
+            "theta_deg": round(math.degrees(theta), 2),
+            "phi_deg": round(math.degrees(phi), 2),
+        })
 
     # Top basis states
     top_indices = np.argsort(probabilities)[::-1][:min(16, dim)]
@@ -264,6 +289,7 @@ def simulate_quantum_circuit(n_qubits: int, layers: List[Dict[str, Any]]) -> Dic
         "total_gates": total_gates,
         "depth": len(layers),
         "pauli_z": pauli_z,
+        "bloch_vectors": bloch_vectors,
         "top_states": top_states,
         "shannon_entropy": round(shannon_entropy, 3),
         "f_xeb": round(f_xeb_clamped, 4),
@@ -1223,6 +1249,14 @@ class SovereignHandler(http.server.SimpleHTTPRequestHandler):
         if ctqw_path.exists():
             try:
                 summary["continuous_walk"] = json.loads(ctqw_path.read_text(encoding="utf-8"))
+            except Exception:
+                pass
+
+        # 9. Second Hopf Fibration S4 Quaternionic Entanglement (M157)
+        hopf_path = data_dir / "hopf_s4_entanglement_report.json"
+        if hopf_path.exists():
+            try:
+                summary["hopf_s4_entanglement"] = json.loads(hopf_path.read_text(encoding="utf-8"))
             except Exception:
                 pass
 

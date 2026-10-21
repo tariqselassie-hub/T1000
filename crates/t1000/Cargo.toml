@@ -104,6 +104,10 @@ path = "src/bin/measurements/rcs_coherence_chaos_bench.rs"
 name = "w7_heptal_qec_test"
 path = "src/bin/w7_heptal_qec_test.rs"
 
+[[bin]]
+name = "frontier_hopf_s4"
+path = "src/bin/measurements/frontier_hopf_s4.rs"
+
 # =========================================================================
 # Executable Binaries: Quantum Neural Network Training
 # =========================================================================

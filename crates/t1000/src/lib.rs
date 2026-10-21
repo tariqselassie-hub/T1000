@@ -31,6 +31,7 @@ pub mod glued_trees;
 pub mod gpu;
 pub mod heptal_qnn;
 pub mod heptal_wave;
+pub mod hopf_s4;
 pub mod ingest;
 pub mod lattice;
 pub mod measurements;
@@ -44,6 +45,7 @@ pub mod protocol;
 pub mod qec;
 pub mod qgnn;
 pub mod qssm;
+pub mod quaternion;
 pub mod rcs;
 pub mod simd;
 pub mod simd_bloch;
@@ -84,6 +86,11 @@ pub use glued_trees::{
 pub use gpu::{IGpuBridge, IGpuBridgeConfig, IGpuExecutionReport};
 pub use qgnn::{EquivariantGraphConvLayer, GeometricQgnn, MolecularGraph};
 pub use simd::{SimdBackend, SimdStateView, SimdStateViewMut};
+pub use hopf_s4::{
+    bell_rotation_state, compute_entanglement_invariants, compute_qubit_pair_hopf_s4,
+    evaluate_werner_state, project_state_s7_to_s4, EntanglementInvariant, HopfS4Coordinate,
+};
+pub use quaternion::Quaternion;
 pub use simd_bloch::{
     compute_all_bloch_vectors, compute_bloch_restoring_weights, compute_qubit_bloch, BlochVector,
 };

@@ -1415,3 +1415,123 @@ button.btn-secondary.active {
     color: var(--quantum-green);
     font-weight: 700;
 }
+
+/* ========================================================================= */
+/* Deck 5: 3D Multi-Qubit Bloch Sphere Array Styling                         */
+/* ========================================================================= */
+.bloch-sphere-array-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+@media (max-width: 1400px) {
+    .bloch-sphere-array-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 1000px) {
+    .bloch-sphere-array-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 650px) {
+    .bloch-sphere-array-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.bloch-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.bloch-card:hover {
+    border-color: var(--quantum-green);
+    box-shadow: 0 4px 16px rgba(0, 230, 118, 0.12);
+}
+
+.bloch-card-header {
+    background: rgba(15, 23, 42, 0.95);
+    border-bottom: 1px solid var(--border-color);
+    padding: 8px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.bloch-card-title {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--quantum-green);
+}
+
+.bloch-card-angles {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-slate);
+}
+
+.bloch-canvas-wrap {
+    width: 100%;
+    height: 180px;
+    background: #080c14;
+    position: relative;
+    cursor: grab;
+}
+
+.bloch-canvas-wrap:active {
+    cursor: grabbing;
+}
+
+.bloch-card-telemetry {
+    padding: 10px 12px;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border-color);
+    font-family: var(--font-mono);
+    font-size: 11px;
+}
+
+.bloch-telemetry-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.bloch-telemetry-row:last-child {
+    margin-bottom: 0;
+}
+
+.bloch-telemetry-label {
+    color: var(--text-slate);
+}
+
+.bloch-telemetry-val {
+    color: var(--text-white);
+    font-weight: 700;
+}
+
+.bloch-telemetry-val.green {
+    color: var(--quantum-green);
+}
+
+.bloch-telemetry-val.gold {
+    color: var(--hardware-gold);
+}
+
+.bloch-gate-btn {
+    padding: 4px 10px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    font-weight: 600;
+}
+
