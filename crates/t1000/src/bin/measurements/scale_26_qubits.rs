@@ -220,7 +220,7 @@ fn main() {
             top_latency_ms,
             t1000::results::Better::Lower,
         );
-        if !matches!(outcome, Ok(t1000::results::Outcome::Written)) {
+        if matches!(outcome, Ok(t1000::results::Outcome::KeptBest)) {
             println!("\n[KEPT] Saved 26-Qubit run is faster ({top_latency_ms:.1} ms is not an improvement)");
             return;
         }

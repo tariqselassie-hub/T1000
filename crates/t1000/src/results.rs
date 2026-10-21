@@ -13,9 +13,14 @@
 //! | `--record` / `T1000_RECORD=1`, other host     | `results/hosts/<host>/<path without "results/">` |
 //!
 //! Paths outside the workspace (an explicit `--out /tmp/x.json`) are always used as given.
-//! [`write_if_better`] additionally keeps the best recorded value of a metric in a `.best`
-//! sidecar and only replaces the saved file when the new value is better, unless
-//! `--force` / `T1000_RECORD_FORCE=1` is set.
+//!
+//! [`write_scored`] adds keep-best recording. A `.best` sidecar stores the settings
+//! fingerprint, the deciding metric and an optional guard metric of the saved run. A new run
+//! replaces it only if the metric improves and the guard has not regressed by more than its
+//! tolerance. A run with different settings never competes with the saved one: it is saved
+//! beside it as `<stem>.<settings-hash>.<ext>` with its own sidecar. `--force` /
+//! `T1000_RECORD_FORCE=1` replaces the saved run unconditionally. [`write_if_better`] is the
+//! single-metric form.
 
 use std::fs::{self, File};
 use std::io;
@@ -33,8 +38,12 @@ pub enum Better {
 /// What [`write_if_better`] did.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Outcome {
-    /// The file was written (scratch mode, first record, forced, or an improvement).
+    /// Recorded: first record, forced, or an improvement.
     Written,
+    /// Not recording: the output went to the scratch directory and saved results are untouched.
+    Scratch,
+    /// The settings differ from the saved run, so the result was saved as a sibling variant.
+    WrittenVariant,
     /// An existing recorded run is at least as good; nothing was changed.
     KeptBest,
 }
@@ -158,6 +167,27 @@ pub fn create(path: impl AsRef<Path>) -> io::Result<File> {
     Ok(file)
 }
 
+/// A secondary metric that must not regress by more than `tolerance` (in its own units).
+#[derive(Debug, Clone, Copy)]
+pub struct Guard<'a> {
+    pub name: &'a str,
+    pub value: f64,
+    pub better: Better,
+    pub tolerance: f64,
+}
+
+/// What a run is judged on when recording.
+#[derive(Debug, Clone, Copy)]
+pub struct Score<'a> {
+    /// The deciding metric (for example held-out loss).
+    pub metric: &'a str,
+    pub value: f64,
+    pub better: Better,
+    pub guard: Option<Guard<'a>>,
+    /// Fingerprint of everything that makes two runs comparable (sizes, epochs, rates).
+    pub settings: &'a str,
+}
+
 /// Writes `contents` and, when recording, keeps the file only if `value` of `metric` beats the
 /// best previously recorded one (stored next to the file as `<name>.best`).
 pub fn write_if_better(
@@ -167,35 +197,80 @@ pub fn write_if_better(
     value: f64,
     better: Better,
 ) -> io::Result<Outcome> {
-    let policy = Policy::detect();
-    write_if_better_with(&policy, path.as_ref(), contents.as_ref(), metric, value, better)
+    let score = Score { metric, value, better, guard: None, settings: "" };
+    write_scored(path, contents, &score)
 }
 
-fn write_if_better_with(
+/// Writes `contents` under the keep-best rules described in the module docs.
+pub fn write_scored(
+    path: impl AsRef<Path>,
+    contents: impl AsRef<[u8]>,
+    score: &Score,
+) -> io::Result<Outcome> {
+    let policy = Policy::detect();
+    write_scored_with(&policy, path.as_ref(), contents.as_ref(), score)
+}
+
+fn write_scored_with(
     policy: &Policy,
     path: &Path,
     contents: &[u8],
-    metric: &str,
-    value: f64,
-    better: Better,
+    score: &Score,
 ) -> io::Result<Outcome> {
     let actual = policy.resolve(path);
     prepare(&actual)?;
-    let sidecar = sidecar_path(&actual);
-    if policy.record && !policy.force {
-        if let Some((name, best)) = read_best(&sidecar) {
-            if name == metric && !improves(value, best, better) {
-                eprintln!("[results] not recorded: {metric} = {value} does not beat saved {best}");
+    if !policy.record {
+        fs::write(&actual, contents)?;
+        policy.note(path, &actual);
+        return Ok(if actual == path { Outcome::Written } else { Outcome::Scratch });
+    }
+    let mut target = actual.clone();
+    let mut variant = false;
+    if !policy.force {
+        if let Some(saved) = read_saved(&sidecar_path(&target)) {
+            if saved.settings != score.settings {
+                target = variant_path(&actual, score.settings);
+                variant = true;
+            }
+        }
+        if let Some(saved) = read_saved(&sidecar_path(&target)) {
+            if let Some(reason) = rejection(&saved, score) {
+                eprintln!("[results] not recorded: {reason}");
                 return Ok(Outcome::KeptBest);
             }
         }
     }
-    fs::write(&actual, contents)?;
-    if policy.record {
-        fs::write(&sidecar, format!("{metric} {value:e}\n"))?;
+    fs::write(&target, contents)?;
+    fs::write(sidecar_path(&target), render(score))?;
+    policy.note(path, &target);
+    Ok(if variant { Outcome::WrittenVariant } else { Outcome::Written })
+}
+
+/// Why `score` must not replace `saved`, if it must not.
+fn rejection(saved: &Saved, score: &Score) -> Option<String> {
+    if saved.metric != score.metric {
+        return None;
     }
-    policy.note(path, &actual);
-    Ok(Outcome::Written)
+    if !improves(score.value, saved.value, score.better) {
+        return Some(format!(
+            "{} = {} does not beat saved {}",
+            score.metric, score.value, saved.value
+        ));
+    }
+    let (g, (saved_name, saved_value)) = (score.guard?, saved.guard.as_ref()?);
+    if g.name != saved_name.as_str() {
+        return None;
+    }
+    let regressed = match g.better {
+        Better::Higher => g.value < saved_value - g.tolerance,
+        Better::Lower => g.value > saved_value + g.tolerance,
+    };
+    regressed.then(|| {
+        format!(
+            "{} improved but {} = {} regressed past saved {} (tolerance {})",
+            score.metric, g.name, g.value, saved_value, g.tolerance
+        )
+    })
 }
 
 fn improves(new: f64, best: f64, better: Better) -> bool {
@@ -211,10 +286,58 @@ fn sidecar_path(file: &Path) -> PathBuf {
     file.with_file_name(name)
 }
 
-fn read_best(sidecar: &Path) -> Option<(String, f64)> {
+/// `<stem>.<8 hex digits of the settings hash>.<ext>` next to `file`.
+fn variant_path(file: &Path, settings: &str) -> PathBuf {
+    let hash = settings
+        .bytes()
+        .fold(0xcbf2_9ce4_8422_2325u64, |h, b| (h ^ u64::from(b)).wrapping_mul(0x0100_0000_01b3));
+    let stem = file.file_stem().unwrap_or_default().to_string_lossy();
+    let name = match file.extension() {
+        Some(ext) => format!("{stem}.{:08x}.{}", hash as u32, ext.to_string_lossy()),
+        None => format!("{stem}.{:08x}", hash as u32),
+    };
+    file.with_file_name(name)
+}
+
+/// The recorded best of a saved run.
+#[derive(Debug, Clone, PartialEq)]
+struct Saved {
+    settings: String,
+    metric: String,
+    value: f64,
+    guard: Option<(String, f64)>,
+}
+
+fn render(score: &Score) -> String {
+    let mut out = format!("settings {}\nmetric {} {:e}\n", score.settings, score.metric, score.value);
+    if let Some(g) = score.guard {
+        out.push_str(&format!("guard {} {:e}\n", g.name, g.value));
+    }
+    out
+}
+
+/// Reads the current format, or the earlier single-line `<metric> <value>` form.
+fn read_saved(sidecar: &Path) -> Option<Saved> {
     let text = fs::read_to_string(sidecar).ok()?;
-    let (name, value) = text.trim().split_once(' ')?;
-    Some((name.to_string(), value.parse().ok()?))
+    let mut saved = Saved { settings: String::new(), metric: String::new(), value: 0.0, guard: None };
+    let pair = |rest: &str| -> Option<(String, f64)> {
+        let (name, v) = rest.trim().rsplit_once(' ')?;
+        Some((name.to_string(), v.parse().ok()?))
+    };
+    let mut lines = text.lines().peekable();
+    if lines.peek().is_some_and(|l| !l.starts_with("settings") && !l.starts_with("metric")) {
+        let (metric, value) = pair(lines.next()?)?;
+        return Some(Saved { metric, value, ..saved });
+    }
+    for line in lines {
+        match line.split_once(' ') {
+            Some(("settings", rest)) => saved.settings = rest.to_string(),
+            Some(("metric", rest)) => (saved.metric, saved.value) = pair(rest)?,
+            Some(("guard", rest)) => saved.guard = pair(rest),
+            _ => {}
+        }
+    }
+    (!saved.metric.is_empty()).then_some(saved)
 }
 
 #[cfg(test)]
@@ -277,28 +400,85 @@ mod tests {
         assert_eq!(got, PathBuf::from("/ws/target/bench-scratch/i3-1115g4/results/a.json"));
     }
 
+    fn temp_policy(tag: &str) -> Policy {
+        let root = std::env::temp_dir().join(format!("t1000_results_{tag}_{}", std::process::id()));
+        Policy { root, ..policy(true, true) }
+    }
+
+    fn score<'a>(value: f64, guard: Option<f64>, settings: &'a str) -> Score<'a> {
+        Score {
+            metric: "holdout_loss",
+            value,
+            better: Better::Lower,
+            guard: guard.map(|v| Guard { name: "accuracy", value: v, better: Better::Higher, tolerance: 1.0 }),
+            settings,
+        }
+    }
+
+    fn put(p: &Policy, file: &Path, body: &str, s: &Score) -> Outcome {
+        write_scored_with(p, file, body.as_bytes(), s).unwrap()
+    }
+
     #[test]
     fn keep_best_only_replaces_with_an_improvement() {
-        let root = std::env::temp_dir().join(format!("t1000_results_test_{}", std::process::id()));
-        let mut p = policy(true, true);
-        p.root = root.clone();
-        let file = root.join("results/run.json");
-        let go = |p: &Policy, body: &str, v: f64| {
-            write_if_better_with(p, &file, body.as_bytes(), "latency_ms", v, Better::Lower).unwrap()
-        };
-        assert_eq!(go(&p, "first", 10.0), Outcome::Written);
-        assert_eq!(go(&p, "slower", 12.0), Outcome::KeptBest);
+        let p = temp_policy("best");
+        let file = p.root.join("results/run.json");
+        assert_eq!(put(&p, &file, "first", &score(10.0, None, "a")), Outcome::Written);
+        assert_eq!(put(&p, &file, "slower", &score(12.0, None, "a")), Outcome::KeptBest);
         assert_eq!(fs::read_to_string(&file).unwrap(), "first");
-        assert_eq!(go(&p, "faster", 8.0), Outcome::Written);
+        assert_eq!(put(&p, &file, "faster", &score(8.0, None, "a")), Outcome::Written);
         assert_eq!(fs::read_to_string(&file).unwrap(), "faster");
-        p.force = true;
-        assert_eq!(go(&p, "forced", 99.0), Outcome::Written);
+        let forced = Policy { force: true, ..p.clone() };
+        assert_eq!(put(&forced, &file, "forced", &score(99.0, None, "a")), Outcome::Written);
         assert_eq!(fs::read_to_string(&file).unwrap(), "forced");
-        // Scratch mode never consults or writes the sidecar.
-        let scratch = Policy { record: false, force: false, ..p.clone() };
-        assert_eq!(go(&scratch, "scratch", 1000.0), Outcome::Written);
+        let scratch = Policy { record: false, ..p.clone() };
+        assert_eq!(put(&scratch, &file, "scratch", &score(1000.0, None, "a")), Outcome::Scratch);
         assert_eq!(fs::read_to_string(&file).unwrap(), "forced");
-        fs::remove_dir_all(&root).unwrap();
+        fs::remove_dir_all(&p.root).unwrap();
+    }
+
+    #[test]
+    fn guard_blocks_a_loss_win_that_costs_accuracy() {
+        let p = temp_policy("guard");
+        let file = p.root.join("results/run.json");
+        put(&p, &file, "base", &score(0.50, Some(90.0), "a"));
+        // Better loss, accuracy down 5 points: rejected.
+        assert_eq!(put(&p, &file, "overfit", &score(0.40, Some(85.0), "a")), Outcome::KeptBest);
+        // Better loss, accuracy down within the 1 point tolerance: accepted.
+        assert_eq!(put(&p, &file, "ok", &score(0.40, Some(89.5), "a")), Outcome::Written);
+        assert_eq!(fs::read_to_string(&file).unwrap(), "ok");
+        // Worse loss with better accuracy: still rejected, loss decides.
+        assert_eq!(put(&p, &file, "lucky", &score(0.45, Some(99.0), "a")), Outcome::KeptBest);
+        fs::remove_dir_all(&p.root).unwrap();
+    }
+
+    #[test]
+    fn different_settings_never_replace_the_saved_run() {
+        let p = temp_policy("variant");
+        let file = p.root.join("results/run.json");
+        put(&p, &file, "owner", &score(0.50, None, "epochs=20"));
+        let short = score(0.10, None, "epochs=3");
+        assert_eq!(put(&p, &file, "short", &short), Outcome::WrittenVariant);
+        assert_eq!(fs::read_to_string(&file).unwrap(), "owner");
+        let variant = variant_path(&file, "epochs=3");
+        assert_eq!(fs::read_to_string(&variant).unwrap(), "short");
+        // The variant has its own best: a worse run with the same settings is rejected.
+        assert_eq!(put(&p, &file, "worse", &score(0.30, None, "epochs=3")), Outcome::KeptBest);
+        assert_eq!(fs::read_to_string(&variant).unwrap(), "short");
+        fs::remove_dir_all(&p.root).unwrap();
+    }
+
+    #[test]
+    fn legacy_single_line_sidecar_is_understood() {
+        let p = temp_policy("legacy");
+        let file = p.root.join("results/run.json");
+        fs::create_dir_all(file.parent().unwrap()).unwrap();
+        fs::write(&file, "saved").unwrap();
+        fs::write(sidecar_path(&file), "latency_ms 1.0e4\n").unwrap();
+        let s = Score { metric: "latency_ms", value: 12000.0, better: Better::Lower, guard: None, settings: "" };
+        assert_eq!(put(&p, &file, "slower", &s), Outcome::KeptBest);
+        assert_eq!(fs::read_to_string(&file).unwrap(), "saved");
+        fs::remove_dir_all(&p.root).unwrap();
     }
 
     #[test]

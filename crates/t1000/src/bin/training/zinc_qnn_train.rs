@@ -716,10 +716,51 @@ fn main() {
     }
 
     if let Ok(json_str) = serde_json::to_string_pretty(&report) {
-        let _ = t1000::results::write(&out_json_path, json_str);
-        println!(
-            "\n[SAVED] 10k Training and Evaluation Report exported to: {}",
-            out_json_path.display()
+        // Held-out MSE relative to the target variance (1.0 = no better than predicting the
+        // mean) decides; the mean Pearson r may not drop by more than 0.02.
+        let variance = |t: &[f64]| {
+            let mean = t.iter().sum::<f64>() / t.len() as f64;
+            t.iter().map(|v| (v - mean) * (v - mean)).sum::<f64>() / t.len() as f64
+        };
+        let relative_mse = (tuned_mse_logp / variance(&targets_logp)
+            + tuned_mse_qed / variance(&targets_qed)
+            + tuned_mse_sas / variance(&targets_sas))
+            / 3.0;
+        let mean_r = (r_logp + r_qed + r_sas) / 3.0;
+        let settings = format!(
+            "qubits={n_qubits};depth={depth};epochs={num_epochs};batch={batch_size};lr={lr};\
+             train={};test={}",
+            train_samples.len(),
+            test_samples.len()
         );
+        let score = t1000::results::Score {
+            metric: "holdout_relative_mse",
+            value: relative_mse,
+            better: t1000::results::Better::Lower,
+            guard: Some(t1000::results::Guard {
+                name: "holdout_mean_pearson_r",
+                value: mean_r,
+                better: t1000::results::Better::Higher,
+                tolerance: 0.02,
+            }),
+            settings: &settings,
+        };
+        println!("\n  Recording score : holdout relative MSE {relative_mse:.4} | mean Pearson r {mean_r:.4}");
+        match t1000::results::write_scored(&out_json_path, json_str, &score) {
+            Ok(t1000::results::Outcome::KeptBest) => {
+                println!("[=] Saved 10k report kept: this run did not improve it");
+            }
+            Ok(t1000::results::Outcome::Scratch) => {
+                println!("[~] 10k report written to a scratch copy only (use --record to save)");
+            }
+            Ok(t1000::results::Outcome::WrittenVariant) => {
+                println!("[SAVED] Different settings from the saved report: recorded as a variant");
+            }
+            Ok(_) => println!(
+                "[SAVED] 10k Training and Evaluation Report exported to: {}",
+                out_json_path.display()
+            ),
+            Err(e) => eprintln!("[!] Could not write the report: {e}"),
+        }
     }
 }
