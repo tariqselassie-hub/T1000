@@ -91,8 +91,7 @@ pub fn calibrate(
         test_r2: [0.0; 3],
     };
     let fits = fit_columns(train_z, train_y);
-    for k in 0..3 {
-        let fit = fits[k];
+    for (k, &fit) in fits.iter().enumerate() {
         let (z, y) = (column(test_z, k), column(test_y, k));
         let n = y.len() as f64;
         let mean = y.iter().sum::<f64>() / n;
