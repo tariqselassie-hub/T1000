@@ -411,8 +411,7 @@ fn main() {
         return;
     };
     println!(
-        "  -> Epochs Completed: {}, Full Parameters: {}
-",
+        "  -> Epochs Completed: {}, Full Parameters: {}\n",
         ckpt.epochs_completed,
         ckpt.hybrid_params.len()
     );
