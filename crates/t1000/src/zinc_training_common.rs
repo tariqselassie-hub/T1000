@@ -316,6 +316,147 @@ pub fn compute_mae_and_r2(preds: &[Vec<f64>], targets: &[Vec<f64>]) -> ([f64; 3]
     (mae, r2)
 }
 
+/// Centred normal equations of a ridge fit: `(A + λI, b, mean_y, mean_z)`.
+#[allow(clippy::needless_range_loop)] // index form mirrors the maths
+fn ridge_normal_equations(
+    z_matrix: &[Vec<f64>],
+    targets: &[f64],
+    lambda: f64,
+) -> (Vec<Vec<f64>>, Vec<f64>, f64, Vec<f64>) {
+    let n = z_matrix.len();
+    let k = z_matrix[0].len();
+    assert_eq!(n, targets.len());
+
+    let mut mean_y = 0.0;
+    for &y in targets {
+        mean_y += y;
+    }
+    mean_y /= n as f64;
+
+    let mut mean_z = vec![0.0; k];
+    for row in z_matrix {
+        for (j, &val) in row.iter().enumerate() {
+            mean_z[j] += val;
+        }
+    }
+    for m in &mut mean_z {
+        *m /= n as f64;
+    }
+
+    let mut a = vec![vec![0.0; k]; k];
+    let mut b = vec![0.0; k];
+    for (row_idx, row) in z_matrix.iter().enumerate() {
+        let dy = targets[row_idx] - mean_y;
+        for i in 0..k {
+            let dzi = row[i] - mean_z[i];
+            b[i] += dzi * dy;
+            for j in i..k {
+                let dzj = row[j] - mean_z[j];
+                a[i][j] += dzi * dzj;
+            }
+        }
+    }
+    for i in 0..k {
+        for j in i..k {
+            a[j][i] = a[i][j];
+        }
+        a[i][i] += lambda;
+    }
+    (a, b, mean_y, mean_z)
+}
+
+/// Lower Cholesky factor, with the diagonal floored at 1e-12 so a near-singular matrix still factors.
+#[allow(clippy::needless_range_loop)] // index form mirrors the maths
+fn cholesky_lower_floored(a: &[Vec<f64>]) -> Vec<Vec<f64>> {
+    let k = a.len();
+    let mut l = vec![vec![0.0; k]; k];
+    for i in 0..k {
+        for j in 0..=i {
+            let mut sum = a[i][j];
+            for p in 0..j {
+                sum -= l[i][p] * l[j][p];
+            }
+            if i == j {
+                let diag = sum.max(1e-12);
+                l[i][j] = diag.sqrt();
+            } else {
+                l[i][j] = sum / l[j][j].max(1e-12);
+            }
+        }
+    }
+    l
+}
+
+/// Solves `L Lᵀ w = b`; the weights are clamped to [-2.5, 2.5].
+#[allow(clippy::needless_range_loop)] // index form mirrors the maths
+fn solve_cholesky_clamped(l: &[Vec<f64>], b: &[f64]) -> Vec<f64> {
+    let k = b.len();
+    let mut y_sol = vec![0.0; k];
+    for i in 0..k {
+        let mut sum = b[i];
+        for p in 0..i {
+            sum -= l[i][p] * y_sol[p];
+        }
+        y_sol[i] = sum / l[i][i].max(1e-12);
+    }
+
+    let mut w = vec![0.0; k];
+    for i in (0..k).rev() {
+        let mut sum = y_sol[i];
+        for p in (i + 1)..k {
+            sum -= l[p][i] * w[p];
+        }
+        let raw_w = sum / l[i][i].max(1e-12);
+        w[i] = raw_w.clamp(-2.5, 2.5);
+    }
+    w
+}
+
+/// Centred ridge regression of one target on the columns of `z_matrix`, solved by Cholesky.
+/// Returns `(weights, bias)`.
+pub fn solve_ridge_cholesky(
+    z_matrix: &[Vec<f64>],
+    targets: &[f64],
+    lambda: f64,
+) -> (Vec<f64>, f64) {
+    let (a, b, mean_y, mean_z) = ridge_normal_equations(z_matrix, targets, lambda);
+    let w = solve_cholesky_clamped(&cholesky_lower_floored(&a), &b);
+
+    let mut bias = mean_y;
+    for (j, &wj) in w.iter().enumerate() {
+        bias -= wj * mean_z[j];
+    }
+    (w, bias)
+}
+
+/// Mean absolute error and R^2 of one target.
+pub fn compute_mae_and_r2_single(preds: &[f64], targets: &[f64]) -> (f64, f64) {
+    let n = preds.len() as f64;
+    let mut mae = 0.0;
+    let mut mean_t = 0.0;
+    for (&p, &t) in preds.iter().zip(targets) {
+        mae += (p - t).abs();
+        mean_t += t;
+    }
+    mae /= n;
+    mean_t /= n;
+
+    let mut ss_tot = 0.0;
+    let mut ss_res = 0.0;
+    for (&p, &t) in preds.iter().zip(targets) {
+        let dt = t - mean_t;
+        let dp = t - p;
+        ss_tot += dt * dt;
+        ss_res += dp * dp;
+    }
+    let r2 = if ss_tot > 1e-12 {
+        1.0 - (ss_res / ss_tot)
+    } else {
+        0.0
+    };
+    (mae, r2)
+}
+
 // ── Timestamps ────────────────────────────────────────────────────────────────
 
 /// Current UTC time as RFC 3339 (`2026-10-22T15:04:05Z`).
@@ -479,7 +620,7 @@ mod tests {
     fn ridge_recovers_an_exact_linear_map() {
         // y = 2 x0 - x1 + 0.5 and y' = -x0 + 3, no noise, tiny lambda.
         let xs: Vec<Vec<f64>> = (0..20)
-            .map(|i| vec![i as f64 * 0.1, (i % 7) as f64])
+            .map(|i| vec![f64::from(i) * 0.1, f64::from(i % 7)])
             .collect();
         let ys: Vec<Vec<f64>> = xs
             .iter()
@@ -496,7 +637,7 @@ mod tests {
 
     #[test]
     fn pruning_keeps_layers_1_2_ry_of_layer_3_and_the_readout() {
-        let full: Vec<f64> = (0..111).map(|i| i as f64).collect();
+        let full: Vec<f64> = (0..111).map(f64::from).collect();
         let pruned = derive_pruned_params(&full, 12);
         assert_eq!(pruned.len(), 99);
         assert_eq!(&pruned[..48], &full[..48]);

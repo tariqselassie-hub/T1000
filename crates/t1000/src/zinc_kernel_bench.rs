@@ -169,7 +169,7 @@ mod tests {
 
     /// 111 parameters; qubit 11's readout weights are zero so dropping it changes nothing.
     fn full_params() -> Vec<f64> {
-        let mut p: Vec<f64> = (0..111).map(|i| (i as f64 * 0.37).sin()).collect();
+        let mut p: Vec<f64> = (0..111).map(|i| (f64::from(i) * 0.37).sin()).collect();
         for row in 0..3 {
             p[72 + row * 12 + 11] = 0.0;
         }
