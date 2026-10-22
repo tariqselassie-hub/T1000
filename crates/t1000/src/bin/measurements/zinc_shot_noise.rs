@@ -18,6 +18,9 @@
 //! `--prep-rotations R --prep-cnots C` multiplies the fidelity by that of the state-preparation circuit
 //! (counts from `zinc_state_prep_cost`).
 //!
+//! `--circuit-1q R --circuit-2q C` gives the total gate counts of a routed circuit directly
+//! (see `zinc_routing_study`) and overrides the two settings above.
+//!
 //! `--sweep` instead compares noise-aware head settings (wider ridge-penalty grid, feature subsets)
 //! on identical sampled data.
 //!
@@ -206,7 +209,12 @@ fn main() {
     let prep_cnots: f64 = value("--prep-cnots").and_then(|v| v.parse().ok()).unwrap_or(0.0);
     let prep_fidelity = (1.0 - p2 / 10.0).powf(prep_rotations) * (1.0 - p2).powf(prep_cnots);
     let ansatz_f = ansatz_fidelity(N_QUBITS, value("--depth").and_then(|v| v.parse().ok()).unwrap_or(4), p2 / 10.0, p2);
-    let fidelity = ansatz_f * prep_fidelity;
+    // Routed circuits supply total gate counts directly (single-qubit gates, CNOT-equivalents).
+    let direct = value("--circuit-1q").zip(value("--circuit-2q")).and_then(|(r, c)| Some((r.parse::<f64>().ok()?, c.parse::<f64>().ok()?)));
+    let fidelity = match direct {
+        Some((r, c)) => (1.0 - p2 / 10.0).powf(r) * (1.0 - p2).powf(c),
+        None => ansatz_f * prep_fidelity,
+    };
     let mitigate = args.iter().any(|a| a == "--mitigate-readout");
     let plan = Plan { kind, mitigate: if mitigate { readout } else { None } };
     let noisy_train: usize = value("--noisy-train").and_then(|v| v.parse().ok()).unwrap_or(2_000);
@@ -293,7 +301,7 @@ fn main() {
         Observables::SingleZ => "w1".to_string(),
     };
     let device_tag = if p2 > 0.0 || readout.is_some() {
-        format!("_g{p2}_r{}{}{}", readout.map_or(0.0, |e| e.p10), if mitigate { "_m" } else { "" }, if prep_cnots > 0.0 { format!("_prep{prep_cnots:.0}") } else { String::new() })
+        format!("_g{p2}_r{}{}{}", readout.map_or(0.0, |e| e.p10), if mitigate { "_m" } else { "" }, if let Some((_, c)) = direct { format!("_routed{c:.0}") } else if prep_cnots > 0.0 { format!("_prep{prep_cnots:.0}") } else { String::new() })
     } else {
         String::new()
     };

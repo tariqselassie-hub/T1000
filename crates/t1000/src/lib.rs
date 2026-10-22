@@ -54,6 +54,7 @@ pub mod qgnn;
 pub mod qssm;
 pub mod rcs;
 pub mod results;
+pub mod routing;
 pub mod simd;
 pub mod simd_bloch;
 pub mod smiles;

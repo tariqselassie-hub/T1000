@@ -737,3 +737,71 @@ about 0.005:
 to turn CNOTs into a device's native two-qubit gate; and compilation tricks (such as approximate
 preparation or reusing the preparation across molecules) that could lower the counts.
 
+### 5.9 Routing onto real qubit connectivity (`t1000::routing`, `zinc_routing_study`)
+
+Sections 5.7 and 5.8 assumed any two qubits can interact. `zinc_routing_study` routes the real circuit,
+the state preparation of a molecule followed by the depth-4, 10-qubit ansatz, onto five connectivities.
+
+* **The ansatz is not nearest-neighbour.** `CircuitAnsatz` pairs qubit `q` with `q + 2^(layer mod 4)`
+  (mod `n`), so on 10 qubits the four layers use offsets 1, 2, 4 and 2. Only the first layer is local;
+  the other three are what makes routing expensive.
+* **Topologies:** all-to-all (the baseline used so far), a 10-qubit line, a 10-qubit ring, a 2 x 5 grid,
+  and a 10-qubit tree cut from the heavy-hex lattice (a path of five with a branch of two and a
+  branch of three; real devices are larger and contain cycles, so this fragment is conservative).
+* **Router:** greedy. It executes every pending gate whose qubits are neighbours, then takes the
+  SWAP that most reduces the summed distance of the pending gates, breaking ties with the next
+  layer's gates. The ten CZ gates of a layer commute and may run in any order. The final qubit
+  permutation is not undone, because the readout relabels the measured bits (the earlier chain
+  estimate swapped every qubit back). A SWAP counts as three CNOTs.
+* **Placement search ("best fit"):** for each topology the identity placement and random placements
+  improved by pairwise exchanges, scored on the mean routed cost of 4 molecules; 40, 150 and 500
+  restarts give identical results, so the search is converged. The best placement is then scored
+  on 200 other molecules and compared with the naive identity placement.
+* **Verification:** every routed circuit of the first molecule is simulated and compared with the
+  original after undoing the final permutation (largest difference 1e-16); the library tests do the
+  same for random programs, every topology and random placements.
+
+Two-qubit gates per molecule (preparation plus ansatz, CNOT-equivalents) and circuit fidelity under
+the global depolarizing model (single-qubit error = two-qubit error / 10; 99.3 single-qubit gates):
+
+| Topology | Edges | Best placement: two-qubit gates (swaps) | Range | Naive placement | Best 2q depth | Ansatz alone (same placement) | F at 1e-3 | F at 5e-3 | F at 1e-2 |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| all-to-all | 45 | 63.8 (0.0) | 60 to 64 | 63.8 | 44.8 | 40 | 0.929 | 0.691 | 0.477 |
+| line | 9 | 201.8 (46.0) | 198 to 202 | 210.8 | 120.7 | 142 | 0.809 | 0.346 | 0.119 |
+| ring | 10 | 180.9 (39.0) | 179 to 181 | 195.8 | 93.9 | 136 | 0.826 | 0.384 | 0.147 |
+| grid | 13 | 130.0 (22.1) | 128 to 132 | 168.4 | 85.7 | 112 | 0.869 | 0.496 | 0.245 |
+| heavy-hex | 9 | 175.5 (37.2) | 175 to 183 | 204.8 | 112.1 | 136 | 0.831 | 0.395 | 0.155 |
+
+Accuracy of the 385-feature head at the typical device (two-qubit error 5e-3, readout 2%, 5,000
+noisy training molecules, 2 seeds), using each topology's routed gate counts (relative MSE; seed noise
+about 0.005):
+
+| Topology | Total F | 1,000 shots | 10,000 shots | 100,000 shots |
+| :--- | :--- | :--- | :--- | :--- |
+| all-to-all | 0.691 | 0.653 | 0.535 | 0.470 |
+| grid | 0.496 | 0.713 | 0.557 | 0.481 |
+| heavy-hex | 0.395 | 0.750 | 0.575 | 0.491 |
+| ring | 0.384 | 0.758 | 0.577 | 0.491 |
+| line | 0.346 | 0.782 | 0.585 | 0.500 |
+
+* **Connectivity costs far more than the preparation.** The same circuit needs 64 two-qubit gates with
+  all-to-all connectivity and 130 to 202 on the restricted topologies; most of the extra comes from the
+  ansatz's offset-2 and offset-4 layers, not from the state preparation.
+* **The grid is clearly best of the restricted topologies** (130 gates, F 0.496 at the typical error
+  rate) and the line clearly worst (202, F 0.346). Heavy-hex (176) and ring (181) are within the
+  router's noise of each other, so their order should not be trusted.
+* **Accuracy follows the gate count but degrades gently.** At 100,000 shots all topologies except the
+  line (0.500) beat linear ridge on the raw features (0.4952): 0.470 all-to-all, 0.481 grid, 0.491
+  heavy-hex and ring. At 10,000 shots none does (0.535 to 0.585).
+* **A good placement matters:** against the identity placement it saves 4% of the gates on the line,
+  8% on the ring, 14% on heavy-hex and 23% on the grid.
+* **Caveats.** The router is greedy, so counts are an upper bound and a stronger compiler would lower
+  them; the ranking of the grid and the line is the dependable result. Native-gate overhead (a CNOT
+  is a CZ plus two Hadamards on CZ-native hardware), the Rademacher phase layer (treated as virtual Z
+  rotations) and crosstalk are not counted. Saved for this host: `zinc_routing_study.json` and the
+  weight-4 curves `zinc_shot_noise_maxabs_w4_g0.005_r0.02_routed<N>.json`.
+
+**What this suggests.** The cost is set by the ansatz's long-range entangling pattern, not by the
+linear head, which needs no training. A topology-native ansatz (entanglers only between neighbours)
+would remove most routing; whether it keeps the accuracy is the natural next test.
+

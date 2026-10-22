@@ -322,6 +322,10 @@ name = "zinc_state_prep_cost"
 path = "src/bin/measurements/zinc_state_prep_cost.rs"
 
 [[bin]]
+name = "zinc_routing_study"
+path = "src/bin/measurements/zinc_routing_study.rs"
+
+[[bin]]
 name = "zinc_topological_walk_screen"
 path = "src/bin/screening/zinc_topological_walk_screen.rs"
 
