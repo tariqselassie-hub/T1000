@@ -85,10 +85,14 @@ pub struct Scaler {
 
 impl Scaler {
     pub fn fit(kind: InputScaling, rows: &[ZincMolecule]) -> Self {
-        let d = rows[0].features.len();
-        let stat = |j: usize, f: fn(f64, f64) -> f64, init: f64| {
-            rows.iter().map(|m| m.features[j]).fold(init, f)
-        };
+        let features: Vec<&[f64]> = rows.iter().map(|m| m.features.as_slice()).collect();
+        Self::fit_rows(kind, &features)
+    }
+
+    /// As [`Scaler::fit`] for plain feature rows (any dataset).
+    pub fn fit_rows(kind: InputScaling, rows: &[&[f64]]) -> Self {
+        let d = rows[0].len();
+        let stat = |j: usize, f: fn(f64, f64) -> f64, init: f64| rows.iter().map(|r| r[j]).fold(init, f);
         let (mut offset, mut range) = (vec![0.0; d], vec![1.0; d]);
         for j in 0..d {
             let (lo, hi) = (stat(j, f64::min, f64::INFINITY), stat(j, f64::max, f64::NEG_INFINITY));

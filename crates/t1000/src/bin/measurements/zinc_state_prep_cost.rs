@@ -9,17 +9,18 @@
 //! verifies each one by simulating it against the encoder, and reports the gate counts and the
 //! circuit fidelity they imply for a given gate error.
 //!
+//! `--dataset qm9` (with `--features zinc|qm9`) runs the same count on QM9 molecules.
+//!
 //! Usage: `zinc_state_prep_cost [--scale maxabs|minmax|raw] [--samples N]`
 
 use std::env;
 use t1000::device_noise::ansatz_fidelity;
 use t1000::state::QuantumState;
 use t1000::state_prep::{amplitude_prep, amplitude_prep_raw, counts, to_circuit, PrepGate};
-use t1000::zinc_data::{self, InputScaling, Scaler};
+use t1000::datasets::DataOptions;
+use t1000::zinc_data::{InputScaling, Scaler};
 
 const PREP_QUBITS: usize = 5;
-const TRAIN_CSV: &str = "tests/benchmarks/zinc_molecular/outputs/zinc_train_10k.csv";
-const TEST_CSV: &str = "tests/benchmarks/zinc_molecular/outputs/zinc_test_2k.csv";
 
 /// The encoder's amplitudes: the scaled features, zero padded to 32 entries (the encoder
 /// normalises, the preparation does too).
@@ -55,10 +56,10 @@ fn main() {
         Some("minmax") => InputScaling::MinMax,
         _ => InputScaling::MaxAbs,
     };
-    let samples: usize = value("--samples").and_then(|v| v.parse().ok()).unwrap_or(10_000);
-    let train = zinc_data::load(TRAIN_CSV, samples).expect("load training set");
-    let test = zinc_data::load(TEST_CSV, 2_000).expect("load held-out set");
-    let scaler = Scaler::fit(scaling, &train);
+    let data = DataOptions::from_args(&args).load();
+    let (train, test) = (data.train, data.test);
+    let fit_rows: Vec<&[f64]> = train.iter().map(|m| m.features.as_slice()).collect();
+    let scaler = Scaler::fit_rows(scaling, &fit_rows);
 
     let (mut raw_c, mut opt_c, mut opt_r, mut chain) = (Vec::new(), Vec::new(), Vec::new(), Vec::new());
     let mut worst_deviation = 0.0f64;
@@ -77,7 +78,7 @@ fn main() {
         let dev = state.real.iter().zip(&amps).map(|(g, a)| (g - a / norm).abs()).fold(0.0, f64::max);
         worst_deviation = worst_deviation.max(dev).max(state.imag.iter().fold(0.0f64, |x, v| x.max(v.abs())));
     }
-    println!("State preparation of the ZINC input ({scaling:?} inputs), {} molecules, 19 amplitudes on {PREP_QUBITS} qubits\n", raw_c.len());
+    println!("State preparation of the {} input ({scaling:?} inputs), {} molecules, 19 amplitudes on {PREP_QUBITS} qubits\n", data.label, raw_c.len());
     println!("Plain construction: every molecule needs 31 rotations and 30 CNOTs.");
     println!("With free-angle zeroing and CNOT cancellation:");
     summary("CNOTs (2-qubit gates)", &opt_c);
@@ -113,6 +114,7 @@ fn main() {
         "max_state_deviation": worst_deviation,
         "fidelity": fidelity_rows,
     });
-    let _ = t1000::results::write("results/experiments/zinc_state_prep_cost.json", serde_json::to_string_pretty(&report).unwrap_or_default());
+    let name = if data.label.starts_with("QM9") { "qm9_state_prep_cost" } else { "zinc_state_prep_cost" };
+    let _ = t1000::results::write(format!("results/experiments/{name}.json"), serde_json::to_string_pretty(&report).unwrap_or_default());
     println!("\nMean counts to use with zinc_shot_noise: --prep-rotations {rot:.1} --prep-cnots {cnot:.1}");
 }

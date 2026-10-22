@@ -805,3 +805,144 @@ about 0.005):
 linear head, which needs no training. A topology-native ansatz (entanglers only between neighbours)
 would remove most routing; whether it keeps the accuracy is the natural next test.
 
+---
+
+## 6. QM9 and a hybrid head
+
+Sections 5.1 to 5.9 used ZINC. This section runs the same machinery on QM9 (133,885 molecules with
+DFT properties; `data/qm9/README.md` explains how to fetch the file, which is not stored in git) and
+tests whether the findings carry over.
+
+### 6.1 Data and baselines
+
+`t1000::qm9_data` featurises the SMILES with the same 19 descriptors as the ZINC pipeline (heavy
+atoms, estimated molecular weight, element counts, aromatic atoms and ratio, heteroatoms and ratio,
+double and triple bonds, branches, chiral atoms, rings). All 133,885 SMILES parse and featurising the
+whole file takes 0.4 s. QM9 contains only C, H, N, O and F, so the sulfur, chlorine and bromine columns
+are always zero. A `--features qm9` variant replaces those and the halogen total with the hydrogen
+count, formal charge, aromatic carbons and total atom count. `t1000::datasets` puts ZINC and QM9 behind
+one interface (`--dataset zinc|qm9`, `--targets a,b,c`, `--features zinc|qm9`, `--seed`); QM9 is shuffled
+with a fixed seed, the last 10,000 molecules are held out and training takes the first 20,000 of the
+rest.
+
+Held-out R2 of ridge regression on the 19 descriptors (`qm9_explore`, 20,000 training molecules):
+
+| Property | Linear ridge | Quadratic ridge | Quadratic, with-hydrogen descriptors |
+| :--- | :--- | :--- | :--- |
+| mu (dipole) | 0.244 | 0.317 | 0.326 |
+| alpha (polarizability) | 0.923 | 0.940 | 0.941 |
+| homo | 0.320 | 0.491 | 0.567 |
+| lumo | 0.742 | 0.801 | 0.814 |
+| gap | 0.706 | 0.753 | 0.756 |
+| r2 | 0.642 | 0.729 | 0.731 |
+| zpve | 0.998 | 0.999 | 0.999 |
+| cv | 0.916 | 0.924 | 0.926 |
+| u0_atom | 0.994 | 0.995 | 0.995 |
+
+The properties span the range from hard (`mu`) to almost linear in the descriptors (`zpve`, `u0_atom`).
+The study uses `mu`, `gap` and `alpha` (hard, medium, easy); `zpve` and `u0_atom` are too easy to tell
+models apart. The with-hydrogen descriptors help only `homo`.
+
+### 6.2 The circuit feature map on QM9
+
+Depth 4, 385 parity features (weight 4), `maxabs` inputs, targets `mu, gap, alpha`, 20,000 training and
+10,000 held-out molecules (relative MSE as in section 5; lower is better):
+
+| Model | Relative MSE | R2 mu | R2 gap | R2 alpha |
+| :--- | :--- | :--- | :--- | :--- |
+| Mean predictor | 1.000 | 0.000 | 0.000 | 0.000 |
+| Linear ridge | 0.3757 | 0.244 | 0.706 | 0.923 |
+| Circuit + linear head | 0.3359 | 0.319 | 0.750 | 0.924 |
+| Quadratic ridge | 0.3301 | 0.317 | 0.753 | 0.940 |
+
+* **The circuit head matches quadratic ridge and does not beat it.** The same holds as the training set
+  grows (relative MSE at 1,000 / 5,000 / 20,000 / 50,000 molecules: circuit 0.3727 / 0.3412 / 0.3359 /
+  0.3344, quadratic 0.3514 / 0.3340 / 0.3301 / 0.3287). All models plateau near 0.33: the 19
+  descriptors, not the model class, limit these targets.
+* **Targets that depend on interactions** (`homo, lumo, r2`) give the same picture: circuit 0.336,
+  linear ridge 0.432, quadratic ridge 0.326 with the ZINC descriptors; 0.307, 0.402 and 0.296 with the
+  hydrogen-aware ones.
+* **Structure carries over from ZINC.** Observables (10 single-qubit Z, then weights 2, 3, 4, 5, 6):
+  0.556, 0.351, 0.336, 0.336, 0.336, 0.336. Depth 1, 2, 3, 4, 6: 0.405, 0.362, 0.338, 0.336, 0.336;
+  depth 1 is worse than linear ridge. Input scaling matters much less than on ZINC (raw 0.338, min-max
+  0.336, max-abs 0.336) because no column dominates the norm.
+* **Unexplained dip at very large training sets.** From about 80,000 training molecules the validated
+  ridge penalty moves up from 1e-7 and `alpha`'s R2 falls (0.926 at 50,000, 0.910 at 123,885; relative
+  MSE 0.3344 to 0.3399). A separate penalty per target did not fix it (each target chose its own, and
+  the result was unchanged), so the shared penalty is not the cause. Numerical conditioning of the
+  normal equations with 385 strongly collinear features is the likely cause but was not confirmed;
+  results here use up to 50,000 training molecules.
+
+### 6.3 QM9 on the device model
+
+Preparation: the 19 amplitudes of QM9 molecules are sparser, so the preparation circuit is smaller than
+for ZINC (30,000 molecules, every prepared state matches the encoder to 6.7e-16): 20.65 CNOTs and 15.80
+rotations on average (minimum 2, maximum 24), against 23.77 and 19.28 for ZINC. Routing the
+preparation plus the depth-4 ansatz (the same strides as before) gives almost the same counts as ZINC:
+
+| Topology | Two-qubit gates (best placement) | Naive placement |
+| :--- | :--- | :--- |
+| all-to-all | 60.4 | 60.4 |
+| grid | 129.9 | 162.6 |
+| heavy-hex fragment | 173.7 | 200.6 |
+| ring | 180.5 | 189.7 |
+| line | 197.4 | 206.4 |
+
+Accuracy at the typical device (two-qubit error 5e-3, readout 2%), 385 features, 5,000 noisy training
+molecules, 2,000 held-out, 2 seeds. On this smaller held-out set the references are linear ridge 0.389,
+quadratic ridge 0.340 and the noise-free circuit head 0.345. Circuit features only (relative MSE at
+1,000 / 10,000 / 100,000 shots):
+
+| Topology | Circuit features only | Circuit features plus exact descriptors |
+| :--- | :--- | :--- |
+| all-to-all | 0.567 / 0.453 / 0.403 | 0.396 / 0.373 / 0.355 |
+| grid | 0.612 / 0.481 / 0.412 | 0.407 / 0.385 / 0.359 |
+| heavy-hex fragment | 0.645 / 0.496 / 0.423 | 0.406 / 0.386 / 0.364 |
+| ring | 0.649 / 0.498 / 0.423 | 0.406 / 0.384 / 0.364 |
+| line | 0.666 / 0.507 / 0.429 | 0.407 / 0.391 / 0.366 |
+
+* **With circuit features only, QM9 does worse than ZINC on hardware.** No topology beats linear ridge
+  (0.389) even at 100,000 shots. The per-target R2 shows why: on the all-to-all device `alpha` falls from
+  0.928 (noise-free) to 0.783 at 100,000 shots and 0.523 at 1,000, while `mu` (0.301 to 0.287) and `gap`
+  (0.737 to 0.720) barely move. A noisy estimate of a nonlinear expansion cannot compete with exact
+  descriptors on an almost-linear target.
+
+### 6.4 A hybrid head: exact descriptors plus circuit features
+
+`zinc_shot_noise --append-raw` lets the head read the 19 scaled descriptors (exact, no sampling)
+together with the sampled circuit features. The descriptors give the head a floor at about
+linear-ridge accuracy, and the circuit features add gain on top as shots increase.
+
+* **QM9:** relative MSE falls to 0.396 / 0.373 / 0.355 on the all-to-all device (table above), with
+  `alpha` holding R2 0.91 to 0.92 at every shot count. It beats linear ridge (0.389) from 10,000 shots
+  on every topology except the line (0.391), and from 100,000 shots on all of them.
+* **ZINC:** the same change on the routed circuits at the typical device (relative MSE at 1,000 / 10,000
+  / 100,000 shots):
+
+| Topology | Circuit features only (section 5.9) | Circuit features plus exact descriptors |
+| :--- | :--- | :--- |
+| all-to-all | 0.653 / 0.535 / 0.470 | 0.497 / 0.475 / 0.428 |
+| grid | 0.713 / 0.557 / 0.481 | 0.509 / 0.475 / 0.440 |
+| heavy-hex fragment | 0.750 / 0.575 / 0.491 | 0.517 / 0.483 / 0.445 |
+| ring | 0.758 / 0.577 / 0.491 | 0.518 / 0.485 / 0.446 |
+| line | 0.782 / 0.585 / 0.500 | 0.519 / 0.489 / 0.453 |
+
+  Every topology now beats linear ridge on the raw features (0.4952) at 10,000 shots, and the spread
+  between topologies at 10,000 shots shrinks from 0.050 to 0.015.
+* **Noise-free**, the hybrid head scores 0.3834 on ZINC (circuit-only 0.3959, quadratic ridge 0.386) and
+  0.3346 on the 2,000 held-out QM9 molecules (circuit-only 0.3447, quadratic ridge 0.3401 on the same
+  molecules), narrowly ahead of quadratic ridge in both cases.
+
+### 6.5 What this does and does not show
+
+* The circuit's parity features act as a general nonlinear feature expansion: on both ZINC and QM9 they
+  match, and with the descriptors narrowly exceed, a quadratic polynomial ridge model. They do not
+  show a clear advantage over that classical model, which is cheaper to fit and has no sampling noise.
+* Under device errors the circuit-only head loses to a plain linear ridge on QM9 and needs about
+  100,000 shots to beat it on ZINC. The hybrid head is robust (it cannot fall far below the classical
+  floor) and keeps a gain of 0.02 to 0.07 relative MSE over linear ridge at 100,000 shots, at a cost of
+  that many shots per molecule.
+* Everything here simulates the circuit exactly and models only sampling noise, global depolarising gate
+  errors, readout errors, state preparation and routing (sections 5.5 to 5.9). The limitations listed
+  there apply.
+

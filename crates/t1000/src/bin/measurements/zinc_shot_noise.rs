@@ -24,21 +24,24 @@
 //! `--sweep` instead compares noise-aware head settings (wider ridge-penalty grid, feature subsets)
 //! on identical sampled data.
 //!
+//! `--append-raw` adds the 19 exact scaled descriptors to the sampled features.
+//!
+//! `--dataset qm9` (with `--targets a,b,c`, `--features zinc|qm9`) runs the same study on QM9.
+//!
 //! Usage: `zinc_shot_noise [--scale raw|minmax|maxabs] [--depth N] [--seeds K] [--noisy-train M] [--sweep]`
 
 use serde::Serialize;
 use std::env;
-use t1000::baselines::{regression_metrics, ZINC_TARGETS};
+use t1000::baselines::regression_metrics;
 use t1000::baselines::RIDGE_LAMBDAS;
 use t1000::device_noise::{ansatz_fidelity, apply_readout, depolarize, invert_readout, ReadoutError};
 use t1000::linear_head::{probability_features_into, project, select_features, LinearHead, Observables, NOISE_LAMBDAS};
-use t1000::zinc_data::{self, InputScaling, Scaler, ZincMolecule};
+use t1000::datasets::{Dataset, DataOptions, Sample};
+use t1000::zinc_data::{InputScaling, Scaler};
 use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState};
 
 const N_QUBITS: usize = 10;
 const SHOTS: [usize; 8] = [30, 100, 300, 1_000, 3_000, 10_000, 30_000, 100_000];
-const TRAIN_CSV: &str = "tests/benchmarks/zinc_molecular/outputs/zinc_train_10k.csv";
-const TEST_CSV: &str = "tests/benchmarks/zinc_molecular/outputs/zinc_test_2k.csv";
 
 /// SplitMix64: small, fast and deterministic across platforms.
 struct Rng(u64);
@@ -96,8 +99,14 @@ fn cumulative(p: &[f64]) -> Vec<f64> {
 }
 
 fn score(head: &LinearHead, features: &[Vec<f64>], targets: &[Vec<f64>]) -> (f64, f64) {
-    let m = regression_metrics(&head.predict(features), targets, &ZINC_TARGETS);
+    let m = regression_metrics(&head.predict(features), targets, &["t0", "t1", "t2"]);
     (1.0 - m.iter().map(|t| t.r2).sum::<f64>() / 3.0, m.iter().map(|t| t.pearson_r).sum::<f64>() / 3.0)
+}
+
+/// Held-out R2 of each of the three targets.
+fn target_r2(head: &LinearHead, features: &[Vec<f64>], targets: &[Vec<f64>]) -> [f64; 3] {
+    let m = regression_metrics(&head.predict(features), targets, &["t0", "t1", "t2"]);
+    [m[0].r2, m[1].r2, m[2].r2]
 }
 
 fn mean_sd(v: &[f64]) -> (f64, f64) {
@@ -219,18 +228,20 @@ fn main() {
     let plan = Plan { kind, mitigate: if mitigate { readout } else { None } };
     let noisy_train: usize = value("--noisy-train").and_then(|v| v.parse().ok()).unwrap_or(2_000);
 
-    let train = zinc_data::load(TRAIN_CSV, 10_000).expect("load training set");
-    let test = zinc_data::load(TEST_CSV, 2_000).expect("load held-out set");
-    let scaler = Scaler::fit(scaling, &train);
+    let data_options = DataOptions::from_args(&args);
+    let data = data_options.load();
+    let (train, test) = (data.train, data.test);
+    let rows: Vec<&[f64]> = train.iter().map(|m| m.features.as_slice()).collect();
+    let scaler = Scaler::fit_rows(scaling, &rows);
     let encoding = DataEncodingLayer::new(N_QUBITS, EncodingKind::Amplitude);
     let ansatz = CircuitAnsatz::new(N_QUBITS, depth).with_pi_layer(true);
 
     if p2 > 0.0 || readout.is_some() {
         println!("Device errors: circuit fidelity {fidelity:.3} = ansatz {ansatz_f:.3} x state preparation {prep_fidelity:.3} (two-qubit error {p2}), readout {readout:?}, mitigation {mitigate}");
     }
-    println!("Simulating the circuit (depth {depth}, {scaling:?} inputs, {kind:?}) for {} + {} molecules...", train.len(), test.len());
+    println!("{} targets {:?}: simulating the circuit (depth {depth}, {scaling:?} inputs, {kind:?}) for {} + {} molecules...", data.label, data.target_names, train.len(), test.len());
     let mut state = QuantumState::new(encoding.dim);
-    let mut outputs = |rows: &[ZincMolecule]| -> Vec<Vec<f64>> {
+    let mut outputs = |rows: &[Sample]| -> Vec<Vec<f64>> {
         rows.iter()
             .map(|m| {
                 ansatz.forward_into(&encoding.encode(&scaler.apply(&m.features)), &ansatz.weights, &mut state);
@@ -249,9 +260,19 @@ fn main() {
             })
             .collect()
     };
-    let train_y: Vec<Vec<f64>> = train.iter().map(|m| m.targets().to_vec()).collect();
-    let test_y: Vec<Vec<f64>> = test.iter().map(|m| m.targets().to_vec()).collect();
-    let (train_exact, test_exact) = (exact(&train_p), exact(&test_p));
+    let train_y: Vec<Vec<f64>> = train.iter().map(|m| m.targets.to_vec()).collect();
+    let test_y: Vec<Vec<f64>> = test.iter().map(|m| m.targets.to_vec()).collect();
+    // --append-raw: the head also sees the exact scaled descriptors (free to read, no sampling).
+    let append_raw = args.iter().any(|a| a == "--append-raw");
+    let raw_train: Vec<Vec<f64>> = train.iter().map(|m| scaler.apply(&m.features)).collect();
+    let raw_test: Vec<Vec<f64>> = test.iter().map(|m| scaler.apply(&m.features)).collect();
+    let with_raw = |rows: Vec<Vec<f64>>, raw: &[Vec<f64>]| -> Vec<Vec<f64>> {
+        if !append_raw {
+            return rows;
+        }
+        rows.into_iter().zip(raw).map(|(mut r, x)| { r.extend_from_slice(x); r }).collect()
+    };
+    let (train_exact, test_exact) = (with_raw(exact(&train_p), &raw_train), with_raw(exact(&test_p), &raw_test));
     let exact_head = LinearHead::fit(&train_exact, &train_y);
     let (ref_mse, ref_r) = score(&exact_head, &test_exact, &test_y);
     println!("Noise-free reference: relative MSE {ref_mse:.4}, mean r {ref_r:.4}\n");
@@ -265,6 +286,7 @@ fn main() {
     }
     let mut counts = vec![0u32; encoding.dim];
     let mut rows = Vec::new();
+    let mut per_target: Vec<(usize, [f64; 3])> = Vec::new();
     println!("┌─────────┬───────────────────────────────┬───────────────────────────────┐");
     println!("│  shots  │ exact-trained head            │ noisy-trained head            │");
     println!("│         │ rel. MSE (sd)       mean r    │ rel. MSE (sd)       mean r    │");
@@ -274,27 +296,35 @@ fn main() {
         .unwrap_or_else(|| SHOTS.to_vec());
     for &shots in &shot_list {
         let (mut a_mse, mut a_r, mut b_mse, mut b_r) = (vec![], vec![], vec![], vec![]);
+        let mut b_r2 = [0.0f64; 3];
         for seed in 0..seeds {
             let mut rng = Rng(0xC0FF_EE00 ^ (shots as u64) << 8 ^ seed as u64);
-            let noisy_test: Vec<Vec<f64>> = test_cdf.iter().map(|c| sampled_features(c, shots, &mut rng, &mut counts, &plan)).collect();
+            let noisy_test = with_raw(test_cdf.iter().map(|c| sampled_features(c, shots, &mut rng, &mut counts, &plan)).collect(), &raw_test);
             let (m, r) = score(&exact_head, &noisy_test, &test_y);
             a_mse.push(m);
             a_r.push(r);
-            let noisy_train_x: Vec<Vec<f64>> = train_cdf.iter().map(|c| sampled_features(c, shots, &mut rng, &mut counts, &plan)).collect();
+            let noisy_train_x = with_raw(train_cdf.iter().map(|c| sampled_features(c, shots, &mut rng, &mut counts, &plan)).collect(), &raw_train);
             let head = LinearHead::fit(&noisy_train_x, &train_y[..noisy_train_x.len()]);
             let (m, r) = score(&head, &noisy_test, &test_y);
             b_mse.push(m);
             b_r.push(r);
+            target_r2(&head, &noisy_test, &test_y).iter().enumerate().for_each(|(k, v)| b_r2[k] += v / seeds as f64);
         }
         let ((am, asd), (bm, bsd)) = (mean_sd(&a_mse), mean_sd(&b_mse));
         let (ar, br) = (mean_sd(&a_r).0, mean_sd(&b_r).0);
         println!("│ {shots:>7} │ {am:>8.4} ({asd:.4})   {ar:>8.4}   │ {bm:>8.4} ({bsd:.4})   {br:>8.4}   │");
+        per_target.push((shots, b_r2));
         rows.push(Row { shots, exact_head_relative_mse: am, exact_head_sd: asd, exact_head_mean_r: ar, noisy_head_relative_mse: bm, noisy_head_sd: bsd, noisy_head_mean_r: br });
     }
     println!("└─────────┴───────────────────────────────┴───────────────────────────────┘");
+    let free_r2 = target_r2(&exact_head, &test_exact, &test_y);
+    println!("Held-out R2 per target {:?} (noisy-trained head, mean over seeds); noise-free {:.3} {:.3} {:.3}", data.target_names, free_r2[0], free_r2[1], free_r2[2]);
+    for (shots, r2) in &per_target {
+        println!("  {shots:>7} shots: {:>7.3} {:>7.3} {:>7.3}", r2[0], r2[1], r2[2]);
+    }
     println!("Noise-free: relative MSE {ref_mse:.4}. Mean predictor = 1.0. {seeds} seeds per row; noisy-trained head uses {} training molecules.", train_cdf.len());
 
-    let report = serde_json::json!({ "scaling": format!("{scaling:?}"), "observables": format!("{kind:?}"), "depth": depth, "gate_error_p2": p2, "circuit_fidelity": fidelity, "ansatz_fidelity": ansatz_f, "state_preparation_fidelity": prep_fidelity, "readout_p10": readout.map(|e| e.p10), "readout_mitigated": mitigate, "noise_free_relative_mse": ref_mse, "noise_free_mean_r": ref_r, "seeds": seeds, "noisy_train_molecules": train_cdf.len(), "rows": rows });
+    let report = serde_json::json!({ "dataset": data.label, "targets": data.target_names, "scaling": format!("{scaling:?}"), "observables": format!("{kind:?}"), "depth": depth, "gate_error_p2": p2, "circuit_fidelity": fidelity, "ansatz_fidelity": ansatz_f, "state_preparation_fidelity": prep_fidelity, "readout_p10": readout.map(|e| e.p10), "readout_mitigated": mitigate, "noise_free_relative_mse": ref_mse, "noise_free_mean_r": ref_r, "seeds": seeds, "noisy_train_molecules": train_cdf.len(), "rows": rows });
     let obs_tag = match kind {
         Observables::ParityUpTo(k) => format!("w{k}"),
         Observables::ZAndZz => "w2".to_string(),
@@ -305,7 +335,9 @@ fn main() {
     } else {
         String::new()
     };
-    let path = format!("results/experiments/zinc_shot_noise_{}_{obs_tag}{device_tag}.json", format!("{scaling:?}").to_lowercase());
+    let raw_tag = if append_raw { "_raw" } else { "" };
+    let prefix = if data_options.dataset == Dataset::Qm9 { format!("qm9_shot_noise_{}{raw_tag}", data.target_names.join("-")) } else { format!("zinc_shot_noise{raw_tag}") };
+    let path = format!("results/experiments/{prefix}_{}_{obs_tag}{device_tag}.json", format!("{scaling:?}").to_lowercase());
     let _ = t1000::results::write(path, serde_json::to_string_pretty(&report).unwrap_or_default());
 }
 

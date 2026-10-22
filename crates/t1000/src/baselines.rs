@@ -428,11 +428,16 @@ impl QnnScore {
 
 /// Prints QNN rows next to the classical baselines, one block per ZINC target.
 pub fn print_comparison(qnn: &[QnnScore], baselines: &[BaselineResult]) {
+    print_comparison_named(qnn, baselines, &ZINC_TARGETS);
+}
+
+/// As [`print_comparison`] with explicit target names (any three targets).
+pub fn print_comparison_named(qnn: &[QnnScore], baselines: &[BaselineResult], names: &[&str]) {
     let fmt = |v: Option<f64>| v.map_or_else(|| "      -".to_string(), |x| format!("{x:>7.4}"));
     println!("\n=========================================================================");
     println!(" CLASSICAL BASELINES vs QNN (same raw features, same train/test split)");
     println!("=========================================================================");
-    for (t, name) in ZINC_TARGETS.iter().enumerate() {
+    for (t, name) in names.iter().enumerate() {
         println!("  {name}");
         println!(
             "    {:<40} {:>7} {:>7} {:>7} {:>7}",

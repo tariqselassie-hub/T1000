@@ -9,21 +9,25 @@
 //! no gradient training: the circuit is either the default initialisation or the weights stored
 //! in a `zinc_qnn_train` report, and the head is exactly reproducible.
 //!
+//! `--dataset qm9` runs the same model on the QM9 DFT properties (`data/qm9/qm9.csv`, see
+//! `data/qm9/README.md`): `--targets mu,gap,alpha` picks three of the nine properties and
+//! `--features zinc|qm9` the descriptor set.
+//!
 //! Usage: `zinc_linear_head_train [--depth N] [--weights report.json] [--observables w4|wK|all|z]
 //!         [--scale maxabs|minmax|raw] [--samples N] [--eval-samples N] [--record]`
 
 use serde::{Deserialize, Serialize};
 use std::{env, fs, time::Instant};
-use t1000::baselines::{print_comparison, regression_metrics, zinc_baselines, BaselineResult, QnnScore, TargetMetrics, ZINC_TARGETS};
+use t1000::baselines::{evaluate_baselines, print_comparison_named, regression_metrics, BaselineResult, QnnScore, TargetMetrics};
+use t1000::datasets::{Data, DataOptions, Dataset, Sample};
 use t1000::holdout_score::ZincHoldout;
 use t1000::linear_head::{feature_spreads, shots_for_noise_equal_to, weights_fingerprint, CircuitFeatureMap, LinearHead, Observables};
-use t1000::zinc_data::{self, InputScaling, Scaler, ZincMolecule};
+use t1000::zinc_data::{InputScaling, Scaler};
 use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind};
 
 const N_QUBITS: usize = 10;
-const TRAIN_CSV: &str = "tests/benchmarks/zinc_molecular/outputs/zinc_train_10k.csv";
-const TEST_CSV: &str = "tests/benchmarks/zinc_molecular/outputs/zinc_test_2k.csv";
-const REPORT_PATH: &str = "tests/benchmarks/zinc_molecular/outputs/zinc_linear_head_results.json";
+const ZINC_REPORT_PATH: &str = "tests/benchmarks/zinc_molecular/outputs/zinc_linear_head_results.json";
+const QM9_REPORT_PATH: &str = "results/experiments/qm9_linear_head_results.json";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct LinearHeadReport {
@@ -58,8 +62,7 @@ struct Options {
     weights_path: Option<String>,
     observables: Observables,
     scaling: InputScaling,
-    samples: usize,
-    eval_samples: usize,
+    data: DataOptions,
 }
 
 fn options() -> Options {
@@ -79,8 +82,7 @@ fn options() -> Options {
             Some("minmax") => InputScaling::MinMax,
             _ => InputScaling::MaxAbs,
         },
-        samples: value("--samples").and_then(|v| v.parse().ok()).unwrap_or(10_000),
-        eval_samples: value("--eval-samples").and_then(|v| v.parse().ok()).unwrap_or(2_000),
+        data: DataOptions::from_args(&args),
     }
 }
 
@@ -97,20 +99,18 @@ fn circuit_weights(opts: &Options, ansatz: &CircuitAnsatz) -> (Vec<f64>, String)
     (weights, format!("trained circuit from {path}"))
 }
 
-fn load(path: &str, max: usize) -> Vec<ZincMolecule> {
-    zinc_data::load(path, max).unwrap_or_else(|e| panic!("{e}"))
-}
-
 fn main() {
     let opts = options();
     let host = t1000::hostinfo::HostProfile::detect();
     println!("=========================================================================");
-    println!("   ZINC QUANTUM FEATURE MAP + CLOSED-FORM LINEAR HEAD                     ");
+    println!("   QUANTUM FEATURE MAP + CLOSED-FORM LINEAR HEAD ({:?})", opts.data.dataset);
     println!("=========================================================================");
     println!(" Host            : {}", host.label());
 
-    let train = load(TRAIN_CSV, opts.samples);
-    let test = load(TEST_CSV, opts.eval_samples);
+    let Data { train, test, target_names, label } = opts.data.load();
+    let report_path = if opts.data.dataset == Dataset::Qm9 { QM9_REPORT_PATH } else { ZINC_REPORT_PATH };
+    let names: Vec<&str> = target_names.iter().map(String::as_str).collect();
+    println!(" Data set        : {label}; targets {names:?}");
     let encoding = DataEncodingLayer::new(N_QUBITS, EncodingKind::Amplitude);
     let ansatz = CircuitAnsatz::new(N_QUBITS, opts.depth).with_pi_layer(true);
     let (weights, source) = circuit_weights(&opts, &ansatz);
@@ -121,12 +121,13 @@ fn main() {
     println!(" Molecules       : {} training, {} held-out\n", train.len(), test.len());
 
     let t = Instant::now();
-    let scaler = Scaler::fit(opts.scaling, &train);
+    let rows: Vec<&[f64]> = train.iter().map(|m| m.features.as_slice()).collect();
+    let scaler = Scaler::fit_rows(opts.scaling, &rows);
     let scaled_train: Vec<Vec<f64>> = train.iter().map(|m| scaler.apply(&m.features)).collect();
     let scaled_test: Vec<Vec<f64>> = test.iter().map(|m| scaler.apply(&m.features)).collect();
     let train_x = map.feature_matrix(scaled_train.iter().map(Vec::as_slice));
     let train_ms = t.elapsed().as_secs_f64() * 1e3;
-    let train_y: Vec<Vec<f64>> = train.iter().map(|m| m.targets().to_vec()).collect();
+    let train_y: Vec<Vec<f64>> = train.iter().map(|m| m.targets.to_vec()).collect();
 
     let t = Instant::now();
     let head = LinearHead::fit(&train_x, &train_y);
@@ -136,8 +137,8 @@ fn main() {
     let test_x = map.feature_matrix(scaled_test.iter().map(Vec::as_slice));
     let preds = head.predict(&test_x);
     let eval_ms = t.elapsed().as_secs_f64() * 1e3;
-    let test_y: Vec<Vec<f64>> = test.iter().map(|m| m.targets().to_vec()).collect();
-    let metrics = regression_metrics(&preds, &test_y, &ZINC_TARGETS);
+    let test_y: Vec<Vec<f64>> = test.iter().map(|m| m.targets.to_vec()).collect();
+    let metrics = regression_metrics(&preds, &test_y, &names);
 
     let target_cols: Vec<Vec<f64>> = (0..3).map(|k| test_y.iter().map(|r| r[k]).collect()).collect();
     let holdout = ZincHoldout::new(
@@ -160,17 +161,15 @@ fn main() {
     }
     println!("\n  Held-out relative MSE {:.4} | mean Pearson r {:.4}", holdout.relative_mse, holdout.mean_pearson_r);
 
-    let baselines = zinc_baselines(
-        train.iter().map(|m| (m.features.as_slice(), m.targets())),
-        test.iter().map(|m| (m.features.as_slice(), m.targets())),
-    );
+    let pairs = |rows: &[Sample]| -> Vec<(Vec<f64>, Vec<f64>)> { rows.iter().map(|m| (m.features.clone(), m.targets.to_vec())).collect() };
+    let baselines = evaluate_baselines(&pairs(&train), &pairs(&test), &names);
     let col = |f: fn(&TargetMetrics) -> f64| [f(&metrics[0]), f(&metrics[1]), f(&metrics[2])];
     let row = QnnScore::new("circuit + linear head")
         .mae(col(|m| m.mae))
         .mse(col(|m| m.mse))
         .r2(col(|m| m.r2))
         .pearson_r(col(|m| m.pearson_r));
-    print_comparison(&[row], &baselines);
+    print_comparison_named(&[row], &baselines, &names);
 
     let report = LinearHeadReport {
         host_cpu: host.label(),
@@ -196,8 +195,10 @@ fn main() {
         circuit_weights: weights.clone(),
         head,
     };
+    // ZINC keeps its original fingerprint so saved ZINC records stay comparable.
+    let data_prefix = if opts.data.dataset == Dataset::Qm9 { format!("data={label}:{names:?};seed={};", opts.data.seed) } else { String::new() };
     let settings = format!(
-        "qubits={N_QUBITS};depth={};weights={};obs={:?};scale={:?};train={};test={}",
+        "{data_prefix}qubits={N_QUBITS};depth={};weights={};obs={:?};scale={:?};train={};test={}",
         opts.depth,
         weights_fingerprint(&weights),
         opts.observables,
@@ -206,11 +207,11 @@ fn main() {
         test.len()
     );
     let json = serde_json::to_string_pretty(&report).expect("serialize report");
-    match t1000::results::write_scored(REPORT_PATH, json, &holdout.score(&settings)) {
+    match t1000::results::write_scored(report_path, json, &holdout.score(&settings)) {
         Ok(t1000::results::Outcome::KeptBest) => println!("\n[=] Saved report kept: this run did not improve it"),
         Ok(t1000::results::Outcome::Scratch) => println!("\n[~] Report written to a scratch copy only (use --record to save)"),
         Ok(t1000::results::Outcome::WrittenVariant) => println!("\n[SAVED] Different settings from the saved report: recorded as a variant"),
-        Ok(t1000::results::Outcome::Written) => println!("\n[SAVED] Report exported to: {REPORT_PATH}"),
+        Ok(t1000::results::Outcome::Written) => println!("\n[SAVED] Report exported to: {report_path}"),
         Err(e) => eprintln!("\n[!] Could not write the report: {e}"),
     }
 }

@@ -9,16 +9,18 @@
 //! molecules. Routing is greedy, so counts are an upper bound; the ranking between topologies is the
 //! result. Every routed circuit for the first molecule is verified by simulation.
 //!
+//! `--dataset qm9` routes QM9 molecules instead.
+//!
 //! Usage: `zinc_routing_study [--restarts N] [--search-molecules K] [--eval-molecules M] [--depth D]`
 
 use serde::Serialize;
 use std::env;
 use t1000::routing::{ansatz_program, cost, mean_cost, prep_program, route, search_layout, verify, Item, Topology};
 use t1000::state_prep::amplitude_prep;
-use t1000::zinc_data::{self, InputScaling, Scaler};
+use t1000::datasets::DataOptions;
+use t1000::zinc_data::{InputScaling, Scaler};
 
 const N_QUBITS: usize = 10;
-const TRAIN_CSV: &str = "tests/benchmarks/zinc_molecular/outputs/zinc_train_10k.csv";
 
 #[derive(Serialize, Clone, Copy)]
 struct Stats {
@@ -87,8 +89,11 @@ fn main() {
     let value = |flag: &str, default: usize| args.iter().position(|a| a == flag).and_then(|i| args.get(i + 1)).and_then(|v| v.parse().ok()).unwrap_or(default);
     let (restarts, search_n, eval_n, depth) = (value("--restarts", 40), value("--search-molecules", 4), value("--eval-molecules", 200), value("--depth", 4));
 
-    let train = zinc_data::load(TRAIN_CSV, 10_000).expect("load training set");
-    let scaler = Scaler::fit(InputScaling::MaxAbs, &train);
+    let data_options = DataOptions::from_args(&args);
+    let data = data_options.load();
+    let train = data.train;
+    let fit_rows: Vec<&[f64]> = train.iter().map(|m| m.features.as_slice()).collect();
+    let scaler = Scaler::fit_rows(InputScaling::MaxAbs, &fit_rows);
     let amps = |idx: usize| -> Vec<f64> {
         let mut a = vec![0.0; 32];
         let f = scaler.apply(&train[idx].features);
@@ -102,7 +107,7 @@ fn main() {
 
     let topologies = [Topology::all_to_all(N_QUBITS), Topology::line(N_QUBITS), Topology::ring(N_QUBITS), Topology::grid(2, 5), Topology::heavy_hex_fragment()];
     let identity: Vec<usize> = (0..N_QUBITS).collect();
-    println!("Routing the preparation + depth-{depth} ansatz of {eval_n} molecules ({} layout restarts, searched on {search_n} molecules)\n", restarts);
+    println!("{}: routing the preparation + depth-{depth} ansatz of {eval_n} molecules ({} layout restarts, searched on {search_n} molecules)\n", data.label, restarts);
     let mut results = Vec::new();
     for topo in &topologies {
         let (layout, searched) = search_layout(&search_progs, topo, restarts, 7);
@@ -133,5 +138,6 @@ fn main() {
     }
 
     let json = serde_json::json!({ "depth": depth, "restarts": restarts, "search_molecules": search_n, "eval_molecules": eval_n, "results": results });
-    let _ = t1000::results::write("results/experiments/zinc_routing_study.json", serde_json::to_string_pretty(&json).unwrap_or_default());
+    let name = if data.label.starts_with("QM9") { "qm9_routing_study" } else { "zinc_routing_study" };
+    let _ = t1000::results::write(format!("results/experiments/{name}.json"), serde_json::to_string_pretty(&json).unwrap_or_default());
 }
