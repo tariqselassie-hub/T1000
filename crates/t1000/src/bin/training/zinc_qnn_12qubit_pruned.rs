@@ -11,7 +11,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use t1000::zinc_data::{self, ZincMolecule};
 use t1000::zinc_training_common::{eval_all_z12, resolve_workspace_path, QnnCheckpoint};
 use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState};
@@ -20,6 +20,9 @@ const N_QUBITS: usize = 12;
 const DIM: usize = 1 << N_QUBITS; // 4,096
 #[allow(dead_code)]
 const N_PROPS: usize = 3;
+const RULE: &str = "-------------------------------------------------------------------------";
+const DOUBLE_RULE: &str =
+    "=========================================================================";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QnnPrunedCheckpoint {
@@ -57,10 +60,51 @@ pub struct EquivalenceReport {
     pub throughput_speedup_x: f64,
 }
 
-fn main() {
-    println!("=========================================================================");
+/// Which circuit kernel a prediction pass runs.
+#[derive(Clone, Copy)]
+enum Kernel {
+    /// 72 quantum angles + 39 classical readout parameters (108 gates).
+    Full,
+    /// 60 quantum angles + 39 classical readout parameters (84 gates).
+    Pruned,
+}
+
+impl Kernel {
+    fn quantum_params(self) -> usize {
+        match self {
+            Kernel::Full => 72,
+            Kernel::Pruned => 60,
+        }
+    }
+}
+
+/// Per-property deviation between the two kernels over the holdout set.
+struct Deviation {
+    max_logp: f64,
+    max_qed: f64,
+    max_sas: f64,
+    sum_logp: f64,
+    sum_qed: f64,
+    sum_sas: f64,
+}
+
+impl Deviation {
+    fn max_overall(&self) -> f64 {
+        self.max_logp.max(self.max_qed).max(self.max_sas)
+    }
+}
+
+/// One timed prediction pass.
+struct Timed {
+    predictions: Vec<[f64; 3]>,
+    latency_us: f64,
+    throughput: f64,
+}
+
+fn print_banner() {
+    println!("{DOUBLE_RULE}");
     println!("   GUDDANETWORKS QNN: 99-PARAMETER PRUNED CANONICAL KERNEL VERIFICATION  ");
-    println!("=========================================================================");
+    println!("{DOUBLE_RULE}");
     println!(" Theorem        : Commutation Invariance [Rz(φ_i), Z_j] = 0 & [CZ, Z_j] = 0");
     println!(" Target Circuit : 12 Qubits (dim=4,096 | 64 KB L2 Cache) | Depth = 3");
     println!(" Pruning Target : 111 Parameters (108 Gates) -> 99 Parameters (84 Gates)");
@@ -70,8 +114,12 @@ fn main() {
         host.label(),
         host.ram_gb
     );
-    println!("=========================================================================\n");
+    println!("{DOUBLE_RULE}\n");
+}
 
+/// Loads the 2,000-molecule holdout set and the 30-epoch checkpoint.
+/// Prints the reason and returns `None` if either is unusable.
+fn load_inputs() -> Option<(Vec<ZincMolecule>, QnnCheckpoint)> {
     let test_path =
         resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_test_2k.csv");
     let ckpt_path = resolve_workspace_path(
@@ -86,7 +134,7 @@ fn main() {
         Ok(s) => s,
         Err(e) => {
             eprintln!("[-] Error: {}", e);
-            return;
+            return None;
         }
     };
     println!("  -> Loaded {} molecules.\n", test_samples.len());
@@ -99,14 +147,14 @@ fn main() {
         Ok(c) => c,
         Err(e) => {
             eprintln!("[-] Error reading checkpoint: {}", e);
-            return;
+            return None;
         }
     };
     let ckpt: QnnCheckpoint = match serde_json::from_str(&ckpt_content) {
         Ok(c) => c,
         Err(e) => {
             eprintln!("[-] Error parsing checkpoint: {}", e);
-            return;
+            return None;
         }
     };
     println!(
@@ -114,24 +162,18 @@ fn main() {
         ckpt.epochs_completed,
         ckpt.hybrid_params.len()
     );
+    Some((test_samples, ckpt))
+}
 
-    if ckpt.hybrid_params.len() != 111 {
-        eprintln!(
-            "[-] Expected 111 hybrid parameters in checkpoint, found {}",
-            ckpt.hybrid_params.len()
-        );
-        return;
-    }
-
-    let full_params = ckpt.hybrid_params.clone();
-
-    // Construct 99-parameter pruned hybrid parameters:
-    // 1. Layer 1: params[0..24] (24 angles: 12 Ry + 12 Rz)
-    // 2. Layer 2: params[24..48] (24 angles: 12 Ry + 12 Rz)
-    // 3. Layer 3: params[48..60] (12 angles: 12 Ry ONLY)
-    // 4. Readout weights: params[72..108] (36 weights)
-    // 5. Readout biases: params[108..111] (3 biases)
-    // Total = 24 + 24 + 12 + 36 + 3 = 99 parameters (792 bytes).
+/// Builds the 99-parameter pruned vector from the 111-parameter full one:
+/// 1. Layer 1: params[0..24] (24 angles: 12 Ry + 12 Rz)
+/// 2. Layer 2: params[24..48] (24 angles: 12 Ry + 12 Rz)
+/// 3. Layer 3: params[48..60] (12 angles: 12 Ry ONLY)
+/// 4. Readout weights: params[72..108] (36 weights)
+/// 5. Readout biases: params[108..111] (3 biases)
+///
+/// Total = 24 + 24 + 12 + 36 + 3 = 99 parameters (792 bytes).
+fn prune_params(full_params: &[f64]) -> Vec<f64> {
     let mut pruned_params = Vec::with_capacity(99);
     // Layers 1 & 2
     pruned_params.extend_from_slice(&full_params[0..48]);
@@ -147,10 +189,13 @@ fn main() {
         99,
         "Pruned parameter count must equal 99"
     );
+    pruned_params
+}
 
-    println!("-------------------------------------------------------------------------");
+fn print_architecture_comparison() {
+    println!("{RULE}");
     println!(" [SUB-SYSTEM ALLOCATION & GATE DEPTH COMPARISON]");
-    println!("-------------------------------------------------------------------------");
+    println!("{RULE}");
     println!(
         " Full Model Architecture  : 72 Quantum Angles + 39 Classical = 111 Params (888 bytes)"
     );
@@ -160,180 +205,151 @@ fn main() {
     println!(" Full Circuit Operations  : 36 Ry + 36 Rz + 36 CZ = 108 Gates / Molecule");
     println!(" Pruned Circuit Operations: 36 Ry + 24 Rz + 24 CZ = 84 Gates / Molecule");
     println!(" Gate Depth Reduction     : -24 Gates (-22.2%) with Zero Mathematical Loss");
-    println!("-------------------------------------------------------------------------\n");
+    println!("{RULE}\n");
+}
 
-    let encoding = DataEncodingLayer::new(N_QUBITS, EncodingKind::Amplitude);
-    let ansatz_full = CircuitAnsatz::new(N_QUBITS, 3).with_pi_layer(true);
-    let ansatz_pruned = CircuitAnsatz::new(N_QUBITS, 3).with_pi_layer(true);
+/// Predicts (logP, QED, SAS) for one chunk of molecules with the given kernel.
+fn predict_chunk(
+    kernel: Kernel,
+    ansatz: &CircuitAnsatz,
+    encoding: &DataEncodingLayer,
+    params: &[f64],
+    chunk: &[ZincMolecule],
+) -> Vec<[f64; 3]> {
+    let mut out_state = QuantumState::new(DIM);
+    let mut z_eval = [0.0; 12];
+    let mut preds = Vec::with_capacity(chunk.len());
 
-    let num_threads = std::thread::available_parallelism()
-        .map(|n| n.get().min(12))
-        .unwrap_or(8);
+    // Readout weights follow the quantum angles; the 3 biases follow the weights.
+    let n_quantum = kernel.quantum_params();
+    let w_off = n_quantum;
+    let b_off = n_quantum + 36;
 
-    println!("[EXECUTION] Running Mode A: Full 111-Parameter Kernel (108 Gates)...");
-    let t_full_start = Instant::now();
-    let full_predictions: Vec<[f64; 3]> = {
-        let chunk_size = (test_samples.len() + num_threads - 1) / num_threads;
-        let sub_chunks: Vec<&[ZincMolecule]> = test_samples.chunks(chunk_size).collect();
-        let ansatz_ref = &ansatz_full;
-        let encoding_ref = &encoding;
-        let full_params_ref = &full_params;
-
-        std::thread::scope(|s| {
-            let mut handles = Vec::with_capacity(sub_chunks.len());
-            for chunk in sub_chunks {
-                handles.push(s.spawn(move || {
-                    let mut out_state = QuantumState::new(DIM);
-                    let mut z_eval = [0.0; 12];
-                    let mut preds = Vec::with_capacity(chunk.len());
-
-                    let w_off = 72;
-                    let b_off = 72 + 36;
-
-                    for sample in chunk {
-                        let state_in = encoding_ref.encode(&sample.features);
-                        ansatz_ref.forward_into(&state_in, &full_params_ref[..72], &mut out_state);
-                        eval_all_z12(&out_state, &mut z_eval);
-
-                        let mut p_logp = full_params_ref[b_off + 0];
-                        let mut p_qed = full_params_ref[b_off + 1];
-                        let mut p_sas = full_params_ref[b_off + 2];
-                        for q in 0..12 {
-                            p_logp += full_params_ref[w_off + q] * z_eval[q];
-                            p_qed += full_params_ref[w_off + 1 * 12 + q] * z_eval[q];
-                            p_sas += full_params_ref[w_off + 2 * 12 + q] * z_eval[q];
-                        }
-                        preds.push([p_logp, p_qed, p_sas]);
-                    }
-                    preds
-                }));
+    for sample in chunk {
+        let state_in = encoding.encode(&sample.features);
+        match kernel {
+            Kernel::Full => ansatz.forward_into(&state_in, &params[..n_quantum], &mut out_state),
+            Kernel::Pruned => {
+                ansatz.forward_pruned_into(&state_in, &params[..n_quantum], &mut out_state)
             }
-            let mut all_preds = Vec::with_capacity(test_samples.len());
-            for h in handles {
-                all_preds.extend(h.join().unwrap());
-            }
-            all_preds
-        })
-    };
-    let full_elapsed = t_full_start.elapsed();
-    let full_latency_us = full_elapsed.as_secs_f64() * 1_000_000.0 / test_samples.len() as f64;
-    let full_throughput = test_samples.len() as f64 / full_elapsed.as_secs_f64();
-    println!(
-        "  -> Completed in {:.2} ms ({:.2} μs/mol | {:.1} mols/sec)",
-        full_elapsed.as_secs_f64() * 1000.0,
-        full_latency_us,
-        full_throughput
-    );
+        }
+        eval_all_z12(&out_state, &mut z_eval);
 
-    println!("[EXECUTION] Running Mode B: Pruned 99-Parameter Canonical Kernel (84 Gates)...");
-    let t_pruned_start = Instant::now();
-    let pruned_predictions: Vec<[f64; 3]> = {
-        let chunk_size = (test_samples.len() + num_threads - 1) / num_threads;
-        let sub_chunks: Vec<&[ZincMolecule]> = test_samples.chunks(chunk_size).collect();
-        let ansatz_ref = &ansatz_pruned;
-        let encoding_ref = &encoding;
-        let pruned_params_ref = &pruned_params;
-
-        std::thread::scope(|s| {
-            let mut handles = Vec::with_capacity(sub_chunks.len());
-            for chunk in sub_chunks {
-                handles.push(s.spawn(move || {
-                    let mut out_state = QuantumState::new(DIM);
-                    let mut z_eval = [0.0; 12];
-                    let mut preds = Vec::with_capacity(chunk.len());
-
-                    let w_off = 60; // 60 quantum params in pruned model
-                    let b_off = 60 + 36;
-
-                    for sample in chunk {
-                        let state_in = encoding_ref.encode(&sample.features);
-                        ansatz_ref.forward_pruned_into(
-                            &state_in,
-                            &pruned_params_ref[..60],
-                            &mut out_state,
-                        );
-                        eval_all_z12(&out_state, &mut z_eval);
-
-                        let mut p_logp = pruned_params_ref[b_off + 0];
-                        let mut p_qed = pruned_params_ref[b_off + 1];
-                        let mut p_sas = pruned_params_ref[b_off + 2];
-                        for q in 0..12 {
-                            p_logp += pruned_params_ref[w_off + q] * z_eval[q];
-                            p_qed += pruned_params_ref[w_off + 1 * 12 + q] * z_eval[q];
-                            p_sas += pruned_params_ref[w_off + 2 * 12 + q] * z_eval[q];
-                        }
-                        preds.push([p_logp, p_qed, p_sas]);
-                    }
-                    preds
-                }));
-            }
-            let mut all_preds = Vec::with_capacity(test_samples.len());
-            for h in handles {
-                all_preds.extend(h.join().unwrap());
-            }
-            all_preds
-        })
-    };
-    let pruned_elapsed = t_pruned_start.elapsed();
-    let pruned_latency_us = pruned_elapsed.as_secs_f64() * 1_000_000.0 / test_samples.len() as f64;
-    let pruned_throughput = test_samples.len() as f64 / pruned_elapsed.as_secs_f64();
-    println!(
-        "  -> Completed in {:.2} ms ({:.2} μs/mol | {:.1} mols/sec)\n",
-        pruned_elapsed.as_secs_f64() * 1000.0,
-        pruned_latency_us,
-        pruned_throughput
-    );
-
-    // Compute Bit-for-Bit Equivalence Metrics
-    let mut max_diff_logp = 0.0f64;
-    let mut max_diff_qed = 0.0f64;
-    let mut max_diff_sas = 0.0f64;
-    let mut sum_diff_logp = 0.0f64;
-    let mut sum_diff_qed = 0.0f64;
-    let mut sum_diff_sas = 0.0f64;
-
-    for i in 0..test_samples.len() {
-        let diff_logp = (full_predictions[i][0] - pruned_predictions[i][0]).abs();
-        let diff_qed = (full_predictions[i][1] - pruned_predictions[i][1]).abs();
-        let diff_sas = (full_predictions[i][2] - pruned_predictions[i][2]).abs();
-
-        max_diff_logp = max_diff_logp.max(diff_logp);
-        max_diff_qed = max_diff_qed.max(diff_qed);
-        max_diff_sas = max_diff_sas.max(diff_sas);
-
-        sum_diff_logp += diff_logp;
-        sum_diff_qed += diff_qed;
-        sum_diff_sas += diff_sas;
+        let mut p_logp = params[b_off];
+        let mut p_qed = params[b_off + 1];
+        let mut p_sas = params[b_off + 2];
+        for q in 0..12 {
+            p_logp += params[w_off + q] * z_eval[q];
+            p_qed += params[w_off + 12 + q] * z_eval[q];
+            p_sas += params[w_off + 2 * 12 + q] * z_eval[q];
+        }
+        preds.push([p_logp, p_qed, p_sas]);
     }
+    preds
+}
 
-    let n = test_samples.len() as f64;
-    let max_overall = max_diff_logp.max(max_diff_qed).max(max_diff_sas);
-    let exact_match = max_overall < 1e-12;
+/// Runs `kernel` over every molecule, split across `num_threads` scoped threads.
+fn predict_all(
+    kernel: Kernel,
+    ansatz: &CircuitAnsatz,
+    encoding: &DataEncodingLayer,
+    params: &[f64],
+    samples: &[ZincMolecule],
+    num_threads: usize,
+) -> Vec<[f64; 3]> {
+    let chunk_size = samples.len().div_ceil(num_threads);
+    let sub_chunks: Vec<&[ZincMolecule]> = samples.chunks(chunk_size).collect();
 
-    println!("=========================================================================");
+    std::thread::scope(|s| {
+        let mut handles = Vec::with_capacity(sub_chunks.len());
+        for chunk in sub_chunks {
+            handles.push(s.spawn(move || predict_chunk(kernel, ansatz, encoding, params, chunk)));
+        }
+        let mut all_preds = Vec::with_capacity(samples.len());
+        for h in handles {
+            all_preds.extend(h.join().unwrap());
+        }
+        all_preds
+    })
+}
+
+/// Times one full prediction pass and prints its summary line.
+fn run_timed(
+    title: &str,
+    kernel: Kernel,
+    ansatz: &CircuitAnsatz,
+    encoding: &DataEncodingLayer,
+    params: &[f64],
+    samples: &[ZincMolecule],
+    num_threads: usize,
+) -> Timed {
+    println!("{title}");
+    let start = Instant::now();
+    let predictions = predict_all(kernel, ansatz, encoding, params, samples, num_threads);
+    let elapsed: Duration = start.elapsed();
+    let latency_us = elapsed.as_secs_f64() * 1_000_000.0 / samples.len() as f64;
+    let throughput = samples.len() as f64 / elapsed.as_secs_f64();
+    let trailer = if matches!(kernel, Kernel::Pruned) {
+        "\n"
+    } else {
+        ""
+    };
+    println!(
+        "  -> Completed in {:.2} ms ({:.2} μs/mol | {:.1} mols/sec){trailer}",
+        elapsed.as_secs_f64() * 1000.0,
+        latency_us,
+        throughput
+    );
+    Timed {
+        predictions,
+        latency_us,
+        throughput,
+    }
+}
+
+fn measure_deviation(full: &[[f64; 3]], pruned: &[[f64; 3]]) -> Deviation {
+    let mut dev = Deviation {
+        max_logp: 0.0,
+        max_qed: 0.0,
+        max_sas: 0.0,
+        sum_logp: 0.0,
+        sum_qed: 0.0,
+        sum_sas: 0.0,
+    };
+    for (f, p) in full.iter().zip(pruned) {
+        let diff_logp = (f[0] - p[0]).abs();
+        let diff_qed = (f[1] - p[1]).abs();
+        let diff_sas = (f[2] - p[2]).abs();
+
+        dev.max_logp = dev.max_logp.max(diff_logp);
+        dev.max_qed = dev.max_qed.max(diff_qed);
+        dev.max_sas = dev.max_sas.max(diff_sas);
+
+        dev.sum_logp += diff_logp;
+        dev.sum_qed += diff_qed;
+        dev.sum_sas += diff_sas;
+    }
+    dev
+}
+
+fn print_equivalence_ledger(dev: &Deviation, n: f64, exact_match: bool) {
+    println!("{DOUBLE_RULE}");
     println!("       BIT-FOR-BIT EQUIVALENCE VERIFICATION LEDGER (2,000 MOLECULES)     ");
-    println!("=========================================================================");
+    println!("{DOUBLE_RULE}");
     println!(" Target Property     │ Max Absolute Deviation │ Mean Absolute Deviation │ Status");
     println!("─────────────────────┼────────────────────────┼─────────────────────────┼───────");
-    println!(
-        " logP (Lipophilicity)│ {:>22.16} │ {:>23.16} │ EXACT",
-        max_diff_logp,
-        sum_diff_logp / n
-    );
-    println!(
-        " QED  (Drug-Likeness)│ {:>22.16} │ {:>23.16} │ EXACT",
-        max_diff_qed,
-        sum_diff_qed / n
-    );
-    println!(
-        " SAS  (Synthetic Acc)│ {:>22.16} │ {:>23.16} │ EXACT",
-        max_diff_sas,
-        sum_diff_sas / n
-    );
-    println!("=========================================================================");
+    let rows = [
+        (" logP (Lipophilicity)", dev.max_logp, dev.sum_logp),
+        (" QED  (Drug-Likeness)", dev.max_qed, dev.sum_qed),
+        (" SAS  (Synthetic Acc)", dev.max_sas, dev.sum_sas),
+    ];
+    for (name, max, sum) in rows {
+        println!("{name}│ {:>22.16} │ {:>23.16} │ EXACT", max, sum / n);
+    }
+    println!("{DOUBLE_RULE}");
     println!(
         " Overall Maximum Error  : {:.2e} (Machine-Precision Rounding Floor)",
-        max_overall
+        dev.max_overall()
     );
     println!(
         " Mathematical Equivalence: {}",
@@ -343,21 +359,20 @@ fn main() {
             "FAILED"
         }
     );
-    println!("=========================================================================\n");
+    println!("{DOUBLE_RULE}\n");
+}
 
-    let latency_reduction_pct = ((full_latency_us - pruned_latency_us) / full_latency_us) * 100.0;
-    let speedup_x = pruned_throughput / full_throughput;
-
-    println!("-------------------------------------------------------------------------");
+fn print_performance(full: &Timed, pruned: &Timed, latency_reduction_pct: f64, speedup_x: f64) {
+    println!("{RULE}");
     println!(" [HARDWARE PERFORMANCE & ACCELERATION PROFILE]");
-    println!("-------------------------------------------------------------------------");
+    println!("{RULE}");
     println!(
         " Full Circuit Latency (108 Gates)   : {:.2} μs / molecule",
-        full_latency_us
+        full.latency_us
     );
     println!(
         " Pruned Circuit Latency (84 Gates)  : {:.2} μs / molecule",
-        pruned_latency_us
+        pruned.latency_us
     );
     println!(
         " Latency Reduction                  : {:+.2}%",
@@ -365,24 +380,25 @@ fn main() {
     );
     println!(
         " Full Circuit Throughput            : {:.1} molecules / second",
-        full_throughput
+        full.throughput
     );
     println!(
         " Pruned Circuit Throughput          : {:.1} molecules / second",
-        pruned_throughput
+        pruned.throughput
     );
     println!(
         " Throughput Acceleration Factor     : {:.3}x Speedup",
         speedup_x
     );
     println!(" State Memory Saving                : 888 bytes -> 792 bytes (-10.8%)");
-    println!("-------------------------------------------------------------------------\n");
+    println!("{RULE}\n");
+}
 
-    // Save pruned checkpoint
-    let pruned_ckpt_path = resolve_workspace_path(
+fn save_pruned_checkpoint(epochs_completed: usize, pruned_params: Vec<f64>) {
+    let path = resolve_workspace_path(
         "tests/benchmarks/zinc_molecular/outputs/zinc_12qubit_checkpoint_pruned99.json",
     );
-    let pruned_checkpoint = QnnPrunedCheckpoint {
+    let checkpoint = QnnPrunedCheckpoint {
         timestamp_rfc3339: "2026-10-13T20:15:00Z".to_string(),
         n_qubits: N_QUBITS,
         depth: 3,
@@ -391,46 +407,119 @@ fn main() {
         gate_count_full: 108,
         gate_count_pruned: 84,
         gate_depth_reduction_pct: 22.22,
-        epochs_completed: ckpt.epochs_completed,
+        epochs_completed,
         pruned_hybrid_params: pruned_params,
     };
-    if let Ok(json_str) = serde_json::to_string_pretty(&pruned_checkpoint) {
-        let _ = t1000::results::write(&pruned_ckpt_path, json_str);
+    if let Ok(json_str) = serde_json::to_string_pretty(&checkpoint) {
+        let _ = t1000::results::write(&path, json_str);
         println!(
             "[SAVED] Canonical 99-parameter checkpoint: {}",
-            pruned_ckpt_path.display()
+            path.display()
         );
     }
+}
 
-    // Save verification report
-    let report_path = resolve_workspace_path(
+fn save_report(report: &EquivalenceReport) {
+    let path = resolve_workspace_path(
         "tests/benchmarks/zinc_molecular/outputs/zinc_12qubit_pruned_verification.json",
     );
-    let report = EquivalenceReport {
+    if let Ok(json_str) = serde_json::to_string_pretty(report) {
+        let _ = t1000::results::write(&path, json_str);
+        println!("[SAVED] Pruned Equivalence Report: {}", path.display());
+    }
+}
+
+fn build_report(
+    n_samples: usize,
+    dev: &Deviation,
+    exact_match: bool,
+    full: &Timed,
+    pruned: &Timed,
+    latency_reduction_pct: f64,
+    speedup_x: f64,
+) -> EquivalenceReport {
+    EquivalenceReport {
         timestamp_rfc3339: "2026-10-13T20:15:00Z".to_string(),
         host_cpu: t1000::hostinfo::HostProfile::detect().label(),
-        holdout_samples: test_samples.len(),
+        holdout_samples: n_samples,
         full_param_count: 111,
         pruned_param_count: 99,
         full_gate_count: 108,
         pruned_gate_count: 84,
-        max_abs_diff_logp: max_diff_logp,
-        max_abs_diff_qed: max_diff_qed,
-        max_abs_diff_sas: max_diff_sas,
-        max_overall_diff: max_overall,
+        max_abs_diff_logp: dev.max_logp,
+        max_abs_diff_qed: dev.max_qed,
+        max_abs_diff_sas: dev.max_sas,
+        max_overall_diff: dev.max_overall(),
         exact_bit_for_bit_equivalence: exact_match,
-        full_latency_us,
-        pruned_latency_us,
+        full_latency_us: full.latency_us,
+        pruned_latency_us: pruned.latency_us,
         latency_reduction_pct,
-        full_throughput_mols_per_sec: full_throughput,
-        pruned_throughput_mols_per_sec: pruned_throughput,
+        full_throughput_mols_per_sec: full.throughput,
+        pruned_throughput_mols_per_sec: pruned.throughput,
         throughput_speedup_x: speedup_x,
-    };
-    if let Ok(json_str) = serde_json::to_string_pretty(&report) {
-        let _ = t1000::results::write(&report_path, json_str);
-        println!(
-            "[SAVED] Pruned Equivalence Report: {}",
-            report_path.display()
-        );
     }
+}
+
+fn main() {
+    print_banner();
+
+    let Some((test_samples, ckpt)) = load_inputs() else {
+        return;
+    };
+    if ckpt.hybrid_params.len() != 111 {
+        eprintln!(
+            "[-] Expected 111 hybrid parameters in checkpoint, found {}",
+            ckpt.hybrid_params.len()
+        );
+        return;
+    }
+    let full_params = ckpt.hybrid_params.clone();
+    let pruned_params = prune_params(&full_params);
+    print_architecture_comparison();
+
+    let encoding = DataEncodingLayer::new(N_QUBITS, EncodingKind::Amplitude);
+    let ansatz_full = CircuitAnsatz::new(N_QUBITS, 3).with_pi_layer(true);
+    let ansatz_pruned = CircuitAnsatz::new(N_QUBITS, 3).with_pi_layer(true);
+    let num_threads = std::thread::available_parallelism()
+        .map(|n| n.get().min(12))
+        .unwrap_or(8);
+
+    let full = run_timed(
+        "[EXECUTION] Running Mode A: Full 111-Parameter Kernel (108 Gates)...",
+        Kernel::Full,
+        &ansatz_full,
+        &encoding,
+        &full_params,
+        &test_samples,
+        num_threads,
+    );
+    let pruned = run_timed(
+        "[EXECUTION] Running Mode B: Pruned 99-Parameter Canonical Kernel (84 Gates)...",
+        Kernel::Pruned,
+        &ansatz_pruned,
+        &encoding,
+        &pruned_params,
+        &test_samples,
+        num_threads,
+    );
+
+    let dev = measure_deviation(&full.predictions, &pruned.predictions);
+    let exact_match = dev.max_overall() < 1e-12;
+    print_equivalence_ledger(&dev, test_samples.len() as f64, exact_match);
+
+    let latency_reduction_pct = ((full.latency_us - pruned.latency_us) / full.latency_us) * 100.0;
+    let speedup_x = pruned.throughput / full.throughput;
+    print_performance(&full, &pruned, latency_reduction_pct, speedup_x);
+
+    save_pruned_checkpoint(ckpt.epochs_completed, pruned_params);
+    let report = build_report(
+        test_samples.len(),
+        &dev,
+        exact_match,
+        &full,
+        &pruned,
+        latency_reduction_pct,
+        speedup_x,
+    );
+    save_report(&report);
 }
