@@ -18,17 +18,25 @@
 
 use serde::{Deserialize, Serialize};
 use std::{env, fs, time::Instant};
-use t1000::baselines::{evaluate_baselines, print_comparison_named, regression_metrics, BaselineResult, QnnScore, TargetMetrics};
+use t1000::baselines::{
+    evaluate_baselines, print_comparison_named, regression_metrics, BaselineResult, QnnScore,
+    TargetMetrics,
+};
 use t1000::datasets::{Data, DataOptions, Dataset, Sample};
+use t1000::feature_head::{fit_head, targets_of, validation_mse, FeatureExtractor, FittedHead};
 use t1000::holdout_score::ZincHoldout;
-use t1000::polynomial::polynomial_features;
+use t1000::linear_head::{
+    feature_spreads, shots_for_noise_equal_to, weights_fingerprint, CircuitFeatureMap, LinearHead,
+    Observables,
+};
+use t1000::polynomial::polynomial_ridge_baseline;
 use t1000::reuploading::ReuploadingMap;
-use t1000::linear_head::{feature_spreads, shots_for_noise_equal_to, weights_fingerprint, CircuitFeatureMap, LinearHead, Observables};
 use t1000::zinc_data::{InputScaling, Scaler};
 use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind};
 
 const DEFAULT_QUBITS: usize = 10;
-const ZINC_REPORT_PATH: &str = "tests/benchmarks/zinc_molecular/outputs/zinc_linear_head_results.json";
+const ZINC_REPORT_PATH: &str =
+    "tests/benchmarks/zinc_molecular/outputs/zinc_linear_head_results.json";
 const QM9_REPORT_PATH: &str = "results/experiments/qm9_linear_head_results.json";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -82,7 +90,12 @@ struct Options {
 
 fn options() -> Options {
     let args: Vec<String> = env::args().collect();
-    let value = |flag: &str| args.iter().position(|a| a == flag).and_then(|i| args.get(i + 1)).cloned();
+    let value = |flag: &str| {
+        args.iter()
+            .position(|a| a == flag)
+            .and_then(|i| args.get(i + 1))
+            .cloned()
+    };
     Options {
         depth: value("--depth").and_then(|v| v.parse().ok()).unwrap_or(4),
         weights_path: value("--weights"),
@@ -101,11 +114,16 @@ fn options() -> Options {
         poly_baseline: value("--poly-baseline").and_then(|v| v.parse().ok()),
         poly_normalized: value("--poly-normalized").and_then(|v| v.parse().ok()),
         append_raw: args.iter().any(|a| a == "--append-raw"),
-        qubits: value("--qubits").and_then(|v| v.parse().ok()).unwrap_or(DEFAULT_QUBITS).max(5),
+        qubits: value("--qubits")
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(DEFAULT_QUBITS)
+            .max(5),
         reupload: (value("--feature-map").as_deref() == Some("reupload")).then(|| {
             (
                 value("--uploads").and_then(|v| v.parse().ok()).unwrap_or(4),
-                value("--angle-scale").and_then(|v| v.parse().ok()).unwrap_or(std::f64::consts::PI),
+                value("--angle-scale")
+                    .and_then(|v| v.parse().ok())
+                    .unwrap_or(std::f64::consts::PI),
             )
         }),
     }
@@ -117,142 +135,203 @@ fn circuit_weights(opts: &Options, ansatz: &CircuitAnsatz) -> (Vec<f64>, String)
         return (ansatz.weights.clone(), "default initialisation".to_string());
     };
     let text = fs::read_to_string(path).unwrap_or_else(|e| panic!("cannot read {path}: {e}"));
-    let report: serde_json::Value = serde_json::from_str(&text).unwrap_or_else(|e| panic!("cannot parse {path}: {e}"));
-    let weights: Vec<f64> = serde_json::from_value(report["final_weights"].clone())
-        .unwrap_or_else(|_| panic!("{path} has no final_weights (re-run zinc_qnn_train to store them)"));
-    assert_eq!(weights.len(), ansatz.param_count(), "{path} was trained with a different depth (--depth)");
+    let report: serde_json::Value =
+        serde_json::from_str(&text).unwrap_or_else(|e| panic!("cannot parse {path}: {e}"));
+    let weights: Vec<f64> =
+        serde_json::from_value(report["final_weights"].clone()).unwrap_or_else(|_| {
+            panic!("{path} has no final_weights (re-run zinc_qnn_train to store them)")
+        });
+    assert_eq!(
+        weights.len(),
+        ansatz.param_count(),
+        "{path} was trained with a different depth (--depth)"
+    );
     (weights, format!("trained circuit from {path}"))
 }
 
-/// Ridge regression on every monomial up to `degree` of the max-abs scaled descriptors.
-fn polynomial_baseline(degree: usize, normalize: bool, train: &[Sample], test: &[Sample], names: &[&str]) -> BaselineResult {
-    let rows: Vec<&[f64]> = train.iter().map(|m| m.features.as_slice()).collect();
-    let scaler = Scaler::fit_rows(InputScaling::MaxAbs, &rows);
-    // Descriptors that never vary in the training set only add all-zero monomials; drop them.
-    let varying: Vec<usize> = (0..rows[0].len())
-        .filter(|&j| rows.iter().any(|r| (r[j] - rows[0][j]).abs() > 1e-12))
-        .collect();
-    let prepare = |m: &Sample| -> Vec<f64> {
-        let full = scaler.apply(&m.features);
-        let x: Vec<f64> = varying.iter().map(|&j| full[j]).collect();
-        if !normalize {
-            return x;
+/// The circuit under test: register encoding, ansatz and its weights.
+struct Circuit {
+    encoding: DataEncodingLayer,
+    ansatz: CircuitAnsatz,
+    depth: usize,
+    weights: Vec<f64>,
+    source: String,
+}
+
+impl Circuit {
+    fn new(opts: &Options) -> Self {
+        let encoding = DataEncodingLayer::new(opts.qubits, EncodingKind::Amplitude);
+        // Re-uploading needs one ansatz layer per upload.
+        let depth = opts
+            .reupload
+            .map_or(opts.depth, |(uploads, _)| opts.depth.max(uploads));
+        let ansatz = CircuitAnsatz::new(opts.qubits, depth).with_pi_layer(true);
+        let (weights, source) = circuit_weights(opts, &ansatz);
+        Self {
+            encoding,
+            ansatz,
+            depth,
+            weights,
+            source,
         }
-        let norm = x.iter().map(|v| v * v).sum::<f64>().sqrt().max(1e-12);
-        x.iter().map(|v| v / norm).collect()
-    };
-    let expand = |set: &[Sample]| -> Vec<Vec<f64>> { set.iter().map(|m| polynomial_features(&prepare(m), degree)).collect() };
-    let (x_train, x_test) = (expand(train), expand(test));
-    let y_train: Vec<Vec<f64>> = train.iter().map(|m| m.targets.to_vec()).collect();
-    let y_test: Vec<Vec<f64>> = test.iter().map(|m| m.targets.to_vec()).collect();
-    let head = LinearHead::fit(&x_train, &y_train);
-    BaselineResult {
-        model: format!("Ridge (degree {degree}{})", if normalize { ", normalised input" } else { "" }),
-        n_features: x_train[0].len(),
-        lambda: Some(head.lambda()),
-        metrics: regression_metrics(&head.predict(&x_test), &y_test, names),
+    }
+
+    fn features(&self, opts: &Options) -> FeatureExtractor<'_> {
+        let (uploads, angle_scale) = opts.reupload.unwrap_or((0, 0.0));
+        FeatureExtractor {
+            map: CircuitFeatureMap {
+                encoding: &self.encoding,
+                ansatz: &self.ansatz,
+                weights: &self.weights,
+                observables: opts.observables,
+            },
+            reupload: ReuploadingMap {
+                ansatz: &self.ansatz,
+                weights: &self.weights,
+                uploads,
+                angle_scale,
+                observables: opts.observables,
+            },
+            use_reupload: opts.reupload.is_some(),
+            append_raw: opts.append_raw,
+        }
     }
 }
 
-fn main() {
-    let opts = options();
-    let host = t1000::hostinfo::HostProfile::detect();
+/// What the run is about, shared by the printers and the report.
+struct RunInfo<'a> {
+    opts: &'a Options,
+    label: &'a str,
+    names: &'a [&'a str],
+    depth: usize,
+    source: &'a str,
+}
+
+/// Held-out results.
+struct Evaluation {
+    metrics: Vec<TargetMetrics>,
+    holdout: ZincHoldout,
+    validation_relative_mse: Option<f64>,
+    eval_ms: f64,
+}
+
+fn print_title(opts: &Options, host: &t1000::hostinfo::HostProfile) {
     println!("=========================================================================");
-    println!("   QUANTUM FEATURE MAP + CLOSED-FORM LINEAR HEAD ({:?})", opts.data.dataset);
+    println!(
+        "   QUANTUM FEATURE MAP + CLOSED-FORM LINEAR HEAD ({:?})",
+        opts.data.dataset
+    );
     println!("=========================================================================");
     println!(" Host            : {}", host.label());
+}
 
-    let Data { train, validation, test, target_names, label } = opts.data.load();
-    let report_path = if opts.data.dataset == Dataset::Qm9 { QM9_REPORT_PATH } else { ZINC_REPORT_PATH };
-    let names: Vec<&str> = target_names.iter().map(String::as_str).collect();
-    println!(" Data set        : {label}; targets {names:?}");
-    let encoding = DataEncodingLayer::new(opts.qubits, EncodingKind::Amplitude);
-    // Re-uploading needs one ansatz layer per upload.
-    let depth = opts.reupload.map_or(opts.depth, |(uploads, _)| opts.depth.max(uploads));
-    let ansatz = CircuitAnsatz::new(opts.qubits, depth).with_pi_layer(true);
-    let (weights, source) = circuit_weights(&opts, &ansatz);
-    let map = CircuitFeatureMap { encoding: &encoding, ansatz: &ansatz, weights: &weights, observables: opts.observables };
-    let (uploads, angle_scale) = opts.reupload.unwrap_or((0, 0.0));
-    let reupload = ReuploadingMap { ansatz: &ansatz, weights: &weights, uploads, angle_scale, observables: opts.observables };
-    let extract = |rows: &[Vec<f64>]| -> Vec<Vec<f64>> {
-        if opts.reupload.is_some() {
-            reupload.feature_matrix(rows.iter().map(Vec::as_slice))
-        } else {
-            map.feature_matrix(rows.iter().map(Vec::as_slice))
-        }
-    };
+fn print_setup(run: &RunInfo, features: &FeatureExtractor, n_train: usize, n_test: usize) {
+    let opts = run.opts;
     match opts.reupload {
-        Some((uploads, scale)) => println!(" Circuit         : {} qubits, depth {depth}, data re-uploading ({uploads} uploads, angle scale {scale:.3}), {source}", opts.qubits),
-        None => println!(" Circuit         : {} qubits, depth {}, {source}", opts.qubits, opts.depth),
+        Some((uploads, scale)) => println!(" Circuit         : {} qubits, depth {}, data re-uploading ({uploads} uploads, angle scale {scale:.3}), {}", opts.qubits, run.depth, run.source),
+        None => println!(" Circuit         : {} qubits, depth {}, {}", opts.qubits, opts.depth, run.source),
     }
-    println!(" Readout         : {} observables ({:?}), ridge head fitted in closed form", map.n_features(), opts.observables);
+    println!(
+        " Readout         : {} observables ({:?}), ridge head fitted in closed form",
+        features.map.n_features(),
+        opts.observables
+    );
     println!(" Input scaling   : {:?}", opts.scaling);
-    println!(" Molecules       : {} training, {} held-out\n", train.len(), test.len());
+    println!(" Molecules       : {n_train} training, {n_test} held-out\n");
+}
 
+fn evaluate(
+    fit: &FittedHead,
+    features: &FeatureExtractor,
+    validation: &[Sample],
+    test: &[Sample],
+    names: &[&str],
+) -> Evaluation {
     let t = Instant::now();
-    let rows: Vec<&[f64]> = train.iter().map(|m| m.features.as_slice()).collect();
-    let scaler = Scaler::fit_rows(opts.scaling, &rows);
-    let scaled_train: Vec<Vec<f64>> = train.iter().map(|m| scaler.apply(&m.features)).collect();
-    let scaled_test: Vec<Vec<f64>> = test.iter().map(|m| scaler.apply(&m.features)).collect();
-    let with_raw = |mut rows: Vec<Vec<f64>>, raw: &[Vec<f64>]| -> Vec<Vec<f64>> {
-        if opts.append_raw {
-            rows.iter_mut().zip(raw).for_each(|(r, x)| r.extend_from_slice(x));
-        }
-        rows
-    };
-    let train_x = with_raw(extract(&scaled_train), &scaled_train);
-    let train_ms = t.elapsed().as_secs_f64() * 1e3;
-    let train_y: Vec<Vec<f64>> = train.iter().map(|m| m.targets.to_vec()).collect();
-
-    let t = Instant::now();
-    let head = LinearHead::fit(&train_x, &train_y);
-    let fit_ms = t.elapsed().as_secs_f64() * 1e3;
-
-    let t = Instant::now();
-    let test_x = with_raw(extract(&scaled_test), &scaled_test);
-    let preds = head.predict(&test_x);
+    let test_x = features.matrix(&fit.scaled_test);
+    let preds = fit.head.predict(&test_x);
     let eval_ms = t.elapsed().as_secs_f64() * 1e3;
-    let test_y: Vec<Vec<f64>> = test.iter().map(|m| m.targets.to_vec()).collect();
-    let metrics = regression_metrics(&preds, &test_y, &names);
-    // Hyperparameters are chosen on these molecules, never on the test set.
-    let validation_relative_mse = (!validation.is_empty()).then(|| {
-        let scaled: Vec<Vec<f64>> = validation.iter().map(|m| scaler.apply(&m.features)).collect();
-        let val_y: Vec<Vec<f64>> = validation.iter().map(|m| m.targets.to_vec()).collect();
-        let m = regression_metrics(&head.predict(&with_raw(extract(&scaled), &scaled)), &val_y, &names);
-        1.0 - m.iter().map(|t| t.r2).sum::<f64>() / m.len() as f64
-    });
+    let test_y = targets_of(test);
+    let metrics = regression_metrics(&preds, &test_y, names);
+    let validation_relative_mse = validation_mse(fit, features, validation, names);
     if let Some(v) = validation_relative_mse {
         println!("  Validation relative MSE {v:.4} on {} molecules (choose settings on this, not on the test set)", validation.len());
     }
 
-    let target_cols: Vec<Vec<f64>> = (0..3).map(|k| test_y.iter().map(|r| r[k]).collect()).collect();
+    let target_cols: Vec<Vec<f64>> = (0..3)
+        .map(|k| test_y.iter().map(|r| r[k]).collect())
+        .collect();
     let holdout = ZincHoldout::new(
         [metrics[0].mse, metrics[1].mse, metrics[2].mse],
-        [metrics[0].pearson_r, metrics[1].pearson_r, metrics[2].pearson_r],
+        [
+            metrics[0].pearson_r,
+            metrics[1].pearson_r,
+            metrics[2].pearson_r,
+        ],
         [&target_cols[0], &target_cols[1], &target_cols[2]],
     );
+    Evaluation {
+        metrics,
+        holdout,
+        validation_relative_mse,
+        eval_ms,
+    }
+}
 
-    println!("  Feature extraction : {train_ms:>8.1} ms for {} training molecules", train.len());
-    println!("  Head fit           : {fit_ms:>8.1} ms (ridge lambda {:e})", head.lambda());
-    println!("  Held-out inference : {eval_ms:>8.1} ms ({:.1} us/molecule including the circuit)", eval_ms * 1e3 / test.len() as f64);
-    let mut spreads = feature_spreads(&train_x);
+/// Prints timings, feature spread and the per-target table. Returns (median spread, shots).
+fn print_results(fit: &FittedHead, eval: &Evaluation, n_train: usize, n_test: usize) -> (f64, f64) {
+    println!(
+        "  Feature extraction : {:>8.1} ms for {n_train} training molecules",
+        fit.train_ms
+    );
+    println!(
+        "  Head fit           : {:>8.1} ms (ridge lambda {:e})",
+        fit.fit_ms,
+        fit.head.lambda()
+    );
+    println!(
+        "  Held-out inference : {:>8.1} ms ({:.1} us/molecule including the circuit)",
+        eval.eval_ms,
+        eval.eval_ms * 1e3 / n_test as f64
+    );
+    let mut spreads = feature_spreads(&fit.train_x);
     spreads.sort_by(f64::total_cmp);
     let median_spread = spreads[spreads.len() / 2];
     let shots = shots_for_noise_equal_to(median_spread);
     println!("  Feature spread     : median {median_spread:.2e} (min {:.1e}, max {:.1e}); sampling noise equals it at ~{shots:.1e} shots", spreads[0], spreads[spreads.len() - 1]);
     println!("\n  Target    MAE       MSE       R2      Pearson r");
-    for m in &metrics {
-        println!("  {:<6} {:>8.4}  {:>8.4}  {:>7.4}  {:>8.4}", m.target, m.mae, m.mse, m.r2, m.pearson_r);
+    for m in &eval.metrics {
+        println!(
+            "  {:<6} {:>8.4}  {:>8.4}  {:>7.4}  {:>8.4}",
+            m.target, m.mae, m.mse, m.r2, m.pearson_r
+        );
     }
-    println!("\n  Held-out relative MSE {:.4} | mean Pearson r {:.4}", holdout.relative_mse, holdout.mean_pearson_r);
+    println!(
+        "\n  Held-out relative MSE {:.4} | mean Pearson r {:.4}",
+        eval.holdout.relative_mse, eval.holdout.mean_pearson_r
+    );
+    (median_spread, shots)
+}
 
-    let pairs = |rows: &[Sample]| -> Vec<(Vec<f64>, Vec<f64>)> { rows.iter().map(|m| (m.features.clone(), m.targets.to_vec())).collect() };
-    let mut baselines = evaluate_baselines(&pairs(&train), &pairs(&test), &names);
+/// Classical baselines (plus the optional polynomial ridges), printed next to the circuit row.
+fn compare_with_baselines(
+    opts: &Options,
+    train: &[Sample],
+    test: &[Sample],
+    metrics: &[TargetMetrics],
+    names: &[&str],
+) -> Vec<BaselineResult> {
+    let pairs = |rows: &[Sample]| -> Vec<(Vec<f64>, Vec<f64>)> {
+        rows.iter()
+            .map(|m| (m.features.clone(), m.targets.to_vec()))
+            .collect()
+    };
+    let mut baselines = evaluate_baselines(&pairs(train), &pairs(test), names);
     if let Some(degree) = opts.poly_baseline {
-        baselines.push(polynomial_baseline(degree, false, &train, &test, &names));
+        baselines.push(polynomial_ridge_baseline(degree, false, train, test, names));
     }
     if let Some(degree) = opts.poly_normalized {
-        baselines.push(polynomial_baseline(degree, true, &train, &test, &names));
+        baselines.push(polynomial_ridge_baseline(degree, true, train, test, names));
     }
     let col = |f: fn(&TargetMetrics) -> f64| [f(&metrics[0]), f(&metrics[1]), f(&metrics[2])];
     let row = QnnScore::new("circuit + linear head")
@@ -260,53 +339,118 @@ fn main() {
         .mse(col(|m| m.mse))
         .r2(col(|m| m.r2))
         .pearson_r(col(|m| m.pearson_r));
-    print_comparison_named(&[row], &baselines, &names);
+    print_comparison_named(&[row], &baselines, names);
+    baselines
+}
 
+/// Identifies a run for `write_scored`: only runs with identical settings compete.
+fn settings_fingerprint(run: &RunInfo, weights: &[f64], n_train: usize, n_test: usize) -> String {
+    let opts = run.opts;
+    // ZINC keeps its original fingerprint so saved ZINC records stay comparable.
+    let data_prefix = if opts.data.dataset == Dataset::Qm9 {
+        format!(
+            "data={};{:?};seed={};",
+            run.label, run.names, opts.data.seed
+        )
+    } else {
+        String::new()
+    };
+    format!(
+        "{data_prefix}{}{}qubits={};depth={};weights={};obs={:?};scale={:?};train={n_train};test={n_test}",
+        if opts.append_raw { "descriptors;" } else { "" },
+        opts.reupload.map_or(String::new(), |(u, s)| format!("reupload={u}x{s:.3};")),
+        opts.qubits,
+        run.depth,
+        weights_fingerprint(weights),
+        opts.observables,
+        opts.scaling,
+    )
+}
+
+fn save_report(
+    report_path: &str,
+    report: &LinearHeadReport,
+    holdout: &ZincHoldout,
+    settings: &str,
+) {
+    let json = serde_json::to_string_pretty(report).expect("serialize report");
+    match t1000::results::write_scored(report_path, json, &holdout.score(settings)) {
+        Ok(t1000::results::Outcome::KeptBest) => {
+            println!("\n[=] Saved report kept: this run did not improve it")
+        }
+        Ok(t1000::results::Outcome::Scratch) => {
+            println!("\n[~] Report written to a scratch copy only (use --record to save)")
+        }
+        Ok(t1000::results::Outcome::WrittenVariant) => {
+            println!("\n[SAVED] Different settings from the saved report: recorded as a variant")
+        }
+        Ok(t1000::results::Outcome::Written) => {
+            println!("\n[SAVED] Report exported to: {report_path}")
+        }
+        Err(e) => eprintln!("\n[!] Could not write the report: {e}"),
+    }
+}
+
+fn main() {
+    let opts = options();
+    let host = t1000::hostinfo::HostProfile::detect();
+    print_title(&opts, &host);
+
+    let Data {
+        train,
+        validation,
+        test,
+        target_names,
+        label,
+    } = opts.data.load();
+    let report_path = if opts.data.dataset == Dataset::Qm9 {
+        QM9_REPORT_PATH
+    } else {
+        ZINC_REPORT_PATH
+    };
+    let names: Vec<&str> = target_names.iter().map(String::as_str).collect();
+    println!(" Data set        : {label}; targets {names:?}");
+    let circuit = Circuit::new(&opts);
+    let features = circuit.features(&opts);
+    let run = RunInfo {
+        opts: &opts,
+        label: &label,
+        names: &names,
+        depth: circuit.depth,
+        source: &circuit.source,
+    };
+    print_setup(&run, &features, train.len(), test.len());
+
+    let fit = fit_head(opts.scaling, &features, &train, &test);
+    let eval = evaluate(&fit, &features, &validation, &test, &names);
+    let (median_spread, shots) = print_results(&fit, &eval, train.len(), test.len());
+    let baselines = compare_with_baselines(&opts, &train, &test, &eval.metrics, &names);
+
+    let settings = settings_fingerprint(&run, &circuit.weights, train.len(), test.len());
     let report = LinearHeadReport {
         host_cpu: host.label(),
         host_ram_gb: host.ram_gb,
         n_qubits: opts.qubits,
-        circuit_depth: depth,
-        circuit_weights_source: source,
-        n_observables: map.n_features(),
+        circuit_depth: circuit.depth,
+        circuit_weights_source: circuit.source.clone(),
+        n_observables: features.map.n_features(),
         observables: format!("{:?}", opts.observables),
         train_sample_count: train.len(),
         test_sample_count: test.len(),
-        ridge_lambda: head.lambda(),
-        feature_time_ms: train_ms,
-        fit_time_ms: fit_ms,
-        per_molecule_latency_us: eval_ms * 1e3 / test.len() as f64,
+        ridge_lambda: fit.head.lambda(),
+        feature_time_ms: fit.train_ms,
+        fit_time_ms: fit.fit_ms,
+        per_molecule_latency_us: eval.eval_ms * 1e3 / test.len() as f64,
         median_feature_spread: median_spread,
         shots_for_median_spread: shots,
-        scaler,
-        metrics,
-        relative_mse: holdout.relative_mse,
-        mean_pearson_r: holdout.mean_pearson_r,
-        validation_relative_mse,
+        scaler: fit.scaler,
+        metrics: eval.metrics,
+        relative_mse: eval.holdout.relative_mse,
+        mean_pearson_r: eval.holdout.mean_pearson_r,
+        validation_relative_mse: eval.validation_relative_mse,
         classical_baselines: baselines,
-        circuit_weights: weights.clone(),
-        head,
+        circuit_weights: circuit.weights.clone(),
+        head: fit.head,
     };
-    // ZINC keeps its original fingerprint so saved ZINC records stay comparable.
-    let data_prefix = if opts.data.dataset == Dataset::Qm9 { format!("data={label}:{names:?};seed={};", opts.data.seed) } else { String::new() };
-    let settings = format!(
-        "{data_prefix}{}{}qubits={};depth={};weights={};obs={:?};scale={:?};train={};test={}",
-        if opts.append_raw { "descriptors;" } else { "" },
-        opts.reupload.map_or(String::new(), |(u, s)| format!("reupload={u}x{s:.3};")),
-        opts.qubits,
-        depth,
-        weights_fingerprint(&weights),
-        opts.observables,
-        opts.scaling,
-        train.len(),
-        test.len()
-    );
-    let json = serde_json::to_string_pretty(&report).expect("serialize report");
-    match t1000::results::write_scored(report_path, json, &holdout.score(&settings)) {
-        Ok(t1000::results::Outcome::KeptBest) => println!("\n[=] Saved report kept: this run did not improve it"),
-        Ok(t1000::results::Outcome::Scratch) => println!("\n[~] Report written to a scratch copy only (use --record to save)"),
-        Ok(t1000::results::Outcome::WrittenVariant) => println!("\n[SAVED] Different settings from the saved report: recorded as a variant"),
-        Ok(t1000::results::Outcome::Written) => println!("\n[SAVED] Report exported to: {report_path}"),
-        Err(e) => eprintln!("\n[!] Could not write the report: {e}"),
-    }
+    save_report(report_path, &report, &eval.holdout, &settings);
 }

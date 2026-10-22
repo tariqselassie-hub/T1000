@@ -30,6 +30,7 @@ pub mod datasets;
 pub mod device_noise;
 pub mod diagonal;
 pub mod engine;
+pub mod feature_head;
 pub mod feature_map;
 pub mod glued_tree_valve;
 pub mod glued_trees;
