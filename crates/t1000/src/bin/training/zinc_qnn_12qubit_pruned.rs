@@ -10,10 +10,11 @@
 //! Pauli-Z expectation values down to machine precision while cutting gate depth by 22.2%.
 
 use serde::{Deserialize, Serialize};
-use std::fs;
 use std::time::{Duration, Instant};
-use t1000::zinc_data::{self, ZincMolecule};
-use t1000::zinc_training_common::{eval_all_z12, resolve_workspace_path, QnnCheckpoint};
+use t1000::zinc_data::ZincMolecule;
+use t1000::zinc_training_common::{
+    derive_pruned_params, eval_all_z12, load_holdout_and_checkpoint, resolve_workspace_path,
+};
 use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState};
 
 const N_QUBITS: usize = 12;
@@ -117,54 +118,6 @@ fn print_banner() {
     println!("{DOUBLE_RULE}\n");
 }
 
-/// Loads the 2,000-molecule holdout set and the 30-epoch checkpoint.
-/// Prints the reason and returns `None` if either is unusable.
-fn load_inputs() -> Option<(Vec<ZincMolecule>, QnnCheckpoint)> {
-    let test_path =
-        resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_test_2k.csv");
-    let ckpt_path = resolve_workspace_path(
-        "tests/benchmarks/zinc_molecular/outputs/zinc_12qubit_checkpoint.json",
-    );
-
-    println!(
-        "[INIT] Loading ZINC 2,000 holdout molecules: {}",
-        test_path.display()
-    );
-    let test_samples = match zinc_data::load(&test_path, 2000) {
-        Ok(s) => s,
-        Err(e) => {
-            eprintln!("[-] Error: {}", e);
-            return None;
-        }
-    };
-    println!("  -> Loaded {} molecules.\n", test_samples.len());
-
-    println!(
-        "[INIT] Loading 30-epoch checkpoint: {}",
-        ckpt_path.display()
-    );
-    let ckpt_content = match fs::read_to_string(&ckpt_path) {
-        Ok(c) => c,
-        Err(e) => {
-            eprintln!("[-] Error reading checkpoint: {}", e);
-            return None;
-        }
-    };
-    let ckpt: QnnCheckpoint = match serde_json::from_str(&ckpt_content) {
-        Ok(c) => c,
-        Err(e) => {
-            eprintln!("[-] Error parsing checkpoint: {}", e);
-            return None;
-        }
-    };
-    println!(
-        "  -> Epochs Completed: {}, Full Parameters: {}\n",
-        ckpt.epochs_completed,
-        ckpt.hybrid_params.len()
-    );
-    Some((test_samples, ckpt))
-}
-
 /// Builds the 99-parameter pruned vector from the 111-parameter full one:
 /// 1. Layer 1: params[0..24] (24 angles: 12 Ry + 12 Rz)
 /// 2. Layer 2: params[24..48] (24 angles: 12 Ry + 12 Rz)
@@ -174,16 +127,7 @@ fn load_inputs() -> Option<(Vec<ZincMolecule>, QnnCheckpoint)> {
 ///
 /// Total = 24 + 24 + 12 + 36 + 3 = 99 parameters (792 bytes).
 fn prune_params(full_params: &[f64]) -> Vec<f64> {
-    let mut pruned_params = Vec::with_capacity(99);
-    // Layers 1 & 2
-    pruned_params.extend_from_slice(&full_params[0..48]);
-    // Layer 3 (only Ry angles: full_params[48 + 2*q])
-    for q in 0..12 {
-        pruned_params.push(full_params[48 + 2 * q]);
-    }
-    // Readout weights & biases
-    pruned_params.extend_from_slice(&full_params[72..111]);
-
+    let pruned_params = derive_pruned_params(full_params, 12);
     assert_eq!(
         pruned_params.len(),
         99,
@@ -463,9 +407,15 @@ fn build_report(
 fn main() {
     print_banner();
 
-    let Some((test_samples, ckpt)) = load_inputs() else {
+    let Some((test_samples, ckpt)) = load_holdout_and_checkpoint() else {
         return;
     };
+    println!(
+        "  -> Epochs Completed: {}, Full Parameters: {}
+",
+        ckpt.epochs_completed,
+        ckpt.hybrid_params.len()
+    );
     if ckpt.hybrid_params.len() != 111 {
         eprintln!(
             "[-] Expected 111 hybrid parameters in checkpoint, found {}",

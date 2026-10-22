@@ -74,6 +74,7 @@ pub mod topological_sorter;
 pub mod trainer;
 pub mod ultrametric_tree;
 pub mod zinc_data;
+pub mod zinc_kernel_bench;
 pub mod zinc_training_common;
 pub mod zipper;
 

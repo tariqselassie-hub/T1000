@@ -351,6 +351,64 @@ pub fn rfc3339_from_unix(secs: u64) -> String {
     )
 }
 
+// ── Holdout + checkpoint loading ──────────────────────────────────────────────
+
+/// Loads the 2,000-molecule holdout set and the 30-epoch checkpoint, printing progress.
+/// Prints the reason and returns `None` if either is unusable.
+pub fn load_holdout_and_checkpoint() -> Option<(Vec<crate::zinc_data::ZincMolecule>, QnnCheckpoint)>
+{
+    let test_path =
+        resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_test_2k.csv");
+    let ckpt_path = resolve_workspace_path(
+        "tests/benchmarks/zinc_molecular/outputs/zinc_12qubit_checkpoint.json",
+    );
+
+    println!(
+        "[INIT] Loading ZINC 2,000 holdout molecules: {}",
+        test_path.display()
+    );
+    let test_samples = match crate::zinc_data::load(&test_path, 2000) {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("[-] Error: {}", e);
+            return None;
+        }
+    };
+    println!("  -> Loaded {} molecules.\n", test_samples.len());
+
+    println!(
+        "[INIT] Loading 30-epoch checkpoint: {}",
+        ckpt_path.display()
+    );
+    let ckpt_content = match std::fs::read_to_string(&ckpt_path) {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("[-] Error reading checkpoint: {}", e);
+            return None;
+        }
+    };
+    match serde_json::from_str(&ckpt_content) {
+        Ok(ckpt) => Some((test_samples, ckpt)),
+        Err(e) => {
+            eprintln!("[-] Error parsing checkpoint: {}", e);
+            None
+        }
+    }
+}
+
+/// Pruned parameter vector from the full 111: layers 1 & 2 keep their 48 angles, layer 3 keeps
+/// only its first `n_ry` Ry angles (12 = canonical pruning, 11 = qubit 11 eliminated), and the
+/// readout keeps its 36 weights and 3 biases.
+pub fn derive_pruned_params(full_params: &[f64], n_ry: usize) -> Vec<f64> {
+    let mut p = Vec::with_capacity(48 + n_ry + 39);
+    p.extend_from_slice(&full_params[0..48]);
+    for q in 0..n_ry {
+        p.push(full_params[48 + 2 * q]);
+    }
+    p.extend_from_slice(&full_params[72..111]);
+    p
+}
+
 // ── Epoch telemetry ───────────────────────────────────────────────────────────
 
 /// Prints a single formatted training epoch row to stdout.
@@ -434,6 +492,17 @@ mod tests {
         let rows: Vec<Vec<f64>> = ys.iter().map(|y| vec![y[0], y[1], 1.0]).collect();
         let (mae, r2) = compute_mae_and_r2(&rows, &rows);
         assert_eq!((mae[0], r2[0], r2[2]), (0.0, 1.0, 0.0));
+    }
+
+    #[test]
+    fn pruning_keeps_layers_1_2_ry_of_layer_3_and_the_readout() {
+        let full: Vec<f64> = (0..111).map(|i| i as f64).collect();
+        let pruned = derive_pruned_params(&full, 12);
+        assert_eq!(pruned.len(), 99);
+        assert_eq!(&pruned[..48], &full[..48]);
+        assert_eq!(pruned[48 + 5], full[48 + 2 * 5]); // Ry of qubit 5, Rz skipped
+        assert_eq!(&pruned[60..], &full[72..111]);
+        assert_eq!(derive_pruned_params(&full, 11).len(), 98);
     }
 
     #[test]
