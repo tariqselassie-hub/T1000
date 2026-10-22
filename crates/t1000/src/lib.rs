@@ -49,6 +49,7 @@ pub mod molfeatures;
 pub mod optimizer;
 pub mod parallel;
 pub mod plaquette;
+pub mod polynomial;
 pub mod protocol;
 pub mod qec;
 pub mod qm9_data;

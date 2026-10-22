@@ -64,3 +64,56 @@ fn saved_head_reloads_to_matching_predictions() {
     let worst = a.iter().flatten().zip(b.iter().flatten()).map(|(x, y)| (x - y).abs()).fold(0.0, f64::max);
     assert!(worst < 1e-12, "reloaded head deviates by {worst}");
 }
+
+/// Largest fraction of any circuit feature's variance left unexplained when it is regressed on all
+/// monomials up to `degree` of the normalised input (fitted on 450 inputs, scored on 150 others).
+fn unexplained_variance(degree: usize) -> f64 {
+    use t1000::linear_head::LinearHead;
+    use t1000::polynomial::polynomial_features;
+
+    let encoding = DataEncodingLayer::new(5, EncodingKind::Amplitude);
+    let ansatz = CircuitAnsatz::new(5, 3).with_pi_layer(true);
+    let weights = ansatz.weights.clone();
+    let map = CircuitFeatureMap { encoding: &encoding, ansatz: &ansatz, weights: &weights, observables: Observables::ParityUpTo(4) };
+    let inputs: Vec<Vec<f64>> = inputs(600).into_iter().map(|v| v[..6].to_vec()).collect();
+    let features = map.feature_matrix(inputs.iter().map(Vec::as_slice));
+    let monomials: Vec<Vec<f64>> = inputs
+        .iter()
+        .map(|x| {
+            let n = x.iter().map(|v| v * v).sum::<f64>().sqrt();
+            polynomial_features(&x.iter().map(|v| v / n).collect::<Vec<_>>(), degree)
+        })
+        .collect();
+    let head = LinearHead::fit(&monomials[..450], &features[..450]);
+    let predicted = head.predict(&monomials[450..]);
+    let mut worst = 0.0f64;
+    for k in 0..features[0].len() {
+        let truth: Vec<f64> = features[450..].iter().map(|r| r[k]).collect();
+        let mean = truth.iter().sum::<f64>() / truth.len() as f64;
+        let var = truth.iter().map(|v| (v - mean).powi(2)).sum::<f64>();
+        if var < 1e-20 {
+            continue; // a constant feature is trivially reproduced
+        }
+        let err: f64 = predicted.iter().zip(&truth).map(|(p, t)| (p[k] - t).powi(2)).sum();
+        worst = worst.max(err / var);
+    }
+    worst
+}
+
+/// Every Z-string expectation of an amplitude-encoded input passed through a fixed circuit is a
+/// quadratic form in the normalised input vector, so the span of the circuit features lies inside
+/// the span of the degree-2 monomials of that vector (plus a constant). This is why register size and
+/// circuit depth cannot lift the circuit head above a quadratic model.
+#[test]
+fn circuit_features_are_quadratic_forms_in_the_normalised_input() {
+    let worst = unexplained_variance(2);
+    assert!(worst < 1e-8, "a circuit feature left {worst:e} of its variance unexplained by quadratic forms");
+}
+
+/// Negative control for the test above: degree-1 monomials alone must leave a large share of some
+/// feature unexplained, so the quadratic result is not an artefact of the regression.
+#[test]
+fn linear_monomials_alone_do_not_explain_the_circuit_features() {
+    let worst = unexplained_variance(1);
+    assert!(worst > 0.05, "only {worst:e} left unexplained by linear terms; the control is not discriminating");
+}

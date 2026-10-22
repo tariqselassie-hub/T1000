@@ -946,3 +946,52 @@ linear-ridge accuracy, and the circuit features add gain on top as shots increas
   errors, readout errors, state preparation and routing (sections 5.5 to 5.9). The limitations listed
   there apply.
 
+### 6.6 Why the circuit head stops at the quadratic level
+
+Section 6.2 found the circuit head matching quadratic ridge but never passing it. Four further tests
+explain why, and show where the headroom is.
+
+**A cubic baseline does better.** `t1000::polynomial` expands the (max-abs scaled) descriptors into every
+monomial up to a given degree (degree 2 reproduces the existing quadratic features exactly; degree 3 on
+19 descriptors gives 1,539 features); `zinc_linear_head_train --poly-baseline 3` fits ridge on them.
+Relative MSE on the 10,000 held-out QM9 molecules (`mu, gap, alpha`):
+
+| Training molecules | Linear ridge | Quadratic ridge | Cubic ridge | Circuit head | Circuit head + descriptors |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 5,000 | 0.3761 | 0.3340 | 0.3240 | 0.3412 | 0.3282 |
+| 20,000 | 0.3757 | 0.3301 | 0.3128 | 0.3359 | 0.3249 |
+| 50,000 | 0.3757 | 0.3287 | 0.3104 | 0.3344 | 0.3234 |
+
+At 20,000 molecules cubic ridge reaches R2 0.342, 0.775 and 0.945 on `mu`, `gap` and `alpha`. So the
+descriptors are not the limit for QM9, and a cheap classical model with more interaction terms goes
+further. On ZINC (10,000 training molecules) cubic ridge barely improves on quadratic (0.3828 against
+0.3862) and is tied with the descriptor-augmented circuit head (0.3834).
+
+**The register size does not matter.** QM9, 20,000 training molecules, weight-4 parities, relative MSE:
+
+| Qubits | 8 | 10 | 12 | 14 |
+| :--- | :--- | :--- | :--- | :--- |
+| Circuit features | 162 | 385 | 793 | 1,470 |
+| Circuit head | 0.3357 | 0.3359 | 0.3356 | 0.3354 |
+| Circuit head + descriptors | 0.3250 | 0.3249 | 0.3249 | 0.3248 |
+
+**The cause is structural.** The input is amplitude-encoded and passed through a fixed circuit, so every
+Z-string expectation value is a quadratic form `x^T M x` in the L2-normalised input vector `x`. No
+register size, depth or parity weight can make the features exceed degree 2 in `x`. Two checks:
+
+* Ridge on all degree-2 monomials of the normalised scaled descriptors (209 features, which contain
+  every circuit feature in their span) scores 0.3259 on QM9, ahead of the circuit head (0.3359) and of
+  quadratic ridge on the raw inputs (0.3301). The circuit head cannot beat it by construction.
+* `tests/linear_head.rs` regresses every parity feature (weight up to 4) of a 5-qubit circuit on the
+  degree-2 monomials of its normalised input: each is reproduced to within 1e-8 of its variance. A
+  negative control, regression on degree-1 terms alone, leaves more than 5% of some feature unexplained.
+
+**What this means.** The parity features are an efficient quadratic feature map, and the measured
+plateau (circuit head at the quadratic level, hybrid head between quadratic and cubic) follows from
+that. Passing a cubic classical model would need features of higher degree in the inputs, for example
+data re-uploading or angle encoding with several repetitions, which is a different model family from
+the one studied here. The conditioning dip of section 6.2 is unrelated to this.
+
+Saved for this host: `qm9_linear_head_results.bd82568a.json` (QM9, descriptors in the head, with the
+cubic and normalised-input baselines) and the matching ZINC variant.
+
