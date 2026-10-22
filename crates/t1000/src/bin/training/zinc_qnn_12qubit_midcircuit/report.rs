@@ -1,14 +1,13 @@
-use super::phases::{Audit, Baseline, Fit, Throughput, TRUE_LP_10640};
+use super::phases::{Audit, Baseline, Throughput};
 use super::*;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
+use t1000::zinc_stage_common::{
+    improvement, phase_header, print_angle_grid, Fit, PROPS, SMILES_10640, TRUE_LP_10640,
+};
 use t1000::zinc_training_common::{utc_timestamp_rfc3339, MidCircuitCheckpoint};
 
 const RULE: &str = "=========================================================================";
-const SMILES_10640: &str =
-    "O=[N+]([O-])c1ccc2c(c1)=[NH+][C@@H](CS[C@H]1[NH+]=c3ccc(Br)cc3=[NH+]1)[NH+]=2";
-const PROPS: [&str; 3] = ["logP", "QED", "SAS"];
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MidCircuitReport {
     pub timestamp_rfc3339: String,
@@ -46,12 +45,6 @@ pub struct MidCircuitReport {
     pub combined_throughput_mols_per_sec: f64,
     #[serde(default)]
     pub classical_baselines: Vec<t1000::baselines::BaselineResult>,
-}
-
-pub fn phase_header(title: &str) {
-    println!("{RULE}");
-    println!("{title}");
-    println!("{RULE}");
 }
 
 pub fn print_banner() {
@@ -116,28 +109,6 @@ pub fn print_alpha_table_header() {
     println!("───────┼────────────────┼─────────────────────┼───────────┼────────────────────────────────────");
 }
 
-pub fn print_alpha_row(epoch: usize, loss: f64, pred_lp_10640: f64, alphas: &[f64]) {
-    let norm_alpha = alphas.iter().map(|&a| a * a).sum::<f64>().sqrt();
-
-    // Top 3 alphas by magnitude
-    let mut alpha_pairs: Vec<(usize, f64)> = alphas.iter().cloned().enumerate().collect();
-    alpha_pairs.sort_by(|a, b| b.1.abs().partial_cmp(&a.1.abs()).unwrap());
-    let top_str = format!(
-        "q{}: {:>+5.2}, q{}: {:>+5.2}, q{}: {:>+5.2}",
-        alpha_pairs[0].0,
-        alpha_pairs[0].1,
-        alpha_pairs[1].0,
-        alpha_pairs[1].1,
-        alpha_pairs[2].0,
-        alpha_pairs[2].1,
-    );
-
-    println!(
-        "  {:>3}  │   {:>10.6}   │      {:>+10.4}     │  {:>7.4}  │ {}",
-        epoch, loss, pred_lp_10640, norm_alpha, top_str
-    );
-}
-
 pub fn print_alpha_footer(elapsed: Duration, alphas: &[f64]) {
     println!("───────┴────────────────┴─────────────────────┴───────────┴────────────────────────────────────");
     println!(
@@ -147,19 +118,7 @@ pub fn print_alpha_footer(elapsed: Duration, alphas: &[f64]) {
 
     // Final alpha distribution across all 12 qubits
     println!(" Final Feed-Forward Weight Distribution (α_q for q ∈ 0..11):");
-    print!("   ");
-    for (q, alpha) in alphas.iter().enumerate() {
-        print!("q{:02}: {:>+6.3}  ", q, alpha);
-        if (q + 1) % 6 == 0 {
-            print!("\n   ");
-        }
-    }
-    println!();
-}
-
-/// Percentage MAE improvement of `mae` over the baseline for each property.
-fn improvement(base: &[f64; 3], mae: &[f64; 3]) -> [f64; 3] {
-    [0, 1, 2].map(|k| (1.0 - mae[k] / base[k]) * 100.0)
+    print_angle_grid(alphas);
 }
 
 pub fn print_feedforward(base: &Fit, ff: &Fit) {

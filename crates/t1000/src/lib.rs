@@ -76,6 +76,7 @@ pub mod ultrametric_tree;
 pub mod zinc_data;
 pub mod zinc_kernel_bench;
 pub mod zinc_readout_fit;
+pub mod zinc_stage_common;
 pub mod zinc_reuploading_model;
 pub mod zinc_training_common;
 pub mod zipper;

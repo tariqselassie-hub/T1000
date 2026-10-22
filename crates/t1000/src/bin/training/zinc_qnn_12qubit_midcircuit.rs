@@ -14,7 +14,8 @@
 //!   non-linearities that break the quadratic ceiling and resolve deep-regime Born solvation.
 
 use std::fs;
-use t1000::zinc_data::{self, ZincMolecule};
+use t1000::zinc_data::ZincMolecule;
+use t1000::zinc_stage_common::{load_stage_data, Data};
 use t1000::zinc_training_common::{resolve_workspace_path, PrunedCheckpoint};
 use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState};
 
@@ -98,52 +99,6 @@ impl Circuit {
     }
 }
 
-/// Train and holdout molecules with their (logP, QED, SAS) target rows.
-#[derive(Debug)]
-pub struct Data {
-    train: Vec<ZincMolecule>,
-    test: Vec<ZincMolecule>,
-    y_train: Vec<Vec<f64>>,
-    y_test: Vec<Vec<f64>>,
-}
-
-impl Data {
-    fn new(train: Vec<ZincMolecule>, test: Vec<ZincMolecule>) -> Self {
-        let rows = |s: &[ZincMolecule]| s.iter().map(|m| vec![m.log_p, m.qed, m.sas]).collect();
-        Data {
-            y_train: rows(&train),
-            y_test: rows(&test),
-            train,
-            test,
-        }
-    }
-}
-
-/// `b + Σ_q w[q] · x[q]` for each of the three properties.
-pub fn linear_predict(w: &[Vec<f64>], b: &[f64], x: &[f64]) -> [f64; 3] {
-    let mut p = [b[0], b[1], b[2]];
-    for (wq, xq) in w.iter().zip(x) {
-        for k in 0..3 {
-            p[k] += wq[k] * xq;
-        }
-    }
-    p
-}
-
-/// Loads a CSV from `rel`, falling back to `fallback_rel`; reports the first error if both fail.
-fn load_with_fallback(rel: &str, fallback_rel: &str, n: usize) -> Option<Vec<ZincMolecule>> {
-    match zinc_data::load(resolve_workspace_path(rel), n) {
-        Ok(s) => Some(s),
-        Err(e) => match zinc_data::load(resolve_workspace_path(fallback_rel), n) {
-            Ok(s) => Some(s),
-            Err(_) => {
-                eprintln!("[-] Error: {}", e);
-                None
-            }
-        },
-    }
-}
-
 /// The first 60 pruned-checkpoint parameters (48 L1/L2 angles + 12 terminal Ry).
 fn load_circuit_params() -> Option<Vec<f64>> {
     println!("[INIT] Loading quantum circuit parameters...");
@@ -169,24 +124,9 @@ fn load_circuit_params() -> Option<Vec<f64>> {
 }
 
 fn load_inputs() -> Option<(Data, Vec<f64>)> {
-    println!("[INIT] Loading training set (10,000 molecules)...");
-    let train = load_with_fallback(
-        "tests/benchmarks/zinc_molecular/data/zinc_train_10k.csv",
-        "tests/benchmarks/zinc_molecular/outputs/zinc_train_10k.csv",
-        10_000,
-    )?;
-    println!("  -> Loaded {} training molecules.\n", train.len());
-
-    println!("[INIT] Loading holdout test set (2,000 molecules)...");
-    let test = load_with_fallback(
-        "tests/benchmarks/zinc_molecular/data/zinc_test_2k.csv",
-        "tests/benchmarks/zinc_molecular/outputs/zinc_test_2k.csv",
-        2_000,
-    )?;
-    println!("  -> Loaded {} test molecules.\n", test.len());
-
+    let data = load_stage_data()?;
     let params = load_circuit_params()?;
-    Some((Data::new(train, test), params))
+    Some((data, params))
 }
 
 fn main() {
