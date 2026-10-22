@@ -24,6 +24,9 @@
 //! `--sweep` instead compares noise-aware head settings (wider ridge-penalty grid, feature subsets)
 //! on identical sampled data.
 //!
+//! `--feature-map reupload [--uploads K] [--angle-scale S]` uses data re-uploading (angle-encoded
+//! inputs, one ansatz layer per upload) instead of amplitude encoding.
+//!
 //! `--append-raw` adds the 19 exact scaled descriptors to the sampled features.
 //!
 //! `--dataset qm9` (with `--targets a,b,c`, `--features zinc|qm9`) runs the same study on QM9.
@@ -35,6 +38,7 @@ use std::env;
 use t1000::baselines::regression_metrics;
 use t1000::baselines::RIDGE_LAMBDAS;
 use t1000::device_noise::{ansatz_fidelity, apply_readout, depolarize, invert_readout, ReadoutError};
+use t1000::reuploading::ReuploadingMap;
 use t1000::linear_head::{probability_features_into, project, select_features, LinearHead, Observables, NOISE_LAMBDAS};
 use t1000::datasets::{Dataset, DataOptions, Sample};
 use t1000::zinc_data::{InputScaling, Scaler};
@@ -230,11 +234,18 @@ fn main() {
 
     let data_options = DataOptions::from_args(&args);
     let data = data_options.load();
-    let (train, test) = (data.train, data.test);
+    let (train, test, validation) = (data.train, data.test, data.validation);
     let rows: Vec<&[f64]> = train.iter().map(|m| m.features.as_slice()).collect();
     let scaler = Scaler::fit_rows(scaling, &rows);
     let encoding = DataEncodingLayer::new(N_QUBITS, EncodingKind::Amplitude);
-    let ansatz = CircuitAnsatz::new(N_QUBITS, depth).with_pi_layer(true);
+    // --feature-map reupload --uploads K --angle-scale S: angle-encoded data re-uploading.
+    let reupload: Option<(usize, f64)> = (value("--feature-map").as_deref() == Some("reupload")).then(|| {
+        (
+            value("--uploads").and_then(|v| v.parse().ok()).unwrap_or(6),
+            value("--angle-scale").and_then(|v| v.parse().ok()).unwrap_or(0.5),
+        )
+    });
+    let ansatz = CircuitAnsatz::new(N_QUBITS, reupload.map_or(depth, |(k, _)| depth.max(k))).with_pi_layer(true);
 
     if p2 > 0.0 || readout.is_some() {
         println!("Device errors: circuit fidelity {fidelity:.3} = ansatz {ansatz_f:.3} x state preparation {prep_fidelity:.3} (two-qubit error {p2}), readout {readout:?}, mitigation {mitigate}");
@@ -244,13 +255,20 @@ fn main() {
     let mut outputs = |rows: &[Sample]| -> Vec<Vec<f64>> {
         rows.iter()
             .map(|m| {
-                ansatz.forward_into(&encoding.encode(&scaler.apply(&m.features)), &ansatz.weights, &mut state);
+                match reupload {
+                    Some((uploads, angle_scale)) => {
+                        let map = ReuploadingMap { ansatz: &ansatz, weights: &ansatz.weights, uploads, angle_scale, observables: kind };
+                        map.run(&scaler.apply(&m.features), &mut state);
+                    }
+                    None => ansatz.forward_into(&encoding.encode(&scaler.apply(&m.features)), &ansatz.weights, &mut state),
+                }
                 probabilities(&state)
             })
             .collect()
     };
     let train_p = outputs(&train);
     let test_p = outputs(&test);
+    let val_p = outputs(&validation);
     let exact = |p: &[Vec<f64>]| -> Vec<Vec<f64>> {
         p.iter()
             .map(|probs| {
@@ -278,6 +296,11 @@ fn main() {
     println!("Noise-free reference: relative MSE {ref_mse:.4}, mean r {ref_r:.4}\n");
 
     let test_cdf: Vec<Vec<f64>> = test_p.iter().map(|p| cumulative(&device_distribution(p, fidelity, readout))).collect();
+    // --validation N: held-out molecules, disjoint from training and test, for choosing settings.
+    let val_cdf: Vec<Vec<f64>> = val_p.iter().map(|p| cumulative(&device_distribution(p, fidelity, readout))).collect();
+    let raw_val: Vec<Vec<f64>> = validation.iter().map(|m| scaler.apply(&m.features)).collect();
+    let val_y: Vec<Vec<f64>> = validation.iter().map(|m| m.targets.to_vec()).collect();
+    let mut validation_scores: Vec<(usize, f64)> = Vec::new();
     let train_cdf: Vec<Vec<f64>> = train_p.iter().take(noisy_train).map(|p| cumulative(&device_distribution(p, fidelity, readout))).collect();
     if args.iter().any(|a| a == "--sweep") {
         println!("Sweeping noise-aware head settings ({seeds} seeds, {} noisy training molecules)...", train_cdf.len());
@@ -297,6 +320,7 @@ fn main() {
     for &shots in &shot_list {
         let (mut a_mse, mut a_r, mut b_mse, mut b_r) = (vec![], vec![], vec![], vec![]);
         let mut b_r2 = [0.0f64; 3];
+        let mut val_mse = Vec::new();
         for seed in 0..seeds {
             let mut rng = Rng(0xC0FF_EE00 ^ (shots as u64) << 8 ^ seed as u64);
             let noisy_test = with_raw(test_cdf.iter().map(|c| sampled_features(c, shots, &mut rng, &mut counts, &plan)).collect(), &raw_test);
@@ -309,14 +333,25 @@ fn main() {
             b_mse.push(m);
             b_r.push(r);
             target_r2(&head, &noisy_test, &test_y).iter().enumerate().for_each(|(k, v)| b_r2[k] += v / seeds as f64);
+            if !validation.is_empty() {
+                let noisy_val = with_raw(val_cdf.iter().map(|c| sampled_features(c, shots, &mut rng, &mut counts, &plan)).collect(), &raw_val);
+                val_mse.push(score(&head, &noisy_val, &val_y).0);
+            }
         }
         let ((am, asd), (bm, bsd)) = (mean_sd(&a_mse), mean_sd(&b_mse));
         let (ar, br) = (mean_sd(&a_r).0, mean_sd(&b_r).0);
         println!("│ {shots:>7} │ {am:>8.4} ({asd:.4})   {ar:>8.4}   │ {bm:>8.4} ({bsd:.4})   {br:>8.4}   │");
         per_target.push((shots, b_r2));
+        if !val_mse.is_empty() {
+            validation_scores.push((shots, mean_sd(&val_mse).0));
+        }
         rows.push(Row { shots, exact_head_relative_mse: am, exact_head_sd: asd, exact_head_mean_r: ar, noisy_head_relative_mse: bm, noisy_head_sd: bsd, noisy_head_mean_r: br });
     }
     println!("└─────────┴───────────────────────────────┴───────────────────────────────┘");
+    if !validation_scores.is_empty() {
+        let line: Vec<String> = validation_scores.iter().map(|(s, v)| format!("{s}: {v:.4}")).collect();
+        println!("Validation relative MSE of the noisy-trained head ({} molecules; choose settings on this): {}", validation.len(), line.join("  "));
+    }
     let free_r2 = target_r2(&exact_head, &test_exact, &test_y);
     println!("Held-out R2 per target {:?} (noisy-trained head, mean over seeds); noise-free {:.3} {:.3} {:.3}", data.target_names, free_r2[0], free_r2[1], free_r2[2]);
     for (shots, r2) in &per_target {
@@ -331,7 +366,7 @@ fn main() {
         Observables::SingleZ => "w1".to_string(),
     };
     let device_tag = if p2 > 0.0 || readout.is_some() {
-        format!("_g{p2}_r{}{}{}", readout.map_or(0.0, |e| e.p10), if mitigate { "_m" } else { "" }, if let Some((_, c)) = direct { format!("_routed{c:.0}") } else if prep_cnots > 0.0 { format!("_prep{prep_cnots:.0}") } else { String::new() })
+        format!("_g{p2}_r{}{}{}", readout.map_or(0.0, |e| e.p10), if mitigate { "_m" } else { "" }, if let Some((_, c)) = direct { format!("_routed{c:.0}{}", reupload.map_or(String::new(), |(k, s)| format!("_ru{k}s{s:.2}"))) } else if prep_cnots > 0.0 { format!("_prep{prep_cnots:.0}") } else { String::new() })
     } else {
         String::new()
     };

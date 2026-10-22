@@ -14,7 +14,7 @@
 //! `--features zinc|qm9` the descriptor set.
 //!
 //! Usage: `zinc_linear_head_train [--depth N] [--weights report.json] [--observables w4|wK|all|z]
-//!         [--scale maxabs|minmax|raw] [--poly-baseline D] [--poly-normalized D] [--append-raw] [--qubits N] [--samples N] [--eval-samples N] [--record]`
+//!         [--scale maxabs|minmax|raw] [--poly-baseline D] [--poly-normalized D] [--append-raw] [--qubits N] [--validation N] [--feature-map amplitude|reupload] [--uploads K] [--angle-scale S] [--samples N] [--eval-samples N] [--record]`
 
 use serde::{Deserialize, Serialize};
 use std::{env, fs, time::Instant};
@@ -22,6 +22,7 @@ use t1000::baselines::{evaluate_baselines, print_comparison_named, regression_me
 use t1000::datasets::{Data, DataOptions, Dataset, Sample};
 use t1000::holdout_score::ZincHoldout;
 use t1000::polynomial::polynomial_features;
+use t1000::reuploading::ReuploadingMap;
 use t1000::linear_head::{feature_spreads, shots_for_noise_equal_to, weights_fingerprint, CircuitFeatureMap, LinearHead, Observables};
 use t1000::zinc_data::{InputScaling, Scaler};
 use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind};
@@ -53,6 +54,8 @@ struct LinearHeadReport {
     metrics: Vec<TargetMetrics>,
     relative_mse: f64,
     mean_pearson_r: f64,
+    #[serde(default)]
+    validation_relative_mse: Option<f64>,
     classical_baselines: Vec<BaselineResult>,
     circuit_weights: Vec<f64>,
     head: LinearHead,
@@ -73,6 +76,8 @@ struct Options {
     append_raw: bool,
     /// Register size (at least 5, so the 19 amplitudes fit).
     qubits: usize,
+    /// Data re-uploading instead of amplitude encoding: `Some((uploads, angle_scale))`.
+    reupload: Option<(usize, f64)>,
 }
 
 fn options() -> Options {
@@ -97,6 +102,12 @@ fn options() -> Options {
         poly_normalized: value("--poly-normalized").and_then(|v| v.parse().ok()),
         append_raw: args.iter().any(|a| a == "--append-raw"),
         qubits: value("--qubits").and_then(|v| v.parse().ok()).unwrap_or(DEFAULT_QUBITS).max(5),
+        reupload: (value("--feature-map").as_deref() == Some("reupload")).then(|| {
+            (
+                value("--uploads").and_then(|v| v.parse().ok()).unwrap_or(4),
+                value("--angle-scale").and_then(|v| v.parse().ok()).unwrap_or(std::f64::consts::PI),
+            )
+        }),
     }
 }
 
@@ -117,8 +128,13 @@ fn circuit_weights(opts: &Options, ansatz: &CircuitAnsatz) -> (Vec<f64>, String)
 fn polynomial_baseline(degree: usize, normalize: bool, train: &[Sample], test: &[Sample], names: &[&str]) -> BaselineResult {
     let rows: Vec<&[f64]> = train.iter().map(|m| m.features.as_slice()).collect();
     let scaler = Scaler::fit_rows(InputScaling::MaxAbs, &rows);
+    // Descriptors that never vary in the training set only add all-zero monomials; drop them.
+    let varying: Vec<usize> = (0..rows[0].len())
+        .filter(|&j| rows.iter().any(|r| (r[j] - rows[0][j]).abs() > 1e-12))
+        .collect();
     let prepare = |m: &Sample| -> Vec<f64> {
-        let x = scaler.apply(&m.features);
+        let full = scaler.apply(&m.features);
+        let x: Vec<f64> = varying.iter().map(|&j| full[j]).collect();
         if !normalize {
             return x;
         }
@@ -146,15 +162,29 @@ fn main() {
     println!("=========================================================================");
     println!(" Host            : {}", host.label());
 
-    let Data { train, test, target_names, label } = opts.data.load();
+    let Data { train, validation, test, target_names, label } = opts.data.load();
     let report_path = if opts.data.dataset == Dataset::Qm9 { QM9_REPORT_PATH } else { ZINC_REPORT_PATH };
     let names: Vec<&str> = target_names.iter().map(String::as_str).collect();
     println!(" Data set        : {label}; targets {names:?}");
     let encoding = DataEncodingLayer::new(opts.qubits, EncodingKind::Amplitude);
-    let ansatz = CircuitAnsatz::new(opts.qubits, opts.depth).with_pi_layer(true);
+    // Re-uploading needs one ansatz layer per upload.
+    let depth = opts.reupload.map_or(opts.depth, |(uploads, _)| opts.depth.max(uploads));
+    let ansatz = CircuitAnsatz::new(opts.qubits, depth).with_pi_layer(true);
     let (weights, source) = circuit_weights(&opts, &ansatz);
     let map = CircuitFeatureMap { encoding: &encoding, ansatz: &ansatz, weights: &weights, observables: opts.observables };
-    println!(" Circuit         : {} qubits, depth {}, {source}", opts.qubits, opts.depth);
+    let (uploads, angle_scale) = opts.reupload.unwrap_or((0, 0.0));
+    let reupload = ReuploadingMap { ansatz: &ansatz, weights: &weights, uploads, angle_scale, observables: opts.observables };
+    let extract = |rows: &[Vec<f64>]| -> Vec<Vec<f64>> {
+        if opts.reupload.is_some() {
+            reupload.feature_matrix(rows.iter().map(Vec::as_slice))
+        } else {
+            map.feature_matrix(rows.iter().map(Vec::as_slice))
+        }
+    };
+    match opts.reupload {
+        Some((uploads, scale)) => println!(" Circuit         : {} qubits, depth {depth}, data re-uploading ({uploads} uploads, angle scale {scale:.3}), {source}", opts.qubits),
+        None => println!(" Circuit         : {} qubits, depth {}, {source}", opts.qubits, opts.depth),
+    }
     println!(" Readout         : {} observables ({:?}), ridge head fitted in closed form", map.n_features(), opts.observables);
     println!(" Input scaling   : {:?}", opts.scaling);
     println!(" Molecules       : {} training, {} held-out\n", train.len(), test.len());
@@ -170,7 +200,7 @@ fn main() {
         }
         rows
     };
-    let train_x = with_raw(map.feature_matrix(scaled_train.iter().map(Vec::as_slice)), &scaled_train);
+    let train_x = with_raw(extract(&scaled_train), &scaled_train);
     let train_ms = t.elapsed().as_secs_f64() * 1e3;
     let train_y: Vec<Vec<f64>> = train.iter().map(|m| m.targets.to_vec()).collect();
 
@@ -179,11 +209,21 @@ fn main() {
     let fit_ms = t.elapsed().as_secs_f64() * 1e3;
 
     let t = Instant::now();
-    let test_x = with_raw(map.feature_matrix(scaled_test.iter().map(Vec::as_slice)), &scaled_test);
+    let test_x = with_raw(extract(&scaled_test), &scaled_test);
     let preds = head.predict(&test_x);
     let eval_ms = t.elapsed().as_secs_f64() * 1e3;
     let test_y: Vec<Vec<f64>> = test.iter().map(|m| m.targets.to_vec()).collect();
     let metrics = regression_metrics(&preds, &test_y, &names);
+    // Hyperparameters are chosen on these molecules, never on the test set.
+    let validation_relative_mse = (!validation.is_empty()).then(|| {
+        let scaled: Vec<Vec<f64>> = validation.iter().map(|m| scaler.apply(&m.features)).collect();
+        let val_y: Vec<Vec<f64>> = validation.iter().map(|m| m.targets.to_vec()).collect();
+        let m = regression_metrics(&head.predict(&with_raw(extract(&scaled), &scaled)), &val_y, &names);
+        1.0 - m.iter().map(|t| t.r2).sum::<f64>() / m.len() as f64
+    });
+    if let Some(v) = validation_relative_mse {
+        println!("  Validation relative MSE {v:.4} on {} molecules (choose settings on this, not on the test set)", validation.len());
+    }
 
     let target_cols: Vec<Vec<f64>> = (0..3).map(|k| test_y.iter().map(|r| r[k]).collect()).collect();
     let holdout = ZincHoldout::new(
@@ -226,7 +266,7 @@ fn main() {
         host_cpu: host.label(),
         host_ram_gb: host.ram_gb,
         n_qubits: opts.qubits,
-        circuit_depth: opts.depth,
+        circuit_depth: depth,
         circuit_weights_source: source,
         n_observables: map.n_features(),
         observables: format!("{:?}", opts.observables),
@@ -242,6 +282,7 @@ fn main() {
         metrics,
         relative_mse: holdout.relative_mse,
         mean_pearson_r: holdout.mean_pearson_r,
+        validation_relative_mse,
         classical_baselines: baselines,
         circuit_weights: weights.clone(),
         head,
@@ -249,10 +290,11 @@ fn main() {
     // ZINC keeps its original fingerprint so saved ZINC records stay comparable.
     let data_prefix = if opts.data.dataset == Dataset::Qm9 { format!("data={label}:{names:?};seed={};", opts.data.seed) } else { String::new() };
     let settings = format!(
-        "{data_prefix}{}qubits={};depth={};weights={};obs={:?};scale={:?};train={};test={}",
+        "{data_prefix}{}{}qubits={};depth={};weights={};obs={:?};scale={:?};train={};test={}",
         if opts.append_raw { "descriptors;" } else { "" },
+        opts.reupload.map_or(String::new(), |(u, s)| format!("reupload={u}x{s:.3};")),
         opts.qubits,
-        opts.depth,
+        depth,
         weights_fingerprint(&weights),
         opts.observables,
         opts.scaling,

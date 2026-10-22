@@ -11,6 +11,9 @@
 //!
 //! `--dataset qm9` routes QM9 molecules instead.
 //!
+//! `--no-prep --uploads K` routes a data re-uploading circuit instead: no state preparation, and the
+//! `K` uploads' single-qubit rotations are added to the gate counts.
+//!
 //! Usage: `zinc_routing_study [--restarts N] [--search-molecules K] [--eval-molecules M] [--depth D]`
 
 use serde::Serialize;
@@ -55,16 +58,23 @@ struct TopologyResult {
     naive_fidelity: [f64; 3],
 }
 
-fn programs(depth: usize, molecules: &[Vec<f64>]) -> Vec<Vec<Item>> {
+fn programs(depth: usize, molecules: &[Vec<f64>], with_prep: bool) -> Vec<Vec<Item>> {
     let ansatz = ansatz_program(N_QUBITS, depth);
     molecules
         .iter()
         .map(|amps| {
-            let mut p = prep_program(&amplitude_prep(amps));
+            let mut p = if with_prep { prep_program(&amplitude_prep(amps)) } else { Vec::new() };
             p.extend(ansatz.iter().cloned());
             p
         })
         .collect()
+}
+
+/// Single-qubit data rotations of a re-uploading circuit with `uploads` uploads of `n_inputs` inputs
+/// (they cost no two-qubit gates and need no routing, but they add single-qubit error).
+fn data_rotations(uploads: usize, n_inputs: usize) -> usize {
+    let n_chunks = n_inputs.div_ceil(N_QUBITS);
+    (0..uploads).map(|l| (n_inputs - (l % n_chunks) * N_QUBITS).min(N_QUBITS)).sum()
 }
 
 fn evaluate(progs: &[Vec<Item>], topo: &Topology, layout: &[usize], depth: usize) -> Placement {
@@ -87,6 +97,8 @@ fn fidelities(p: &Placement) -> [f64; 3] {
 fn main() {
     let args: Vec<String> = env::args().collect();
     let value = |flag: &str, default: usize| args.iter().position(|a| a == flag).and_then(|i| args.get(i + 1)).and_then(|v| v.parse().ok()).unwrap_or(default);
+    let no_prep = args.iter().any(|a| a == "--no-prep");
+    let uploads = value("--uploads", 0);
     let (restarts, search_n, eval_n, depth) = (value("--restarts", 40), value("--search-molecules", 4), value("--eval-molecules", 200), value("--depth", 4));
 
     let data_options = DataOptions::from_args(&args);
@@ -103,7 +115,7 @@ fn main() {
     let step = train.len() / eval_n;
     let eval_set: Vec<Vec<f64>> = (0..eval_n).map(|i| amps(i * step)).collect();
     let search_set: Vec<Vec<f64>> = (0..search_n).map(|i| amps(i * step + step / 2)).collect();
-    let (eval_progs, search_progs) = (programs(depth, &eval_set), programs(depth, &search_set));
+    let (eval_progs, search_progs) = (programs(depth, &eval_set, !no_prep), programs(depth, &search_set, !no_prep));
 
     let topologies = [Topology::all_to_all(N_QUBITS), Topology::line(N_QUBITS), Topology::ring(N_QUBITS), Topology::grid(2, 5), Topology::heavy_hex_fragment()];
     let identity: Vec<usize> = (0..N_QUBITS).collect();
@@ -111,7 +123,13 @@ fn main() {
     let mut results = Vec::new();
     for topo in &topologies {
         let (layout, searched) = search_layout(&search_progs, topo, restarts, 7);
-        let (best, naive) = (evaluate(&eval_progs, topo, &layout, depth), evaluate(&eval_progs, topo, &identity, depth));
+        let (mut best, mut naive) = (evaluate(&eval_progs, topo, &layout, depth), evaluate(&eval_progs, topo, &identity, depth));
+        let extra = data_rotations(uploads, train[0].features.len());
+        for p in [&mut best, &mut naive] {
+            p.single_qubit.mean += extra as f64;
+            p.single_qubit.min += extra;
+            p.single_qubit.max += extra;
+        }
         // Verify every routed circuit of the first molecule against the original.
         let dev = verify(&eval_progs[0], &route(&eval_progs[0], topo, &layout), N_QUBITS).max(verify(&eval_progs[0], &route(&eval_progs[0], topo, &identity), N_QUBITS));
         println!("{:<11} best layout {:?}  (search objective {:.1}, verified to {:.1e})", topo.name, layout, searched, dev);
@@ -138,6 +156,7 @@ fn main() {
     }
 
     let json = serde_json::json!({ "depth": depth, "restarts": restarts, "search_molecules": search_n, "eval_molecules": eval_n, "results": results });
-    let name = if data.label.starts_with("QM9") { "qm9_routing_study" } else { "zinc_routing_study" };
+    let base = if data.label.starts_with("QM9") { "qm9_routing_study" } else { "zinc_routing_study" };
+    let name = if no_prep { format!("{base}_reupload{uploads}") } else { base.to_string() };
     let _ = t1000::results::write(format!("results/experiments/{name}.json"), serde_json::to_string_pretty(&json).unwrap_or_default());
 }

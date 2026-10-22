@@ -995,3 +995,106 @@ the one studied here. The conditioning dip of section 6.2 is unrelated to this.
 Saved for this host: `qm9_linear_head_results.bd82568a.json` (QM9, descriptors in the head, with the
 cubic and normalised-input baselines) and the matching ZINC variant.
 
+### 6.7 Data re-uploading: features of higher degree
+
+Section 6.6 showed that amplitude encoding caps the features at degree 2. `t1000::reuploading`
+(`--feature-map reupload --uploads K --angle-scale S` on `zinc_linear_head_train` and
+`zinc_shot_noise`) uses angle encoding instead. The 19 descriptors are split into chunks of 10; upload
+`l` applies `Ry(S x_j)` to qubit `p` for every input `j` of chunk `l mod 2`, followed by layer `l` of the
+ansatz (so `K` uploads need depth `K`). Each Z-string expectation is then a trigonometric polynomial
+of the inputs: an input uploaded `k` times enters with frequencies up to `k`, and different inputs
+interact to every order. Tests pin this down: a single upload gives exactly `cos(angle)`; with one
+upload per input, summing a feature over two shifts of an input by pi removes its dependence
+(frequency at most 1); with every input uploaded twice that sum no longer cancels but a four-shift sum
+does (frequency 2). No state-preparation circuit is needed: the data enters as single-qubit rotations.
+
+**Protocol.** Settings were chosen on a validation set (`--validation N`, molecules disjoint from
+training and test), and the test set was read once for each chosen configuration. Earlier exploratory
+sweeps that looked at test numbers are not used for any claim below.
+
+**Noise-free, QM9.** Validation relative MSE over uploads (2 to 12) and angle scale (0.1 to 1.5) forms a
+broad plateau: at least 4 uploads and a scale between 0.2 and 1.0 give 0.313 to 0.315, saturating at
+about 0.3125 from 6 uploads. The rule fixed before looking at the test set (smallest number of uploads
+within 0.001 of the best validation score, then the best scale) selects **6 uploads, angle scale 0.5**
+(validation 0.3130 circuit-only, 0.3129 with descriptors). Test, 20,000 training and 10,000 held-out
+molecules (relative MSE; the amplitude circuit head scored 0.3359, quadratic ridge 0.3301, cubic ridge
+0.3128):
+
+| Head | Relative MSE | R2 mu | R2 gap | R2 alpha |
+| :--- | :--- | :--- | :--- | :--- |
+| Re-uploading, circuit features only | 0.3091 | 0.346 | 0.782 | 0.945 |
+| Re-uploading + descriptors | 0.3089 | 0.346 | 0.782 | 0.945 |
+
+Six independent random splits (the selection above was made on the first):
+
+| Seed | Amplitude | Re-uploading | Quadratic ridge | Cubic ridge | Re-uploading minus cubic |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 7 | 0.3359 | 0.3091 | 0.3301 | 0.3128 | -0.0038 |
+| 11 | 0.3470 | 0.3016 | 0.3237 | 0.3041 | -0.0025 |
+| 13 | 0.3445 | 0.3005 | 0.3205 | 0.3024 | -0.0019 |
+| 17 | 0.3295 | 0.3026 | 0.3231 | 0.3048 | -0.0022 |
+| 19 | 0.3714 | 0.3076 | 0.3271 | 0.3108 | -0.0032 |
+| 23 | 0.3216 | 0.2956 | 0.3156 | 0.2985 | -0.0029 |
+
+The re-uploading head beats cubic ridge on all six splits (mean difference -0.0028, standard error
+0.0003) and quadratic ridge on all six (mean -0.0205). The margin over cubic is small. A degree-4
+polynomial ridge on the same descriptors (3,875 features after dropping the constant columns; 396 s to
+fit, against about 4 s for 385 re-uploading features) scores 0.3099 on the first split, tied with
+re-uploading (0.3091). So re-uploading reaches what a high-order polynomial reaches with about ten times
+fewer features, and does not go beyond it.
+
+**Transfer to ZINC** (10,000 training, 2,000 held-out; the QM9-selected setting, nothing tuned on
+ZINC; a single fixed test set, so no repeated splits): re-uploading 0.3758 against cubic ridge 0.3828,
+quadratic 0.3862, the amplitude head 0.3959 and the amplitude head with descriptors 0.3834.
+
+**On the device model.** Routing the circuit (6 ansatz layers, no preparation, 177 single-qubit gates
+including the data rotations; strides 1, 2, 4, 8, 1, 2) onto the five topologies:
+
+| Topology | Two-qubit gates (best placement) | Naive placement | Fidelity at 5e-3 | Amplitude circuit (section 6.3) |
+| :--- | :--- | :--- | :--- | :--- |
+| all-to-all | 60.0 | 60.0 | 0.678 | 60.4 |
+| grid | 138.0 | 165.0 | 0.458 | 129.9 |
+| ring | 192.0 | 201.0 | 0.350 | 180.5 |
+| heavy-hex fragment | 225.0 | 255.0 | 0.296 | 173.7 |
+| line | 255.0 | 276.0 | 0.255 | 197.4 |
+
+Without the 24-gate preparation the all-to-all count is about the same as for the amplitude circuit
+(60.0 against 60.4), but the two extra long-range layers make the restricted topologies more expensive.
+
+The angle scale also sets the spread of the features, and with it the signal-to-noise per shot. With the
+small scale chosen for noise-free accuracy the head did worse on the device model than the amplitude
+head (all-to-all, with descriptors: 0.410 / 0.395 / 0.369 at 1,000 / 10,000 / 100,000 shots against
+0.396 / 0.373 / 0.355). Choosing the scale under noise on a 3,000-molecule validation set (mean over
+1,000, 10,000 and 100,000 shots, all-to-all, with descriptors):
+
+| Angle scale | 0.5 | 1.0 | 1.5 | 2.0 | 2.5 | 3.14 | 4.0 |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| Validation mean | 0.4089 | 0.3866 | 0.3764 | 0.3752 | **0.3745** | 0.3761 | 0.3799 |
+
+Scale 2.5 gives, on the 2,000 held-out test molecules at the typical device (two-qubit error 5e-3,
+readout 2%, 5,000 noisy training molecules, 2 seeds), relative MSE at 1,000 / 10,000 / 100,000 shots:
+
+| Topology | Re-uploading, circuit only | Re-uploading + descriptors | Amplitude + descriptors |
+| :--- | :--- | :--- | :--- |
+| all-to-all | 0.515 / 0.392 / 0.351 | 0.373 / 0.351 / 0.334 | 0.396 / 0.373 / 0.355 |
+| grid | 0.579 / 0.422 / 0.362 | 0.384 / 0.360 / 0.340 | 0.407 / 0.385 / 0.359 |
+| ring | 0.633 / 0.453 / 0.370 | 0.390 / 0.364 / 0.343 | 0.406 / 0.384 / 0.364 |
+| heavy-hex fragment | 0.666 / 0.466 / 0.376 | 0.391 / 0.363 / 0.346 | 0.406 / 0.386 / 0.364 |
+| line | 0.695 / 0.488 / 0.381 | 0.394 / 0.369 / 0.346 | 0.407 / 0.391 / 0.366 |
+
+On these 2,000 molecules linear ridge scores 0.389, quadratic ridge 0.340, cubic ridge 0.319 and the
+noise-free re-uploading head with descriptors 0.319 (circuit-only 0.329 at this scale, against 0.317 at
+scale 0.5: the larger scale trades a little noise-free accuracy for noise robustness).
+
+* **With a scale chosen under noise, re-uploading beats the amplitude head on every topology**, by 0.013
+  to 0.025 at every shot count, and beats linear ridge from 1,000 shots on the all-to-all and grid devices
+  and from 10,000 shots on all of them.
+* **It does not beat classical models.** Cubic ridge (0.319) and a degree-4 polynomial are as good or
+  better noise-free, are cheaper, and have no sampling noise. At 100,000 shots on the all-to-all device the
+  hybrid head (0.334) is still 0.015 behind cubic ridge.
+* The caveats of sections 5.7 to 5.9 apply: exact circuit simulation, global depolarising gate errors, no
+  crosstalk or drift, and a greedy router that gives upper bounds on gate counts.
+
+Saved for this host: `qm9_linear_head_results.88c8d4a3.json`, the ZINC variant, `qm9_routing_study_reupload6.json`
+and the `..._routed<N>_ru6s2.50.json` shot-noise curves for the all-to-all, grid and line devices.
+

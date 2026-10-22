@@ -33,6 +33,9 @@ pub struct Sample {
 #[derive(Debug)]
 pub struct Data {
     pub train: Vec<Sample>,
+    /// Molecules for choosing hyperparameters, disjoint from `train` and `test` (empty unless
+    /// `--validation N` is given). Choose settings on these, then report `test` once.
+    pub validation: Vec<Sample>,
     pub test: Vec<Sample>,
     pub target_names: [String; 3],
     /// Human-readable description, for example `QM9 (ZincLike descriptors)`.
@@ -49,6 +52,7 @@ pub struct DataOptions {
     pub qm9_targets: [usize; 3],
     pub qm9_features: FeatureSet,
     pub seed: u64,
+    pub validation: usize,
 }
 
 /// Indices into [`PROPERTIES`] for a comma-separated list of exactly three property names.
@@ -73,6 +77,7 @@ impl DataOptions {
             qm9_targets: parse_targets(value("--targets").as_deref()),
             qm9_features: if value("--features").as_deref() == Some("qm9") { FeatureSet::Qm9 } else { FeatureSet::ZincLike },
             seed: number("--seed", 7) as u64,
+            validation: number("--validation", 0),
         }
     }
 
@@ -87,8 +92,13 @@ impl DataOptions {
                         .map(|m| Sample { targets: m.targets(), features: m.features })
                         .collect()
                 };
+                // ZINC has no spare molecules: a validation set is taken from the end of the
+                // training file, which shortens the training set by the same amount.
+                let mut train = load(ZINC_TRAIN_CSV, self.samples);
+                let validation = train.split_off(train.len() - self.validation.min(train.len() / 2));
                 Data {
-                    train: load(ZINC_TRAIN_CSV, self.samples),
+                    train,
+                    validation,
                     test: load(ZINC_TEST_CSV, self.eval_samples),
                     target_names: ZINC_TARGETS.map(String::from),
                     label: "ZINC".to_string(),
@@ -99,10 +109,12 @@ impl DataOptions {
                     .unwrap_or_else(|e| panic!("{e} (see data/qm9/README.md to fetch the data)"));
                 println!(" QM9 rows         : {} featurised, {skipped} skipped", rows.len());
                 let (mut train, test) = qm9_data::split(rows, self.eval_samples, self.seed);
+                let validation = if train.len() > self.samples { train.split_off(self.samples) } else { Vec::new() };
                 train.truncate(self.samples);
                 let sample = |m: Qm9Molecule| Sample { targets: m.targets(self.qm9_targets), features: m.features };
                 Data {
                     train: train.into_iter().map(sample).collect(),
+                    validation: validation.into_iter().take(self.validation).map(sample).collect(),
                     test: test.into_iter().map(sample).collect(),
                     target_names: self.qm9_targets.map(|i| PROPERTIES[i].to_string()),
                     label: format!("QM9 ({:?} descriptors)", self.qm9_features),
@@ -135,6 +147,12 @@ mod tests {
         assert_eq!((o.samples, o.eval_samples, o.seed), (500, 100, 3));
         assert_eq!(o.qm9_targets, [2, 3, 5]);
         assert_eq!(o.qm9_features, FeatureSet::Qm9);
+    }
+
+    #[test]
+    fn the_validation_size_is_read_from_the_command_line() {
+        assert_eq!(DataOptions::from_args(&args(&[])).validation, 0);
+        assert_eq!(DataOptions::from_args(&args(&["--validation", "5000"])).validation, 5000);
     }
 
     #[test]
