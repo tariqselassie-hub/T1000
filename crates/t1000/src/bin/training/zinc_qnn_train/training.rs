@@ -1,4 +1,5 @@
 use super::*;
+use t1000::zinc_holdout_eval::{print_zero_shot, target_columns};
 
 /// Fused single-pass expectation value evaluation for Z0, Z1, Z2 across state amplitudes.
 /// Eliminates redundant memory sweeps and leverages L1 cache residency.
@@ -73,38 +74,14 @@ pub fn targets_of(m: &ZincMolecule) -> [f64; 3] {
     [m.log_p, m.qed, m.sas]
 }
 
-/// Mean squared error and mean absolute error of `preds` against `targets`.
-pub fn mse_mae(preds: &[f64], targets: &[f64], n: f64) -> (f64, f64) {
-    let mse = preds
-        .iter()
-        .zip(targets)
-        .map(|(p, t)| (p - t).powi(2))
-        .sum::<f64>()
-        / n;
-    let mae = preds
-        .iter()
-        .zip(targets)
-        .map(|(p, t)| (p - t).abs())
-        .sum::<f64>()
-        / n;
-    (mse, mae)
-}
-
 /// Prints and returns the pre-training (zero-shot) holdout MSE of each property.
 pub fn print_baseline(test: &[ZincMolecule], model: &Model, state: &mut QuantumState) -> [f64; 3] {
-    let n = test.len() as f64;
     let fixed = fixed_head();
     let preds = model.predict(test, &model.ansatz.weights, &fixed, state);
     println!("{RULE}");
     println!(" [BASELINE TEST METRICS (Pre-Training Zero-Shot)]");
     println!("{RULE}");
-    let mut init_mse = [0.0; 3];
-    for (k, name) in ["logP", "qed ", "SAS "].iter().enumerate() {
-        let targets: Vec<f64> = test.iter().map(|s| targets_of(s)[k]).collect();
-        let (mse, mae) = mse_mae(&preds[k], &targets, n);
-        println!("  Initial Test MSE - {name} : {mse:.4} (MAE: {mae:.4})");
-        init_mse[k] = mse;
-    }
+    let init_mse = print_zero_shot(&preds, &target_columns(test));
     println!("{RULE}\n");
     init_mse
 }

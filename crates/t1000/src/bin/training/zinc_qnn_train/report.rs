@@ -1,5 +1,5 @@
-use super::training::mse_mae;
 use super::*;
+use t1000::zinc_holdout_eval::{holdout_metrics, print_ledger, target_columns};
 
 /// Holdout evaluation: per-property scores plus screening speed and unitarity.
 pub struct Evaluation {
@@ -34,17 +34,7 @@ pub fn evaluate(
     let throughput_mol_sec = n_eval / eval_duration.as_secs_f64();
     let norm = compute_state_norm(state);
 
-    let scores = [0, 1, 2].map(|k| {
-        let targets: Vec<f64> = test.iter().map(|s| targets_of(s)[k]).collect();
-        let (mse, mae) = mse_mae(&preds[k], &targets, n_eval);
-        PropertyMetric {
-            initial_mse: init_mse[k],
-            tuned_mse: mse,
-            tuned_mae: mae,
-            pearson_r: t1000::calibration::pearson_r(&preds[k], &targets),
-            error_reduction_pct: ((init_mse[k] - mse) / init_mse[k]).max(0.0) * 100.0,
-        }
-    });
+    let scores = holdout_metrics(&preds, &target_columns(test), init_mse);
     Evaluation {
         scores,
         eval_ms,
@@ -88,23 +78,10 @@ pub fn print_evaluation(
         ev.norm
     );
 
-    println!("\n╔═══════════════════════════════════════════════════════════════════════════════════════════════════════╗");
-    println!("║                    ZINC 10k QUANTUM NEURAL NETWORK HOLDOUT EVALUATION LEDGER                          ║");
-    println!("╠═══════════════════════════════════════════════════════════════════════════════════════════════════════╣");
-    println!("║ Target Property         │ Initial MSE │ Tuned MSE   │ Tuned MAE   │ Pearson R │ Error Reduction   ║");
-    println!("╟─────────────────────────┼─────────────┼─────────────┼─────────────┼───────────┼───────────────────╢");
-    let labels = [
-        "logP (Lipophilicity)   ",
-        "qed  (Drug-Likeness)   ",
-        "SAS  (Synthetic Access)",
-    ];
-    for (label, m) in labels.iter().zip(&ev.scores) {
-        println!(
-            "║ {label} │ {:>11.4} │ {:>11.4} │ {:>11.4} │ {:>9.4} │ {:>15.2}% ║",
-            m.initial_mse, m.tuned_mse, m.tuned_mae, m.pearson_r, m.error_reduction_pct
-        );
-    }
-    println!("╚═══════════════════════════════════════════════════════════════════════════════════════════════════════╝");
+    print_ledger(
+        "║                    ZINC 10k QUANTUM NEURAL NETWORK HOLDOUT EVALUATION LEDGER                          ║",
+        &ev.scores,
+    );
 }
 
 pub fn load_samples(args: &Args) -> Option<(Vec<ZincMolecule>, Vec<ZincMolecule>)> {
