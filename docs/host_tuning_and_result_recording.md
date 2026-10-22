@@ -656,11 +656,84 @@ molecules, 2 seeds; the mean predictor is 1.0). The noise-free values are 0.4312
   with 385 features (0.494; 847 features give 0.496).
 * Saved for this host: `zinc_shot_noise_maxabs_w4_g<p2>_r<e>.json` for each scenario.
 
-**What is not modelled.** The circuit is simulated from an ideal amplitude-encoded input. On hardware
-the 19-amplitude state would have to be prepared by a circuit of its own, plausibly of the order of a
-hundred two-qubit gates; at the typical error rate that alone would roughly halve the fidelity again
-(the "poor" scenario's F of 0.62 is about what typical gate errors plus such a preparation would
-give, but that is an estimate, not a compiled circuit). Gate errors are modelled as a global
-depolarizing channel, not as the structured errors a device has; crosstalk, drift and decoherence
-during measurement are not included.
+**What is not modelled here.** Section 5.7 simulates the circuit from an ideal amplitude-encoded
+input. The cost of preparing that input is measured in section 5.8, which replaces an earlier guess
+of about a hundred two-qubit gates (the real count is about 24 with all-to-all connectivity). Gate
+errors are modelled as a global depolarizing channel, not as the structured errors a device has;
+crosstalk, drift and decoherence during measurement are not included.
+
+### 5.8 Cost of preparing the input state (`state_prep`, `zinc_state_prep_cost`)
+
+The 19 scaled features are amplitude-encoded into amplitudes 0 to 18, so they occupy qubits 0 to 4
+(a 32-entry vector, 19 non-zero) and qubits 5 to 9 stay in |0>. `t1000::state_prep` builds the
+gate-level circuit for such a non-negative vector: a binary tree of Ry rotations, each level
+multiplexed over the more significant qubits and expanded into rotations and CNOTs on a Gray-code
+schedule (Möttönen et al.). The plain construction needs 31 rotations and 30 CNOTs for any 5-qubit
+vector. Two exact savings apply to sparse vectors: the angle of a branch whose amplitudes are all
+zero is free, so it is chosen to make as many rotations vanish as possible (a small linear solve,
+several elimination orders tried per level), and CNOTs that share a target commute, so identical
+pairs cancel once the rotations between them are gone.
+
+`zinc_state_prep_cost` builds the circuit for all 12,000 molecules (`maxabs` inputs) and simulates each
+one against the encoder: the largest deviation of any prepared state is 6.7e-16. Gate counts per
+molecule:
+
+| | Plain | Optimised mean (min to max) |
+| :--- | :--- | :--- |
+| CNOTs | 30 | 23.8 (18 to 24) |
+| Ry rotations | 31 | 19.3 (12 to 21) |
+| CNOT-equivalents on a linear chain (illustration) | n/a | 143.5 (104 to 144) |
+
+The linear-chain row routes every CNOT between qubits at distance `d` by swapping the control next
+to the target and back (`6 (d - 1) + 1` CNOTs); it is a naive illustration, not an optimised
+routing. It shows that connectivity matters more than the algorithm: the same circuit costs about
+six times more gates on a chain than with all-to-all connectivity. The ansatz's ring of CZ gates
+has the same issue and is not routed here.
+
+Circuit fidelity under the global depolarizing model (single-qubit error = two-qubit error / 10),
+with the preparation circuit's mean gate counts:
+
+| Two-qubit error | Ansatz F | Preparation F | Total F |
+| :--- | :--- | :--- | :--- |
+| 1e-3 | 0.953 | 0.975 | 0.929 |
+| 5e-3 | 0.786 | 0.879 | 0.691 |
+| 1e-2 | 0.618 | 0.772 | 0.477 |
+
+At the typical error rate the preparation costs about 12% of the fidelity with all-to-all
+connectivity and about half of it (preparation F 0.482, total 0.379) on a linear chain.
+
+Relative MSE of the head fitted on noisy features (depth 4, `maxabs`, 5,000 noisy training molecules,
+2 seeds; readout error as in section 5.7), with the preparation included. Seed-to-seed noise is
+about 0.005:
+
+| Scenario | Total F | Shots | 55 features (w2) | 385 features (w4) |
+| :--- | :--- | :--- | :--- | :--- |
+| Good + preparation | 0.929 | 1,000 | 0.699 | 0.600 |
+| | | 10,000 | 0.562 | 0.497 |
+| | | 100,000 | 0.507 | 0.450 |
+| Typical + preparation | 0.691 | 1,000 | 0.758 | 0.653 |
+| | | 10,000 | 0.602 | 0.535 |
+| | | 100,000 | 0.526 | 0.470 |
+| Poor + preparation | 0.477 | 1,000 | 0.854 | 0.742 |
+| | | 10,000 | 0.651 | 0.568 |
+| | | 100,000 | 0.550 | 0.490 |
+| Typical, preparation on a linear chain | 0.379 | 1,000 | 0.872 | 0.761 |
+| | | 10,000 | 0.677 | 0.577 |
+| | | 100,000 | 0.557 | 0.491 |
+
+* **The preparation is a modest extra cost with good connectivity.** At 10,000 shots the typical
+  device moves from 0.519 (section 5.7) to 0.535 for 385 features; by log interpolation that is
+  like an ideal device at about 2,800 shots (0.28 of the shots), against about 4,400 without the
+  preparation.
+* **Connectivity is the larger risk.** With the preparation routed on a linear chain, 385 features
+  need 100,000 shots to get below linear ridge on the raw features (0.491 against 0.4952) and are
+  like an ideal device at about 1,200 shots at 10,000.
+* **The advantage of 385 over 55 features persists in every row** (0.06 to 0.11 at the same shots).
+* The mean gate counts are used for the whole data set; per-molecule counts vary by 6 CNOTs.
+  Saved for this host: `zinc_state_prep_cost.json` and the weight-4 curves
+  `zinc_shot_noise_maxabs_w4_g0.005_r0.02_prep24.json` and `_prep144.json`.
+
+**Still not modelled.** Routing of the ansatz's CZ ring on a real topology; single-qubit gates needed
+to turn CNOTs into a device's native two-qubit gate; and compilation tricks (such as approximate
+preparation or reusing the preparation across molecules) that could lower the counts.
 

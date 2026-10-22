@@ -58,6 +58,7 @@ pub mod simd;
 pub mod simd_bloch;
 pub mod smiles;
 pub mod state;
+pub mod state_prep;
 pub mod telemetry;
 pub mod tensor_network;
 pub mod tiled_butterfly;

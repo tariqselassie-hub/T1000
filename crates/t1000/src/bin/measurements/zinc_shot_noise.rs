@@ -15,6 +15,9 @@
 //! (`P(read 0 | 1) = e`, `P(read 1 | 0) = e / 2`) and `--mitigate-readout` (invert the confusion
 //! matrix on the measured frequencies).
 //!
+//! `--prep-rotations R --prep-cnots C` multiplies the fidelity by that of the state-preparation circuit
+//! (counts from `zinc_state_prep_cost`).
+//!
 //! `--sweep` instead compares noise-aware head settings (wider ridge-penalty grid, feature subsets)
 //! on identical sampled data.
 //!
@@ -199,7 +202,11 @@ fn main() {
     };
     let readout = value("--readout-error").and_then(|v| v.parse::<f64>().ok()).map(ReadoutError::typical);
     let p2: f64 = value("--gate-error").and_then(|v| v.parse().ok()).unwrap_or(0.0);
-    let fidelity = ansatz_fidelity(N_QUBITS, value("--depth").and_then(|v| v.parse().ok()).unwrap_or(4), p2 / 10.0, p2);
+    let prep_rotations: f64 = value("--prep-rotations").and_then(|v| v.parse().ok()).unwrap_or(0.0);
+    let prep_cnots: f64 = value("--prep-cnots").and_then(|v| v.parse().ok()).unwrap_or(0.0);
+    let prep_fidelity = (1.0 - p2 / 10.0).powf(prep_rotations) * (1.0 - p2).powf(prep_cnots);
+    let ansatz_f = ansatz_fidelity(N_QUBITS, value("--depth").and_then(|v| v.parse().ok()).unwrap_or(4), p2 / 10.0, p2);
+    let fidelity = ansatz_f * prep_fidelity;
     let mitigate = args.iter().any(|a| a == "--mitigate-readout");
     let plan = Plan { kind, mitigate: if mitigate { readout } else { None } };
     let noisy_train: usize = value("--noisy-train").and_then(|v| v.parse().ok()).unwrap_or(2_000);
@@ -211,7 +218,7 @@ fn main() {
     let ansatz = CircuitAnsatz::new(N_QUBITS, depth).with_pi_layer(true);
 
     if p2 > 0.0 || readout.is_some() {
-        println!("Device errors: circuit fidelity {fidelity:.3} (two-qubit error {p2}), readout {readout:?}, mitigation {mitigate}");
+        println!("Device errors: circuit fidelity {fidelity:.3} = ansatz {ansatz_f:.3} x state preparation {prep_fidelity:.3} (two-qubit error {p2}), readout {readout:?}, mitigation {mitigate}");
     }
     println!("Simulating the circuit (depth {depth}, {scaling:?} inputs, {kind:?}) for {} + {} molecules...", train.len(), test.len());
     let mut state = QuantumState::new(encoding.dim);
@@ -279,14 +286,14 @@ fn main() {
     println!("└─────────┴───────────────────────────────┴───────────────────────────────┘");
     println!("Noise-free: relative MSE {ref_mse:.4}. Mean predictor = 1.0. {seeds} seeds per row; noisy-trained head uses {} training molecules.", train_cdf.len());
 
-    let report = serde_json::json!({ "scaling": format!("{scaling:?}"), "observables": format!("{kind:?}"), "depth": depth, "gate_error_p2": p2, "circuit_fidelity": fidelity, "readout_p10": readout.map(|e| e.p10), "readout_mitigated": mitigate, "noise_free_relative_mse": ref_mse, "noise_free_mean_r": ref_r, "seeds": seeds, "noisy_train_molecules": train_cdf.len(), "rows": rows });
+    let report = serde_json::json!({ "scaling": format!("{scaling:?}"), "observables": format!("{kind:?}"), "depth": depth, "gate_error_p2": p2, "circuit_fidelity": fidelity, "ansatz_fidelity": ansatz_f, "state_preparation_fidelity": prep_fidelity, "readout_p10": readout.map(|e| e.p10), "readout_mitigated": mitigate, "noise_free_relative_mse": ref_mse, "noise_free_mean_r": ref_r, "seeds": seeds, "noisy_train_molecules": train_cdf.len(), "rows": rows });
     let obs_tag = match kind {
         Observables::ParityUpTo(k) => format!("w{k}"),
         Observables::ZAndZz => "w2".to_string(),
         Observables::SingleZ => "w1".to_string(),
     };
     let device_tag = if p2 > 0.0 || readout.is_some() {
-        format!("_g{p2}_r{}{}", readout.map_or(0.0, |e| e.p10), if mitigate { "_m" } else { "" })
+        format!("_g{p2}_r{}{}{}", readout.map_or(0.0, |e| e.p10), if mitigate { "_m" } else { "" }, if prep_cnots > 0.0 { format!("_prep{prep_cnots:.0}") } else { String::new() })
     } else {
         String::new()
     };
