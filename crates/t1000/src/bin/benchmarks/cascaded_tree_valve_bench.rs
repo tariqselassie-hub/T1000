@@ -189,7 +189,7 @@ fn main() {
     fs::create_dir_all(out_dir).expect("Failed to create results/experiments dir");
     let out_path = out_dir.join("cascaded_tree_valve_report.json");
     let json_bytes = serde_json::to_string_pretty(&report).expect("Serialization failed");
-    fs::write(&out_path, json_bytes).expect("Failed to write report");
+    t1000::results::write(&out_path, json_bytes).expect("Failed to write report");
 
     println!(
         "\n[SUCCESS] Telemetry report written to: {}",

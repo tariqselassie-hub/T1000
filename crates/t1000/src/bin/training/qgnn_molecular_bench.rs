@@ -181,7 +181,7 @@ fn main() {
     fs::create_dir_all(out_dir).expect("results/data directory should be created");
     let out_path = out_dir.join("qgnn_molecular_telemetry.json");
     let json_data = serde_json::to_string_pretty(&telemetry).expect("JSON serialization failed");
-    fs::write(&out_path, json_data).expect("Telemetry write failed");
+    t1000::results::write(&out_path, json_data).expect("Telemetry write failed");
     println!("  [+] Telemetry Persisted: {}", out_path.display());
 }
 

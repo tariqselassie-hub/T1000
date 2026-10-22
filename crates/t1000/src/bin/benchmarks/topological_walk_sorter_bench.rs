@@ -286,7 +286,7 @@ fn main() {
     }
     let json_path = results_dir.join("topological_walk_sorter_telemetry.json");
     if let Ok(serialized) = serde_json::to_string_pretty(&report) {
-        let _ = fs::write(&json_path, serialized);
+        let _ = t1000::results::write(&json_path, serialized);
         println!("\nTelemetry written to: {}", json_path.display());
     }
 }

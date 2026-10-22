@@ -1,0 +1,162 @@
+{
+  "architecture": "Variational Quantum Circuit (HEA + Parameter-Shift)",
+  "n_qubits": 12,
+  "dim": 4096,
+  "depth": 3,
+  "observable": "Global Multi-Qubit Hamiltonian <H> = (1/12) sum <Z_i>",
+  "num_trainable_parameters": 72,
+  "total_epochs": 20,
+  "initial_lr": 0.05,
+  "final_lr": 0.03645,
+  "decay_gamma": 0.9,
+  "decay_step": 5,
+  "initial_loss": 0.44619545663678184,
+  "final_loss": 0.3036541717947281,
+  "final_accuracy_pct": 91.66666666666666,
+  "holdout_loss": 0.3026890506961245,
+  "holdout_accuracy_pct": 89.58333333333334,
+  "holdout_samples": 96,
+  "training_time_ms": 188.28960899999998,
+  "epoch_logs": [
+    {
+      "epoch": 1,
+      "lr": 0.05,
+      "train_loss": 0.44619545663678184,
+      "train_accuracy_pct": 75.0,
+      "max_grad": 0.12117292436675972
+    },
+    {
+      "epoch": 2,
+      "lr": 0.05,
+      "train_loss": 0.43156147069455225,
+      "train_accuracy_pct": 75.0,
+      "max_grad": 0.12983873291092102
+    },
+    {
+      "epoch": 3,
+      "lr": 0.05,
+      "train_loss": 0.4172001837067206,
+      "train_accuracy_pct": 70.83333333333334,
+      "max_grad": 0.13627869603869625
+    },
+    {
+      "epoch": 4,
+      "lr": 0.05,
+      "train_loss": 0.40326772346154444,
+      "train_accuracy_pct": 79.16666666666666,
+      "max_grad": 0.13974667341438807
+    },
+    {
+      "epoch": 5,
+      "lr": 0.05,
+      "train_loss": 0.3899090497822703,
+      "train_accuracy_pct": 87.5,
+      "max_grad": 0.1401056859782545
+    },
+    {
+      "epoch": 6,
+      "lr": 0.045000000000000005,
+      "train_loss": 0.3773569521732835,
+      "train_accuracy_pct": 87.5,
+      "max_grad": 0.13763194898258688
+    },
+    {
+      "epoch": 7,
+      "lr": 0.045000000000000005,
+      "train_loss": 0.36690475556757157,
+      "train_accuracy_pct": 87.5,
+      "max_grad": 0.13340971285109876
+    },
+    {
+      "epoch": 8,
+      "lr": 0.045000000000000005,
+      "train_loss": 0.35736954624279815,
+      "train_accuracy_pct": 87.5,
+      "max_grad": 0.12783739148636755
+    },
+    {
+      "epoch": 9,
+      "lr": 0.045000000000000005,
+      "train_loss": 0.3488724385560495,
+      "train_accuracy_pct": 87.5,
+      "max_grad": 0.1214899942842376
+    },
+    {
+      "epoch": 10,
+      "lr": 0.045000000000000005,
+      "train_loss": 0.3414806451194461,
+      "train_accuracy_pct": 87.5,
+      "max_grad": 0.1149178455548765
+    },
+    {
+      "epoch": 11,
+      "lr": 0.04050000000000001,
+      "train_loss": 0.33516035239795255,
+      "train_accuracy_pct": 87.5,
+      "max_grad": 0.10859256964836873
+    },
+    {
+      "epoch": 12,
+      "lr": 0.04050000000000001,
+      "train_loss": 0.3302688776079241,
+      "train_accuracy_pct": 87.5,
+      "max_grad": 0.1034415142682044
+    },
+    {
+      "epoch": 13,
+      "lr": 0.04050000000000001,
+      "train_loss": 0.32596949287283045,
+      "train_accuracy_pct": 87.5,
+      "max_grad": 0.09898079535432161
+    },
+    {
+      "epoch": 14,
+      "lr": 0.04050000000000001,
+      "train_loss": 0.322103679387256,
+      "train_accuracy_pct": 87.5,
+      "max_grad": 0.09735438394628991
+    },
+    {
+      "epoch": 15,
+      "lr": 0.04050000000000001,
+      "train_loss": 0.31853004423556996,
+      "train_accuracy_pct": 87.5,
+      "max_grad": 0.10003726508394692
+    },
+    {
+      "epoch": 16,
+      "lr": 0.03645,
+      "train_loss": 0.3151413644113877,
+      "train_accuracy_pct": 87.5,
+      "max_grad": 0.10326547348596052
+    },
+    {
+      "epoch": 17,
+      "lr": 0.03645,
+      "train_loss": 0.3121847820050942,
+      "train_accuracy_pct": 87.5,
+      "max_grad": 0.10646709788085028
+    },
+    {
+      "epoch": 18,
+      "lr": 0.03645,
+      "train_loss": 0.3092848198136274,
+      "train_accuracy_pct": 87.5,
+      "max_grad": 0.10977807592148559
+    },
+    {
+      "epoch": 19,
+      "lr": 0.03645,
+      "train_loss": 0.3064400812180075,
+      "train_accuracy_pct": 87.5,
+      "max_grad": 0.11302963515169047
+    },
+    {
+      "epoch": 20,
+      "lr": 0.03645,
+      "train_loss": 0.3036541717947281,
+      "train_accuracy_pct": 91.66666666666666,
+      "max_grad": 0.11608092520260996
+    }
+  ]
+}

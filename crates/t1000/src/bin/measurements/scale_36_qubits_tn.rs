@@ -179,7 +179,7 @@ fn main() {
 
     let report = Tn36QubitReport {
         timestamp: "2026-10-12T21:40:00Z".to_string(),
-        host_cpu: "Intel Core Ultra 7 265 (20 Cores, 256-Bit AVX2)".to_string(),
+        host_cpu: t1000::hostinfo::HostProfile::detect().label(),
         architecture: "2D Planar Tensor Network (PEPS) + Tindall-Fishman BP Gauging".to_string(),
         qubits,
         topology: format!("{}x{} Square Grid", width, height),
@@ -192,7 +192,7 @@ fn main() {
     fs::create_dir_all(&out_dir).expect("failed to create results dir");
     let out_file = out_dir.join("qnn_scaling_36_qubits_tn.json");
     let json_str = serde_json::to_string_pretty(&report).expect("failed to serialize report");
-    fs::write(&out_file, json_str).expect("failed to write 36-qubit report");
+    t1000::results::write(&out_file, json_str).expect("failed to write 36-qubit report");
 
     println!(" Report persisted to: {}", out_file.display());
 }

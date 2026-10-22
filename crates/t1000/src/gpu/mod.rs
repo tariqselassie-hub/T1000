@@ -7,6 +7,7 @@
 //! Intel Graphics OpenCL runtime via `CL_MEM_USE_HOST_PTR` unified memory mappings.
 //! For $N < 22$, automatically routes to the CPU L3-cache resident AVX2+FMA SIMD engine.
 
+pub mod fp32;
 pub mod opencl;
 
 use crate::state::QuantumState;

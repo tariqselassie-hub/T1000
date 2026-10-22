@@ -131,10 +131,15 @@ impl CompiledCircuit {
             self.num_qubits
         );
 
-        for stage in &self.stages {
-            for op in &stage.ops {
-                Self::execute_op(state, op);
-            }
+        let ops: Vec<&CircuitOp> = self.stages.iter().flat_map(|stage| stage.ops.iter()).collect();
+        super::layered::execute_layered(&ops, self.num_qubits, state);
+    }
+
+    /// Executes every op as its own statevector pass. Reference path for the fused executor.
+    pub fn execute_unfused(&self, state: &mut QuantumState) {
+        assert_eq!(state.dim, 1 << self.num_qubits, "state does not match circuit width");
+        for op in self.stages.iter().flat_map(|stage| stage.ops.iter()) {
+            Self::execute_op(state, op);
         }
     }
 
@@ -220,24 +225,7 @@ pub fn apply_unitary2x2_op(real: &mut [f64], imag: &mut [f64], qubit: usize, u: 
 pub fn apply_cnot_op(real: &mut [f64], imag: &mut [f64], control: usize, target: usize) {
     let n_qubits = crate::simd::assert_statevector(real, imag);
     crate::simd::assert_qubit_pair(control, target, n_qubits);
-    let dim = real.len();
-    let ctrl_mask = 1 << control;
-    let target_mask = 1 << target;
-
-    for i in 0..dim {
-        if (i & ctrl_mask) != 0 && (i & target_mask) == 0 {
-            let partner = i | target_mask;
-            let r0 = real[i];
-            let i0 = imag[i];
-            let r1 = real[partner];
-            let i1 = imag[partner];
-
-            real[i] = r1;
-            imag[i] = i1;
-            real[partner] = r0;
-            imag[partner] = i0;
-        }
-    }
+    super::permute::cnot(real, imag, control, target);
 }
 
 /// Applies Hadamard gate: H = (1/√2) [1, 1; 1, -1]
@@ -268,48 +256,14 @@ pub fn apply_hadamard_op(real: &mut [f64], imag: &mut [f64], qubit: usize) {
 pub fn apply_anticnot_op(real: &mut [f64], imag: &mut [f64], control: usize, target: usize) {
     let n_qubits = crate::simd::assert_statevector(real, imag);
     crate::simd::assert_qubit_pair(control, target, n_qubits);
-    let dim = real.len();
-    let ctrl_mask = 1 << control;
-    let target_mask = 1 << target;
-
-    for i in 0..dim {
-        if (i & ctrl_mask) == 0 && (i & target_mask) == 0 {
-            let partner = i | target_mask;
-            let r0 = real[i];
-            let i0 = imag[i];
-            let r1 = real[partner];
-            let i1 = imag[partner];
-
-            real[i] = r1;
-            imag[i] = i1;
-            real[partner] = r0;
-            imag[partner] = i0;
-        }
-    }
+    super::permute::anticnot(real, imag, control, target);
 }
 
 /// Applies two-qubit SWAP gate.
 pub fn apply_swap_op(real: &mut [f64], imag: &mut [f64], q1: usize, q2: usize) {
     let n_qubits = crate::simd::assert_statevector(real, imag);
     crate::simd::assert_qubit_pair(q1, q2, n_qubits);
-    let dim = real.len();
-    let m1 = 1 << q1;
-    let m2 = 1 << q2;
-
-    for i in 0..dim {
-        if (i & m1) != 0 && (i & m2) == 0 {
-            let partner = (i ^ m1) | m2;
-            let r0 = real[i];
-            let i0 = imag[i];
-            let r1 = real[partner];
-            let i1 = imag[partner];
-
-            real[i] = r1;
-            imag[i] = i1;
-            real[partner] = r0;
-            imag[partner] = i0;
-        }
-    }
+    super::permute::swap(real, imag, q1, q2);
 }
 
 /// Applies two-qubit Controlled-Phase gate: multiplies state |11> by exp(i theta).
@@ -322,20 +276,42 @@ pub fn apply_controlled_phase_op(
 ) {
     let n_qubits = crate::simd::assert_statevector(real, imag);
     crate::simd::assert_qubit_pair(control, target, n_qubits);
-    let dim = real.len();
-    let ctrl_mask = 1 << control;
-    let target_mask = 1 << target;
-    let both_mask = ctrl_mask | target_mask;
+    super::permute::controlled_phase(real, imag, control, target, theta);
+}
 
-    let cos_t = theta.cos();
-    let sin_t = theta.sin();
+#[cfg(test)]
+mod fused_tests {
+    use super::super::CircuitBuilder;
+    use crate::state::QuantumState;
 
-    for i in 0..dim {
-        if (i & both_mask) == both_mask {
-            let r = real[i];
-            let im = imag[i];
-            real[i] = r * cos_t - im * sin_t;
-            imag[i] = r * sin_t + im * cos_t;
+    fn mixed_circuit(n: usize) -> super::CompiledCircuit {
+        let mut b = CircuitBuilder::new(n);
+        for l in 0..3 {
+            for q in 0..n {
+                b.ry(q, 0.37 * (1 + l + q) as f64).rz(q, 0.21 * (3 + l * 7 + q) as f64);
+            }
+            for q in 0..n {
+                b.cz(q, (q + 1) % n);
+            }
+            b.h(l).cnot(l, n - 1 - l).ry(n - 1, 0.5).ry(n - 1, -0.2).swap(0, n - 1);
+            for q in (0..n).step_by(3) {
+                b.controlled_phase(q, (q + 5) % n, 0.9).rz(q, 1.3);
+            }
+        }
+        b.compile()
+    }
+
+    #[test]
+    fn fused_executor_matches_per_op_executor() {
+        for n in [6, 13, 16, 17, 19] {
+            let c = mixed_circuit(n);
+            let mut fused = QuantumState::ground(1 << n);
+            let mut plain = fused.clone();
+            c.execute(&mut fused);
+            c.execute_unfused(&mut plain);
+            let dev = fused.real.iter().zip(&plain.real).chain(fused.imag.iter().zip(&plain.imag))
+                .map(|(a, b)| (a - b).abs()).fold(0.0, f64::max);
+            assert!(dev < 1e-11, "n={n}: max deviation {dev}");
         }
     }
 }

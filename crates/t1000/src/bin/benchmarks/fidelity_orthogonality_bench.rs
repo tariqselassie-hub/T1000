@@ -582,7 +582,7 @@ fn main() {
     fs::create_dir_all(&out_dir).unwrap();
     let report_path = out_dir.join("fidelity_orthogonality_report.json");
     if let Ok(json_str) = serde_json::to_string_pretty(&report) {
-        let _ = fs::write(&report_path, json_str);
+        let _ = t1000::results::write(&report_path, json_str);
         println!("Saved report to: {}", report_path.display());
     }
 }

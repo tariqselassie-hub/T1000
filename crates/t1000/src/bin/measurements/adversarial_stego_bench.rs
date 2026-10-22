@@ -311,7 +311,7 @@ pub fn run_adversarial_stego_benchmark() {
     println!("=========================================================================");
     println!("   ADVERSARIAL CRYPTOGRAPHIC STEGANOGRAPHY & ANOMALY RADAR (N=18)        ");
     println!("=========================================================================");
-    println!(" Microarchitecture : 256-Bit AVX2 + FMA (Intel Core Ultra 7 265)");
+    println!(" Host              : {}", t1000::hostinfo::HostProfile::detect().label());
     println!(" State Buffer Size : 2^18 = 262,144 Amplitudes (4.00 MB resident SOA)");
     println!(" Cryptographic Ring: Z[omega] Cyclotomic Field (omega = e^(i*pi/4))");
     println!(" Entangling Cluster: Fused Bipartite K_9,9 CZ All-to-All (R1 <-> R2)");

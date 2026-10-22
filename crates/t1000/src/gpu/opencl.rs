@@ -3,7 +3,7 @@
 
 //! Low-Level OpenCL Zero-Copy UMA Bridge for Intel Integrated Graphics.
 //!
-//! Dynamically binds to OpenCL.dll on Windows (or libOpenCL.so on Unix) to allocate
+//! Dynamically binds to OpenCL.dll on Windows (or libOpenCL.so.1 on Linux) to allocate
 //! `CL_MEM_USE_HOST_PTR` memory buffers directly over host `QuantumState` SOA arrays.
 //! Executes parallel butterfly state evolutions on Intel Xe Graphics with zero PCIe copy.
 
@@ -36,6 +36,17 @@ extern "system" {
     fn GetProcAddress(hModule: *mut c_void, lpProcName: *const c_char) -> *mut c_void;
     fn FreeLibrary(hLibModule: *mut c_void) -> i32;
 }
+
+#[cfg(unix)]
+#[link(name = "dl")]
+extern "C" {
+    fn dlopen(filename: *const c_char, flag: i32) -> *mut c_void;
+    fn dlsym(handle: *mut c_void, symbol: *const c_char) -> *mut c_void;
+    fn dlclose(handle: *mut c_void) -> i32;
+}
+
+#[cfg(unix)]
+const RTLD_NOW: i32 = 2;
 
 pub const CL_TRUE: ClUint = 1;
 
@@ -118,63 +129,103 @@ pub struct OpenClDispatch {
 impl OpenClDispatch {
     /// Attempts to dynamically load the OpenCL runtime library.
     pub fn load() -> Option<Self> {
-        #[cfg(target_os = "windows")]
-        unsafe {
-            let lib_name = CString::new("OpenCL.dll").ok()?;
-            let handle = LoadLibraryA(lib_name.as_ptr());
-            if handle.is_null() {
-                return None;
-            }
+        let handle = open_library()?;
 
-            macro_rules! load_sym {
-                ($sym:ident) => {{
-                    let name = CString::new(stringify!($sym)).ok()?;
-                    let ptr = GetProcAddress(handle, name.as_ptr());
-                    if ptr.is_null() {
-                        FreeLibrary(handle);
-                        return None;
-                    }
-                    std::mem::transmute(ptr)
-                }};
-            }
-
-            Some(Self {
-                _handle: handle,
-                clGetPlatformIDs: load_sym!(clGetPlatformIDs),
-                clGetPlatformInfo: load_sym!(clGetPlatformInfo),
-                clGetDeviceIDs: load_sym!(clGetDeviceIDs),
-                clGetDeviceInfo: load_sym!(clGetDeviceInfo),
-                clCreateContext: load_sym!(clCreateContext),
-                clCreateCommandQueue: load_sym!(clCreateCommandQueue),
-                clCreateProgramWithSource: load_sym!(clCreateProgramWithSource),
-                clBuildProgram: load_sym!(clBuildProgram),
-                clCreateKernel: load_sym!(clCreateKernel),
-                clCreateBuffer: load_sym!(clCreateBuffer),
-                clSetKernelArg: load_sym!(clSetKernelArg),
-                clEnqueueNDRangeKernel: load_sym!(clEnqueueNDRangeKernel),
-                clEnqueueReadBuffer: load_sym!(clEnqueueReadBuffer),
-                clFinish: load_sym!(clFinish),
-                clReleaseMemObject: load_sym!(clReleaseMemObject),
-                clReleaseKernel: load_sym!(clReleaseKernel),
-                clReleaseProgram: load_sym!(clReleaseProgram),
-                clReleaseCommandQueue: load_sym!(clReleaseCommandQueue),
-                clReleaseContext: load_sym!(clReleaseContext),
-            })
+        macro_rules! load_sym {
+            ($sym:ident) => {{
+                let name = CString::new(stringify!($sym)).ok()?;
+                let ptr = lookup_symbol(handle, name.as_ptr());
+                if ptr.is_null() {
+                    close_library(handle);
+                    return None;
+                }
+                // SAFETY: the symbol is the OpenCL entry point of the same name.
+                unsafe { std::mem::transmute(ptr) }
+            }};
         }
-        #[cfg(not(target_os = "windows"))]
-        {
-            None
+
+        Some(Self {
+            _handle: handle,
+            clGetPlatformIDs: load_sym!(clGetPlatformIDs),
+            clGetPlatformInfo: load_sym!(clGetPlatformInfo),
+            clGetDeviceIDs: load_sym!(clGetDeviceIDs),
+            clGetDeviceInfo: load_sym!(clGetDeviceInfo),
+            clCreateContext: load_sym!(clCreateContext),
+            clCreateCommandQueue: load_sym!(clCreateCommandQueue),
+            clCreateProgramWithSource: load_sym!(clCreateProgramWithSource),
+            clBuildProgram: load_sym!(clBuildProgram),
+            clCreateKernel: load_sym!(clCreateKernel),
+            clCreateBuffer: load_sym!(clCreateBuffer),
+            clSetKernelArg: load_sym!(clSetKernelArg),
+            clEnqueueNDRangeKernel: load_sym!(clEnqueueNDRangeKernel),
+            clEnqueueReadBuffer: load_sym!(clEnqueueReadBuffer),
+            clFinish: load_sym!(clFinish),
+            clReleaseMemObject: load_sym!(clReleaseMemObject),
+            clReleaseKernel: load_sym!(clReleaseKernel),
+            clReleaseProgram: load_sym!(clReleaseProgram),
+            clReleaseCommandQueue: load_sym!(clReleaseCommandQueue),
+            clReleaseContext: load_sym!(clReleaseContext),
+        })
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn open_library() -> Option<*mut c_void> {
+    let lib_name = CString::new("OpenCL.dll").ok()?;
+    let handle = unsafe { LoadLibraryA(lib_name.as_ptr()) };
+    (!handle.is_null()).then_some(handle)
+}
+
+#[cfg(all(unix, not(target_os = "windows")))]
+fn open_library() -> Option<*mut c_void> {
+    for name in ["libOpenCL.so.1", "libOpenCL.so"] {
+        let lib_name = CString::new(name).ok()?;
+        let handle = unsafe { dlopen(lib_name.as_ptr(), RTLD_NOW) };
+        if !handle.is_null() {
+            return Some(handle);
         }
     }
+    None
+}
+
+#[cfg(not(any(unix, target_os = "windows")))]
+fn open_library() -> Option<*mut c_void> {
+    None
+}
+
+fn lookup_symbol(handle: *mut c_void, name: *const c_char) -> *mut c_void {
+    #[cfg(target_os = "windows")]
+    unsafe {
+        GetProcAddress(handle, name)
+    }
+    #[cfg(all(unix, not(target_os = "windows")))]
+    unsafe {
+        dlsym(handle, name)
+    }
+    #[cfg(not(any(unix, target_os = "windows")))]
+    {
+        let _ = (handle, name);
+        ptr::null_mut()
+    }
+}
+
+fn close_library(handle: *mut c_void) {
+    #[cfg(target_os = "windows")]
+    unsafe {
+        FreeLibrary(handle);
+    }
+    #[cfg(all(unix, not(target_os = "windows")))]
+    unsafe {
+        dlclose(handle);
+    }
+    #[cfg(not(any(unix, target_os = "windows")))]
+    let _ = handle;
 }
 
 impl Drop for OpenClDispatch {
     fn drop(&mut self) {
-        #[cfg(target_os = "windows")]
         if !self._handle.is_null() {
-            unsafe {
-                FreeLibrary(self._handle);
-            }
+            close_library(self._handle);
         }
     }
 }

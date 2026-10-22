@@ -722,7 +722,7 @@ fn main() {
     let report = Zinc20epReport {
         classical_baselines: classical_baselines.clone(),
         timestamp_rfc3339: "2026-10-13T12:55:00Z".to_string(),
-        host_cpu: "Intel Core Ultra 7 265 (20 Cores)".to_string(),
+        host_cpu: t1000::hostinfo::HostProfile::detect().label(),
         host_ram_gb: 16.0,
         n_qubits,
         state_dimension: encoding.dim,
@@ -775,7 +775,34 @@ fn main() {
     }
 
     if let Ok(json_str) = serde_json::to_string_pretty(&report) {
-        let _ = fs::write(&out_json_path, json_str);
-        println!("[SAVED] Complete 20-Epoch Evaluation Report exported to: {}", out_json_path.display());
+        let holdout = t1000::holdout_score::ZincHoldout::new(
+            [report.logp_metrics.tuned_mse, report.qed_metrics.tuned_mse, report.sas_metrics.tuned_mse],
+            [report.logp_metrics.pearson_r, report.qed_metrics.pearson_r, report.sas_metrics.pearson_r],
+            [&targets_logp, &targets_qed, &targets_sas],
+        );
+        let settings = format!(
+            "qubits={};depth={};epochs={};batch={};lr={};train={};test={}",
+            report.n_qubits,
+            report.circuit_depth,
+            report.epochs_trained,
+            report.batch_size,
+            report.learning_rate,
+            train_samples.len(),
+            test_samples.len()
+        );
+        println!(
+            "\n  Recording score : holdout relative MSE {:.4} | mean Pearson r {:.4}",
+            holdout.relative_mse, holdout.mean_pearson_r
+        );
+        match t1000::results::write_scored(&out_json_path, json_str, &holdout.score(&settings)) {
+            Ok(t1000::results::Outcome::KeptBest) => {
+                println!("[=] Saved 20-epoch report kept: this run did not improve it");
+            }
+            Ok(t1000::results::Outcome::Scratch) => {
+                println!("[~] 20-epoch report written to a scratch copy only (use --record to save)");
+            }
+            Ok(_) => println!("[SAVED] Complete 20-Epoch Evaluation Report exported to: {}", out_json_path.display()),
+            Err(e) => eprintln!("[!] Could not write the report: {e}"),
+        }
     }
 }

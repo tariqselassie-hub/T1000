@@ -938,27 +938,13 @@ impl CircuitAnsatz {
             weights.len()
         );
 
-        if n <= 16 {
-            // Qubit Threshold Guard: Sequential AVX2 path for <=16 qubits (reclaims threadpool dispatch overhead)
-            for q in 0..n {
-                crate::simd::apply_ry_kernel(
-                    &mut out.real,
-                    &mut out.imag,
-                    q,
-                    weights[p_start + 2 * q],
-                );
-            }
-        } else {
-            // Multithreaded AVX2 + Tiled Butterfly path for >=17 qubits
-            for q in 0..n {
-                crate::parallel::apply_ry(
-                    &mut out.real,
-                    &mut out.imag,
-                    q,
-                    weights[p_start + 2 * q],
-                );
-            }
+        // One cache-blocked pass per group of qubits instead of one pass per Ry gate.
+        let mut theta_ry = [0.0f64; 64];
+        assert!(n <= theta_ry.len(), "{n} qubits exceed the layer angle buffer");
+        for (q, t) in theta_ry.iter_mut().enumerate().take(n) {
+            *t = weights[p_start + 2 * q];
         }
+        crate::layer_fusion::apply_ry_layer(&mut out.real, &mut out.imag, &theta_ry[..n]);
 
         let theta_rz: Vec<f64> = (0..n).map(|q| weights[p_start + 2 * q + 1]).collect();
         let pairs: Vec<(usize, usize)> = entangling_pairs(n, layer_idx).collect();

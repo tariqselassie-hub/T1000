@@ -321,7 +321,7 @@ fn export_hits_csv(path: &Path, hits: &[SearchHit]) -> Result<(), std::io::Error
             h.total_anomaly_score
         ));
     }
-    fs::write(path, lines.join("\n"))
+    t1000::results::write(path, lines.join("\n"))
 }
 
 fn main() {
@@ -486,14 +486,14 @@ fn main() {
     let pareto_csv = out_dir.join("zinc_pareto_leads.csv");
     let sum_json = out_dir.join("zinc_dual_search_summary.json");
 
-    fs::write(
+    t1000::results::write(
         &anom_json,
         serde_json::to_string_pretty(&top_100_anomalies).unwrap(),
     )
     .unwrap();
     export_hits_csv(&anom_csv, &top_100_anomalies).unwrap();
 
-    fs::write(
+    t1000::results::write(
         &pareto_json,
         serde_json::to_string_pretty(&top_100_pareto).unwrap(),
     )
@@ -512,7 +512,7 @@ fn main() {
         max_pareto_score: top_100_pareto[0].pareto_score,
         max_anomaly_score: top_100_anomalies[0].total_anomaly_score,
     };
-    fs::write(&sum_json, serde_json::to_string_pretty(&summary).unwrap()).unwrap();
+    t1000::results::write(&sum_json, serde_json::to_string_pretty(&summary).unwrap()).unwrap();
 
     println!("\n=========================================================================");
     println!("             SEARCH 3: TOP 5 QUANTUM CHEMICAL ANOMALIES & OUTLIERS       ");

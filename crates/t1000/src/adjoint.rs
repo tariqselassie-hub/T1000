@@ -186,37 +186,9 @@ pub fn adjoint_gradient_with_purity_buffered(
         let pairs: Vec<(usize, usize)> = entangling_pairs(n, layer).collect();
 
         // Rz gradients: Im <lambda| Z_q |phi> for every qubit, in one pass.
-        if n <= 16 {
-            ws.rz_grad.fill(0.0);
-            for x in 0..ansatz.dim {
-                let t = ws.lambda.real[x] * ws.phi.imag[x] - ws.lambda.imag[x] * ws.phi.real[x];
-                for q in 0..n {
-                    if (x >> q) & 1 == 0 {
-                        ws.rz_grad[q] += t;
-                    } else {
-                        ws.rz_grad[q] -= t;
-                    }
-                }
-            }
-            for q in 0..n {
-                gradient[base + 2 * q + 1] = ws.rz_grad[q];
-            }
-        } else {
-            let rz_grad = crate::parallel::chunked_sum(ansatz.dim, n, |range, acc| {
-                for x in range {
-                    let t = ws.lambda.real[x] * ws.phi.imag[x] - ws.lambda.imag[x] * ws.phi.real[x];
-                    for (q, g) in acc.iter_mut().enumerate() {
-                        if (x >> q) & 1 == 0 {
-                            *g += t;
-                        } else {
-                            *g -= t;
-                        }
-                    }
-                }
-            });
-            for q in 0..n {
-                gradient[base + 2 * q + 1] = rz_grad[q];
-            }
+        crate::adjoint_fusion::rz_grad_all(&ws.phi, &ws.lambda, &mut ws.rz_grad);
+        for q in 0..n {
+            gradient[base + 2 * q + 1] = ws.rz_grad[q];
         }
 
         // Undo the diagonal block (Rz(-theta) and the same CZs) on both states.
@@ -225,58 +197,19 @@ pub fn adjoint_gradient_with_purity_buffered(
             crate::diagonal::apply_rz_cz_layer(&mut s.real, &mut s.imag, &neg_rz, &pairs);
         }
 
-        // Ry gradients: Im <lambda| Y_q |phi>
-        if n <= 16 {
-            ws.ry_grad.fill(0.0);
-            for q in 0..n {
-                let mask = 1usize << q;
-                let mut g = 0.0;
-                for t in 0..(ansatz.dim / 2) {
-                    let x0 = ((t >> q) << (q + 1)) | (t & (mask - 1));
-                    let x1 = x0 | mask;
-                    g += ws.lambda.real[x1] * ws.phi.real[x0]
-                        + ws.lambda.imag[x1] * ws.phi.imag[x0]
-                        - ws.lambda.real[x0] * ws.phi.real[x1]
-                        - ws.lambda.imag[x0] * ws.phi.imag[x1];
-                }
-                ws.ry_grad[q] = g;
-                gradient[base + 2 * q] = g;
-            }
-        } else {
-            let ry_grad = crate::parallel::chunked_sum(ansatz.dim / 2, n, |range, acc| {
-                for (q, g) in acc.iter_mut().enumerate() {
-                    let mask = 1usize << q;
-                    for t in range.clone() {
-                        let x0 = ((t >> q) << (q + 1)) | (t & (mask - 1));
-                        let x1 = x0 | mask;
-                        *g += ws.lambda.real[x1] * ws.phi.real[x0]
-                            + ws.lambda.imag[x1] * ws.phi.imag[x0]
-                            - ws.lambda.real[x0] * ws.phi.real[x1]
-                            - ws.lambda.imag[x0] * ws.phi.imag[x1];
-                    }
-                }
-            });
-            for q in 0..n {
-                gradient[base + 2 * q] = ry_grad[q];
-            }
+        // Ry gradients Im <lambda| Y_q |phi>, fused with undoing the Ry gates on both states.
+        let mut theta_ry = [0.0f64; crate::layer_fusion::MAX_LAYER_QUBITS];
+        for (q, t) in theta_ry.iter_mut().enumerate().take(n) {
+            *t = weights[base + 2 * q];
         }
-
-        // Undo the Ry gates on both states.
-        for s in [&mut ws.phi, &mut ws.lambda] {
-            if n <= 16 {
-                for q in 0..n {
-                    crate::simd::apply_ry_kernel(
-                        &mut s.real,
-                        &mut s.imag,
-                        q,
-                        -weights[base + 2 * q],
-                    );
-                }
-            } else {
-                for q in 0..n {
-                    crate::parallel::apply_ry(&mut s.real, &mut s.imag, q, -weights[base + 2 * q]);
-                }
-            }
+        crate::adjoint_fusion::ry_grad_and_undo(
+            &mut ws.phi,
+            &mut ws.lambda,
+            &theta_ry[..n],
+            &mut ws.ry_grad,
+        );
+        for q in 0..n {
+            gradient[base + 2 * q] = ws.ry_grad[q];
         }
     }
 

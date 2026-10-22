@@ -1,0 +1,48 @@
+{
+  "fidelity": [
+    {
+      "ansatz": 0.9531143306034291,
+      "plain_preparation": 0.9674271394095336,
+      "preparation": 0.9780053968337219,
+      "total": 0.9321509591297139,
+      "two_qubit_error": 0.001
+    },
+    {
+      "ansatz": 0.7862254652087167,
+      "plain_preparation": 0.8471477748614034,
+      "preparation": 0.8945724716425604,
+      "total": 0.7033356576800835,
+      "two_qubit_error": 0.005
+    },
+    {
+      "ansatz": 0.6175140480706846,
+      "plain_preparation": 0.7171103206832224,
+      "preparation": 0.7998395579952278,
+      "total": 0.49391216326470017,
+      "two_qubit_error": 0.01
+    }
+  ],
+  "linear_chain_cnot_equivalents": {
+    "max": 156,
+    "mean": 133.35166666666666,
+    "min": 2
+  },
+  "max_state_deviation": 6.661338147750939e-16,
+  "molecules": 30000,
+  "optimised_cnots": {
+    "max": 24,
+    "mean": 20.64966666666667,
+    "min": 2
+  },
+  "optimised_rotations": {
+    "max": 21,
+    "mean": 15.800133333333333,
+    "min": 3
+  },
+  "plain_construction": {
+    "cnots": 30,
+    "rotations": 31
+  },
+  "preparation_qubits": 5,
+  "scaling": "MaxAbs"
+}

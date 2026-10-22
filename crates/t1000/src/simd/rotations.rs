@@ -15,6 +15,12 @@ use super::guards::{assert_qubit, assert_qubit_pair, assert_statevector};
 pub fn apply_ry_kernel(real: &mut [f64], imag: &mut [f64], qubit: usize, theta: f64) {
     let n_qubits = assert_statevector(real, imag);
     assert_qubit(qubit, n_qubits);
+    #[cfg(target_arch = "x86_64")]
+    if super::avx512::use_for(real.len()) {
+        // SAFETY: `use_for` is true only when AVX-512F is available.
+        unsafe { super::avx512::apply_ry(real, imag, qubit, theta) };
+        return;
+    }
     #[cfg(all(
         target_arch = "x86_64",
         target_feature = "avx2",
@@ -46,6 +52,12 @@ pub fn apply_ry_kernel(real: &mut [f64], imag: &mut [f64], qubit: usize, theta: 
 pub fn apply_rz_kernel(real: &mut [f64], imag: &mut [f64], qubit: usize, theta: f64) {
     let n_qubits = assert_statevector(real, imag);
     assert_qubit(qubit, n_qubits);
+    #[cfg(target_arch = "x86_64")]
+    if super::avx512::use_for(real.len()) {
+        // SAFETY: `use_for` is true only when AVX-512F is available.
+        unsafe { super::avx512::apply_rz(real, imag, qubit, theta) };
+        return;
+    }
     #[cfg(all(
         target_arch = "x86_64",
         target_feature = "avx2",
@@ -153,6 +165,12 @@ unsafe fn apply_ry_avx2(real: &mut [f64], imag: &mut [f64], qubit: usize, theta:
         if use_stream {
             _mm_sfence();
         }
+    } else if dim >= 8 {
+        if qubit == 0 {
+            super::lowq::ry::<0>(real, imag, theta);
+        } else {
+            super::lowq::ry::<1>(real, imag, theta);
+        }
     } else {
         apply_ry_scalar(real, imag, qubit, theta);
     }
@@ -224,6 +242,12 @@ unsafe fn apply_rz_avx2(real: &mut [f64], imag: &mut [f64], qubit: usize, theta:
 
         if use_stream {
             _mm_sfence();
+        }
+    } else if dim >= 4 {
+        if qubit == 0 {
+            super::lowq::rz::<0>(real, imag, theta);
+        } else {
+            super::lowq::rz::<1>(real, imag, theta);
         }
     } else {
         apply_rz_scalar(real, imag, qubit, theta);
@@ -332,6 +356,78 @@ pub(crate) fn apply_cz_scalar(real: &mut [f64], imag: &mut [f64], q1: usize, q2:
         if (i & mask1) != 0 && (i & mask2) != 0 {
             real[i] = -real[i];
             imag[i] = -imag[i];
+        }
+    }
+}
+
+#[cfg(all(test, target_arch = "x86_64"))]
+mod kernel_tests {
+    use super::*;
+
+    fn state(dim: usize) -> (Vec<f64>, Vec<f64>) {
+        (
+            (0..dim).map(|i| (i as f64 * 0.37).sin() + 0.1).collect(),
+            (0..dim).map(|i| (i as f64 * 0.91).cos() - 0.2).collect(),
+        )
+    }
+
+    fn max_dev(a: &(Vec<f64>, Vec<f64>), b: &(Vec<f64>, Vec<f64>)) -> f64 {
+        let d = |x: &[f64], y: &[f64]| x.iter().zip(y).map(|(p, q)| (p - q).abs()).fold(0.0, f64::max);
+        d(&a.0, &b.0).max(d(&a.1, &b.1))
+    }
+
+    /// Runs `kernel` and the scalar reference on every qubit of every size and compares.
+    fn check(
+        name: &str,
+        min_dim: usize,
+        kernel: unsafe fn(&mut [f64], &mut [f64], usize, f64),
+        reference: fn(&mut [f64], &mut [f64], usize, f64),
+    ) {
+        for n in 3..=12 {
+            let dim = 1usize << n;
+            if dim < min_dim {
+                continue;
+            }
+            for qubit in 0..n {
+                let theta = 0.3 + 0.17 * qubit as f64;
+                let (mut got, mut want) = (state(dim), state(dim));
+                unsafe { kernel(&mut got.0, &mut got.1, qubit, theta) };
+                reference(&mut want.0, &mut want.1, qubit, theta);
+                assert!(max_dev(&got, &want) < 1e-13, "{name}: n={n} qubit={qubit}");
+            }
+        }
+    }
+
+    #[test]
+    fn avx2_ry_rz_match_scalar_for_every_qubit() {
+        if !(is_x86_feature_detected!("avx2") && is_x86_feature_detected!("fma")) {
+            return;
+        }
+        check("avx2 ry", 8, apply_ry_avx2, apply_ry_scalar);
+        check("avx2 rz", 8, apply_rz_avx2, apply_rz_scalar);
+    }
+
+    #[test]
+    fn avx512_ry_rz_match_scalar_for_every_qubit() {
+        if !is_x86_feature_detected!("avx512f") {
+            return;
+        }
+        check("avx512 ry", 16, super::super::avx512::apply_ry, apply_ry_scalar);
+        check("avx512 rz", 16, super::super::avx512::apply_rz, apply_rz_scalar);
+    }
+
+    #[test]
+    fn public_kernels_match_scalar_on_whatever_path_is_active() {
+        for n in 1..=12 {
+            let dim = 1usize << n;
+            for qubit in 0..n {
+                let (mut got, mut want) = (state(dim), state(dim));
+                apply_ry_kernel(&mut got.0, &mut got.1, qubit, 0.7);
+                apply_rz_kernel(&mut got.0, &mut got.1, qubit, -0.4);
+                apply_ry_scalar(&mut want.0, &mut want.1, qubit, 0.7);
+                apply_rz_scalar(&mut want.0, &mut want.1, qubit, -0.4);
+                assert!(max_dev(&got, &want) < 1e-13, "n={n} qubit={qubit}");
+            }
         }
     }
 }

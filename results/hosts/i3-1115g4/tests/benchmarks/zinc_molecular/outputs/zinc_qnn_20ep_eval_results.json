@@ -1,0 +1,339 @@
+{
+  "timestamp_rfc3339": "2026-10-13T12:55:00Z",
+  "host_cpu": "Intel Core i3-1115G4 (4 threads, 512-bit AVX-512 (engine kernels: 256-bit AVX2+FMA))",
+  "host_ram_gb": 16.0,
+  "n_qubits": 10,
+  "state_dimension": 1024,
+  "state_memory_bytes": 16384,
+  "circuit_depth": 4,
+  "num_parameters": 80,
+  "epochs_trained": 20,
+  "batch_size": 50,
+  "learning_rate": 0.03,
+  "epoch_history": [
+    {
+      "epoch": 1,
+      "batch_count": 200,
+      "train_loss": 3.0083033256763776,
+      "grad_norm": 0.13390102342056528,
+      "epoch_time_ms": 826.6177620000001
+    },
+    {
+      "epoch": 2,
+      "batch_count": 200,
+      "train_loss": 2.9988867837457565,
+      "grad_norm": 0.036300731451920115,
+      "epoch_time_ms": 818.2139520000001
+    },
+    {
+      "epoch": 3,
+      "batch_count": 200,
+      "train_loss": 2.989445255213048,
+      "grad_norm": 0.04623783758915465,
+      "epoch_time_ms": 838.586503
+    },
+    {
+      "epoch": 4,
+      "batch_count": 200,
+      "train_loss": 2.979045125622049,
+      "grad_norm": 0.03111741124528974,
+      "epoch_time_ms": 834.044761
+    },
+    {
+      "epoch": 5,
+      "batch_count": 200,
+      "train_loss": 2.978195831484515,
+      "grad_norm": 0.030544893254639986,
+      "epoch_time_ms": 833.765431
+    },
+    {
+      "epoch": 6,
+      "batch_count": 200,
+      "train_loss": 2.977852524557876,
+      "grad_norm": 0.03080586681549683,
+      "epoch_time_ms": 831.739067
+    },
+    {
+      "epoch": 7,
+      "batch_count": 200,
+      "train_loss": 2.9767658054941104,
+      "grad_norm": 0.03224055621002928,
+      "epoch_time_ms": 828.7300990000001
+    },
+    {
+      "epoch": 8,
+      "batch_count": 200,
+      "train_loss": 2.9753475468471056,
+      "grad_norm": 0.034918406860491795,
+      "epoch_time_ms": 837.442468
+    },
+    {
+      "epoch": 9,
+      "batch_count": 200,
+      "train_loss": 2.975450651202303,
+      "grad_norm": 0.04182913663333603,
+      "epoch_time_ms": 836.676854
+    },
+    {
+      "epoch": 10,
+      "batch_count": 200,
+      "train_loss": 2.9737770711538944,
+      "grad_norm": 0.03881851917903192,
+      "epoch_time_ms": 837.844261
+    },
+    {
+      "epoch": 11,
+      "batch_count": 200,
+      "train_loss": 2.9738657497165786,
+      "grad_norm": 0.04193210972562964,
+      "epoch_time_ms": 830.930384
+    },
+    {
+      "epoch": 12,
+      "batch_count": 200,
+      "train_loss": 2.9738031368415796,
+      "grad_norm": 0.04635065800452351,
+      "epoch_time_ms": 834.336923
+    },
+    {
+      "epoch": 13,
+      "batch_count": 200,
+      "train_loss": 2.9737311110501965,
+      "grad_norm": 0.0481188071446387,
+      "epoch_time_ms": 829.275746
+    },
+    {
+      "epoch": 14,
+      "batch_count": 200,
+      "train_loss": 2.9736636432956773,
+      "grad_norm": 0.0494662292826947,
+      "epoch_time_ms": 832.075013
+    },
+    {
+      "epoch": 15,
+      "batch_count": 200,
+      "train_loss": 2.972640753894581,
+      "grad_norm": 0.05134484247556844,
+      "epoch_time_ms": 827.6896459999999
+    },
+    {
+      "epoch": 16,
+      "batch_count": 200,
+      "train_loss": 2.9723875472771963,
+      "grad_norm": 0.06066231999710727,
+      "epoch_time_ms": 828.944196
+    },
+    {
+      "epoch": 17,
+      "batch_count": 200,
+      "train_loss": 2.972239790118012,
+      "grad_norm": 0.06896656216631994,
+      "epoch_time_ms": 834.52505
+    },
+    {
+      "epoch": 18,
+      "batch_count": 200,
+      "train_loss": 2.9720912036124343,
+      "grad_norm": 0.07687970137711918,
+      "epoch_time_ms": 836.551148
+    },
+    {
+      "epoch": 19,
+      "batch_count": 200,
+      "train_loss": 2.9719526255606117,
+      "grad_norm": 0.08442776937802828,
+      "epoch_time_ms": 831.195302
+    },
+    {
+      "epoch": 20,
+      "batch_count": 200,
+      "train_loss": 2.9718264088127824,
+      "grad_norm": 0.09147924556065666,
+      "epoch_time_ms": 832.322499
+    }
+  ],
+  "test_eval_time_ms": 90.564009,
+  "per_molecule_latency_us": 45.2820045,
+  "throughput_molecules_per_sec": 22083.82802488348,
+  "logp_metrics": {
+    "initial_mse": 2.705868007083813,
+    "tuned_mse": 2.1152853989014444,
+    "tuned_mae": 1.1554484500893032,
+    "pearson_r": 0.4756545659372406,
+    "error_reduction_pct": 21.825994713572715
+  },
+  "qed_metrics": {
+    "initial_mse": 0.022793157311217758,
+    "tuned_mse": 0.019402888330905428,
+    "tuned_mae": 0.11200951923706415,
+    "pearson_r": 0.13488803999852955,
+    "error_reduction_pct": 14.874064764357122
+  },
+  "sas_metrics": {
+    "initial_mse": 0.7474674453041816,
+    "tuned_mse": 0.6844484381634808,
+    "tuned_mae": 0.6583426277999089,
+    "pearson_r": 0.5112963862712822,
+    "error_reduction_pct": 8.431003589066718
+  },
+  "unitary_norm": 1.0000000000000002,
+  "recall_noise_results": [
+    {
+      "noise_pct": 0.0,
+      "top1_accuracy_pct": 99.5,
+      "top5_accuracy_pct": 100.0,
+      "mean_fidelity": 1.0
+    },
+    {
+      "noise_pct": 10.0,
+      "top1_accuracy_pct": 1.5,
+      "top5_accuracy_pct": 5.5,
+      "mean_fidelity": 0.1289907725568347
+    },
+    {
+      "noise_pct": 25.0,
+      "top1_accuracy_pct": 0.5,
+      "top5_accuracy_pct": 3.0,
+      "mean_fidelity": 0.023408426559543387
+    },
+    {
+      "noise_pct": 50.0,
+      "top1_accuracy_pct": 1.0,
+      "top5_accuracy_pct": 2.5,
+      "mean_fidelity": 0.006620241142993694
+    }
+  ],
+  "inverse_leads": [
+    {
+      "target_name": "Lead Alpha: High-QED Drug-Likeness Profile",
+      "target_logp": 2.5,
+      "target_qed": 0.88,
+      "target_sas": 2.1,
+      "discovered_smiles": "C[C@H]1CCC[C@H](C)N1C(=O)[C@@H]1[C@@H]2CC[C@@H](O2)[C@@H]1C(=O)[O-]",
+      "predicted_logp": 2.3641027139062354,
+      "predicted_qed": 0.7313529091628617,
+      "predicted_sas": 3.0539552012543254,
+      "actual_logp": 0.3194,
+      "actual_qed": 0.746954759506,
+      "actual_sas": 5.112489644043997,
+      "euclidean_error": 0.9749843875581676,
+      "chemical_validity": true
+    },
+    {
+      "target_name": "Lead Beta: Hydrophilic Readily-Synthesizable Scaffold",
+      "target_logp": 0.8,
+      "target_qed": 0.78,
+      "target_sas": 1.85,
+      "discovered_smiles": "C[C@H]1CCC[C@H](C)N1C(=O)[C@@H]1[C@@H]2CC[C@@H](O2)[C@@H]1C(=O)[O-]",
+      "predicted_logp": 2.3641027139062354,
+      "predicted_qed": 0.7313529091628617,
+      "predicted_sas": 3.0539552012543254,
+      "actual_logp": 0.3194,
+      "actual_qed": 0.746954759506,
+      "actual_sas": 5.112489644043997,
+      "euclidean_error": 1.9744092700661409,
+      "chemical_validity": true
+    },
+    {
+      "target_name": "Lead Gamma: Lipophilic High-Permeability Target",
+      "target_logp": 4.1,
+      "target_qed": 0.72,
+      "target_sas": 2.85,
+      "discovered_smiles": "c1ccc2[nH]c(-c3cscn3)nc2c1",
+      "predicted_logp": 2.5483893262128596,
+      "predicted_qed": 0.7236696175575776,
+      "predicted_sas": 3.038952286704555,
+      "actual_logp": 2.6864,
+      "actual_qed": 0.654517544103,
+      "actual_sas": 2.3032684977800493,
+      "euclidean_error": 1.5630777702194096,
+      "chemical_validity": true
+    }
+  ],
+  "classical_baselines": [
+    {
+      "model": "Mean predictor",
+      "n_features": 0,
+      "lambda": null,
+      "metrics": [
+        {
+          "target": "logP",
+          "mae": 1.1679349253399953,
+          "mse": 2.1658115969828264,
+          "r2": -0.0004063746345421837,
+          "pearson_r": 1.900249809333326e-15
+        },
+        {
+          "target": "QED",
+          "mae": 0.11180358006562369,
+          "mse": 0.019448056676708146,
+          "r2": -0.00018228220503102577,
+          "pearson_r": 5.917147975903657e-15
+        },
+        {
+          "target": "SAS",
+          "mae": 0.6598574464095874,
+          "mse": 0.6864985340884788,
+          "r2": -0.0000829697744040292,
+          "pearson_r": 1.4589306600631395e-15
+        }
+      ]
+    },
+    {
+      "model": "Ridge (linear)",
+      "n_features": 19,
+      "lambda": 1e-7,
+      "metrics": [
+        {
+          "target": "logP",
+          "mae": 0.7062190516418819,
+          "mse": 0.8641892920672776,
+          "r2": 0.6008237845436784,
+          "pearson_r": 0.7755073761244781
+        },
+        {
+          "target": "QED",
+          "mae": 0.08664291997630016,
+          "mse": 0.012735652371008143,
+          "r2": 0.34502587762095527,
+          "pearson_r": 0.5874272769996243
+        },
+        {
+          "target": "SAS",
+          "mae": 0.41941203682174,
+          "mse": 0.2961753748530487,
+          "r2": 0.5685352061962179,
+          "pearson_r": 0.75406003604063
+        }
+      ]
+    },
+    {
+      "model": "Ridge (quadratic)",
+      "n_features": 209,
+      "lambda": 0.0001,
+      "metrics": [
+        {
+          "target": "logP",
+          "mae": 0.6713804806746146,
+          "mse": 0.7919063313724964,
+          "r2": 0.6342118847631318,
+          "pearson_r": 0.7967370022786391
+        },
+        {
+          "target": "QED",
+          "mae": 0.06885083296955387,
+          "mse": 0.008537636881515974,
+          "r2": 0.5609230637928257,
+          "pearson_r": 0.7493266125620837
+        },
+        {
+          "target": "SAS",
+          "mae": 0.3745015485908897,
+          "mse": 0.24276413596070837,
+          "r2": 0.646344069228542,
+          "pearson_r": 0.8041177313461503
+        }
+      ]
+    }
+  ]
+}

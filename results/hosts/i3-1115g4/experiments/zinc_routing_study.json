@@ -1,0 +1,368 @@
+{
+  "depth": 4,
+  "eval_molecules": 200,
+  "restarts": 40,
+  "results": [
+    {
+      "best": {
+        "ansatz_only_two_qubit_total": 40,
+        "depth": {
+          "max": 45,
+          "mean": 44.845,
+          "min": 42
+        },
+        "single_qubit": {
+          "max": 101,
+          "mean": 99.32,
+          "min": 95
+        },
+        "swaps": {
+          "max": 0,
+          "mean": 0.0,
+          "min": 0
+        },
+        "two_qubit_total": {
+          "max": 64,
+          "mean": 63.82,
+          "min": 60
+        }
+      },
+      "best_layout": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "edges": 45,
+      "fidelity": [
+        0.9288719111075789,
+        0.6910294489026353,
+        0.4767408975943188
+      ],
+      "naive": {
+        "ansatz_only_two_qubit_total": 40,
+        "depth": {
+          "max": 45,
+          "mean": 44.845,
+          "min": 42
+        },
+        "single_qubit": {
+          "max": 101,
+          "mean": 99.32,
+          "min": 95
+        },
+        "swaps": {
+          "max": 0,
+          "mean": 0.0,
+          "min": 0
+        },
+        "two_qubit_total": {
+          "max": 64,
+          "mean": 63.82,
+          "min": 60
+        }
+      },
+      "naive_fidelity": [
+        0.9288719111075789,
+        0.6910294489026353,
+        0.4767408975943188
+      ],
+      "topology": "all-to-all"
+    },
+    {
+      "best": {
+        "ansatz_only_two_qubit_total": 142,
+        "depth": {
+          "max": 121,
+          "mean": 120.665,
+          "min": 114
+        },
+        "single_qubit": {
+          "max": 101,
+          "mean": 99.32,
+          "min": 95
+        },
+        "swaps": {
+          "max": 46,
+          "mean": 46.0,
+          "min": 46
+        },
+        "two_qubit_total": {
+          "max": 202,
+          "mean": 201.82,
+          "min": 198
+        }
+      },
+      "best_layout": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        9,
+        8,
+        7
+      ],
+      "edges": 9,
+      "fidelity": [
+        0.809083240647224,
+        0.3460044613378234,
+        0.11910754254832526
+      ],
+      "naive": {
+        "ansatz_only_two_qubit_total": 151,
+        "depth": {
+          "max": 132,
+          "mean": 131.665,
+          "min": 125
+        },
+        "single_qubit": {
+          "max": 101,
+          "mean": 99.32,
+          "min": 95
+        },
+        "swaps": {
+          "max": 49,
+          "mean": 49.0,
+          "min": 49
+        },
+        "two_qubit_total": {
+          "max": 211,
+          "mean": 210.82,
+          "min": 207
+        }
+      },
+      "naive_fidelity": [
+        0.8018305506169128,
+        0.33074205865804657,
+        0.10880679442328672
+      ],
+      "topology": "line"
+    },
+    {
+      "best": {
+        "ansatz_only_two_qubit_total": 136,
+        "depth": {
+          "max": 97,
+          "mean": 93.915,
+          "min": 90
+        },
+        "single_qubit": {
+          "max": 101,
+          "mean": 99.32,
+          "min": 95
+        },
+        "swaps": {
+          "max": 40,
+          "mean": 39.025,
+          "min": 39
+        },
+        "two_qubit_total": {
+          "max": 181,
+          "mean": 180.895,
+          "min": 179
+        }
+      },
+      "best_layout": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        9,
+        6,
+        8,
+        7
+      ],
+      "edges": 10,
+      "fidelity": [
+        0.8262003301023036,
+        0.3842675699460936,
+        0.1469849325156132
+      ],
+      "naive": {
+        "ansatz_only_two_qubit_total": 124,
+        "depth": {
+          "max": 114,
+          "mean": 113.715,
+          "min": 109
+        },
+        "single_qubit": {
+          "max": 101,
+          "mean": 99.32,
+          "min": 95
+        },
+        "swaps": {
+          "max": 44,
+          "mean": 44.0,
+          "min": 44
+        },
+        "two_qubit_total": {
+          "max": 196,
+          "mean": 195.82,
+          "min": 192
+        }
+      },
+      "naive_fidelity": [
+        0.8139547762499713,
+        0.356568697074239,
+        0.12651094409595923
+      ],
+      "topology": "ring"
+    },
+    {
+      "best": {
+        "ansatz_only_two_qubit_total": 112,
+        "depth": {
+          "max": 86,
+          "mean": 85.745,
+          "min": 79
+        },
+        "single_qubit": {
+          "max": 101,
+          "mean": 99.32,
+          "min": 95
+        },
+        "swaps": {
+          "max": 24,
+          "mean": 22.05,
+          "min": 22
+        },
+        "two_qubit_total": {
+          "max": 132,
+          "mean": 129.97,
+          "min": 128
+        }
+      },
+      "best_layout": [
+        0,
+        3,
+        1,
+        2,
+        7,
+        5,
+        6,
+        8,
+        9,
+        4
+      ],
+      "edges": 13,
+      "fidelity": [
+        0.869386468275527,
+        0.4960133288454817,
+        0.24521697600650746
+      ],
+      "naive": {
+        "ansatz_only_two_qubit_total": 103,
+        "depth": {
+          "max": 108,
+          "mean": 107.665,
+          "min": 101
+        },
+        "single_qubit": {
+          "max": 101,
+          "mean": 99.32,
+          "min": 95
+        },
+        "swaps": {
+          "max": 35,
+          "mean": 34.875,
+          "min": 30
+        },
+        "two_qubit_total": {
+          "max": 169,
+          "mean": 168.445,
+          "min": 150
+        }
+      },
+      "naive_fidelity": [
+        0.83655603334992,
+        0.40901230958524365,
+        0.1665768497521804
+      ],
+      "topology": "grid"
+    },
+    {
+      "best": {
+        "ansatz_only_two_qubit_total": 136,
+        "depth": {
+          "max": 117,
+          "mean": 112.085,
+          "min": 111
+        },
+        "single_qubit": {
+          "max": 101,
+          "mean": 99.32,
+          "min": 95
+        },
+        "swaps": {
+          "max": 41,
+          "mean": 37.22,
+          "min": 37
+        },
+        "two_qubit_total": {
+          "max": 183,
+          "mean": 175.48,
+          "min": 175
+        }
+      },
+      "best_layout": [
+        6,
+        5,
+        0,
+        1,
+        2,
+        3,
+        7,
+        9,
+        8,
+        4
+      ],
+      "edges": 9,
+      "fidelity": [
+        0.8306885903862471,
+        0.3948405532095342,
+        0.15520590431281808
+      ],
+      "naive": {
+        "ansatz_only_two_qubit_total": 151,
+        "depth": {
+          "max": 117,
+          "mean": 116.79,
+          "min": 113
+        },
+        "single_qubit": {
+          "max": 101,
+          "mean": 99.32,
+          "min": 95
+        },
+        "swaps": {
+          "max": 47,
+          "mean": 47.0,
+          "min": 47
+        },
+        "two_qubit_total": {
+          "max": 205,
+          "mean": 204.82,
+          "min": 201
+        }
+      },
+      "naive_fidelity": [
+        0.8066584173659211,
+        0.3408403015017987,
+        0.11556992942709743
+      ],
+      "topology": "heavy-hex"
+    }
+  ],
+  "search_molecules": 4
+}

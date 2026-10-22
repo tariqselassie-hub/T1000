@@ -1,0 +1,3 @@
+settings descriptors;reupload=6x0.500;qubits=10;depth=6;weights=009458914ab592c2;obs=ParityUpTo(4);scale=MaxAbs;train=10000;test=2000
+metric holdout_relative_mse 3.7584458000380777e-1
+guard holdout_mean_pearson_r 7.901321578550086e-1

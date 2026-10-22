@@ -487,7 +487,7 @@ fn main() {
         if let Some(parent) = p.parent() {
             let _ = fs::create_dir_all(parent);
         }
-        fs::write(p, &json_str).unwrap_or_else(|_| panic!("Failed to write {}", path));
+        t1000::results::write(p, &json_str).unwrap_or_else(|_| panic!("Failed to write {}", path));
         println!(" [SAVED] Telemetry: {}", p.display());
     }
 }

@@ -1048,7 +1048,7 @@ fn main() {
     let report = Zinc12QubitReport {
         classical_baselines: classical_baselines.clone(),
         timestamp_rfc3339: "2026-10-13T13:15:00Z".to_string(),
-        host_cpu: "Intel Core Ultra 7 265 (20 Cores)".to_string(),
+        host_cpu: t1000::hostinfo::HostProfile::detect().label(),
         host_ram_gb: 16.0,
         n_qubits: N_QUBITS,
         state_dimension: DIM,
@@ -1134,22 +1134,65 @@ fn main() {
         print_comparison(&qnn_rows, &classical_baselines);
     }
 
+    // Held-out relative MSE decides, mean Pearson r guards. Resumed runs carry their prior
+    // epochs in the settings so they only compete with runs of the same history.
+    let holdout = t1000::holdout_score::ZincHoldout::new(
+        [report.logp_metrics.tuned_mse, report.qed_metrics.tuned_mse, report.sas_metrics.tuned_mse],
+        [report.logp_metrics.pearson_r, report.qed_metrics.pearson_r, report.sas_metrics.pearson_r],
+        [&targets_logp, &targets_qed, &targets_sas],
+    );
+    let settings = format!(
+        "qubits={};depth={};prior_epochs={};epochs={};batch={};lr={};max_norm={};train={};test={}",
+        report.n_qubits,
+        report.circuit_depth,
+        prior_epochs_completed,
+        report.epochs_trained,
+        report.batch_size,
+        report.learning_rate,
+        report.max_norm,
+        train_samples.len(),
+        test_samples.len()
+    );
+    let mut outcome = t1000::results::Outcome::Written;
     if let Ok(json_str) = serde_json::to_string_pretty(&report) {
-        let _ = fs::write(&out_json_path, json_str);
-        println!(
-            "[SAVED] 12-Qubit Hybrid Report exported to: {}",
-            out_json_path.display()
-        );
+        match t1000::results::write_scored(&out_json_path, json_str, &holdout.score(&settings)) {
+            Ok(o) => outcome = o,
+            Err(e) => eprintln!("[!] Could not write the report: {e}"),
+        }
+        match outcome {
+            t1000::results::Outcome::KeptBest => {
+                println!("[=] Saved 12-qubit hybrid report kept: this run did not improve it");
+            }
+            t1000::results::Outcome::Scratch => {
+                println!("[~] Hybrid report written to a scratch copy only (use --record to save)");
+            }
+            _ => println!(
+                "[SAVED] 12-Qubit Hybrid Report exported to: {}",
+                out_json_path.display()
+            ),
+        }
     }
 
     // Save QnnCheckpoint with all 111 hybrid weights and optimizer state
     let default_ckpt_path = resolve_workspace_path(
         "tests/benchmarks/zinc_molecular/outputs/zinc_12qubit_checkpoint.json",
     );
-    let target_ckpt_path = match &save_weights_path {
+    // The default checkpoint is the weights behind the saved report, so it follows the
+    // report's outcome. An explicit --save-weights path is always written.
+    let explicit_ckpt = save_weights_path.is_some();
+    let mut target_ckpt_path = match &save_weights_path {
         Some(p) => PathBuf::from(p),
         None => default_ckpt_path,
     };
+    if !explicit_ckpt {
+        match outcome {
+            t1000::results::Outcome::KeptBest => return,
+            t1000::results::Outcome::WrittenVariant => {
+                target_ckpt_path = t1000::results::variant_path(&target_ckpt_path, &settings);
+            }
+            _ => {}
+        }
+    }
 
     let checkpoint = QnnCheckpoint {
         timestamp_rfc3339: "2026-10-13T14:10:00Z".to_string(),
@@ -1167,7 +1210,7 @@ fn main() {
         if let Some(parent) = target_ckpt_path.parent() {
             let _ = fs::create_dir_all(parent);
         }
-        let _ = fs::write(&target_ckpt_path, ckpt_str);
+        let _ = t1000::results::write(&target_ckpt_path, ckpt_str);
         println!(
             "[CHECKPOINT] 111 Hybrid Parameters saved to: {}",
             target_ckpt_path.display()

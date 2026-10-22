@@ -398,7 +398,7 @@ fn main() {
         molecules_evaluated: data.len(), epochs, physical_error_rate: p_phys, target_mean_ev: mean_ev, target_std_ev: std_ev,
         trials: vec![t_clean, t_unprot, t_ft_vnni], noise_mitigation_ratio: mit_factor,
     };
-    if let Ok(mut f) = File::create(REPORT_PATH) {
+    if let Ok(mut f) = t1000::results::create(REPORT_PATH) {
         if let Ok(js) = serde_json::to_string_pretty(&report) {
             let _ = f.write_all(js.as_bytes());
             println!("║ Telemetry ledger written to: {}", REPORT_PATH);

@@ -33,6 +33,10 @@ pub struct QnnTrainingTelemetry {
     pub initial_loss: f64,
     pub final_loss: f64,
     pub final_accuracy_pct: f64,
+    /// Mean loss on points not seen in training, with the final weights.
+    pub holdout_loss: f64,
+    pub holdout_accuracy_pct: f64,
+    pub holdout_samples: usize,
     pub training_time_ms: f64,
     pub epoch_logs: Vec<EpochLog>,
 }
@@ -136,7 +140,8 @@ fn main() {
     let engine = ParameterShiftEngine::new(encoding, ansatz, observable);
 
     // Synthetic non-linear classification dataset
-    let dataset = generate_dataset(n_qubits);
+    let dataset = generate_dataset(n_qubits, TRAIN_SAMPLES, 0.0);
+    let holdout = generate_dataset(n_qubits, HOLDOUT_SAMPLES, 0.5);
     println!(
         "[*] Generated {} training samples with binary targets {{-1.0, +1.0}}",
         dataset.len()
@@ -238,6 +243,8 @@ fn main() {
         .unwrap_or(0.0);
     let final_lr = epoch_logs.last().map(|l| l.lr).unwrap_or(lr);
 
+    let (holdout_loss, holdout_acc) = evaluate(&engine, &holdout, &weights);
+
     let loss_reduction_pct = if initial_loss > 1e-6 {
         (initial_loss - final_loss) / initial_loss * 100.0
     } else {
@@ -252,7 +259,13 @@ fn main() {
         " Final Loss         : {:.5} ({:.1}% reduction)",
         final_loss, loss_reduction_pct
     );
-    println!(" Final Accuracy     : {:.1}%", final_acc);
+    println!(" Final Accuracy     : {:.1}% (train, {} samples)", final_acc, dataset.len());
+    println!(
+        " Holdout Loss       : {:.5} | Accuracy {:.1}% ({} unseen samples)",
+        holdout_loss,
+        holdout_acc,
+        holdout.len()
+    );
     println!(" Final Learning Rate: {:.5}", final_lr);
     println!(" Elapsed Time       : {:.2} ms", total_elapsed_ms);
     println!(" Parameter Updates  : {} steps completed", optimizer.step);
@@ -273,6 +286,9 @@ fn main() {
         initial_loss,
         final_loss,
         final_accuracy_pct: final_acc,
+        holdout_loss,
+        holdout_accuracy_pct: holdout_acc,
+        holdout_samples: holdout.len(),
         training_time_ms: total_elapsed_ms,
         epoch_logs,
     };
@@ -281,18 +297,67 @@ fn main() {
         let _ = fs::create_dir_all(parent);
     }
     if let Ok(json_str) = serde_json::to_string_pretty(&telemetry) {
-        let _ = fs::write(&out_path, json_str);
-        println!("[+] Training telemetry exported to: {}", out_path.display());
+        // Recorded runs are judged on unseen data: holdout loss decides, holdout accuracy may
+        // not drop by more than one point, and only runs with the same settings compete.
+        let settings = format!(
+            "qubits={n_qubits};depth={depth};epochs={epochs};lr={lr};gamma={decay_gamma};\
+             step={decay_step};obs={obs_mode};train={TRAIN_SAMPLES};holdout={HOLDOUT_SAMPLES}"
+        );
+        let score = t1000::results::Score {
+            metric: "holdout_loss",
+            value: holdout_loss,
+            better: t1000::results::Better::Lower,
+            guard: Some(t1000::results::Guard {
+                name: "holdout_accuracy_pct",
+                value: holdout_acc,
+                better: t1000::results::Better::Higher,
+                tolerance: 1.0,
+            }),
+            settings: &settings,
+        };
+        match t1000::results::write_scored(&out_path, json_str, &score) {
+            Ok(t1000::results::Outcome::KeptBest) => {
+                println!("[=] Saved run kept: holdout loss {holdout_loss:.5} did not improve it");
+            }
+            Ok(t1000::results::Outcome::Scratch) => {
+                println!("[~] Telemetry written to a scratch copy only (use --record to save)");
+            }
+            Ok(t1000::results::Outcome::WrittenVariant) => {
+                println!("[+] Different settings from the saved run: recorded as a separate variant");
+            }
+            Ok(_) => println!("[+] Training telemetry exported to: {}", out_path.display()),
+            Err(e) => eprintln!("[!] Could not write telemetry: {e}"),
+        }
     }
 }
 
-fn generate_dataset(n_qubits: usize) -> Vec<(Vec<f64>, f64)> {
+/// Training points sit on a 24-point phase grid; holdout points on a 96-point grid shifted by
+/// half a step, so no holdout point coincides with a training point.
+const TRAIN_SAMPLES: usize = 24;
+const HOLDOUT_SAMPLES: usize = 96;
+
+/// Mean loss and sign accuracy (percent) of `weights` on `data`, forward passes only.
+fn evaluate(
+    engine: &ParameterShiftEngine,
+    data: &[(Vec<f64>, f64)],
+    weights: &[f64],
+) -> (f64, f64) {
+    let (mut loss, mut correct) = (0.0, 0usize);
+    for (x, y) in data {
+        let pred = engine.predict(x, weights);
+        loss += 0.5 * (pred - y) * (pred - y);
+        correct += usize::from((if pred >= 0.0 { 1.0 } else { -1.0 } - y).abs() < 1e-3);
+    }
+    let n = data.len() as f64;
+    (loss / n, correct as f64 / n * 100.0)
+}
+
+fn generate_dataset(n_qubits: usize, samples: usize, phase_offset: f64) -> Vec<(Vec<f64>, f64)> {
     use std::f64::consts::PI;
     let mut data = Vec::new();
-    let samples = 24;
 
     for i in 0..samples {
-        let t = (i as f64) / (samples as f64) * 2.0 * PI;
+        let t = (i as f64 + phase_offset) / (samples as f64) * 2.0 * PI;
         let mut x = Vec::with_capacity(n_qubits);
         for q in 0..n_qubits {
             // Features span full [-π, π] phase space

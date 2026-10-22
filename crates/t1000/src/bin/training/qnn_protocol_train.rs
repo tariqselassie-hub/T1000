@@ -294,7 +294,7 @@ fn main() {
     let out_dir = workspace("tests/benchmarks/zinc_molecular/reports/qnn_protocol");
     fs::create_dir_all(&out_dir).unwrap_or_else(|e| fail(e));
     let out = out_dir.join(format!("{}.json", cfg.name));
-    fs::write(
+    t1000::results::write(
         &out,
         serde_json::to_string_pretty(&report).expect("serialize"),
     )

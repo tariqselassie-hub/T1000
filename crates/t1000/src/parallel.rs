@@ -2,7 +2,8 @@
 //!
 //! Work runs on a dedicated rayon pool whose size comes from `GUDDALM_QNN_THREADS` (read once,
 //! at first use) or, if unset, the number of logical CPUs. States smaller than
-//! [`PARALLEL_MIN_DIM`] amplitudes run single-threaded, where thread overhead would dominate.
+//! [`PARALLEL_MIN_DIM`] amplitudes run single-threaded, where thread overhead would dominate;
+//! on hosts with a measured DRAM-bound regime, so do states above `parallel_max_dim`.
 //!
 //! Every kernel here only partitions independent amplitude pairs or blocks across threads; no
 //! value is reduced across threads, so results are deterministic and identical for any thread
@@ -53,8 +54,25 @@ pub fn num_threads() -> usize {
     pool().current_num_threads()
 }
 
-fn use_parallel(dim: usize) -> bool {
-    dim >= PARALLEL_MIN_DIM && num_threads() > 1
+/// Largest statevector (in amplitudes) that is still split across threads.
+///
+/// Above the last-level cache the kernels are DRAM-bound and extra threads only add
+/// contention: on the i3-1115G4 (6 MB L3, ~19 GB/s) one thread already reaches the memory
+/// ceiling and the 4-thread path is 1.7-2x slower from 20 qubits up. Resolution order:
+/// `GUDDALM_QNN_PAR_MAX_QUBITS`, then the measured per-host value, then unbounded.
+fn parallel_max_dim() -> usize {
+    static MAX_DIM: OnceLock<usize> = OnceLock::new();
+    *MAX_DIM.get_or_init(|| {
+        let qubits = std::env::var("GUDDALM_QNN_PAR_MAX_QUBITS")
+            .ok()
+            .and_then(|v| v.trim().parse::<usize>().ok())
+            .or_else(|| crate::hostinfo::HostProfile::detect().parallel_max_qubits());
+        qubits.map_or(usize::MAX, |q| 1usize << q.min(usize::BITS as usize - 1))
+    })
+}
+
+pub(crate) fn use_parallel(dim: usize) -> bool {
+    (PARALLEL_MIN_DIM..=parallel_max_dim()).contains(&dim) && num_threads() > 1
 }
 
 /// Largest power of two `<= dim / (threads * TASKS_PER_THREAD)`, but at least `min`.

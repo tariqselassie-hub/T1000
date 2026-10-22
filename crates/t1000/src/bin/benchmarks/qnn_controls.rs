@@ -290,7 +290,7 @@ fn main() {
         summary,
     };
     let out = workspace("tests/benchmarks/zinc_molecular/reports/qnn_controls.json");
-    fs::write(
+    t1000::results::write(
         &out,
         serde_json::to_string_pretty(&report).expect("serialize"),
     )

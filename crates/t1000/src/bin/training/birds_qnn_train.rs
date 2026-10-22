@@ -8,8 +8,7 @@
 
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::fs::{self, File};
-use std::io::Write;
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
@@ -627,12 +626,38 @@ fn main() {
 
     let report_path = PathBuf::from("data/birds/birds_qnn_report.json");
     if let Ok(json_str) = serde_json::to_string_pretty(&report) {
-        if let Ok(mut f) = File::create(&report_path) {
-            let _ = f.write_all(json_str.as_bytes());
-            println!(
-                "\nReport successfully persisted to: {}",
-                report_path.display()
-            );
+        // Waterbirds is judged on robustness: held-out loss decides and worst-group accuracy
+        // may not drop by more than one point. Only runs with identical settings compete.
+        let best = &report.best_checkpoint_evaluation;
+        let settings = format!(
+            "qubits={};depth={};epochs={};train={};test={}",
+            report.n_qubits,
+            report.circuit_depth,
+            report.total_epochs,
+            report.train_samples,
+            report.test_samples
+        );
+        let score = t1000::results::Score {
+            metric: "test_loss",
+            value: best.average_loss,
+            better: t1000::results::Better::Lower,
+            guard: Some(t1000::results::Guard {
+                name: "worst_group_accuracy_pct",
+                value: best.worst_group_accuracy_pct,
+                better: t1000::results::Better::Higher,
+                tolerance: 1.0,
+            }),
+            settings: &settings,
+        };
+        match t1000::results::write_scored(&report_path, json_str, &score) {
+            Ok(t1000::results::Outcome::KeptBest) => {
+                println!("\nSaved report kept: this run did not improve it");
+            }
+            Ok(t1000::results::Outcome::Scratch) => {
+                println!("\nReport written to a scratch copy only (use --record to save)");
+            }
+            Ok(_) => println!("\nReport successfully persisted to: {}", report_path.display()),
+            Err(e) => eprintln!("\nCould not write the report: {e}"),
         }
     }
 }

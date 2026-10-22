@@ -324,7 +324,7 @@ fn main() {
 
     let json_path = out_dir.join("coherence_frontier_push.json");
     if let Ok(json_str) = serde_json::to_string_pretty(&report) {
-        let _ = fs::write(&json_path, json_str);
+        let _ = t1000::results::write(&json_path, json_str);
         println!(
             "[TELEMETRY] Coherence frontier JSON saved to: {}",
             json_path.display()
@@ -348,7 +348,7 @@ fn main() {
             p.coherence_normalized
         ));
     }
-    let _ = fs::write(&csv_academic, csv_a);
+    let _ = t1000::results::write(&csv_academic, csv_a);
 
     let csv_spectral = out_dir.join("spectral_coherence_frontier.csv");
     let mut csv_s = String::from(
@@ -367,7 +367,7 @@ fn main() {
             p.somatic_leakage_rate * 100.0
         ));
     }
-    let _ = fs::write(&csv_spectral, csv_s);
+    let _ = t1000::results::write(&csv_spectral, csv_s);
     println!(
         "[TELEMETRY] Academic CSV saved to: {}",
         csv_academic.display()

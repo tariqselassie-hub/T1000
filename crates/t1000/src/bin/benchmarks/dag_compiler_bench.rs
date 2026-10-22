@@ -2,7 +2,6 @@
 //! Demonstrates how the DAG dependency tracker automatically groups independent operations
 //! and fuses single-qubit gates, eliminating cache thrashing on arbitrary quantum layers.
 
-use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 use std::time::Instant;
@@ -243,7 +242,7 @@ fn main() {
     let results_dir = Path::new("results/experiments");
     std::fs::create_dir_all(results_dir).unwrap();
     let json_file = results_dir.join("dag_compiler_results.json");
-    let mut file = File::create(&json_file).unwrap();
+    let mut file = t1000::results::create(&json_file).unwrap();
     let json_bytes = serde_json::to_string_pretty(&ledger).unwrap();
     file.write_all(json_bytes.as_bytes()).unwrap();
     println!("[SUCCESS] Telemetry ledger written: {:?}", json_file);

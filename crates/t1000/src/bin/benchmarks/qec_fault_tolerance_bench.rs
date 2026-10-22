@@ -10,7 +10,6 @@
 //! 4. Single-Qubit Pauli Noise Injection & Syndrome Recovery.
 
 use serde::{Deserialize, Serialize};
-use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 use std::time::Instant;
@@ -211,7 +210,7 @@ fn main() {
     std::fs::create_dir_all(out_dir).expect("Failed to create results directory");
     let out_path = out_dir.join("qec_fault_tolerance_telemetry.json");
     let json_bytes = serde_json::to_string_pretty(&telemetry).expect("Failed to serialize telemetry");
-    let mut f = File::create(&out_path).expect("Failed to write telemetry file");
+    let mut f = t1000::results::create(&out_path).expect("Failed to write telemetry file");
     f.write_all(json_bytes.as_bytes()).expect("Failed to write to file");
 
     println!("\n{BOLD}{EMERALD}═══════════════════════════════════════════════════════════════════════════════════════{RESET}");

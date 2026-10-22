@@ -318,6 +318,34 @@ name = "zinc_dual_search"
 path = "src/bin/screening/zinc_dual_search.rs"
 
 [[bin]]
+name = "zinc_qnn_20ep_eval"
+path = "src/bin/screening/zinc_qnn_20ep_eval.rs"
+
+[[bin]]
+name = "zinc_feature_probe"
+path = "src/bin/measurements/zinc_feature_probe.rs"
+
+[[bin]]
+name = "zinc_linear_head_train"
+path = "src/bin/training/zinc_linear_head_train.rs"
+
+[[bin]]
+name = "zinc_shot_noise"
+path = "src/bin/measurements/zinc_shot_noise.rs"
+
+[[bin]]
+name = "zinc_state_prep_cost"
+path = "src/bin/measurements/zinc_state_prep_cost.rs"
+
+[[bin]]
+name = "zinc_routing_study"
+path = "src/bin/measurements/zinc_routing_study.rs"
+
+[[bin]]
+name = "qm9_explore"
+path = "src/bin/measurements/qm9_explore.rs"
+
+[[bin]]
 name = "zinc_topological_walk_screen"
 path = "src/bin/screening/zinc_topological_walk_screen.rs"
 
@@ -331,3 +359,11 @@ path = "src/bin/screening/continuous_walk_qm9_filter.rs"
 
 
 
+
+[[bin]]
+name = "igpu_fp32_proto"
+path = "src/bin/measurements/igpu_fp32_proto.rs"
+
+[[bin]]
+name = "backend_auto_bench"
+path = "src/bin/measurements/backend_auto_bench.rs"

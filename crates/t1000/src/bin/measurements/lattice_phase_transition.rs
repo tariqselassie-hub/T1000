@@ -269,7 +269,7 @@ fn save_telemetry(frames: &[LatticeFrame], relative_path: &str) {
     }
 
     match serde_json::to_string_pretty(frames) {
-        Ok(json) => match fs::write(&out_path, json) {
+        Ok(json) => match t1000::results::write(&out_path, json) {
             Ok(()) => println!(
                 " [PERSISTENCE] Telemetry saved successfully to: {}",
                 out_path.display()
