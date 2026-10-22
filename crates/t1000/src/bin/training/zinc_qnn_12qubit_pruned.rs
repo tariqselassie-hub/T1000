@@ -10,42 +10,16 @@
 //! Pauli-Z expectation values down to machine precision while cutting gate depth by 22.2%.
 
 use serde::{Deserialize, Serialize};
-use std::env;
 use std::fs;
-use std::path::{Path, PathBuf};
 use std::time::Instant;
 use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState};
+use t1000::zinc_data::{self, ZincMolecule};
+use t1000::zinc_training_common::{QnnCheckpoint, eval_all_z12, resolve_workspace_path};
 
 const N_QUBITS: usize = 12;
 const DIM: usize = 1 << N_QUBITS; // 4,096
 #[allow(dead_code)]
 const N_PROPS: usize = 3;
-
-#[allow(dead_code)]
-#[derive(Debug, Clone)]
-struct MoleculeSample {
-    pub smiles: String,
-    pub features: Vec<f64>,
-    pub log_p: f64,
-    pub qed: f64,
-    pub sas: f64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct QnnCheckpoint {
-    pub timestamp_rfc3339: String,
-    pub n_qubits: usize,
-    pub depth: usize,
-    pub total_params: usize,
-    pub epochs_completed: usize,
-    pub hybrid_params: Vec<f64>,
-    #[serde(default)]
-    pub opt_step: usize,
-    #[serde(default)]
-    pub opt_m: Vec<f64>,
-    #[serde(default)]
-    pub opt_v: Vec<f64>,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QnnPrunedCheckpoint {
@@ -83,87 +57,6 @@ pub struct EquivalenceReport {
     pub throughput_speedup_x: f64,
 }
 
-fn resolve_workspace_path(rel: &str) -> PathBuf {
-    let target = Path::new(rel);
-    if target.exists() {
-        return target.to_path_buf();
-    }
-    if let Ok(cwd) = env::current_dir() {
-        let mut curr = cwd.as_path();
-        for _ in 0..6 {
-            let candidate = curr.join(rel);
-            if candidate.exists() {
-                return candidate;
-            }
-            if let Some(parent) = curr.parent() {
-                curr = parent;
-            } else {
-                break;
-            }
-        }
-    }
-    target.to_path_buf()
-}
-
-fn parse_zinc_csv(csv_path: &Path, max_rows: usize) -> Result<Vec<MoleculeSample>, String> {
-    let content = fs::read_to_string(csv_path)
-        .map_err(|e| format!("Failed to read {}: {}", csv_path.display(), e))?;
-
-    let mut records = Vec::new();
-    for (line_idx, line) in content.lines().enumerate() {
-        if line_idx == 0 || line.trim().is_empty() {
-            continue;
-        }
-        let parts: Vec<&str> = line.split(',').map(|s| s.trim()).collect();
-        if parts.len() < 23 {
-            continue;
-        }
-        let smiles = parts[0].to_string();
-        let mut features = Vec::with_capacity(19);
-        for &val_str in &parts[1..20] {
-            features.push(val_str.parse::<f64>().unwrap_or(0.0));
-        }
-        let log_p = parts[20].parse::<f64>().unwrap_or(0.0);
-        let qed = parts[21].parse::<f64>().unwrap_or(0.0);
-        let sas = parts[22].parse::<f64>().unwrap_or(0.0);
-
-        records.push(MoleculeSample {
-            smiles,
-            features,
-            log_p,
-            qed,
-            sas,
-        });
-
-        if records.len() >= max_rows {
-            break;
-        }
-    }
-
-    if records.is_empty() {
-        return Err(format!("No molecules parsed from {}", csv_path.display()));
-    }
-    Ok(records)
-}
-
-#[inline(always)]
-fn eval_all_z12(state: &QuantumState, z_out: &mut [f64; 12]) {
-    for q in 0..12 {
-        z_out[q] = 0.0;
-    }
-    for idx in 0..DIM {
-        let prob = state.real[idx] * state.real[idx] + state.imag[idx] * state.imag[idx];
-        for q in 0..12 {
-            let bit = (idx >> q) & 1;
-            if bit == 0 {
-                z_out[q] += prob;
-            } else {
-                z_out[q] -= prob;
-            }
-        }
-    }
-}
-
 fn main() {
     println!("=========================================================================");
     println!("   GUDDANETWORKS QNN: 99-PARAMETER PRUNED CANONICAL KERNEL VERIFICATION  ");
@@ -185,7 +78,7 @@ fn main() {
         "[INIT] Loading ZINC 2,000 holdout molecules: {}",
         test_path.display()
     );
-    let test_samples = match parse_zinc_csv(&test_path, 2000) {
+    let test_samples = match zinc_data::load(&test_path, 2000) {
         Ok(s) => s,
         Err(e) => {
             eprintln!("[-] Error: {}", e);
@@ -277,7 +170,7 @@ fn main() {
     let t_full_start = Instant::now();
     let full_predictions: Vec<[f64; 3]> = {
         let chunk_size = (test_samples.len() + num_threads - 1) / num_threads;
-        let sub_chunks: Vec<&[MoleculeSample]> = test_samples.chunks(chunk_size).collect();
+        let sub_chunks: Vec<&[ZincMolecule]> = test_samples.chunks(chunk_size).collect();
         let ansatz_ref = &ansatz_full;
         let encoding_ref = &encoding;
         let full_params_ref = &full_params;
@@ -332,7 +225,7 @@ fn main() {
     let t_pruned_start = Instant::now();
     let pruned_predictions: Vec<[f64; 3]> = {
         let chunk_size = (test_samples.len() + num_threads - 1) / num_threads;
-        let sub_chunks: Vec<&[MoleculeSample]> = test_samples.chunks(chunk_size).collect();
+        let sub_chunks: Vec<&[ZincMolecule]> = test_samples.chunks(chunk_size).collect();
         let ansatz_ref = &ansatz_pruned;
         let encoding_ref = &encoding;
         let pruned_params_ref = &pruned_params;

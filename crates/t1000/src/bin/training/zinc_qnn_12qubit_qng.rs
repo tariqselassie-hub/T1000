@@ -23,11 +23,11 @@
 //!   logP, QED, SAS, Molecule #10640 solvation recovery, and Fubini-Study spectrum.
 
 use serde::{Deserialize, Serialize};
-use std::env;
 use std::fs;
-use std::path::{Path, PathBuf};
 use std::time::Instant;
 use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState};
+use t1000::zinc_data::{self, ZincMolecule};
+use t1000::zinc_training_common::{ReuploadingCheckpoint, resolve_workspace_path, utc_timestamp_rfc3339};
 
 const N_QUBITS: usize = 12;
 const DIM: usize = 1 << N_QUBITS; // 4,096
@@ -36,31 +36,6 @@ const N_PAIRS: usize = N_QUBITS * (N_QUBITS - 1) / 2; // 66
 #[allow(dead_code)]
 const N_OBS_FULL: usize = N_QUBITS + N_PAIRS; // 78
 const SOURCE_QUBIT: usize = 8;
-
-#[allow(dead_code)]
-#[derive(Debug, Clone)]
-struct MoleculeSample {
-    pub smiles: String,
-    pub features: Vec<f64>,
-    pub log_p: f64,
-    pub qed: f64,
-    pub sas: f64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ReuploadingCheckpoint {
-    pub timestamp_rfc3339: String,
-    pub n_qubits: usize,
-    pub depth: usize,
-    pub source_qubit: usize,
-    pub circuit_params: Vec<f64>,     // 60 params
-    pub feedforward_alphas: Vec<f64>, // 12 alphas
-    pub upload_scales_l0: Vec<f64>,   // 12 DRU scales
-    pub readout_weights_12: Vec<Vec<f64>>,
-    pub readout_biases_12: Vec<f64>,
-    pub readout_weights_78: Vec<Vec<f64>>,
-    pub readout_biases_78: Vec<f64>,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QngCheckpoint {
@@ -122,56 +97,6 @@ pub struct QngComparisonReport {
     pub classical_baselines: Vec<t1000::baselines::BaselineResult>,
 }
 
-fn resolve_workspace_path(rel_path: &str) -> PathBuf {
-    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let ws_root = manifest_dir
-        .parent()
-        .and_then(|p| p.parent())
-        .and_then(|p| p.parent())
-        .unwrap_or(&manifest_dir);
-    ws_root.join(rel_path)
-}
-
-fn parse_zinc_csv(csv_path: &Path, max_rows: usize) -> Result<Vec<MoleculeSample>, String> {
-    let content = fs::read_to_string(csv_path)
-        .map_err(|e| format!("Failed to read {}: {}", csv_path.display(), e))?;
-
-    let mut records = Vec::new();
-    for (line_idx, line) in content.lines().enumerate() {
-        if line_idx == 0 || line.trim().is_empty() {
-            continue;
-        }
-        let parts: Vec<&str> = line.split(',').map(|s| s.trim()).collect();
-        if parts.len() < 23 {
-            continue;
-        }
-        let smiles = parts[0].to_string();
-        let mut features = Vec::with_capacity(19);
-        for &val_str in &parts[1..20] {
-            features.push(val_str.parse::<f64>().unwrap_or(0.0));
-        }
-        let log_p = parts[20].parse::<f64>().unwrap_or(0.0);
-        let qed = parts[21].parse::<f64>().unwrap_or(0.0);
-        let sas = parts[22].parse::<f64>().unwrap_or(0.0);
-
-        records.push(MoleculeSample {
-            smiles,
-            features,
-            log_p,
-            qed,
-            sas,
-        });
-
-        if records.len() >= max_rows {
-            break;
-        }
-    }
-    if records.is_empty() {
-        return Err(format!("No molecules parsed from {}", csv_path.display()));
-    }
-    Ok(records)
-}
-
 #[inline(always)]
 fn state_fidelity(s1: &QuantumState, s2: &QuantumState) -> f64 {
     let mut sum_re = 0.0;
@@ -192,7 +117,7 @@ fn compute_fubini_study_diagonal(
     circuit_params: &[f64],
     dru_scales: &[f64],
     feedforward_alphas: &[f64],
-    batch: &[MoleculeSample],
+    batch: &[ZincMolecule],
     lambda_damping: f64,
 ) -> Vec<f64> {
     let p_len = circuit_params.len();
@@ -342,7 +267,7 @@ fn eval_loss_and_weights(
     circuit_params: &[f64],
     dru_scales: &[f64],
     feedforward_alphas: &[f64],
-    batch: &[MoleculeSample],
+    batch: &[ZincMolecule],
     lambda_ridge: f64,
 ) -> (f64, Vec<Vec<f64>>, Vec<f64>) {
     let mut z_mat = Vec::with_capacity(batch.len());
@@ -423,10 +348,6 @@ fn compute_mae_and_r2(preds: &[f64], targets: &[f64]) -> (f64, f64) {
     (mae, r2)
 }
 
-fn chrono_now() -> String {
-    "2026-10-13T03:00:00Z".to_string()
-}
-
 fn main() {
     println!("=========================================================================");
     println!(" GUDDANETWORKS 12-QUBIT QNN: QUANTUM NATURAL GRADIENT (MECHANISM #4)     ");
@@ -446,8 +367,8 @@ fn main() {
         "tests/benchmarks/zinc_molecular/checkpoints/zinc_12qubit_checkpoint_reuploading.json",
     );
 
-    let train_samples = parse_zinc_csv(&train_path, 10_000).expect("Load train data");
-    let test_samples = parse_zinc_csv(&test_path, 2_000).expect("Load test data");
+    let train_samples = zinc_data::load(&train_path, 10_000).expect("Load train data");
+    let test_samples = zinc_data::load(&test_path, 2_000).expect("Load test data");
 
     println!("  -> Train samples: {}", train_samples.len());
     println!("  -> Test samples : {}", test_samples.len());
@@ -538,7 +459,7 @@ fn main() {
     // =========================================================================
     // DUAL COMPARISON: PATH A (EUCLIDEAN ADAM) vs PATH B (QUANTUM NATURAL GRADIENT)
     // =========================================================================
-    let opt_subset: Vec<MoleculeSample> = train_samples.iter().take(2000).cloned().collect();
+    let opt_subset: Vec<ZincMolecule> = train_samples.iter().take(2000).cloned().collect();
     let n_epochs = 12;
     let lr = 0.04;
     let eps = 0.01;
@@ -935,7 +856,7 @@ fn main() {
     println!("=========================================================================");
 
     let checkpoint = QngCheckpoint {
-        timestamp_rfc3339: chrono_now(),
+        timestamp_rfc3339: utc_timestamp_rfc3339(),
         n_qubits: N_QUBITS,
         depth: 3,
         source_qubit: SOURCE_QUBIT,
@@ -968,7 +889,7 @@ fn main() {
     );
     let report = QngComparisonReport {
         classical_baselines: classical_baselines.clone(),
-        timestamp_rfc3339: chrono_now(),
+        timestamp_rfc3339: utc_timestamp_rfc3339(),
         host_cpu: "Native Host AVX2+FMA".to_string(),
         n_qubits: N_QUBITS,
         train_samples: train_samples.len(),

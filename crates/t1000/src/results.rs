@@ -347,13 +347,27 @@ fn read_saved(sidecar: &Path) -> Option<Saved> {
 mod tests {
     use super::*;
 
+    /// An absolute fixture root on every platform (`/ws` has no drive letter, so on
+    /// Windows it is relative and `resolve` would join it onto the cwd).
+    fn ws_root() -> PathBuf {
+        if cfg!(windows) {
+            PathBuf::from(r"C:\ws")
+        } else {
+            PathBuf::from("/ws")
+        }
+    }
+
+    fn ws(rel: &str) -> PathBuf {
+        ws_root().join(rel)
+    }
+
     fn policy(record: bool, reference: bool) -> Policy {
         Policy {
             record,
             force: false,
             host_slug: "i3-1115g4".into(),
             reference_host: reference,
-            root: PathBuf::from("/ws"),
+            root: ws_root(),
         }
     }
 
@@ -361,8 +375,8 @@ mod tests {
     fn default_mode_redirects_to_scratch() {
         let p = policy(false, false);
         assert_eq!(
-            p.resolve(Path::new("/ws/results/experiments/a.json")),
-            PathBuf::from("/ws/target/bench-scratch/i3-1115g4/results/experiments/a.json")
+            p.resolve(&ws("results/experiments/a.json")),
+            ws("target/bench-scratch/i3-1115g4/results/experiments/a.json")
         );
     }
 
@@ -370,8 +384,8 @@ mod tests {
     fn record_on_reference_host_uses_the_requested_path() {
         let p = policy(true, true);
         assert_eq!(
-            p.resolve(Path::new("/ws/results/experiments/a.json")),
-            PathBuf::from("/ws/results/experiments/a.json")
+            p.resolve(&ws("results/experiments/a.json")),
+            ws("results/experiments/a.json")
         );
     }
 
@@ -379,12 +393,12 @@ mod tests {
     fn record_on_other_host_goes_to_host_directory() {
         let p = policy(true, false);
         assert_eq!(
-            p.resolve(Path::new("/ws/results/experiments/a.json")),
-            PathBuf::from("/ws/results/hosts/i3-1115g4/experiments/a.json")
+            p.resolve(&ws("results/experiments/a.json")),
+            ws("results/hosts/i3-1115g4/experiments/a.json")
         );
         assert_eq!(
-            p.resolve(Path::new("/ws/tests/benchmarks/z/out.json")),
-            PathBuf::from("/ws/results/hosts/i3-1115g4/tests/benchmarks/z/out.json")
+            p.resolve(&ws("tests/benchmarks/z/out.json")),
+            ws("results/hosts/i3-1115g4/tests/benchmarks/z/out.json")
         );
     }
 
@@ -399,8 +413,8 @@ mod tests {
     #[test]
     fn dot_dot_components_cannot_escape_the_scratch_tree() {
         let p = policy(false, false);
-        let got = p.resolve(Path::new("/ws/crates/../results/a.json"));
-        assert_eq!(got, PathBuf::from("/ws/target/bench-scratch/i3-1115g4/results/a.json"));
+        let got = p.resolve(&ws("crates/../results/a.json"));
+        assert_eq!(got, ws("target/bench-scratch/i3-1115g4/results/a.json"));
     }
 
     fn temp_policy(tag: &str) -> Policy {

@@ -1,13 +1,13 @@
 use serde::{Deserialize, Serialize};
 use t1000::calibration::AffineFit;
 use std::env;
-use std::fs;
-use std::path::{Path, PathBuf};
 use std::time::Instant;
 use t1000::{
     adjoint_gradient, AdamOptimizer, CircuitAnsatz, DataEncodingLayer, EncodingKind,
     PauliObservable, QuantumState,
 };
+use t1000::zinc_data::{self, ZincMolecule};
+use t1000::zinc_training_common::{PropertyMetric, compute_state_norm, resolve_workspace_path};
 
 // Empirical ZINC 10k Target Distributions (Exact Mean & Std)
 const MU_LOGP: f64 = 2.4713;
@@ -20,30 +20,12 @@ const MU_SAS: f64 = 3.0515;
 const SIGMA_SAS: f64 = 0.8394;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MoleculeSample {
-    pub smiles: String,
-    pub features: Vec<f64>,
-    pub log_p: f64,
-    pub qed: f64,
-    pub sas: f64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EpochTelemetry {
     pub epoch: usize,
     pub batch_count: usize,
     pub train_loss: f64,
     pub grad_norm: f64,
     pub epoch_time_ms: f64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PropertyMetric {
-    pub initial_mse: f64,
-    pub tuned_mse: f64,
-    pub tuned_mae: f64,
-    pub pearson_r: f64,
-    pub error_reduction_pct: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -95,19 +77,9 @@ fn eval_z0_z1_z2(state: &QuantumState) -> (f64, f64, f64) {
     (exp0, exp1, exp2)
 }
 
-fn compute_state_norm(state: &QuantumState) -> f64 {
-    state
-        .real
-        .iter()
-        .zip(&state.imag)
-        .map(|(&r, &i)| r * r + i * i)
-        .sum::<f64>()
-        .sqrt()
-}
-
 /// `<Z_0>, <Z_1>, <Z_2>` of the circuit output for every molecule.
 fn collect_readouts(
-    samples: &[MoleculeSample],
+    samples: &[ZincMolecule],
     encoding: &DataEncodingLayer,
     ansatz: &CircuitAnsatz,
     weights: &[f64],
@@ -121,69 +93,6 @@ fn collect_readouts(
             [z0, z1, z2]
         })
         .collect()
-}
-
-fn parse_zinc_csv(csv_path: &Path, max_rows: usize) -> Result<Vec<MoleculeSample>, String> {
-    let content = fs::read_to_string(csv_path)
-        .map_err(|e| format!("Failed to read {}: {}", csv_path.display(), e))?;
-
-    let mut records = Vec::new();
-    for (line_idx, line) in content.lines().enumerate() {
-        if line_idx == 0 || line.trim().is_empty() {
-            continue;
-        }
-        let parts: Vec<&str> = line.split(',').map(|s| s.trim()).collect();
-        if parts.len() < 23 {
-            continue;
-        }
-        let smiles = parts[0].to_string();
-        let mut features = Vec::with_capacity(19);
-        for &val_str in &parts[1..20] {
-            features.push(val_str.parse::<f64>().unwrap_or(0.0));
-        }
-        let log_p = parts[20].parse::<f64>().unwrap_or(0.0);
-        let qed = parts[21].parse::<f64>().unwrap_or(0.0);
-        let sas = parts[22].parse::<f64>().unwrap_or(0.0);
-
-        records.push(MoleculeSample {
-            smiles,
-            features,
-            log_p,
-            qed,
-            sas,
-        });
-
-        if records.len() >= max_rows {
-            break;
-        }
-    }
-
-    if records.is_empty() {
-        return Err(format!("No molecules parsed from {}", csv_path.display()));
-    }
-    Ok(records)
-}
-
-fn resolve_workspace_path(rel: &str) -> PathBuf {
-    let target = Path::new(rel);
-    if target.exists() {
-        return target.to_path_buf();
-    }
-    if let Ok(cwd) = env::current_dir() {
-        let mut curr = cwd.as_path();
-        for _ in 0..6 {
-            let candidate = curr.join(rel);
-            if candidate.exists() {
-                return candidate;
-            }
-            if let Some(parent) = curr.parent() {
-                curr = parent;
-            } else {
-                break;
-            }
-        }
-    }
-    target.to_path_buf()
 }
 
 fn main() {
@@ -275,7 +184,7 @@ fn main() {
         "[INIT] Loading ZINC 10k train set from: {}",
         train_path.display()
     );
-    let train_samples = match parse_zinc_csv(&train_path, max_train) {
+    let train_samples = match zinc_data::load(&train_path, max_train) {
         Ok(r) => r,
         Err(e) => {
             eprintln!("[-] Error loading 10k train set: {}", e);
@@ -291,7 +200,7 @@ fn main() {
         "[INIT] Loading ZINC 2k evaluation set: {}",
         test_path.display()
     );
-    let test_samples = match parse_zinc_csv(&test_path, max_eval) {
+    let test_samples = match zinc_data::load(&test_path, max_eval) {
         Ok(r) => r,
         Err(e) => {
             eprintln!("[-] Error loading test set: {}", e);
@@ -434,7 +343,7 @@ fn main() {
             // Multithreaded parameter-shift evaluation across thread pool
             let chunk_len = chunk.len();
             let thread_chunk_size = (chunk_len + num_threads - 1) / num_threads;
-            let sub_chunks: Vec<&[MoleculeSample]> = chunk.chunks(thread_chunk_size).collect();
+            let sub_chunks: Vec<&[ZincMolecule]> = chunk.chunks(thread_chunk_size).collect();
 
             let thread_results: Vec<(Vec<f64>, f64)> = std::thread::scope(|s| {
                 let mut handles = Vec::with_capacity(sub_chunks.len());

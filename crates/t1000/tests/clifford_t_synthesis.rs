@@ -149,7 +149,10 @@ fn test_rx_and_ry_synthesis() {
 
 #[test]
 fn test_precision_scaling_t_count() {
-    let theta = 0.785398; // ~pi/4
+    // Deliberately ~1.6e-7 off pi/4: an exact pi/4 makes Rz a T gate and the
+    // synthesis trivial, which would defeat this precision-scaling check.
+    #[allow(clippy::approx_constant)]
+    let theta = 0.785398;
     let epsilons = [0.1, 0.01, 0.001];
     let mut t_counts = Vec::new();
 

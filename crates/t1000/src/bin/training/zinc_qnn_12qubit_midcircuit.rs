@@ -14,57 +14,17 @@
 //!   non-linearities that break the quadratic ceiling and resolve deep-regime Born solvation.
 
 use serde::{Deserialize, Serialize};
-use std::env;
 use std::fs;
-use std::path::{Path, PathBuf};
 use std::time::Instant;
 use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState};
+use t1000::zinc_data::{self, ZincMolecule};
+use t1000::zinc_training_common::{MidCircuitCheckpoint, PrunedCheckpoint, compute_mae_and_r2, resolve_workspace_path, solve_ridge_regression, utc_timestamp_rfc3339};
 
 const N_QUBITS: usize = 12;
 const DIM: usize = 1 << N_QUBITS; // 4,096
 const N_PAIRS: usize = N_QUBITS * (N_QUBITS - 1) / 2; // 66
 const N_OBS_FULL: usize = N_QUBITS + N_PAIRS; // 78
 const SOURCE_QUBIT: usize = 8; // Qubit 8 exhibiting severe spin freeze on anomalous molecules
-
-#[derive(Debug, Clone)]
-struct MoleculeSample {
-    pub smiles: String,
-    pub features: Vec<f64>,
-    pub log_p: f64,
-    pub qed: f64,
-    pub sas: f64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PrunedCheckpoint {
-    pub timestamp_rfc3339: String,
-    pub n_qubits: usize,
-    pub depth: usize,
-    pub full_params: usize,
-    pub pruned_params: usize,
-    #[serde(default)]
-    pub gate_count_full: usize,
-    #[serde(default)]
-    pub gate_count_pruned: usize,
-    #[serde(default)]
-    pub gate_depth_reduction_pct: f64,
-    pub epochs_completed: usize,
-    pub pruned_hybrid_params: Vec<f64>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MidCircuitCheckpoint {
-    pub timestamp_rfc3339: String,
-    pub n_qubits: usize,
-    pub depth: usize,
-    pub source_qubit: usize,
-    pub circuit_params: Vec<f64>,          // 60 params
-    pub feedforward_alphas: Vec<f64>,      // 12 alphas
-    pub readout_weights_12: Vec<Vec<f64>>, // 12 x 3
-    pub readout_biases_12: Vec<f64>,       // 3
-    pub readout_weights_78: Vec<Vec<f64>>, // 78 x 3
-    pub readout_biases_78: Vec<f64>,       // 3
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MidCircuitReport {
@@ -105,189 +65,13 @@ pub struct MidCircuitReport {
     pub classical_baselines: Vec<t1000::baselines::BaselineResult>,
 }
 
-fn resolve_workspace_path(rel_path: &str) -> PathBuf {
-    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let ws_root = manifest_dir
-        .parent()
-        .and_then(|p| p.parent())
-        .and_then(|p| p.parent())
-        .unwrap_or(&manifest_dir);
-    ws_root.join(rel_path)
-}
-
-fn parse_zinc_csv(csv_path: &Path, max_rows: usize) -> Result<Vec<MoleculeSample>, String> {
-    let content = fs::read_to_string(csv_path)
-        .map_err(|e| format!("Failed to read {}: {}", csv_path.display(), e))?;
-
-    let mut records = Vec::new();
-    for (line_idx, line) in content.lines().enumerate() {
-        if line_idx == 0 || line.trim().is_empty() {
-            continue;
-        }
-        let parts: Vec<&str> = line.split(',').map(|s| s.trim()).collect();
-        if parts.len() < 23 {
-            continue;
-        }
-        let smiles = parts[0].to_string();
-        let mut features = Vec::with_capacity(19);
-        for &val_str in &parts[1..20] {
-            features.push(val_str.parse::<f64>().unwrap_or(0.0));
-        }
-        let log_p = parts[20].parse::<f64>().unwrap_or(0.0);
-        let qed = parts[21].parse::<f64>().unwrap_or(0.0);
-        let sas = parts[22].parse::<f64>().unwrap_or(0.0);
-
-        records.push(MoleculeSample {
-            smiles,
-            features,
-            log_p,
-            qed,
-            sas,
-        });
-
-        if records.len() >= max_rows {
-            break;
-        }
-    }
-    Ok(records)
-}
-
-/// Solves (X^T X + lambda I) W = X^T Y via Gauss-Jordan elimination with partial pivoting.
-fn solve_ridge_regression(
-    x_matrix: &[Vec<f64>], // N rows x D features
-    y_matrix: &[Vec<f64>], // N rows x P targets
-    lambda: f64,
-) -> (Vec<Vec<f64>>, Vec<f64>) {
-    let n = x_matrix.len();
-    assert!(n > 0);
-    let d = x_matrix[0].len();
-    let p = y_matrix[0].len();
-
-    // Design matrix augmented with bias column: [x, 1.0] -> dim = D + 1
-    let d_aug = d + 1;
-    let mut xtx = vec![vec![0.0; d_aug]; d_aug];
-    let mut xty = vec![vec![0.0; p]; d_aug];
-
-    for (row_x, row_y) in x_matrix.iter().zip(y_matrix) {
-        for i in 0..d_aug {
-            let val_i = if i < d { row_x[i] } else { 1.0 };
-            for j in 0..d_aug {
-                let val_j = if j < d { row_x[j] } else { 1.0 };
-                xtx[i][j] += val_i * val_j;
-            }
-            for k in 0..p {
-                xty[i][k] += val_i * row_y[k];
-            }
-        }
-    }
-
-    // Add ridge penalty (do not penalize bias)
-    for i in 0..d {
-        xtx[i][i] += lambda;
-    }
-
-    // Solve for each target column via Gauss-Jordan elimination
-    let mut weights = vec![vec![0.0; p]; d];
-    let mut biases = vec![0.0; p];
-
-    for k in 0..p {
-        // Augmented system: [xtx | xty[:, k]]
-        let mut aug = vec![vec![0.0; d_aug + 1]; d_aug];
-        for i in 0..d_aug {
-            for j in 0..d_aug {
-                aug[i][j] = xtx[i][j];
-            }
-            aug[i][d_aug] = xty[i][k];
-        }
-
-        // Gauss-Jordan elimination
-        for col in 0..d_aug {
-            let mut max_row = col;
-            let mut max_val = aug[col][col].abs();
-            for row in (col + 1)..d_aug {
-                if aug[row][col].abs() > max_val {
-                    max_val = aug[row][col].abs();
-                    max_row = row;
-                }
-            }
-            aug.swap(col, max_row);
-
-            let pivot = aug[col][col];
-            if pivot.abs() < 1e-14 {
-                continue;
-            }
-
-            for j in col..=d_aug {
-                aug[col][j] /= pivot;
-            }
-
-            for row in 0..d_aug {
-                if row != col {
-                    let factor = aug[row][col];
-                    for j in col..=d_aug {
-                        aug[row][j] -= factor * aug[col][j];
-                    }
-                }
-            }
-        }
-
-        for i in 0..d {
-            weights[i][k] = aug[i][d_aug];
-        }
-        biases[k] = aug[d][d_aug];
-    }
-
-    (weights, biases)
-}
-
-fn compute_mae_and_r2(preds: &[Vec<f64>], targets: &[Vec<f64>]) -> ([f64; 3], [f64; 3]) {
-    let n = preds.len() as f64;
-    assert!(n > 1.0);
-
-    let mut mean_t = [0.0; 3];
-    for row in targets {
-        for k in 0..3 {
-            mean_t[k] += row[k];
-        }
-    }
-    for k in 0..3 {
-        mean_t[k] /= n;
-    }
-
-    let mut mae = [0.0; 3];
-    let mut ss_res = [0.0; 3];
-    let mut ss_tot = [0.0; 3];
-
-    for (p, t) in preds.iter().zip(targets) {
-        for k in 0..3 {
-            let err = p[k] - t[k];
-            mae[k] += err.abs();
-            ss_res[k] += err * err;
-            let d = t[k] - mean_t[k];
-            ss_tot[k] += d * d;
-        }
-    }
-
-    let mut r2 = [0.0; 3];
-    for k in 0..3 {
-        mae[k] /= n;
-        r2[k] = if ss_tot[k] > 1e-12 {
-            1.0 - ss_res[k] / ss_tot[k]
-        } else {
-            0.0
-        };
-    }
-
-    (mae, r2)
-}
-
 /// Computes composite MSE loss for a given alpha vector on a dataset:
 fn eval_alpha_loss(
     ansatz: &CircuitAnsatz,
     encoding: &DataEncodingLayer,
     circuit_params: &[f64],
     alphas: &[f64],
-    samples: &[MoleculeSample],
+    samples: &[ZincMolecule],
     lambda: f64,
 ) -> (f64, Vec<Vec<f64>>, Vec<f64>) {
     let mut x_mat = Vec::with_capacity(samples.len());
@@ -331,20 +115,6 @@ fn eval_alpha_loss(
     (total_loss, w, b)
 }
 
-fn chrono_now() -> String {
-    use std::time::SystemTime;
-    let now = SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs();
-    format!(
-        "2026-10-13T{:02}:{:02}:{:02}Z",
-        (now / 3600) % 24,
-        (now / 60) % 60,
-        now % 60
-    )
-}
-
 fn main() {
     println!("=========================================================================");
     println!(" GUDDANETWORKS 12-QUBIT QNN: MID-CIRCUIT FEED-FORWARD ENGINE (QUBIT 8)  ");
@@ -375,13 +145,13 @@ fn main() {
 
     // Load datasets
     println!("[INIT] Loading training set (10,000 molecules)...");
-    let train_samples = match parse_zinc_csv(&train_path, 10_000) {
+    let train_samples = match zinc_data::load(&train_path, 10_000) {
         Ok(s) => s,
         Err(e) => {
             let fallback = resolve_workspace_path(
                 "tests/benchmarks/zinc_molecular/outputs/zinc_train_10k.csv",
             );
-            match parse_zinc_csv(&fallback, 10_000) {
+            match zinc_data::load(&fallback, 10_000) {
                 Ok(s) => s,
                 Err(_) => {
                     eprintln!("[-] Error: {}", e);
@@ -393,12 +163,12 @@ fn main() {
     println!("  -> Loaded {} training molecules.\n", train_samples.len());
 
     println!("[INIT] Loading holdout test set (2,000 molecules)...");
-    let test_samples = match parse_zinc_csv(&test_path, 2_000) {
+    let test_samples = match zinc_data::load(&test_path, 2_000) {
         Ok(s) => s,
         Err(e) => {
             let fallback =
                 resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_test_2k.csv");
-            match parse_zinc_csv(&fallback, 2_000) {
+            match zinc_data::load(&fallback, 2_000) {
                 Ok(s) => s,
                 Err(_) => {
                     eprintln!("[-] Error: {}", e);
@@ -555,7 +325,7 @@ fn main() {
     alphas[9] = 0.25;
 
     let n_train_opt = 2_000; // Use representative subset for fast gradient calculation
-    let opt_subset: Vec<MoleculeSample> = train_samples.iter().take(n_train_opt).cloned().collect();
+    let opt_subset: Vec<ZincMolecule> = train_samples.iter().take(n_train_opt).cloned().collect();
 
     let n_epochs = 12;
     let lr = 0.08;
@@ -1063,7 +833,7 @@ fn main() {
     println!("=========================================================================");
 
     let checkpoint = MidCircuitCheckpoint {
-        timestamp_rfc3339: chrono_now(),
+        timestamp_rfc3339: utc_timestamp_rfc3339(),
         n_qubits: N_QUBITS,
         depth: 3,
         source_qubit: SOURCE_QUBIT,
@@ -1099,7 +869,7 @@ fn main() {
     );
     let report = MidCircuitReport {
         classical_baselines: classical_baselines.clone(),
-        timestamp_rfc3339: chrono_now(),
+        timestamp_rfc3339: utc_timestamp_rfc3339(),
         host_cpu: "Native Host AVX2+FMA".to_string(),
         n_qubits: N_QUBITS,
         source_qubit: SOURCE_QUBIT,

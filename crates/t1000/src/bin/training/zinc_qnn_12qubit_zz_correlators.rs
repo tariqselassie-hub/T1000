@@ -19,59 +19,18 @@
 //!   5. Evaluate on 2,000 holdout molecules and compare MAE/R² vs baseline
 
 use serde::{Deserialize, Serialize};
-use std::env;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::time::Instant;
 use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState};
+use t1000::zinc_data::{self};
+use t1000::zinc_training_common::{PrunedCheckpoint, QnnCheckpoint, resolve_workspace_path, utc_timestamp_rfc3339};
 
 const N_QUBITS: usize = 12;
 const DIM: usize = 1 << N_QUBITS; // 4,096
 const N_PAIRS: usize = N_QUBITS * (N_QUBITS - 1) / 2; // 66
 const N_OBS: usize = N_QUBITS + N_PAIRS; // 78
 const N_PROPS: usize = 3;
-
-#[derive(Debug, Clone)]
-struct MoleculeSample {
-    pub smiles: String,
-    pub features: Vec<f64>,
-    pub log_p: f64,
-    pub qed: f64,
-    pub sas: f64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct QnnCheckpoint {
-    pub timestamp_rfc3339: String,
-    pub n_qubits: usize,
-    pub depth: usize,
-    pub total_params: usize,
-    pub epochs_completed: usize,
-    pub hybrid_params: Vec<f64>,
-    #[serde(default)]
-    pub opt_step: usize,
-    #[serde(default)]
-    pub opt_m: Vec<f64>,
-    #[serde(default)]
-    pub opt_v: Vec<f64>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PrunedCheckpoint {
-    pub timestamp_rfc3339: String,
-    pub n_qubits: usize,
-    pub depth: usize,
-    pub full_params: usize,
-    pub pruned_params: usize,
-    #[serde(default)]
-    pub gate_count_full: usize,
-    #[serde(default)]
-    pub gate_count_pruned: usize,
-    #[serde(default)]
-    pub gate_depth_reduction_pct: f64,
-    pub epochs_completed: usize,
-    pub pruned_hybrid_params: Vec<f64>,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ZZCorrelatorReport {
@@ -106,75 +65,6 @@ pub struct ZZCorrelatorReport {
     pub throughput_enhanced_mols_per_sec: f64,
     #[serde(default)]
     pub classical_baselines: Vec<t1000::baselines::BaselineResult>,
-}
-
-fn resolve_workspace_path(rel: &str) -> PathBuf {
-    let target = Path::new(rel);
-    if target.exists() {
-        return target.to_path_buf();
-    }
-    if let Ok(cwd) = env::current_dir() {
-        let mut curr = cwd.as_path();
-        for _ in 0..6 {
-            let candidate = curr.join(rel);
-            if candidate.exists() {
-                return candidate;
-            }
-            if let Some(parent) = curr.parent() {
-                curr = parent;
-            } else {
-                break;
-            }
-        }
-    }
-    target.to_path_buf()
-}
-
-fn parse_zinc_csv(csv_path: &Path, max_rows: usize) -> Result<Vec<MoleculeSample>, String> {
-    let content = fs::read_to_string(csv_path)
-        .map_err(|e| format!("Failed to read {}: {}", csv_path.display(), e))?;
-
-    let mut records = Vec::new();
-    for (line_idx, line) in content.lines().enumerate() {
-        if line_idx == 0 || line.trim().is_empty() {
-            continue;
-        }
-        let parts: Vec<&str> = line.split(',').map(|s| s.trim()).collect();
-        if parts.len() < 23 {
-            continue;
-        }
-
-        let smiles = parts[0].to_string();
-        let mut features = Vec::with_capacity(19);
-        for &val_str in &parts[1..20] {
-            features.push(val_str.parse::<f64>().unwrap_or(0.0));
-        }
-
-        let log_p = parts[20].parse::<f64>().unwrap_or(0.0);
-        let qed = parts[21].parse::<f64>().unwrap_or(0.0);
-        let sas = if parts.len() > 22 {
-            parts[22].parse::<f64>().unwrap_or(0.0)
-        } else {
-            0.0
-        };
-
-        records.push(MoleculeSample {
-            smiles,
-            features,
-            log_p,
-            qed,
-            sas,
-        });
-
-        if records.len() >= max_rows {
-            break;
-        }
-    }
-
-    if records.is_empty() {
-        return Err(format!("No molecules parsed from {}", csv_path.display()));
-    }
-    Ok(records)
 }
 
 /// Pair index for (i, j) where i > j: pair_idx = i*(i-1)/2 + j
@@ -374,14 +264,14 @@ fn main() {
     );
 
     println!("[INIT] Loading training set...");
-    let train_samples = match parse_zinc_csv(&train_path, 10_000) {
+    let train_samples = match zinc_data::load(&train_path, 10_000) {
         Ok(s) => s,
         Err(e) => {
             // Try outputs/ fallback
             let fallback = resolve_workspace_path(
                 "tests/benchmarks/zinc_molecular/outputs/zinc_train_10k.csv",
             );
-            match parse_zinc_csv(&fallback, 10_000) {
+            match zinc_data::load(&fallback, 10_000) {
                 Ok(s) => s,
                 Err(_) => {
                     eprintln!("[-] Error: {}", e);
@@ -393,12 +283,12 @@ fn main() {
     println!("  -> Loaded {} training molecules.\n", train_samples.len());
 
     println!("[INIT] Loading test set...");
-    let test_samples = match parse_zinc_csv(&test_path, 2_000) {
+    let test_samples = match zinc_data::load(&test_path, 2_000) {
         Ok(s) => s,
         Err(e) => {
             let fallback =
                 resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_test_2k.csv");
-            match parse_zinc_csv(&fallback, 2_000) {
+            match zinc_data::load(&fallback, 2_000) {
                 Ok(s) => s,
                 Err(_) => {
                     eprintln!("[-] Error: {}", e);
@@ -881,7 +771,7 @@ fn main() {
     );
     let report = ZZCorrelatorReport {
         classical_baselines: classical_baselines.clone(),
-        timestamp_rfc3339: chrono_now(),
+        timestamp_rfc3339: utc_timestamp_rfc3339(),
         host_cpu: t1000::hostinfo::HostProfile::detect().label(),
         n_qubits: N_QUBITS,
         n_single_qubit_obs: N_QUBITS,
@@ -966,7 +856,7 @@ fn main() {
     enhanced_params.extend_from_slice(&b_78); // 3 biases
 
     let enhanced_ckpt = serde_json::json!({
-        "timestamp_rfc3339": chrono_now(),
+        "timestamp_rfc3339": utc_timestamp_rfc3339(),
         "n_qubits": N_QUBITS,
         "depth": 3,
         "circuit_params": 60,
@@ -988,18 +878,4 @@ fn main() {
     println!("\n=========================================================================");
     println!("  EXECUTION COMPLETE: 2-Body Entanglement Correlators Deployed          ");
     println!("=========================================================================");
-}
-
-fn chrono_now() -> String {
-    use std::time::SystemTime;
-    let now = SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs();
-    format!(
-        "2026-10-13T{:02}:{:02}:{:02}Z",
-        (now / 3600) % 24,
-        (now / 60) % 60,
-        now % 60
-    )
 }
