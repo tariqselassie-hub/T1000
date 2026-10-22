@@ -22,9 +22,11 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 use std::time::Instant;
-use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState};
 use t1000::zinc_data::{self};
-use t1000::zinc_training_common::{PrunedCheckpoint, QnnCheckpoint, resolve_workspace_path, utc_timestamp_rfc3339};
+use t1000::zinc_training_common::{
+    resolve_workspace_path, utc_timestamp_rfc3339, PrunedCheckpoint, QnnCheckpoint,
+};
+use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState};
 
 const N_QUBITS: usize = 12;
 const DIM: usize = 1 << N_QUBITS; // 4,096

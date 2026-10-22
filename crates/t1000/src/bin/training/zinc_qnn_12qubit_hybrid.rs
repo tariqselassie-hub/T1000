@@ -3,12 +3,14 @@ use std::env;
 use std::fs;
 use std::path::PathBuf;
 use std::time::Instant;
+use t1000::zinc_data::{self, ZincMolecule};
+use t1000::zinc_training_common::{
+    compute_state_norm, eval_all_z12, resolve_workspace_path, PropertyMetric, QnnCheckpoint,
+};
 use t1000::{
     adjoint_gradient, AdamOptimizer, CircuitAnsatz, DataEncodingLayer, EncodingKind,
     PauliObservable, QuantumState,
 };
-use t1000::zinc_data::{self, ZincMolecule};
-use t1000::zinc_training_common::{PropertyMetric, QnnCheckpoint, compute_state_norm, eval_all_z12, resolve_workspace_path};
 
 // Empirical ZINC 10k Target Distributions (Exact Mean & Std)
 const MU_LOGP: f64 = 2.4713;
@@ -1018,8 +1020,16 @@ fn main() {
     // Held-out relative MSE decides, mean Pearson r guards. Resumed runs carry their prior
     // epochs in the settings so they only compete with runs of the same history.
     let holdout = t1000::holdout_score::ZincHoldout::new(
-        [report.logp_metrics.tuned_mse, report.qed_metrics.tuned_mse, report.sas_metrics.tuned_mse],
-        [report.logp_metrics.pearson_r, report.qed_metrics.pearson_r, report.sas_metrics.pearson_r],
+        [
+            report.logp_metrics.tuned_mse,
+            report.qed_metrics.tuned_mse,
+            report.sas_metrics.tuned_mse,
+        ],
+        [
+            report.logp_metrics.pearson_r,
+            report.qed_metrics.pearson_r,
+            report.sas_metrics.pearson_r,
+        ],
         [&targets_logp, &targets_qed, &targets_sas],
     );
     let settings = format!(

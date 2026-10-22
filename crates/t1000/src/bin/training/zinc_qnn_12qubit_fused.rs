@@ -14,9 +14,9 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::time::Instant;
-use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState};
 use t1000::zinc_data::{self, ZincMolecule};
-use t1000::zinc_training_common::{QnnCheckpoint, eval_all_z12, resolve_workspace_path};
+use t1000::zinc_training_common::{eval_all_z12, resolve_workspace_path, QnnCheckpoint};
+use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState};
 
 const N_QUBITS: usize = 12;
 const DIM: usize = 1 << N_QUBITS; // 4,096
@@ -71,7 +71,10 @@ fn main() {
     println!(" Operator Identity : <Z_q>_final = cos(θ_q) <Z_q>_L2 - sin(θ_q) <X_q>_L2");
     println!(" Memory Traffic    : 768 KB Write Traffic -> 0 KB Statevector Mutation in L3");
     println!(" State Evolution   : Stops at Gate 72 (Layer 2) | Dual AVX2 Read-Only POVM");
-    println!(" Target Hardware   : {}", t1000::hostinfo::HostProfile::detect().label());
+    println!(
+        " Target Hardware   : {}",
+        t1000::hostinfo::HostProfile::detect().label()
+    );
     println!("=========================================================================\n");
 
     let test_path =

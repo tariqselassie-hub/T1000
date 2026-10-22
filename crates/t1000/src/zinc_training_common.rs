@@ -31,7 +31,9 @@ use std::time::{SystemTime, UNIX_EPOCH};
 /// Workspace root: `crates/t1000` -> `crates` -> workspace.
 fn workspace_root() -> Option<PathBuf> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).ancestors().nth(2)?;
-    root.join("Cargo.toml").is_file().then(|| root.to_path_buf())
+    root.join("Cargo.toml")
+        .is_file()
+        .then(|| root.to_path_buf())
 }
 
 /// Resolves a workspace-relative path such as `tests/benchmarks/zinc_molecular/...`.
@@ -418,9 +420,13 @@ mod tests {
     #[test]
     fn ridge_recovers_an_exact_linear_map() {
         // y = 2 x0 - x1 + 0.5 and y' = -x0 + 3, no noise, tiny lambda.
-        let xs: Vec<Vec<f64>> = (0..20).map(|i| vec![i as f64 * 0.1, (i % 7) as f64]).collect();
-        let ys: Vec<Vec<f64>> =
-            xs.iter().map(|x| vec![2.0 * x[0] - x[1] + 0.5, -x[0] + 3.0]).collect();
+        let xs: Vec<Vec<f64>> = (0..20)
+            .map(|i| vec![i as f64 * 0.1, (i % 7) as f64])
+            .collect();
+        let ys: Vec<Vec<f64>> = xs
+            .iter()
+            .map(|x| vec![2.0 * x[0] - x[1] + 0.5, -x[0] + 3.0])
+            .collect();
         let (w, b) = solve_ridge_regression(&xs, &ys, 1e-12);
         assert!((w[0][0] - 2.0).abs() < 1e-6 && (w[1][0] + 1.0).abs() < 1e-6);
         assert!((b[0] - 0.5).abs() < 1e-6 && (b[1] - 3.0).abs() < 1e-6);

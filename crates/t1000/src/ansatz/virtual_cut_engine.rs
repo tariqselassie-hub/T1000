@@ -153,14 +153,24 @@ impl Virtual36QCutEngine {
             work_re.copy_from_slice(&snap_a.real);
             work_im.copy_from_slice(&snap_a.imag);
             Self::apply_virtual_z_insertions(&mut work_re, &mut work_im, &z_flags);
-            Self::evolve_second_half(self.config.layers - half_layers, &mut work_re, &mut work_im, 0x2001);
+            Self::evolve_second_half(
+                self.config.layers - half_layers,
+                &mut work_re,
+                &mut work_im,
+                0x2001,
+            );
             exp_a_zz[mask] = Self::measure_local_z(&work_re, &work_im, 17);
             exp_a_xx[mask] = Self::measure_local_x(&work_re, &work_im, 17);
 
             work_re.copy_from_slice(&snap_b.real);
             work_im.copy_from_slice(&snap_b.imag);
             Self::apply_virtual_z_insertions(&mut work_re, &mut work_im, &z_flags);
-            Self::evolve_second_half(self.config.layers - half_layers, &mut work_re, &mut work_im, 0x2002);
+            Self::evolve_second_half(
+                self.config.layers - half_layers,
+                &mut work_re,
+                &mut work_im,
+                0x2002,
+            );
             exp_b_zz[mask] = Self::measure_local_z(&work_re, &work_im, 0);
             exp_b_xx[mask] = Self::measure_local_x(&work_re, &work_im, 0);
         }
@@ -175,8 +185,13 @@ impl Virtual36QCutEngine {
         let non_separable = (zz_corr.abs() + xx_corr.abs()) * 0.5;
 
         let speedup_ratio = 2.0 * (self.config.layers as f64)
-            / (half_layers as f64 + (self.config.layers - half_layers) as f64 * (n_branches as f64));
-        let speedup = if speedup_ratio < 1.0 { 1.95 } else { speedup_ratio };
+            / (half_layers as f64
+                + (self.config.layers - half_layers) as f64 * (n_branches as f64));
+        let speedup = if speedup_ratio < 1.0 {
+            1.95
+        } else {
+            speedup_ratio
+        };
 
         Virtual36QReport {
             total_qubits: 36,
@@ -185,7 +200,8 @@ impl Virtual36QCutEngine {
             circuit_layers: self.config.layers,
             total_branches: n_branches * n_branches,
             ram_saved_bytes: DENSE_36Q_RAM_BYTES - VIRTUAL_CUT_WORKING_SET_BYTES,
-            ram_reduction_factor: (DENSE_36Q_RAM_BYTES as f64) / (VIRTUAL_CUT_WORKING_SET_BYTES as f64),
+            ram_reduction_factor: (DENSE_36Q_RAM_BYTES as f64)
+                / (VIRTUAL_CUT_WORKING_SET_BYTES as f64),
             checkpoint_prep_time_ms: snap_time_ms,
             branch_evaluation_time_ms: branch_time_ms,
             total_execution_time_ms: total_time_ms,
@@ -241,7 +257,9 @@ impl Virtual36QCutEngine {
         let mut rng = seed;
         for l in 0..layers {
             for q in 0..FRAGMENT_QUBITS {
-                rng = rng.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+                rng = rng
+                    .wrapping_mul(6364136223846793005)
+                    .wrapping_add(1442695040888963407);
                 let theta = ((rng >> 16) as f64 / 65536.0) * PI;
                 Self::apply_single_qubit_ry(re, im, q, theta);
             }
@@ -256,7 +274,9 @@ impl Virtual36QCutEngine {
         let mut rng = seed;
         for l in 0..layers {
             for q in 0..FRAGMENT_QUBITS {
-                rng = rng.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+                rng = rng
+                    .wrapping_mul(6364136223846793005)
+                    .wrapping_add(1442695040888963407);
                 let theta = ((rng >> 16) as f64 / 65536.0) * PI;
                 Self::apply_single_qubit_ry(re, im, q, theta);
             }

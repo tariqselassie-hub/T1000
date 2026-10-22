@@ -5,13 +5,11 @@
 //! mid-circuit feed-forward, data re-uploading, and DAG compilation.
 
 use super::layers::{apply_single_qubit_ry, entangling_pairs, PiPhaseLayer};
-use super::pre_init::{
-    apply_alt_bell_ghz, apply_bell_ghz, apply_iqft, apply_qft, PreInitCircuit,
-};
+use super::pre_init::{apply_alt_bell_ghz, apply_bell_ghz, apply_iqft, apply_qft, PreInitCircuit};
 use crate::state::QuantumState;
+use rand::Rng;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
-use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 /// Canonical Hardware-Efficient Parameterized Circuit Ansatz (W(θ)).
@@ -438,12 +436,7 @@ impl CircuitAnsatz {
         let p_start = (self.depth - 1) * 2 * self.n_qubits;
         let n_eval = z_final.len();
         let theta_y = &pruned_weights[p_start..p_start + n_eval];
-        crate::simd::measure_fused_ry_z_readout(
-            &out_state.real,
-            &out_state.imag,
-            theta_y,
-            z_final,
-        );
+        crate::simd::measure_fused_ry_z_readout(&out_state.real, &out_state.imag, theta_y, z_final);
 
         m_src
     }
@@ -472,7 +465,11 @@ impl CircuitAnsatz {
         let n_feats = features.len();
 
         for q in 0..self.n_qubits {
-            let feat_val = if q < n_feats { features[q] * inv_norm } else { 0.0 };
+            let feat_val = if q < n_feats {
+                features[q] * inv_norm
+            } else {
+                0.0
+            };
             let scale = upload_scales_l0.get(q).copied().unwrap_or(0.0);
             if scale.abs() > 1e-12 {
                 apply_single_qubit_ry(state, q, scale * feat_val);
@@ -523,7 +520,11 @@ impl CircuitAnsatz {
         let n_feats = features.len();
 
         for q in 0..self.n_qubits {
-            let feat_val = if q < n_feats { features[q] * inv_norm } else { 0.0 };
+            let feat_val = if q < n_feats {
+                features[q] * inv_norm
+            } else {
+                0.0
+            };
             let scale = upload_scales_l0.get(q).copied().unwrap_or(0.0);
             if scale.abs() > 1e-12 {
                 apply_single_qubit_ry(state, q, scale * feat_val);
@@ -621,7 +622,10 @@ impl CircuitAnsatz {
         );
 
         let mut theta_ry = [0.0f64; 64];
-        assert!(n <= theta_ry.len(), "{n} qubits exceed the layer angle buffer");
+        assert!(
+            n <= theta_ry.len(),
+            "{n} qubits exceed the layer angle buffer"
+        );
         for (q, t) in theta_ry.iter_mut().enumerate().take(n) {
             *t = weights[p_start + 2 * q];
         }

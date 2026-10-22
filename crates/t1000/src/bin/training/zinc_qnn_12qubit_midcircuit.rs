@@ -16,9 +16,12 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::time::Instant;
-use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState};
 use t1000::zinc_data::{self, ZincMolecule};
-use t1000::zinc_training_common::{MidCircuitCheckpoint, PrunedCheckpoint, compute_mae_and_r2, resolve_workspace_path, solve_ridge_regression, utc_timestamp_rfc3339};
+use t1000::zinc_training_common::{
+    compute_mae_and_r2, resolve_workspace_path, solve_ridge_regression, utc_timestamp_rfc3339,
+    MidCircuitCheckpoint, PrunedCheckpoint,
+};
+use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState};
 
 const N_QUBITS: usize = 12;
 const DIM: usize = 1 << N_QUBITS; // 4,096

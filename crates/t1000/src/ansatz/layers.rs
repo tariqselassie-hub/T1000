@@ -26,10 +26,7 @@ pub fn apply_single_qubit_ry(state: &mut QuantumState, qubit: usize, theta: f64)
 /// Each unordered pair is yielded exactly once. When `2 * stride == n` the naive ring visits
 /// every pair twice (e.g. `(0, 8)` and `(8, 0)` for 16 qubits) and the two CZs cancel, so only
 /// the first `stride` qubits emit a pair. A stride that wraps to 0 (n divides it) emits nothing.
-pub fn entangling_pairs(
-    n_qubits: usize,
-    layer_idx: usize,
-) -> impl Iterator<Item = (usize, usize)> {
+pub fn entangling_pairs(n_qubits: usize, layer_idx: usize) -> impl Iterator<Item = (usize, usize)> {
     let stride = (1usize << (layer_idx % 4)) % n_qubits.max(1);
     let count = match stride {
         0 => 0,
@@ -63,7 +60,12 @@ impl VariationalQuantumLayer {
 
     /// Deterministic layer initialised from `seed`.
     pub fn new_seeded(dim: usize, dt: f64, entangle_coupling: f64, seed: u64) -> Self {
-        Self::from_rng(dim, dt, entangle_coupling, &mut ChaCha8Rng::seed_from_u64(seed))
+        Self::from_rng(
+            dim,
+            dt,
+            entangle_coupling,
+            &mut ChaCha8Rng::seed_from_u64(seed),
+        )
     }
 
     /// Layer initialised from a caller-supplied RNG (lets stacked layers share one stream).
@@ -71,8 +73,7 @@ impl VariationalQuantumLayer {
         let phase_weights: Vec<f64> = (0..dim)
             .map(|_| rng.gen_range(-std::f64::consts::PI..std::f64::consts::PI))
             .collect();
-        let hamiltonian_energies: Vec<f64> =
-            (0..dim).map(|_| rng.gen_range(-1.0..1.0)).collect();
+        let hamiltonian_energies: Vec<f64> = (0..dim).map(|_| rng.gen_range(-1.0..1.0)).collect();
 
         Self {
             dim,
@@ -116,7 +117,11 @@ impl VariationalQuantumLayer {
                 - std::f64::consts::PI;
         }
 
-        for (e, &g) in self.hamiltonian_energies.iter_mut().zip(energy_grads.iter()) {
+        for (e, &g) in self
+            .hamiltonian_energies
+            .iter_mut()
+            .zip(energy_grads.iter())
+        {
             *e -= lr * g;
             *e = e.clamp(-10.0, 10.0);
         }

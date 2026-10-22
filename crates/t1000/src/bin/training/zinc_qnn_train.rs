@@ -1,13 +1,13 @@
 use serde::{Deserialize, Serialize};
-use t1000::calibration::AffineFit;
 use std::env;
 use std::time::Instant;
+use t1000::calibration::AffineFit;
+use t1000::zinc_data::{self, ZincMolecule};
+use t1000::zinc_training_common::{compute_state_norm, resolve_workspace_path, PropertyMetric};
 use t1000::{
     adjoint_gradient, AdamOptimizer, CircuitAnsatz, DataEncodingLayer, EncodingKind,
     PauliObservable, QuantumState,
 };
-use t1000::zinc_data::{self, ZincMolecule};
-use t1000::zinc_training_common::{PropertyMetric, compute_state_norm, resolve_workspace_path};
 
 // Empirical ZINC 10k Target Distributions (Exact Mean & Std)
 const MU_LOGP: f64 = 2.4713;
@@ -309,9 +309,18 @@ fn main() {
     // Readout head: prediction_k = intercept_k + slope_k * <Z_k>. The default is the fixed
     // (mu, sigma) head; --calibrated-head refits it by least squares on the training set.
     let fixed_head = [
-        AffineFit { slope: SIGMA_LOGP, intercept: MU_LOGP },
-        AffineFit { slope: SIGMA_QED, intercept: MU_QED },
-        AffineFit { slope: SIGMA_SAS, intercept: MU_SAS },
+        AffineFit {
+            slope: SIGMA_LOGP,
+            intercept: MU_LOGP,
+        },
+        AffineFit {
+            slope: SIGMA_QED,
+            intercept: MU_QED,
+        },
+        AffineFit {
+            slope: SIGMA_SAS,
+            intercept: MU_SAS,
+        },
     ];
     let mut head = fixed_head;
     let fit_head = |weights: &[f64], state: &mut QuantumState, n: usize| -> [AffineFit; 3] {
@@ -526,12 +535,32 @@ fn main() {
     let r_sas = t1000::calibration::pearson_r(&tuned_preds_sas, &targets_sas);
 
     // Post-hoc affine calibration of the circuit readouts: fit on training molecules only.
-    let train_z = collect_readouts(&train_samples, &encoding, &ansatz, &opt_weights, &mut out_state);
-    let test_z = collect_readouts(&test_samples, &encoding, &ansatz, &opt_weights, &mut out_state);
-    let train_y: Vec<[f64; 3]> = train_samples.iter().map(|m| [m.log_p, m.qed, m.sas]).collect();
-    let test_y: Vec<[f64; 3]> = test_samples.iter().map(|m| [m.log_p, m.qed, m.sas]).collect();
-    t1000::calibration::calibrate(&train_z, &train_y, &test_z, &test_y)
-        .print_table([tuned_mse_logp, tuned_mse_qed, tuned_mse_sas], train_samples.len());
+    let train_z = collect_readouts(
+        &train_samples,
+        &encoding,
+        &ansatz,
+        &opt_weights,
+        &mut out_state,
+    );
+    let test_z = collect_readouts(
+        &test_samples,
+        &encoding,
+        &ansatz,
+        &opt_weights,
+        &mut out_state,
+    );
+    let train_y: Vec<[f64; 3]> = train_samples
+        .iter()
+        .map(|m| [m.log_p, m.qed, m.sas])
+        .collect();
+    let test_y: Vec<[f64; 3]> = test_samples
+        .iter()
+        .map(|m| [m.log_p, m.qed, m.sas])
+        .collect();
+    t1000::calibration::calibrate(&train_z, &train_y, &test_z, &test_y).print_table(
+        [tuned_mse_logp, tuned_mse_qed, tuned_mse_sas],
+        train_samples.len(),
+    );
 
     println!(
         "  Evaluation Time      : {:>8.2} ms ({} molecules)",
@@ -669,7 +698,11 @@ fn main() {
         let settings = format!(
             "qubits={n_qubits};depth={depth};epochs={num_epochs};batch={batch_size};lr={lr};\
              head={};train={};test={}",
-            if calibrated_head { "calibrated" } else { "fixed" },
+            if calibrated_head {
+                "calibrated"
+            } else {
+                "fixed"
+            },
             train_samples.len(),
             test_samples.len()
         );

@@ -12,9 +12,9 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::time::Instant;
-use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState};
 use t1000::zinc_data::{self, ZincMolecule};
-use t1000::zinc_training_common::{QnnCheckpoint, eval_all_z12, resolve_workspace_path};
+use t1000::zinc_training_common::{eval_all_z12, resolve_workspace_path, QnnCheckpoint};
+use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState};
 
 const N_QUBITS: usize = 12;
 const DIM: usize = 1 << N_QUBITS; // 4,096
@@ -65,7 +65,11 @@ fn main() {
     println!(" Target Circuit : 12 Qubits (dim=4,096 | 64 KB L2 Cache) | Depth = 3");
     println!(" Pruning Target : 111 Parameters (108 Gates) -> 99 Parameters (84 Gates)");
     let host = t1000::hostinfo::HostProfile::detect();
-    println!(" Hardware Host  : {} | {:.1} GB RAM", host.label(), host.ram_gb);
+    println!(
+        " Hardware Host  : {} | {:.1} GB RAM",
+        host.label(),
+        host.ram_gb
+    );
     println!("=========================================================================\n");
 
     let test_path =

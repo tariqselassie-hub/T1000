@@ -31,11 +31,9 @@ pub use layers::{
     entangling_pairs, DeepQuantumNeuralNetwork, PiPhaseLayer, RademacherPhaseLayer,
     VariationalQuantumLayer,
 };
-pub use pre_init::{
-    apply_alt_bell_ghz, apply_bell_ghz, apply_iqft, apply_qft, PreInitCircuit,
-};
+pub use pre_init::{apply_alt_bell_ghz, apply_bell_ghz, apply_iqft, apply_qft, PreInitCircuit};
 pub use reupload::DualAxisEncoder;
 pub use virtual_cut_engine::{
-    FragmentSnapshot, Virtual36QCutEngine, Virtual36QReport, VirtualCutConfig,
-    DENSE_36Q_RAM_BYTES, FRAGMENT_DIM, FRAGMENT_QUBITS, VIRTUAL_CUT_WORKING_SET_BYTES,
+    FragmentSnapshot, Virtual36QCutEngine, Virtual36QReport, VirtualCutConfig, DENSE_36Q_RAM_BYTES,
+    FRAGMENT_DIM, FRAGMENT_QUBITS, VIRTUAL_CUT_WORKING_SET_BYTES,
 };
