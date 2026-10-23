@@ -79,6 +79,21 @@ runs; the root `results/` files come from the reference host.
   models. The trained 12-qubit circuit on ZINC has weak holdout correlation (logP Pearson r between
   −0.15 and 0.49 in the committed runs).
 
+## Hardware check of the FPGA design (2026-10-23)
+
+`scripts/fpga/verify_1000_qpu.py` against the `fpga/1000_qpu/build/1000_qpu.bit` bitstream on the
+Basys 3 (`COM6`, 3 Mbaud):
+
+| Check | Result |
+| :--- | :--- |
+| Ping `0xAA` → `0x10`, single layer `0x10` → `0xEE`, recovery after unknown opcodes | Pass (20 of 20). |
+| Autonomous layers `0x20` | Acknowledged. Measured 8.48 µs per layer (difference of means, depth 255 vs 1), against the 10.24 µs expected from 1,024 cycles at 100 MHz; the 17 % gap is unexplained. |
+| Entropy stream `0x30` | Streams at ~4,200 seeds/s as documented, but **every seed is the same counter `00 01 02 … 1f`**: 1 distinct seed in 128, 31 % ones, 5.0 bits/byte. The README's NIST SP 800-22 statement (§ 6, § 7 of `docs/fpga_architecture.md`) does not hold for this bitstream. |
+
+Cause: `qpu_bram_matrix.v` has no initial contents and `qpu_top.v` has no opcode to load or read
+back the statevector, so the layers act on an all-zero state and the entropy register only folds in
+the harvest index. The handshake and timing are real; the computation is not yet meaningful.
+
 ## Not checked
 
 The README quantities with no committed result file are not covered: FPGA figures (§ 6), the Q-SSM

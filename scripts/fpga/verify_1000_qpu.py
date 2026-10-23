@@ -13,8 +13,8 @@ It speaks only the opcodes the RTL implements (`fpga/1000_qpu/rtl/qpu_top.v`):
     0x20 <depth>    autonomous layers      -> 0xEE
     0x30 <depth> <count lo> <count hi>     -> count x 32 bytes of seed, then 0xEE
 
-Stages: 0 port and passive listen, 1 ping, 2 single layer, 3 multi-layer timing (a straight line in
-the depth whose slope is the per-layer cost), 4 entropy stream (length, distinct seeds, bit balance),
+Stages: 0 port and passive listen, 1 ping, 2 single layer, 3 multi-layer timing (per-layer cost from the
+difference of means at depth 255 and depth 1), 4 entropy stream (length, distinct seeds, bit balance),
 5 recovery after an unknown opcode. Nothing is written to the FPGA configuration. The report is
 printed and saved to results/fpga_runs/verify_1000_qpu.json. Exit status 0 means every stage passed.
 
@@ -134,30 +134,34 @@ def linear_fit(xs, ys):
     return slope, intercept, 1.0 - ss_res / ss_tot
 
 
-def stage_multilayer(ser, depths, reps):
+def stage_multilayer(ser, reps):
+    """Per-layer cost from the difference of means at depth 255 and depth 1.
+
+    The USB-serial bridge returns data in 1 ms ticks, so a single timing is quantised to about a
+    millisecond; averaging many repetitions of the shortest and longest command recovers the
+    sub-millisecond slope.
+    """
     s = Stage("3 autonomous layers 0x20 <depth> -> 0xEE, timing")
-    points = []
-    for depth in depths:
+    means = {}
+    for depth in (1, 255):
         times = []
         for _ in range(reps):
             data, dt = exchange(ser, [MULTI, depth], 1)
             if data != bytes([ACK]):
                 return s.finish(False, failed_depth=depth, got=data.hex())
             times.append(dt * 1e6)
-        points.append((depth, statistics.median(times)))
-    slope, intercept, r2 = linear_fit([p[0] for p in points], [p[1] for p in points])
+        means[depth] = (statistics.mean(times), statistics.pstdev(times))
+    slope = (means[255][0] - means[1][0]) / 254.0
     s.details.update(
-        points_us={d: round(t, 1) for d, t in points},
+        mean_us_depth_1=round(means[1][0], 1),
+        mean_us_depth_255=round(means[255][0], 1),
         slope_us_per_layer=round(slope, 3),
         fabric_expected_us=LAYER_US,
-        overhead_us=round(intercept, 1),
-        r_squared=round(r2, 5),
+        implied_cycles_per_layer_at_100MHz=round(slope * CLOCK_MHZ),
     )
-    # Pure fabric time per layer is 10.24 us; allow a few percent of slack for the fixed-latency
-    # pipeline fill between layers. A slope far from it means the layers are not 1,024-cycle passes.
-    ok = 0.9 * LAYER_US <= slope <= 1.2 * LAYER_US and r2 > 0.99
+    ok = 0.9 * LAYER_US <= slope <= 1.2 * LAYER_US
     if not ok:
-        s.notes.append("time per layer is not a straight line near 10.24 us")
+        s.notes.append("time per layer is not within 10% of the 1,024-cycle fabric cost (10.24 us)")
     return s.finish(ok)
 
 
@@ -219,7 +223,7 @@ def run(args):
         ser.close()
         return stages  # nothing else can work without a reply
     stages.append(stage_layer(ser, 5 if args.quick else 20))
-    stages.append(stage_multilayer(ser, [1, 4, 16, 64, 255], 3 if args.quick else 7))
+    stages.append(stage_multilayer(ser, 15 if args.quick else 60))
     stages.append(stage_entropy(ser, 12, 16 if args.quick else 128))
     stages.append(stage_recovery(ser))
     ser.close()
