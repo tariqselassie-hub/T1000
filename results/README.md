@@ -24,6 +24,7 @@ results/
 
 | Monograph | Figure Name | Subsystem & Scientific Focus | Resolution / Telemetry |
 | :---: | :--- | :--- | :--- |
+| **M158** | **`directed_heptal_quantum_walk.png`** | Directed 7-Node Graph Szegedy Quantum Walk Operator & DFS Dark State Retention | 300 DPI, 4 panels (`results/data/directed_heptal_quantum_walk_report.json`) |
 | **M156** | **`qm9_magic_w7_training_dynamics.png`** | Universal FT-QNN Training: Magic State Distillation & Transversal [[7, 1, 3]] Steane-Wheel QEC | 300 DPI, 4 panels (`results/data/qm9_magic_w7_training_report.json`) |
 | **M155** | **`virtual_36q_cut_bridge_dynamics.png`** | 36-Qubit Virtual Cut-Bridge & Heterogeneous Co-Processor Pipeline ($131,072\times$ L3 Compression) | 300 DPI, 4 panels (`results/data/virtual_36q_cut_bridge_report.json`) |
 | **M154** | **`qm9_continuous_walk_screening.png`** | Continuous Topological Walk on Ab Initio Coulomb Laplacians & AVX-VNNI Zeno Confinement | 300 DPI, 4 panels (`results/data/qm9_continuous_walk_screening.json`) |

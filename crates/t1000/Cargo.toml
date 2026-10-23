@@ -279,6 +279,10 @@ name = "cepheus_glued_trees_bench"
 path = "src/bin/benchmarks/cepheus_glued_trees_bench.rs"
 
 [[bin]]
+name = "directed_szegedy_walk_bench"
+path = "src/bin/benchmarks/directed_szegedy_walk_bench.rs"
+
+[[bin]]
 name = "qgnn_molecular_bench"
 path = "src/bin/training/qgnn_molecular_bench.rs"
 

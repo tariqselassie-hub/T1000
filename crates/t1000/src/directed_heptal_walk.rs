@@ -338,6 +338,185 @@ impl DirectedHeptalQuantumWalk {
     }
 }
 
+/// 49-Dimensional Bipartite Szegedy Walk Operator ($W_{49} = \mathcal{R}_B \mathcal{R}_A$) on $\mathcal{H}_7 \otimes \mathcal{H}_7$.
+///
+/// Implements the exact unitary quantization of the non-reversible 7-node Markov chain:
+/// - $\Pi_A = \sum_{i=1}^7 |\psi_i\rangle\langle\psi_i|$ with $|\psi_i\rangle = |i\rangle \otimes \sum_j \sqrt{P_{ij}} |j\rangle$
+/// - $\Pi_B = \sum_{j=1}^7 |\phi_j\rangle\langle\phi_j|$ with $|\phi_j\rangle = \sum_i \sqrt{P^*_{ji}} |i\rangle \otimes |j\rangle$
+/// - $\mathcal{R}_A = 2\Pi_A - I_{49}, \quad \mathcal{R}_B = 2\Pi_B - I_{49}$
+/// - $W_{49} = \mathcal{R}_B \mathcal{R}_A$ (strictly unitary, $W_{49}^T W_{49} = I_{49}$).
+#[derive(Debug, Clone)]
+pub struct BipartiteSzegedyWalk {
+    /// Time-reversed dual transition matrix $P^*_{ji} = \frac{\pi_i P_{ij}}{\pi_j}$.
+    pub p_star: [[f64; 7]; 7],
+    /// 49x49 Unitary Szegedy walk evolution matrix $W_{49} = \mathcal{R}_B \mathcal{R}_A$.
+    pub w_49: [[f64; 49]; 49],
+    /// 49-dimensional quantum state vector.
+    pub state: [f64; 49],
+}
+
+impl Default for BipartiteSzegedyWalk {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl BipartiteSzegedyWalk {
+    /// Constructs and initializes the 49x49 Bipartite Szegedy Walk operator.
+    pub fn new() -> Self {
+        let p = DIRECTED_HEPTAL_P;
+        let pi = STATIONARY_PI;
+
+        // 1. Construct dual matrix P^*_{ji} = (pi_i * P_{ij}) / pi_j
+        let mut p_star = [[0.0f64; 7]; 7];
+        for i in 0..7 {
+            for j in 0..7 {
+                if p[i][j] > 0.0 {
+                    p_star[j][i] = (pi[i] * p[i][j]) / pi[j];
+                }
+            }
+        }
+
+        // 2. Build projectors Pi_A and Pi_B
+        let mut pi_a = [[0.0f64; 49]; 49];
+        let mut pi_b = [[0.0f64; 49]; 49];
+
+        for i in 0..7 {
+            let mut psi_i = [0.0f64; 49];
+            for j in 0..7 {
+                psi_i[7 * i + j] = p[i][j].sqrt();
+            }
+            for r in 0..49 {
+                for c in 0..49 {
+                    pi_a[r][c] += psi_i[r] * psi_i[c];
+                }
+            }
+        }
+
+        for j in 0..7 {
+            let mut phi_j = [0.0f64; 49];
+            for i in 0..7 {
+                phi_j[7 * i + j] = p_star[j][i].sqrt();
+            }
+            for r in 0..49 {
+                for c in 0..49 {
+                    pi_b[r][c] += phi_j[r] * phi_j[c];
+                }
+            }
+        }
+
+        // 3. Build reflections R_A = 2*Pi_A - I, R_B = 2*Pi_B - I
+        let mut r_a = [[0.0f64; 49]; 49];
+        let mut r_b = [[0.0f64; 49]; 49];
+        for r in 0..49 {
+            for c in 0..49 {
+                let delta = if r == c { 1.0 } else { 0.0 };
+                r_a[r][c] = 2.0 * pi_a[r][c] - delta;
+                r_b[r][c] = 2.0 * pi_b[r][c] - delta;
+            }
+        }
+
+        // 4. Multiply W_49 = R_B * R_A
+        let mut w_49 = [[0.0f64; 49]; 49];
+        for r in 0..49 {
+            for k in 0..49 {
+                let rb_rk = r_b[r][k];
+                if rb_rk.abs() > 1e-15 {
+                    for c in 0..49 {
+                        w_49[r][c] += rb_rk * r_a[k][c];
+                    }
+                }
+            }
+        }
+
+        Self {
+            p_star,
+            w_49,
+            state: [0.0f64; 49],
+        }
+    }
+
+    /// Measures the deviation of $W_{49}$ from strict unitarity: $\|W^T W - I\|_{\max}$.
+    pub fn unitarity_error(&self) -> f64 {
+        let mut max_err = 0.0f64;
+        for r in 0..49 {
+            for c in 0..49 {
+                let mut dot = 0.0;
+                for k in 0..49 {
+                    dot += self.w_49[k][r] * self.w_49[k][c];
+                }
+                let delta = if r == c { 1.0 } else { 0.0 };
+                let err = (dot - delta).abs();
+                if err > max_err {
+                    max_err = err;
+                }
+            }
+        }
+        max_err
+    }
+
+    /// Sets the state to localized outgoing basis state $|\psi_{\text{node}}\rangle = |\text{node}\rangle \otimes \sum_j \sqrt{P_{\text{node}, j}} |j\rangle$.
+    pub fn set_localized(&mut self, node: usize) {
+        assert!(node < 7, "Node out of bounds");
+        self.state = [0.0f64; 49];
+        for j in 0..7 {
+            self.state[7 * node + j] = DIRECTED_HEPTAL_P[node][j].sqrt();
+        }
+    }
+
+    /// Sets the state to the exact stationary Szegedy eigenvector $|\psi_\pi\rangle = \sum_{i,j} \sqrt{\pi_i P_{ij}} |i, j\rangle$.
+    pub fn set_stationary_state(&mut self) {
+        let pi = STATIONARY_PI;
+        let p = DIRECTED_HEPTAL_P;
+        for i in 0..7 {
+            for j in 0..7 {
+                self.state[7 * i + j] = (pi[i] * p[i][j]).sqrt();
+            }
+        }
+    }
+
+    /// Advances the 49-amplitude statevector by one unitary Szegedy step: $|\psi_{t+1}\rangle = W_{49} |\psi_t\rangle$.
+    #[inline(always)]
+    pub fn step(&mut self) {
+        let mut next = [0.0f64; 49];
+        for r in 0..49 {
+            let mut acc = 0.0;
+            for c in 0..49 {
+                acc += self.w_49[r][c] * self.state[c];
+            }
+            next[r] = acc;
+        }
+        self.state = next;
+    }
+
+    /// Extracts detection probabilities across the 7 graph nodes by tracing out the target register:
+    /// $$p_i = \sum_{j=0}^6 |\psi(i, j)|^2$$
+    #[inline]
+    pub fn node_probabilities(&self) -> [f64; 7] {
+        let mut p = [0.0f64; 7];
+        for i in 0..7 {
+            let mut sum = 0.0;
+            for j in 0..7 {
+                let amp = self.state[7 * i + j];
+                sum += amp * amp;
+            }
+            p[i] = sum;
+        }
+        p
+    }
+
+    /// Extracts total probability residing in the hub $v_1$ (row 0).
+    #[inline]
+    pub fn hub_leakage(&self) -> f64 {
+        let mut sum = 0.0;
+        for j in 0..7 {
+            let amp = self.state[j];
+            sum += amp * amp;
+        }
+        sum
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -468,4 +647,54 @@ mod tests {
         let ent = ctqw.entropy();
         assert!(ent > 0.0, "Entropy should be positive after ballistic transit");
     }
+
+    #[test]
+    fn test_szegedy_unitarity_machine_precision() {
+        let walk = BipartiteSzegedyWalk::new();
+        let err = walk.unitarity_error();
+        assert!(
+            err < 1e-13,
+            "Szegedy W_49 operator violated unitarity: error = {}",
+            err
+        );
+    }
+
+    #[test]
+    fn test_szegedy_stationary_eigenvector_invariance() {
+        let mut walk = BipartiteSzegedyWalk::new();
+        walk.set_stationary_state();
+        let initial_state = walk.state;
+        walk.step();
+
+        let mut diff_sq = 0.0;
+        for i in 0..49 {
+            let d = walk.state[i] - initial_state[i];
+            diff_sq += d * d;
+        }
+        assert!(
+            diff_sq.sqrt() < 1e-12,
+            "Stationary state |psi_pi> not an invariant eigenvector of W_49: residual = {}",
+            diff_sq.sqrt()
+        );
+    }
+
+    #[test]
+    fn test_dark_state_exact_zero_hub_leakage() {
+        let router = DirectedHeptalRouter::new();
+        // Antisymmetric dark mode on v3 - v6: 1/sqrt(2) * [0, 0, 1, 0, 0, -1, 0]
+        let dark_mode = [0.0, 0.0, 1.0 / 2.0f64.sqrt(), 0.0, 0.0, -1.0 / 2.0f64.sqrt(), 0.0];
+        let mut state = dark_mode;
+
+        for step in 0..10 {
+            state = router.step_distribution(&state);
+            // Hub v1 is at index 0
+            assert!(
+                state[0].abs() < 1e-15,
+                "Dark state leaked into Hub v1 at step {}: {}",
+                step,
+                state[0]
+            );
+        }
+    }
 }
+
