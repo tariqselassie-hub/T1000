@@ -97,7 +97,7 @@ acted on an all-zero state, and the earlier README statements on NIST SP 800-22 
 | Fixed-point precision (`qpu_precision`) | UCCSD energy error against double precision is at most 1.2e-4 mHa at 24 fractional bits for every molecule up to 14 qubits (chemical accuracy: 1.59 mHa); CH4 (16 qubits) does not fit. |
 | RTL against the model in Vivado xsim (`sim/run_sim.py`) | PASS: 2,536 of 2,536 reply bytes equal the model's for the 13,577-byte golden stream. |
 | Vivado 2026.1 implementation | Slack +0.372 ns at 100 MHz; 1,904 LUTs, 1,614 registers, 32 BRAM36, 40 DSP48E1. |
-| Board (`scripts/fpga/verify_1000_qpu.py`) | Not yet run on the board with this bitstream. |
+| Board (`scripts/fpga/verify_1000_qpu.py`, Basys 3 on `COM6`, 3 Mbaud, 2026-10-23) | PASS: the 2,536 reply bytes of the golden stream match the model, and so do the 5,885 reply bytes of the stream extended with the full LiH UCCSD circuit (3,152 gates, 127,095 stimulus bytes). 400 gates at 14 qubits took 121.9 µs each, against a 120.0 µs UART floor and 81.9 µs of fabric time. |
 
 ## Not checked
 
