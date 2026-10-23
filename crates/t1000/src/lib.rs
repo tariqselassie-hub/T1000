@@ -56,6 +56,7 @@ pub mod plaquette;
 pub mod polynomial;
 pub mod protocol;
 pub mod qec;
+pub mod qpu;
 pub mod qm9_data;
 pub mod qgnn;
 pub mod qssm;
