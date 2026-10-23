@@ -1,0 +1,516 @@
+{
+  "resources": [
+    {
+      "by_profile": [
+        {
+          "circuit_fidelity": 1.0,
+          "mitigated_shots_for_chemical_accuracy": 49138.81211223233,
+          "profile": "ideal gates",
+          "unmitigated_bias_mha": 1.5543122344752192e-12
+        },
+        {
+          "circuit_fidelity": 0.5454713371252131,
+          "mitigated_shots_for_chemical_accuracy": 4384506.039285069,
+          "profile": "cepheus intra-die",
+          "unmitigated_bias_mha": 509.2660590973471
+        },
+        {
+          "circuit_fidelity": 0.9413681803283369,
+          "mitigated_shots_for_chemical_accuracy": 313147.7495284207,
+          "profile": "10x better",
+          "unmitigated_bias_mha": 67.41597289802992
+        },
+        {
+          "circuit_fidelity": 0.9939779959806809,
+          "mitigated_shots_for_chemical_accuracy": 92843.13881774407,
+          "profile": "100x better",
+          "unmitigated_bias_mha": 6.944083511367216
+        }
+      ],
+      "cnot": 64,
+      "formula": "H2",
+      "ideal_energy": -1.1372701748295848,
+      "identity_coefficient": -0.09886397755287024,
+      "max_two_qubit_error_for_chemical_accuracy": 0.000020986473490636204,
+      "noiseless_shots_for_chemical_accuracy": 49138.81211223233,
+      "one_qubit_gates": 92,
+      "pauli_terms": 14,
+      "qubits": 4,
+      "rotations": 12
+    },
+    {
+      "by_profile": [
+        {
+          "circuit_fidelity": 1.0,
+          "mitigated_shots_for_chemical_accuracy": 281513.8518351716,
+          "profile": "ideal gates",
+          "unmitigated_bias_mha": -3.9968028886505635e-12
+        },
+        {
+          "circuit_fidelity": 0.5454713371252131,
+          "mitigated_shots_for_chemical_accuracy": 14946786.706556285,
+          "profile": "cepheus intra-die",
+          "unmitigated_bias_mha": 636.4097112756091
+        },
+        {
+          "circuit_fidelity": 0.9413681803283369,
+          "mitigated_shots_for_chemical_accuracy": 1217990.531673818,
+          "profile": "10x better",
+          "unmitigated_bias_mha": 83.95757925370218
+        },
+        {
+          "circuit_fidelity": 0.9939779959806809,
+          "mitigated_shots_for_chemical_accuracy": 416167.9698187661,
+          "profile": "100x better",
+          "unmitigated_bias_mha": 8.644568453480606
+        }
+      ],
+      "cnot": 64,
+      "formula": "HeH+",
+      "ideal_energy": -2.8510240282289563,
+      "identity_coefficient": -1.5419759546968816,
+      "max_two_qubit_error_for_chemical_accuracy": 0.000016644968758472434,
+      "noiseless_shots_for_chemical_accuracy": 281513.8518351716,
+      "one_qubit_gates": 92,
+      "pauli_terms": 26,
+      "qubits": 4,
+      "rotations": 12
+    },
+    {
+      "by_profile": [
+        {
+          "circuit_fidelity": 1.0,
+          "mitigated_shots_for_chemical_accuracy": 3217331.228289522,
+          "profile": "ideal gates",
+          "unmitigated_bias_mha": -5.329070518200751e-12
+        },
+        {
+          "circuit_fidelity": 4.621068204918078e-6,
+          "mitigated_shots_for_chemical_accuracy": 1.8712737344330555e+18,
+          "profile": "cepheus intra-die",
+          "unmitigated_bias_mha": 2149.1256499526435
+        },
+        {
+          "circuit_fidelity": 0.2939202769098867,
+          "mitigated_shots_for_chemical_accuracy": 343957203.35543,
+          "profile": "10x better",
+          "unmitigated_bias_mha": 1519.5652595266768
+        },
+        {
+          "circuit_fidelity": 0.8847904293284559,
+          "mitigated_shots_for_chemical_accuracy": 13708887.79810846,
+          "profile": "100x better",
+          "unmitigated_bias_mha": 248.23376088306048
+        }
+      ],
+      "cnot": 1376,
+      "formula": "LiH",
+      "ideal_energy": -7.882174519897065,
+      "identity_coefficient": -5.733039273590596,
+      "max_two_qubit_error_for_chemical_accuracy": 4.94909743242733e-7,
+      "noiseless_shots_for_chemical_accuracy": 3217331.228289522,
+      "one_qubit_gates": 1232,
+      "pauli_terms": 275,
+      "qubits": 10,
+      "rotations": 144
+    },
+    {
+      "by_profile": [
+        {
+          "circuit_fidelity": 1.0,
+          "mitigated_shots_for_chemical_accuracy": 31376673.446403593,
+          "profile": "ideal gates",
+          "unmitigated_bias_mha": -2.1316282072803006e-10
+        },
+        {
+          "circuit_fidelity": 4.621068204918078e-6,
+          "mitigated_shots_for_chemical_accuracy": 1.8374497081702408e+19,
+          "profile": "cepheus intra-die",
+          "unmitigated_bias_mha": 6820.721908062125
+        },
+        {
+          "circuit_fidelity": 0.2939202769098867,
+          "mitigated_shots_for_chemical_accuracy": 3304627579.549331,
+          "profile": "10x better",
+          "unmitigated_bias_mha": 4821.601938600012
+        },
+        {
+          "circuit_fidelity": 0.8847904293284559,
+          "mitigated_shots_for_chemical_accuracy": 138884094.76835597,
+          "profile": "100x better",
+          "unmitigated_bias_mha": 787.4981025184553
+        }
+      ],
+      "cnot": 1376,
+      "formula": "HF",
+      "ideal_energy": -98.59656590859295,
+      "identity_coefficient": -91.77581339284023,
+      "max_two_qubit_error_for_chemical_accuracy": 1.559003794393554e-7,
+      "noiseless_shots_for_chemical_accuracy": 31376673.446403593,
+      "one_qubit_gates": 1232,
+      "pauli_terms": 275,
+      "qubits": 10,
+      "rotations": 144
+    },
+    {
+      "by_profile": [
+        {
+          "circuit_fidelity": 1.0,
+          "mitigated_shots_for_chemical_accuracy": 12545879.96721754,
+          "profile": "ideal gates",
+          "unmitigated_bias_mha": 1.7763568394002505e-12
+        },
+        {
+          "circuit_fidelity": 1.6529306632985593e-27,
+          "mitigated_shots_for_chemical_accuracy": 4.2841723671665976e+61,
+          "profile": "cepheus intra-die",
+          "unmitigated_bias_mha": 3026.4393581538675
+        },
+        {
+          "circuit_fidelity": 0.002141472348586173,
+          "mitigated_shots_for_chemical_accuracy": 19245941059868.31,
+          "profile": "10x better",
+          "unmitigated_bias_mha": 3019.990681359886
+        },
+        {
+          "circuit_fidelity": 0.5409531482605392,
+          "mitigated_shots_for_chemical_accuracy": 229633245.326143,
+          "profile": "100x better",
+          "unmitigated_bias_mha": 1390.0954519029317
+        }
+      ],
+      "cnot": 6976,
+      "formula": "BeH2",
+      "ideal_energy": -15.594469874393102,
+      "identity_coefficient": -12.568030516239235,
+      "max_two_qubit_error_for_chemical_accuracy": 6.98788030217834e-8,
+      "noiseless_shots_for_chemical_accuracy": 12545879.96721754,
+      "one_qubit_gates": 5632,
+      "pauli_terms": 326,
+      "qubits": 12,
+      "rotations": 640
+    },
+    {
+      "by_profile": [
+        {
+          "circuit_fidelity": 1.0,
+          "mitigated_shots_for_chemical_accuracy": 62940793.739927664,
+          "profile": "ideal gates",
+          "unmitigated_bias_mha": 1.7053025658242404e-10
+        },
+        {
+          "circuit_fidelity": 1.6529306632985593e-27,
+          "mitigated_shots_for_chemical_accuracy": 1.6004754564730083e+62,
+          "profile": "cepheus intra-die",
+          "unmitigated_bias_mha": 4951.043836441173
+        },
+        {
+          "circuit_fidelity": 0.002141472348586173,
+          "mitigated_shots_for_chemical_accuracy": 68275055173531.336,
+          "profile": "10x better",
+          "unmitigated_bias_mha": 4940.489702623381
+        },
+        {
+          "circuit_fidelity": 0.5409531482605392,
+          "mitigated_shots_for_chemical_accuracy": 837347538.5342778,
+          "profile": "100x better",
+          "unmitigated_bias_mha": 2273.9837568333314
+        }
+      ],
+      "cnot": 6976,
+      "formula": "H2O",
+      "ideal_energy": -75.01222495163775,
+      "identity_coefficient": -70.06118111519658,
+      "max_two_qubit_error_for_chemical_accuracy": 4.2710651182442654e-8,
+      "noiseless_shots_for_chemical_accuracy": 62940793.739927664,
+      "one_qubit_gates": 5632,
+      "pauli_terms": 550,
+      "qubits": 12,
+      "rotations": 640
+    },
+    {
+      "by_profile": [
+        {
+          "circuit_fidelity": 1.0,
+          "mitigated_shots_for_chemical_accuracy": 74785229.68157287,
+          "profile": "ideal gates",
+          "unmitigated_bias_mha": -2.4868995751603507e-11
+        },
+        {
+          "circuit_fidelity": 5.6101072808211503e-70,
+          "mitigated_shots_for_chemical_accuracy": 1.2261634216281105e+147,
+          "profile": "cepheus intra-die",
+          "unmitigated_bias_mha": 3649.0990754393665
+        },
+        {
+          "circuit_fidelity": 1.253324946630839e-7,
+          "mitigated_shots_for_chemical_accuracy": 1.5934570310661438e+22,
+          "profile": "10x better",
+          "unmitigated_bias_mha": 3649.098620960338
+        },
+        {
+          "circuit_fidelity": 0.20419110616889002,
+          "mitigated_shots_for_chemical_accuracy": 5642681483.99031,
+          "profile": "100x better",
+          "unmitigated_bias_mha": 2904.4543819988994
+        }
+      ],
+      "cnot": 18208,
+      "formula": "BH3",
+      "ideal_energy": -26.121526811785582,
+      "identity_coefficient": -22.472427736346216,
+      "max_two_qubit_error_for_chemical_accuracy": 2.2373800534492002e-8,
+      "noiseless_shots_for_chemical_accuracy": 74785229.68157287,
+      "one_qubit_gates": 13200,
+      "pauli_terms": 1533,
+      "qubits": 14,
+      "rotations": 1488
+    },
+    {
+      "by_profile": [
+        {
+          "circuit_fidelity": 1.0,
+          "mitigated_shots_for_chemical_accuracy": 143422798.33536488,
+          "profile": "ideal gates",
+          "unmitigated_bias_mha": 2.5579538487363607e-10
+        },
+        {
+          "circuit_fidelity": 5.6101072808211503e-70,
+          "mitigated_shots_for_chemical_accuracy": 2.0600374895155146e+147,
+          "profile": "cepheus intra-die",
+          "unmitigated_bias_mha": 4268.813781684571
+        },
+        {
+          "circuit_fidelity": 1.253324946630839e-7,
+          "mitigated_shots_for_chemical_accuracy": 2.5937484301370223e+22,
+          "profile": "10x better",
+          "unmitigated_bias_mha": 4268.813250025055
+        },
+        {
+          "circuit_fidelity": 0.20419110616889002,
+          "mitigated_shots_for_chemical_accuracy": 9178574684.64141,
+          "profile": "100x better",
+          "unmitigated_bias_mha": 3397.7088506720747
+        }
+      ],
+      "cnot": 18208,
+      "formula": "NH3",
+      "ideal_energy": -55.51875896770099,
+      "identity_coefficient": -51.24994518601642,
+      "max_two_qubit_error_for_chemical_accuracy": 1.9125131645036927e-8,
+      "noiseless_shots_for_chemical_accuracy": 143422798.33536488,
+      "one_qubit_gates": 13200,
+      "pauli_terms": 2325,
+      "qubits": 14,
+      "rotations": 1488
+    },
+    {
+      "by_profile": [
+        {
+          "circuit_fidelity": 1.0,
+          "mitigated_shots_for_chemical_accuracy": 259707765.10996768,
+          "profile": "ideal gates",
+          "unmitigated_bias_mha": -2.5579538487363607e-10
+        },
+        {
+          "circuit_fidelity": 2.2147584205229472e-138,
+          "mitigated_shots_for_chemical_accuracy": 2.156070134523367e+284,
+          "profile": "cepheus intra-die",
+          "unmitigated_bias_mha": 4521.766933919153
+        },
+        {
+          "circuit_fidelity": 1.9094052082718724e-14,
+          "mitigated_shots_for_chemical_accuracy": 1.6927914997986903e+36,
+          "profile": "10x better",
+          "unmitigated_bias_mha": 4521.766933919068
+        },
+        {
+          "circuit_fidelity": 0.042515866681884375,
+          "mitigated_shots_for_chemical_accuracy": 324938436811.883,
+          "profile": "100x better",
+          "unmitigated_bias_mha": 4329.655598063653
+        }
+      ],
+      "cnot": 36480,
+      "formula": "CH4",
+      "ideal_energy": -39.80507698770625,
+      "identity_coefficient": -35.2833100537871,
+      "max_two_qubit_error_for_chemical_accuracy": 9.06988834037392e-9,
+      "noiseless_shots_for_chemical_accuracy": 259707765.10996768,
+      "one_qubit_gates": 23936,
+      "pauli_terms": 4688,
+      "qubits": 16,
+      "rotations": 2688
+    }
+  ],
+  "spsa": [
+    {
+      "formula": "H2",
+      "mean_error_mha": 0.2550088119572062,
+      "runs": 3,
+      "scenario": "shot noise only",
+      "shots_per_term": 100
+    },
+    {
+      "formula": "H2",
+      "mean_error_mha": 0.019781394747712493,
+      "runs": 3,
+      "scenario": "shot noise only",
+      "shots_per_term": 1000
+    },
+    {
+      "formula": "H2",
+      "mean_error_mha": 0.0027024974038614147,
+      "runs": 3,
+      "scenario": "shot noise only",
+      "shots_per_term": 10000
+    },
+    {
+      "formula": "H2",
+      "mean_error_mha": 0.0013517640872577157,
+      "runs": 3,
+      "scenario": "shot noise only",
+      "shots_per_term": 100000
+    },
+    {
+      "formula": "H2",
+      "mean_error_mha": 0.25584062875975516,
+      "runs": 3,
+      "scenario": "100x-better device, raw",
+      "shots_per_term": 100
+    },
+    {
+      "formula": "H2",
+      "mean_error_mha": 0.021084369309957534,
+      "runs": 3,
+      "scenario": "100x-better device, raw",
+      "shots_per_term": 1000
+    },
+    {
+      "formula": "H2",
+      "mean_error_mha": 0.00231681294216024,
+      "runs": 3,
+      "scenario": "100x-better device, raw",
+      "shots_per_term": 10000
+    },
+    {
+      "formula": "H2",
+      "mean_error_mha": 0.0011274690986014708,
+      "runs": 3,
+      "scenario": "100x-better device, raw",
+      "shots_per_term": 100000
+    },
+    {
+      "formula": "H2",
+      "mean_error_mha": 0.2651739890745149,
+      "runs": 3,
+      "scenario": "100x-better device, mitigated",
+      "shots_per_term": 100
+    },
+    {
+      "formula": "H2",
+      "mean_error_mha": 0.0226423172147161,
+      "runs": 3,
+      "scenario": "100x-better device, mitigated",
+      "shots_per_term": 1000
+    },
+    {
+      "formula": "H2",
+      "mean_error_mha": 0.0027337328328454666,
+      "runs": 3,
+      "scenario": "100x-better device, mitigated",
+      "shots_per_term": 10000
+    },
+    {
+      "formula": "H2",
+      "mean_error_mha": 0.0012820568287737661,
+      "runs": 3,
+      "scenario": "100x-better device, mitigated",
+      "shots_per_term": 100000
+    },
+    {
+      "formula": "HeH+",
+      "mean_error_mha": 0.11352091951607098,
+      "runs": 3,
+      "scenario": "shot noise only",
+      "shots_per_term": 1000
+    },
+    {
+      "formula": "HeH+",
+      "mean_error_mha": 0.004768679203219032,
+      "runs": 3,
+      "scenario": "shot noise only",
+      "shots_per_term": 100000
+    },
+    {
+      "formula": "HeH+",
+      "mean_error_mha": 0.14212078379631046,
+      "runs": 3,
+      "scenario": "100x-better device, raw",
+      "shots_per_term": 1000
+    },
+    {
+      "formula": "HeH+",
+      "mean_error_mha": 0.005366360823562862,
+      "runs": 3,
+      "scenario": "100x-better device, raw",
+      "shots_per_term": 100000
+    },
+    {
+      "formula": "HeH+",
+      "mean_error_mha": 0.1486843856339052,
+      "runs": 3,
+      "scenario": "100x-better device, mitigated",
+      "shots_per_term": 1000
+    },
+    {
+      "formula": "HeH+",
+      "mean_error_mha": 0.005345444029340267,
+      "runs": 3,
+      "scenario": "100x-better device, mitigated",
+      "shots_per_term": 100000
+    },
+    {
+      "formula": "LiH",
+      "mean_error_mha": 68.07237830997082,
+      "runs": 3,
+      "scenario": "shot noise only",
+      "shots_per_term": 1000
+    },
+    {
+      "formula": "LiH",
+      "mean_error_mha": 0.6489105280781023,
+      "runs": 3,
+      "scenario": "shot noise only",
+      "shots_per_term": 100000
+    },
+    {
+      "formula": "LiH",
+      "mean_error_mha": 73.87997443076432,
+      "runs": 3,
+      "scenario": "100x-better device, raw",
+      "shots_per_term": 1000
+    },
+    {
+      "formula": "LiH",
+      "mean_error_mha": 0.6347256322779179,
+      "runs": 3,
+      "scenario": "100x-better device, raw",
+      "shots_per_term": 100000
+    },
+    {
+      "formula": "LiH",
+      "mean_error_mha": 75.57769708478753,
+      "runs": 3,
+      "scenario": "100x-better device, mitigated",
+      "shots_per_term": 1000
+    },
+    {
+      "formula": "LiH",
+      "mean_error_mha": 0.7178195712243726,
+      "runs": 3,
+      "scenario": "100x-better device, mitigated",
+      "shots_per_term": 100000
+    }
+  ]
+}

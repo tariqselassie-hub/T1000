@@ -62,7 +62,12 @@ pub fn diatomic(
     r: f64,
     charge: i32,
 ) -> Molecule {
-    Molecule { name, formula, atoms: atoms_at(&z, &[[0.0; 3], [0.0, 0.0, r]]), charge }
+    Molecule {
+        name,
+        formula,
+        atoms: atoms_at(&z, &[[0.0; 3], [0.0, 0.0, r]]),
+        charge,
+    }
 }
 
 /// The nine benchmark molecules at their equilibrium geometries.

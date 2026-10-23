@@ -51,6 +51,8 @@ CLAIMS = [
     ("29", "VQE H2 exact (FCI) energy", ["hosts/unknown-cpu/data/vqe_molecules_report.json"], "-1.13727", "fci_energy"),
     ("29", "VQE CH4 error vs FCI (mHa)", ["hosts/unknown-cpu/data/vqe_molecules_report.json"], "0.1853", "vqe_error_vs_fci"),
     ("29", "VQE BeH2 error vs FCI (mHa, largest)", ["hosts/unknown-cpu/data/vqe_molecules_report.json"], "0.3681", "vqe_error_vs_fci"),
+    ("29", "VQE LiH naive CNOT count", ["hosts/unknown-cpu/data/vqe_noise_report.json"], "1376", "cnot"),
+    ("29", "VQE CH4 naive CNOT count", ["hosts/unknown-cpu/data/vqe_noise_report.json"], "36480", "cnot"),
     ("M158", "Szegedy quantum hit", ["data/directed_heptal_quantum_walk_report.json"], "0.7351", "peak_quantum_sink_prob"),
 ]
 

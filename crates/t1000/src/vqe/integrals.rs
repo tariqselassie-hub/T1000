@@ -207,7 +207,11 @@ fn pair_repulsion(bra: &PairExpansion, ket: &PairExpansion, l_max: usize) -> f64
                 for (tau, &f1) in ket.e[0].iter().enumerate() {
                     for (nu, &f2) in ket.e[1].iter().enumerate() {
                         for (phi, &f3) in ket.e[2].iter().enumerate() {
-                            let sign = if (tau + nu + phi).is_multiple_of(2) { 1.0 } else { -1.0 };
+                            let sign = if (tau + nu + phi).is_multiple_of(2) {
+                                1.0
+                            } else {
+                                -1.0
+                            };
                             sum += bra_term
                                 * sign
                                 * f1

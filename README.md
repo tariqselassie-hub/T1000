@@ -261,6 +261,7 @@
 * **Exact reference:** full configuration interaction by Lanczos in the particle-number sector.
 * **UCCSD-VQE with analytic gradients:** all nine Period 1-2 molecules (H₂, HeH⁺, LiH, HF, BeH₂, H₂O, BH₃, NH₃, CH₄) land within chemical accuracy (1.59 mHa) of FCI; the largest error is 0.37 mHa (BeH₂).
 * **Bond stretching:** H₂ Hartree-Fock is 278 mHa off at 3 Å while the VQE tracks the exact curve; at 6 Å the exact energy equals twice the hydrogen-atom energy.
+* **Noise study (`vqe_noise`):** UCCSD compiled to Pauli rotations (64 to 36,480 CNOTs, naive), depolarising/readout/shot noise, shot budgets (4.9e4 to 2.6e8 for 1.59 mHa) and SPSA on sampled energies; gate error rather than shot noise is the limit.
 * Validated against the Szabo & Ostlund H₂ tables, published STO-3G Hartree-Fock energies, and an independent determinant-basis Hamiltonian. Detailed documentation: [`docs/vqe.md`](docs/vqe.md).
 
 ## System Startup & Execution Guide

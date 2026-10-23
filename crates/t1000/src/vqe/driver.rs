@@ -5,15 +5,15 @@
 //! reference → UCCSD optimisation, with a timed, serialisable report.
 
 use super::basis::sto3g_basis;
-use super::fermion::{build_hamiltonian, Sector};
+use super::fermion::{build_hamiltonian, Sector, SparseMatrix};
 use super::integrals::compute_ao_integrals;
 use super::lanczos::ground_state;
 use super::mo::{active_space, hartree_fock_energy, ActiveHamiltonian};
 use super::molecules::Molecule;
 use super::optimize::bfgs;
-use super::pauli::jordan_wigner;
+use super::pauli::{jordan_wigner, QubitHamiltonian};
 use super::scf::{rhf, RhfResult};
-use super::uccsd::{energy_and_gradient, uccsd_excitations};
+use super::uccsd::{energy_and_gradient, uccsd_excitations, Excitation};
 use serde::{Deserialize, Serialize};
 use std::time::Instant;
 
@@ -110,8 +110,27 @@ fn electronic_structure(molecule: &Molecule, cfg: &VqeConfig) -> Result<Problem,
     })
 }
 
+/// A solved problem with the intermediate objects a noise study needs.
+#[derive(Debug)]
+pub struct SolvedProblem {
+    pub report: VqeReport,
+    pub qubit_hamiltonian: QubitHamiltonian,
+    pub sector: Sector,
+    pub hamiltonian: SparseMatrix,
+    pub excitations: Vec<Excitation>,
+    /// Converged UCCSD parameters.
+    pub theta: Vec<f64>,
+    /// Hartree-Fock determinant as a unit vector in the sector.
+    pub reference: Vec<f64>,
+}
+
 /// Runs the full pipeline for one molecule.
 pub fn solve(molecule: &Molecule, cfg: &VqeConfig) -> Result<VqeReport, String> {
+    solve_detailed(molecule, cfg).map(|s| s.report)
+}
+
+/// Like [`solve`], keeping the Hamiltonians, ansatz and optimal parameters.
+pub fn solve_detailed(molecule: &Molecule, cfg: &VqeConfig) -> Result<SolvedProblem, String> {
     let t0 = Instant::now();
     let p = electronic_structure(molecule, cfg)?;
     let n_qubits = 2 * p.ham.n_orb;
@@ -141,7 +160,7 @@ pub fn solve(molecule: &Molecule, cfg: &VqeConfig) -> Result<VqeReport, String> 
     let correlation_energy = fci_energy - hf_energy;
     let recovered = (result.value - hf_energy) / correlation_energy * 100.0;
     let error = result.value - fci_energy;
-    Ok(VqeReport {
+    let report = VqeReport {
         formula: molecule.formula.to_string(),
         name: molecule.name.to_string(),
         n_basis_functions: p.n_ao,
@@ -170,10 +189,19 @@ pub fn solve(molecule: &Molecule, cfg: &VqeConfig) -> Result<VqeReport, String> 
         energy_evaluations: result.evaluations,
         converged: result.converged,
         gradient_max: result.grad_max,
-        history: result.history,
+        history: result.history.clone(),
         time_integrals_ms,
         time_fci_ms,
         time_vqe_ms,
+    };
+    Ok(SolvedProblem {
+        report,
+        qubit_hamiltonian: qubit_h,
+        sector,
+        hamiltonian: h,
+        excitations,
+        theta: result.x,
+        reference,
     })
 }
 

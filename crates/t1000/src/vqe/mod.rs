@@ -6,6 +6,7 @@
 
 pub mod basis;
 pub mod boys;
+pub mod circuit;
 pub mod driver;
 pub mod fermion;
 pub mod integrals;
@@ -13,6 +14,8 @@ pub mod lanczos;
 pub mod linalg;
 pub mod mo;
 pub mod molecules;
+pub mod noise;
+pub mod noisy_vqe;
 pub mod optimize;
 pub mod pauli;
 pub mod scf;

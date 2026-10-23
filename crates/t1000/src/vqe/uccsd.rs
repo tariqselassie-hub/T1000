@@ -14,6 +14,9 @@ use super::fermion::{annihilate, create, Sector, SparseMatrix};
 #[derive(Debug, Clone)]
 pub struct Excitation {
     pub label: String,
+    /// Spin orbitals emptied and filled: `T = Π a†_to Π a_from`.
+    pub from: Vec<usize>,
+    pub to: Vec<usize>,
     pairs: Vec<(u32, u32, f64)>,
 }
 
@@ -70,7 +73,12 @@ fn excitation(sector: &Sector, label: String, from: &[usize], to: &[usize]) -> E
             }
         }
     }
-    Excitation { label, pairs }
+    Excitation {
+        label,
+        from: from.to_vec(),
+        to: to.to_vec(),
+        pairs,
+    }
 }
 
 /// All spin-conserving single and double excitations out of the closed-shell reference with

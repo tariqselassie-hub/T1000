@@ -34,7 +34,10 @@ cargo run --release -p t1000 --bin vqe_dissociation              # H2 and LiH bo
 | `lanczos` | Ground-state solver: the exact (full CI) reference. |
 | `uccsd` | UCCSD excitations as exact determinant-pair rotations, with analytic gradients. |
 | `optimize` | BFGS with an Armijo line search. |
-| `driver` | The pipeline and the serialisable `VqeReport`. |
+| `driver` | The pipeline and the serialisable `VqeReport` (`solve_detailed` keeps the intermediates). |
+| `circuit` | UCCSD as Pauli rotations, CNOT / one-qubit gate counts, and a qubit-state simulator that checks them. |
+| `noise` | Depolarising gate error, readout error, shot noise, mitigation, shot budgets, tolerable error rates. |
+| `noisy_vqe` | SPSA driven only by sampled, attenuated energies. |
 
 The ansatz state is the one a Jordan-Wigner circuit of commuting Pauli rotations prepares: each
 fermionic excitation generator `T - T†` rotates disjoint pairs of determinants, so its exponential
@@ -67,6 +70,59 @@ Hartree-Fock error grows from 10 mHa at 0.4 Å to 278 mHa at 3.0 Å, while the V
 curve to better than 1e-4 mHa. The exact energy at 6 Å equals twice the STO-3G hydrogen-atom
 energy (-0.46658 hartree) to 5e-5, an independent physical check of the whole stack
 (`tests/vqe_molecules.rs`).
+
+## Noise, shots and gate counts (`vqe_noise`)
+
+```bash
+cargo run --release -p t1000 --bin vqe_noise
+```
+
+`circuit` compiles each UCCSD exponential to commuting Pauli rotations (2 terms per single
+excitation, 8 per double; the compiled rotations are checked to prepare exactly the determinant-space
+state). A weight-`w` rotation costs `2(w-1)` CNOTs, so the counts below are **naive upper bounds**:
+no CNOT cancellation, no qubit tapering, no pruning of small amplitudes.
+
+`noise` then applies a global depolarising channel with circuit fidelity `F = (1-p₁)^{n₁}(1-p₂)^{n₂}`
+(which leaves only the identity coefficient `c₀`: `E_noisy = c₀ + F(E - c₀)`), a symmetric readout
+flip `e` per qubit (a weight-`w` term shrinks by `(1-2e)^w`), and binomial shot noise. Known-noise
+mitigation divides each term by its attenuation: the bias disappears in expectation and returns as
+variance. The reference profile `cepheus intra-die` uses the 0.80 % intra-die two-qubit error and
+≈2.5 % readout error from the Cepheus run (README § 22); its 0.1 % single-qubit error is an assumption.
+
+From `results/hosts/unknown-cpu/data/vqe_noise_report.json`:
+
+| Molecule | Qubits | Pauli terms | CNOTs | 1-qubit gates | Shots for 1.59 mHa (ideal device) | Max p₂ for 1.59 mHa bias |
+| :--- | ---: | ---: | ---: | ---: | ---: | ---: |
+| H₂ | 4 | 14 | 64 | 92 | 4.9e4 | 2.1e-5 |
+| HeH⁺ | 4 | 26 | 64 | 92 | 2.8e5 | 1.7e-5 |
+| LiH | 10 | 275 | 1,376 | 1,232 | 3.2e6 | 4.9e-7 |
+| HF | 10 | 275 | 1,376 | 1,232 | 3.1e7 | 1.6e-7 |
+| BeH₂ | 12 | 326 | 6,976 | 5,632 | 1.3e7 | 7.0e-8 |
+| H₂O | 12 | 550 | 6,976 | 5,632 | 6.3e7 | 4.3e-8 |
+| BH₃ | 14 | 1,533 | 18,208 | 13,200 | 7.5e7 | 2.2e-8 |
+| NH₃ | 14 | 2,325 | 18,208 | 13,200 | 1.4e8 | 1.9e-8 |
+| CH₄ | 16 | 4,688 | 36,480 | 23,936 | 2.6e8 | 9.1e-9 |
+
+Shots are the total over all terms with the variance-optimal split and no commuting-term grouping,
+so they overstate what grouped measurement needs.
+
+What it says:
+
+* **Gate error, not shots, is the barrier.** At the Cepheus profile the circuit fidelity is 0.55 for
+  H₂ and 5e-6 for LiH, giving energy errors of 509 mHa and 2,149 mHa; beyond LiH it is zero to many
+  digits. Mitigating that attenuation needs more than 1e18 shots for LiH, so mitigation does not rescue it.
+* **The tolerable error is far below today's devices**, but this is a worst case: global depolarising
+  mixes toward the maximally mixed state of the *full* `2^n` space, whose energy `c₀` is far above the
+  ground state, and the circuits are uncompiled. Tapering the Z₂ symmetries, dropping tiny
+  excitations and cancelling CNOT ladders can cut the gate count substantially, and
+  symmetry verification (post-selecting on particle number and spin) removes much of the leakage
+  into wrong sectors. None of that is modelled here.
+* **Shot noise alone is mild.** SPSA on sampled energies finds good parameters: H₂ ends within
+  0.26 mHa of FCI with 100 shots per term and 0.001 mHa with 1e5; HeH⁺ within 0.11 mHa at 1,000 and
+  0.005 mHa at 1e5; LiH, with 24 parameters, needs about 1e5 shots per term (0.65 mHa; 68 mHa at 1,000).
+* **Depolarising noise rescales the landscape but does not move its minimum**, so an optimiser on a
+  noisy device still finds good parameters; what is wrong is the energy it *reports*. The SPSA errors
+  above are the exact energies of the returned parameters, not the device's own readings.
 
 ## How it is validated
 

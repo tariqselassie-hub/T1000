@@ -66,6 +66,32 @@ fn add_product(sum: &mut Sum, coeff: f64, ops: &[(usize, bool)]) {
     }
 }
 
+/// The anti-Hermitian excitation generator `T - T†` for `T = Π a†_to Π a_from` as `B(x, z)`
+/// terms with real coefficients (each has an odd number of `Y`s).
+pub fn excitation_generator(from: &[usize], to: &[usize]) -> Vec<(u32, u32, f64)> {
+    // T = a†_to[0] … a†_to[k] a_from[k] … a_from[0]; T† reverses and conjugates every factor.
+    let t_ops: Vec<(usize, bool)> = to
+        .iter()
+        .map(|&j| (j, true))
+        .chain(from.iter().rev().map(|&j| (j, false)))
+        .collect();
+    let td_ops: Vec<(usize, bool)> = from
+        .iter()
+        .map(|&j| (j, true))
+        .chain(to.iter().rev().map(|&j| (j, false)))
+        .collect();
+    let mut sum = Sum::new();
+    add_product(&mut sum, 1.0, &t_ops);
+    add_product(&mut sum, -1.0, &td_ops);
+    let mut out: Vec<_> = sum
+        .into_iter()
+        .filter(|(_, c)| c.abs() > 1e-12)
+        .map(|((x, z), c)| (x, z, c))
+        .collect();
+    out.sort_by_key(|&(x, z, _)| (x, z));
+    out
+}
+
 /// Jordan-Wigner transform of the active-space Hamiltonian; qubit `2p + spin` is spin orbital
 /// `(p, spin)`. Terms below `1e-12` are dropped.
 pub fn jordan_wigner(ham: &ActiveHamiltonian) -> QubitHamiltonian {
@@ -182,6 +208,35 @@ impl QubitHamiltonian {
             e += t.coeff * phase * sign;
         }
         e
+    }
+
+    /// `⟨ψ|P_k|ψ⟩` for every term (coefficient not applied) on a real state over all `2^n` basis
+    /// states.
+    pub fn term_expectations(&self, psi: &[f64]) -> Vec<f64> {
+        use rayon::prelude::*;
+        self.terms
+            .par_iter()
+            .map(|t| {
+                let phase = if (t.x & t.z).count_ones().is_multiple_of(4) {
+                    1.0
+                } else {
+                    -1.0
+                };
+                let mut acc = 0.0;
+                for (i, &v) in psi.iter().enumerate() {
+                    if v == 0.0 {
+                        continue;
+                    }
+                    let sign = if (i as u32 & t.z).count_ones().is_multiple_of(2) {
+                        1.0
+                    } else {
+                        -1.0
+                    };
+                    acc += sign * v * psi[i ^ t.x as usize];
+                }
+                phase * acc
+            })
+            .collect()
     }
 
     /// `⟨ψ|H|ψ⟩` for a real state over all `2^n` computational basis states.
