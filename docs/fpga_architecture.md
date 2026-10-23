@@ -1,70 +1,105 @@
 <!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
 <!-- Copyright (c) 2026 Terrence A. Jones SR. All rights reserved. -->
 
-# T-1000 Physical FPGA Silicon Accelerator Architecture
+# 1000_QPU: fixed-point statevector engine on the Basys 3
 
-This document specifies the hardware architecture, register protocol, memory layout, and operational opcodes for the `1000_QPU` physical quantum coprocessor deployed on the AMD/Xilinx Artix-7 XC7A35T FPGA (Digilent Basys 3).
+Target: Digilent Basys 3, AMD Artix-7 XC7A35T-1CPG236C (20,800 LUTs, 90 DSP48E1, 50 BRAM36), 100 MHz,
+FT2232HQ USB-UART at 3 Mbaud (`COM6` on the development machine).
 
----
+The design is a small, exactly specified accelerator: a 14-qubit complex statevector held in block
+RAM, a controlled 2x2 gate that streams one amplitude pair per clock, and a UART protocol to load,
+run and read back. Its arithmetic is defined by a bit-exact Rust model, and the RTL is checked
+against that model byte for byte. It is a verification platform for fixed-point quantum
+simulation, not a faster simulator than the host CPU (see "What it is not").
 
-## 1. Hardware Specifications
+## 1. Specification chain
 
-| Parameter | Specification | Physical Detail |
-| :--- | :--- | :--- |
-| **FPGA Silicon** | AMD Artix-7 XC7A35T-1CPG236C | 33,280 Logic Cells, 50 Block RAMs (1,800 Kb), 90 DSP48E1 slices |
-| **Target Board** | Digilent Basys 3 | 100 MHz oscillator, 3.0 MBaud FTDI USB-UART on `COM6` |
-| **State Memory** | 128 KB Ping-Pong BRAM Matrix | Dual 16,384 x 32-bit banks (Q1.15 fixed-point complex amplitudes) |
-| **Butterfly ALU** | 8-Lane Parallel DSP48E1 Core | 4 parallel complex multiplies/cycle, pipelined butterfly passes |
-| **State Capacity** | 14 Qubits ($2^{14} = 16,384$ states) | Direct addressable statevector with hardware zero-fill logic |
-| **Burst Speed** | 3.0 MBaud Full Duplex | $240\,\mu\text{s}$ per 64-byte burst; hardware flow-controlled |
+| Layer | File |
+| :--- | :--- |
+| Arithmetic (coefficients, rounding, saturation) | `crates/t1000/src/qpu/fixed.rs`, `model.rs` |
+| Byte protocol and reference session | `crates/t1000/src/qpu/protocol.rs` |
+| UCCSD to gate lists | `crates/t1000/src/qpu/compile.rs` |
+| Golden vectors | `cargo run --release -p t1000 --bin qpu_vectors -- fpga/1000_qpu/sim/vectors` |
+| RTL | `fpga/1000_qpu/rtl/{qpu_top,qpu_gate,qpu_bank}.v` |
+| Simulation | `python fpga/1000_qpu/sim/run_sim.py` |
+| Hardware conformance | `python scripts/fpga/verify_1000_qpu.py` |
 
----
+## 2. Arithmetic
 
-## 2. Command Protocol & Opcode Specification
+* State component: signed 32-bit integer. The engine does not know the scale; the host chooses the
+  number of fractional bits (at least 24 is accurate enough for every molecule up to 14 qubits,
+  below).
+* Gate coefficient: signed 25-bit, scaled by 2^23 (Q2.23), the width of a DSP48E1 multiplier port.
+* A gate applies `out0 = m00 a0 + m01 a1`, `out1 = m10 a0 + m11 a1` (complex) with exact products
+  and sums, then `round_half_up(sum / 2^23)` saturated to 32 bits.
+* The gate acts on `target` and only on pairs whose index has all `ctrl` bits set. CNOT, CZ and
+  Toffoli-style controls come from the mask; `Rz`, `H`, `S` are single-qubit matrices.
+* `EXPECT_Z(mask)` returns the exact 80-bit sum of `(-1)^popcount(k & mask) (re_k^2 + im_k^2)`.
+  `mask = 0` is the squared norm.
 
-Commands are framed as a single opcode byte followed by optional payload parameters over UART (`8-N-1` at 3.0 MBaud):
+## 3. Protocol
 
-```
-┌────────────┬─────────────────────────────┬────────────────────────────────────────────────┐
-│ Opcode     │ Arguments / Payload         │ Hardware Operation                             │
-├────────────┼─────────────────────────────┼────────────────────────────────────────────────┤
-│ 0x01       │ [target_qubit, angle_hi, lo]│ Single-gate butterfly step (Rx/Ry)             │
-│ 0x05       │ None                        │ Read back current 14Q state sample             │
-│ 0x10       │ [target_qubit, angle_hi, lo]│ Fused 14-Qubit Layer Execution (16,384 states) │
-│ 0x20       │ [depth (1..255)]            │ Autonomous On-Chip Multi-Layer Quantum Loop    │
-│ 0x30       │ [depth, count (1..255)]     │ Continuous Quantum Chaos 256-bit Seed Stream   │
-└────────────┴─────────────────────────────┴────────────────────────────────────────────────┘
-```
+All fields little-endian. Every successful command ends its reply with `0xEE`. A command that is
+not valid (qubit count, address range, gate operands) is consumed whole, changes nothing, and is
+answered with `0xE1`. An unknown opcode is answered with `0xE0`.
 
-### Detailed Opcode Dynamics
+| Opcode | Command | Arguments | Reply before `0xEE` |
+| :--- | :--- | :--- | :--- |
+| `0xAA` | PING | none | `0x10` only (no `0xEE`) |
+| `0x01` | VERSION | none | `51 50 55 01` |
+| `0x02` | SET_N | `n` (1 byte, 1..14) | none |
+| `0x03` | RESET | `one` (i32) | none; zeroes the active register, amplitude 0 = `one` |
+| `0x04` | LOAD | `addr` u16, `count` u16, `count` x (re i32, im i32) | none |
+| `0x05` | READ | `addr` u16, `count` u16 | `count` x (re i32, im i32) |
+| `0x06` | GATE | `target` u8, `ctrl` u16, 8 x i32 (`m00r m00i m01r m01i m10r m10i m11r m11i`; low 25 bits used) | none |
+| `0x07` | EXPECT_Z | `mask` u16 | 10-byte signed sum |
 
-#### Opcode 0x10: Fused 14-Qubit Layer Step
-- **Execution:** Pings the entire 16,384-amplitude state through the 8-lane DSP butterfly engine in **$10.24\,\mu\text{s}$**.
-- **Speedup:** Raw silicon compute speedup of **$169.1\times$** over CPU AVX2 single-thread execution ($1.731\text{ ms}$).
+Flow control: the device has a 512-byte receive FIFO and no handshake. Frames whose reply is longer
+than one byte (READ, EXPECT_Z, VERSION) must be sent one at a time, waiting for the reply; GATE,
+LOAD, RESET and SET_N frames may be streamed back to back (the engine is faster than the UART).
+`led[13]` latches if the FIFO ever overflowed.
 
-#### Opcode 0x20: Autonomous On-Chip Multi-Layer Execution
-- **Problem Solved:** Overcomes UART transmission latency bottlenecks by looping $N$ quantum layers entirely in on-chip Block RAM and DSP pipeline registers without host roundtrips.
-- **Performance:** 100 quantum layers executed in **2.006 ms** (**49,845 layers/second**), delivering a **$50\times$ wall-clock speedup** over host-orchestrated passes.
+## 4. Microarchitecture
 
-#### Opcode 0x30: Continuous Quantum Chaos Cryptographic Seed Streaming
-- **Operation:** Drives a chaotic quantum Hamiltonian circuit through continuous unitary evolution and streams 256-bit entropy seeds directly from the statevector hash register.
-- **Throughput:** **4,179.5 seeds/second** (**133.7 KB/s** raw entropy flux).
-- **Randomness Compliance:** Fully passes NIST SP 800-22 statistical test suite with zero bit-bias ($\text{Monobit } p = 0.587$, $\text{Runs } p = 0.612$).
+* Amplitude `k` lives in bank `parity(k)` at address `k >> 1` (two banks of 8192 x 64 bits, 32 BRAM36).
+  The two elements of a gate pair differ in one bit, so they are always in opposite banks: each
+  bank sees one read and one write per cycle and a pair is processed every clock.
+* Pipeline: address, bank read, capture, 16 products, four sums, round and saturate, write
+  (about 7 stages). Pairs of one gate are disjoint, so there is no hazard; the next command starts
+  after the pipeline drains.
+* A gate takes `2^(n-1)` cycles plus about 12: 82 microseconds at 14 qubits, 0.1 microsecond at 4.
+* 16 multipliers of 25 x 32 bits use DSP48E1 slices (40 in total with the `EXPECT_Z` squarers).
 
----
+## 5. Results
 
-## 3. Physical Telemetry Verification
+Fixed-point precision (`qpu_precision`, committed in `results/hosts/unknown-cpu/data/qpu_precision_report.json`):
+energy of the compiled UCCSD circuit minus the same circuit in double precision.
 
-```bash
-# Verify basic communication and 7-segment display ("1000")
-python scripts/fpga/test_1000_qpu.py
+| Molecule | Qubits | Gates | dE at 16 bits | at 24 bits | at 28 bits |
+| :--- | ---: | ---: | ---: | ---: | ---: |
+| H2 | 4 | 196 | 1e-6 mHa | 0 | 0 |
+| LiH | 10 | 3,152 | 3.6e-5 mHa | 0 | 0 |
+| H2O | 12 | 15,104 | -2.2e-3 mHa | 2.5e-5 mHa | 4e-6 mHa |
+| BH3 | 14 | 37,264 | 2.9e-2 mHa | 1.2e-4 mHa | 2e-6 mHa |
+| NH3 | 14 | 37,264 | 0.14 mHa | 4.3e-5 mHa | 2.1e-5 mHa |
 
-# Benchmark autonomous layer execution and chaos streaming (Opcodes 0x20 & 0x30)
-python scripts/fpga/test_chaos_streaming.py
+Chemical accuracy is 1.59 mHa. The norm of the state drifts by up to 1.6e-3 over 37,000 gates
+because the 25-bit coefficients are not exactly unitary; this does not enter the normalised energy.
 
-# Execute 14-Qubit 36-Depth Frontier RCS silicon benchmark
-python scripts/fpga/frontier_rcs_fpga_bench.py
+Build (Vivado 2026.1, `scripts/build_bitstream.tcl`): worst negative slack +0.372 ns at 100 MHz,
+1,904 LUTs (9 %), 1,614 registers, 32 BRAM36 (64 %), 40 DSP48E1 (44 %).
 
-# Run NIST SP 800-22 randomness audit across 1.28 million bits
-python scripts/fpga/nist_randomness_audit.py
-```
+Simulation (`sim/run_sim.py`, xsim): the design's 2,536 reply bytes equal the Rust model's for the
+13,577-byte golden stream (identity, load and readback, illegal frames, random controlled gates
+with saturating coefficients at 1, 2, 3, 5 and 6 qubits, the H2 UCCSD circuit, a 14-qubit
+smoke test, recovery after unknown opcodes).
+
+## 6. What it is not
+
+* It is not faster than the host: a 14-qubit UCCSD circuit is 37,264 gates, about 3 seconds of
+  fabric time plus 37,264 x 36 bytes on the UART (about 4.5 seconds at 3 Mbaud), against
+  milliseconds on the CPU. Molecules above 14 qubits (CH4 at 16) do not fit.
+* It is not a quantum device. Its value is hardware-in-the-loop validation of the integer
+  arithmetic and a reproducible target for fixed-point studies.
+* The hardware conformance result for the board is recorded in `docs/CLAIMS.md`; the simulation
+  result does not stand in for it.

@@ -6,3 +6,4 @@
 pub mod compile;
 pub mod fixed;
 pub mod model;
+pub mod protocol;

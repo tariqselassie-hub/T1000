@@ -83,15 +83,13 @@
 | **GuddaNetworks HDC-10k Dimension** | 81.25% | 10,000-bit BSC Space | Classical | Classical BSC |
 | **T-1000 10-Qubit VQC (AVX2)** | **84.50%** | **1024-dim ($2^{10}$) Hilbert Space** | **350.94** | **34.38 $\mu$s / sample** |
 
-### 6. Physical Silicon Quantum Coprocessor (`fpga/1000_qpu`)
-* **Target Hardware:** AMD/Xilinx Artix-7 XC7A35T-1CPG236C FPGA (Digilent Basys 3).
-* **On-Chip 14-Qubit Memory:** 128 KB True Dual-Port Block RAM ping-pong matrix ($16,384$ complex amplitudes in Q1.15 fixed point).
-* **8-Lane DSP48E1 Butterfly Core:** Executes full 14-qubit state evolution in **$10.24\,\mu\text{s}$** ($169.1\times$ raw silicon compute speedup over host CPU AVX2 passes).
-* **Opcode 0x20 Autonomous Execution:** Executes 100 quantum layers entirely on-chip in **$2.006\text{ ms}$** (**49,845 layers/sec**, $50\times$ speedup over host roundtrips).
-* **Opcode 0x30 Chaos Streamer:** Streams 256-bit cryptographic entropy seeds at **4,179.5 seeds/sec** (133.7 KB/s), passing NIST SP 800-22 randomness tests.
-* **High-Speed Interconnect:** 3.0 MBaud UART interface locked to physical host port `COM6`.
-* **Physical Telemetry:** Dedicated 4-digit 7-segment display showing `1000`, 16-LED state readouts, and zero-drop burst throughput.
-* Detailed Documentation: [`docs/fpga_architecture.md`](docs/fpga_architecture.md).
+### 6. Fixed-Point Statevector Engine on the Basys 3 (`fpga/1000_qpu`)
+* **Target hardware:** AMD/Xilinx Artix-7 XC7A35T-1CPG236C (Digilent Basys 3), 100 MHz, UART at 3 Mbaud on `COM6`.
+* **Design:** 14-qubit complex statevector in block RAM (2 x 8192 x 64 bits), a controlled 2x2 gate that processes one amplitude pair per clock, and load, read-back and Z-string expectation commands. 25-bit coefficients, exact accumulate, 32-bit saturating state.
+* **Specification:** a bit-exact Rust model (`t1000::qpu`). In simulation the design's 2,536 reply bytes equal the model's for the golden stream. Build: 1,904 LUTs, 32 BRAM36, 40 DSP48E1, +0.372 ns slack at 100 MHz.
+* **Precision study:** UCCSD circuits for molecules up to 14 qubits reproduce the double-precision energy to under 1e-3 mHa with 24 or more fractional bits (`qpu_precision`).
+* **Not an accelerator over the CPU:** a 14-qubit UCCSD circuit is 37,264 gates, several seconds of fabric and UART time. The board is a hardware-in-the-loop check of the fixed-point arithmetic.
+* Details and hardware status: [`docs/fpga_architecture.md`](docs/fpga_architecture.md), [`docs/CLAIMS.md`](docs/CLAIMS.md).
 
 ### 7. Fault-Tolerant Quantum Error Correction & Planar Surface Code (`t1000::qec`)
 * **3x3 Planar Surface Code $[[9, 1, 3]]$:** Rotated lattice topology embedding 9 physical data qubits with 8 syndrome measurement plaquettes (4 weight-2/4 $X$-checks and 4 weight-2/4 $Z$-checks).
@@ -304,27 +302,21 @@ T1000_QPU_PORT=COM6 T1000_QPU_BAUD=3000000 PORT=8000 python web/serve.py --no-br
 
 ---
 
-### System 2: Physical Silicon FPGA Hardware Coprocessor (AMD Artix-7 Basys 3)
-Controls the bare-metal FPGA hardware pipeline operating over `COM6 @ 3,000,000 Baud`.
+### System 2: Fixed-Point Statevector Engine (AMD Artix-7 Basys 3)
+Bit-exact model, golden vectors, simulation and hardware conformance for the board on `COM6 @ 3,000,000 Baud`.
 
 ```bash
-# Ping and verify physical Artix-7 1000_QPU hardware connection & link status
-python scripts/fpga/test_1000_qpu.py
+# Regenerate the golden vectors from the Rust model
+cargo run --release -p t1000 --bin qpu_vectors -- fpga/1000_qpu/sim/vectors
 
-# Stream high-entropy 256-bit quantum chaos seeds (Opcode 0x30 @ 4,179 seeds/s)
-python scripts/fpga/test_chaos_streaming.py
+# Fixed-point precision study over the molecule catalogue
+cargo run --release -p t1000 --bin qpu_precision
 
-# Execute 19-second continuous high-throughput burst stability test
-python scripts/fpga/test_19s_chaos_burst.py
+# Simulate the RTL against the vectors (Vivado xsim)
+python fpga/1000_qpu/sim/run_sim.py
 
-# Execute PC Core Ultra AVX2 vs Artix-7 FPGA 26-Qubit scaling benchmark
-python scripts/fpga/bench_pc_vs_fpga_scaling.py
-
-# Run NIST SP 800-22 statistical quantum randomness and entropy audit
-python scripts/fpga/nist_randomness_audit.py
-
-# Generate full 26-qubit FPGA silicon scaling telemetry JSON dataset
-python scripts/fpga/run_fpga_26q_telemetry.py
+# Replay the same vectors on the board
+.venv\Scripts\python.exe scripts\fpga\verify_1000_qpu.py --port COM6
 ```
 
 ---

@@ -85,6 +85,10 @@ name = "qpu_precision"
 path = "src/bin/measurements/qpu_precision.rs"
 
 [[bin]]
+name = "qpu_vectors"
+path = "src/bin/measurements/qpu_vectors.rs"
+
+[[bin]]
 name = "vqe_noise"
 path = "src/bin/measurements/vqe_noise.rs"
 

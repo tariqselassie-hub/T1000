@@ -57,7 +57,7 @@ All scientific findings here are formally **dual-housed** and registered as immu
 | Document | Primary Focus | Subsystem |
 | :--- | :--- | :--- |
 | **[`../mimac_quantum_cliff_analysis.md`](../mimac_quantum_cliff_analysis.md)** | Molecular Activity Cliffs & Latent Space Dispersion | `t1000::molfeatures`, `t1000::smiles` |
-| **[`../fpga_architecture.md`](../fpga_architecture.md)** | Cycle-Accurate Silicon Co-Processor Telemetry | `fpga/1000_qpu` (Artix-7 XC7A35T) |
+| **[`../fpga_architecture.md`](../fpga_architecture.md)** | Fixed-point statevector engine: RTL checked against the Rust model | `fpga/1000_qpu` (Artix-7 XC7A35T) |
 | **[`../cohesion_architecture.md`](../cohesion_architecture.md)** | Sovereign True Cohesion & Substrate Interoperability | `t1000_core`, `t1000` (SOA/Register bridge) |
 | **[`../bloch_zipper_mps_specification.md`](../bloch_zipper_mps_specification.md)** | 1D MPS Linear Bloch-Zipper Theory & Area Law | `t1000::zipper` |
 | **[`../dashboard_and_circuit_composer.md`](../dashboard_and_circuit_composer.md)** | Live Circuit Composer & Statevector Telemetry HUD | `web/dashboard`, `t1000::web` |

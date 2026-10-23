@@ -14,7 +14,7 @@ docs/
 ├── README.md                                 # Master documentation navigation & system index
 ├── dashboard_and_circuit_composer.md         # Tri-Deck Web HUD, 3D molecular manifold & Lego-block composer
 ├── cohesion_architecture.md                  # Substrate bridges (t1000_core <-> t1000) & true cohesion
-├── fpga_architecture.md                      # 1000_QPU Artix-7 XC7A35T hardware accelerator specification
+├── fpga_architecture.md                      # 1000_QPU fixed-point statevector engine (Artix-7 XC7A35T)
 ├── zinc_quantum_screening.md                 # ZINC 250k whole-library VQC screening & Pareto drug mining
 ├── bloch_zipper_mps_specification.md         # 1D Matrix Product State (MPS) linear Bloch-zipper theory
 ├── mimac_quantum_cliff_analysis.md           # Molecular activity cliffs & chemical latent space dispersion
@@ -44,10 +44,10 @@ docs/
 * **Open-System Noise:** Microscopic Lindblad/Kraus models (amplitude damping, phase damping, symmetric depolarizing, and Pauli noise).
 * **Facaded Engine:** High-level `T1000Engine` session facade orchestrating compilation, noise mitigation, and telemetry attestation.
 
-### [Physical FPGA Silicon Architecture](fpga_architecture.md)
+### [Fixed-Point Statevector Engine on the FPGA](fpga_architecture.md)
 * **Target Hardware:** AMD/Xilinx Artix-7 XC7A35T-1CPG236C (Digilent Basys 3) operating at 100 MHz.
-* **Compute Matrix:** 8-lane parallel DSP48E1 butterfly arithmetic unit with 128 KB ping-pong Block RAM.
-* **Opcode Protocol:** Fused 14-qubit layer step (Opcode `0x10`, $10.24\,\mu\text{s}$), autonomous on-chip multi-layer loop (Opcode `0x20`, $49,845\text{ layers/s}$), and continuous quantum chaos entropy streaming (Opcode `0x30`, $4,179.5\text{ seeds/s}$).
+* **Compute Matrix:** controlled 2x2 complex gate streaming one amplitude pair per clock over two parity-banked block-RAM banks (14 qubits, 25-bit coefficients, 32-bit saturating state).
+* **Protocol:** SET_N, RESET, LOAD, READ, GATE and EXPECT_Z over UART, specified by the bit-exact Rust model `t1000::qpu` and checked against it in simulation.
 
 ### [ZINC 250k Whole-Library Quantum Screening](zinc_quantum_screening.md)
 * **Scale:** Evaluated entire ZINC 250k clean drug universe ($N = 249,455$ molecules) in $1.169\text{ s}$ ($213,350.6\text{ mols/s}$).

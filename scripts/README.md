@@ -13,7 +13,7 @@ This directory contains autonomous tooling, empirical benchmarking drivers, data
 scripts/
 ├── charting/       # 38 Sovereign research charting modules & master suite (chart_all.py)
 ├── data/           # High-throughput dataset feature extractors (MobileNetV3 PCA)
-├── fpga/           # Artix-7 XC7A35T hardware UART drivers & chaos verification
+├── fpga/           # Artix-7 XC7A35T hardware conformance script
 ├── qec/            # Heterogeneous CPU-GPU cut-bridge pipelines (OpenCL + AVX2)
 ├── screening/      # Chemical latent space screening & molecule search drivers
 └── benchmarks/     # High-level Python comparative benchmark drivers (Qrack vs T-1000)
@@ -71,13 +71,7 @@ Visual telemetry suite adhering strictly to the Deen OS Sovereign Visual Specifi
 * **`extract_birds.py`**: Utility to extract and verify the Waterbirds image archive.
 
 ### 3. `scripts/fpga/`
-* **`test_chaos_streaming.py`**: Connects to the physical Artix-7 FPGA over 3.0 MBaud UART (`COM6`) to verify cycle-accurate Porter-Thomas chaos streaming and hardware attestation hashes.
-* **`bench_pc_vs_fpga_scaling.py`**: Benchmarks CPU AVX2 vs FPGA Artix-7 across circuit widths $N=10\dots 26$.
-* **`frontier_rcs_fpga_bench.py`**: Evaluates random circuit sampling on physical hardware vs reference simulation.
-* **`nist_randomness_audit.py`**: Runs NIST SP 800-22 statistical entropy tests on FPGA streamed output.
-* **`run_fpga_26q_telemetry.py`**: Records continuous telemetry across 26-qubit scaled circuits.
-* **`test_1000_qpu.py`**: Hardware handshake and 7-segment display verification ("1000").
-* **`test_19s_chaos_burst.py`**: High-speed burst test of chaotic entropy generation.
+* **`verify_1000_qpu.py`**: Replays the golden vectors from the Rust model on the Basys 3 over UART (`COM6`, 3.0 MBaud) and compares every reply byte; also reports gate throughput at 14 qubits.
 
 ### 4. `scripts/qec/`
 * **`heterogeneous_bridge_pipeline.py`**: Orchestrates concurrent dual-register evaluation across CPU L3 cache (AVX2+FMA) and Intel Arc Xe iGPU (OpenCL), evaluating non-local Tsirelson CHSH Bell inequality witnesses ($S = 2.82842712$).
@@ -101,8 +95,8 @@ python scripts/charting/chart_all.py
 # Render M153 Transversal FT-QNN Dynamics
 python scripts/charting/chart_qm9_transversal_w7_training.py
 
-# Run FPGA cycle-accurate chaos verification
-python scripts/fpga/test_chaos_streaming.py --port COM6 --baud 3000000
+# Replay the golden vectors on the FPGA
+python scripts/fpga/verify_1000_qpu.py --port COM6 --baud 3000000
 
 # Run heterogeneous CPU+iGPU cut-bridge pipeline
 python scripts/qec/heterogeneous_bridge_pipeline.py

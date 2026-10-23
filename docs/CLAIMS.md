@@ -81,18 +81,23 @@ runs; the root `results/` files come from the reference host.
 
 ## Hardware check of the FPGA design (2026-10-23)
 
-`scripts/fpga/verify_1000_qpu.py` against the `fpga/1000_qpu/build/1000_qpu.bit` bitstream on the
-Basys 3 (`COM6`, 3 Mbaud):
+**Legacy design (retired).** The first bitstream (opcodes `0xAA`, `0x10`, `0x20`, `0x30`) was
+checked on the Basys 3 (`COM6`, 3 Mbaud): ping and single layer passed 20 of 20, 100-layer loops
+were acknowledged at 8.48 µs per layer (expected 10.24 µs from 1,024 cycles at 100 MHz; the gap was
+never explained), and the entropy stream `0x30` returned the same counter `00 01 … 1f` in every
+seed (1 distinct seed in 128, 31 % ones). That design had no state load or read-back, so its layers
+acted on an all-zero state, and the earlier README statements on NIST SP 800-22 compliance, the
+169x layer speedup and the 26-qubit scaling did not hold. The design and its scripts were removed.
+
+**Current design (`fpga/1000_qpu`, `docs/fpga_architecture.md`).** Evidence in the repository:
 
 | Check | Result |
 | :--- | :--- |
-| Ping `0xAA` → `0x10`, single layer `0x10` → `0xEE`, recovery after unknown opcodes | Pass (20 of 20). |
-| Autonomous layers `0x20` | Acknowledged. Measured 8.48 µs per layer (difference of means, depth 255 vs 1), against the 10.24 µs expected from 1,024 cycles at 100 MHz; the 17 % gap is unexplained. |
-| Entropy stream `0x30` | Streams at ~4,200 seeds/s as documented, but **every seed is the same counter `00 01 02 … 1f`**: 1 distinct seed in 128, 31 % ones, 5.0 bits/byte. The README's NIST SP 800-22 statement (§ 6, § 7 of `docs/fpga_architecture.md`) does not hold for this bitstream. |
-
-Cause: `qpu_bram_matrix.v` has no initial contents and `qpu_top.v` has no opcode to load or read
-back the statevector, so the layers act on an all-zero state and the entropy register only folds in
-the harvest index. The handshake and timing are real; the computation is not yet meaningful.
+| Rust model (`t1000::qpu`), compiler to gates, protocol session | 18 unit tests pass, including the compiled Pauli rotations against the floating-point rotation. |
+| Fixed-point precision (`qpu_precision`) | UCCSD energy error against double precision is at most 1.2e-4 mHa at 24 fractional bits for every molecule up to 14 qubits (chemical accuracy: 1.59 mHa); CH4 (16 qubits) does not fit. |
+| RTL against the model in Vivado xsim (`sim/run_sim.py`) | PASS: 2,536 of 2,536 reply bytes equal the model's for the 13,577-byte golden stream. |
+| Vivado 2026.1 implementation | Slack +0.372 ns at 100 MHz; 1,904 LUTs, 1,614 registers, 32 BRAM36, 40 DSP48E1. |
+| Board (`scripts/fpga/verify_1000_qpu.py`) | Not yet run on the board with this bitstream. |
 
 ## Not checked
 
