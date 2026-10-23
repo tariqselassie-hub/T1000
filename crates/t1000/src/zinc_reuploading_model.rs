@@ -170,18 +170,17 @@ pub struct TrackedPath<'a> {
 
 /// logP predictions of one molecule under several parameter sets.
 ///
-/// The molecule is encoded once and each path then continues from the state the previous one
-/// left, so every path after the first starts from an already-evolved state. This reproduces
-/// the sequencing of the original script, whose reports depend on it.
+/// The molecule is encoded afresh for every path, so each prediction is independent of the
+/// order of the paths. (The original script encoded once and let each path continue from the
+/// state the previous one left, which skewed every path after the first.)
 #[allow(clippy::needless_range_loop)] // index form mirrors the maths
 pub fn track_molecule(model: &Model, features: &[f64], paths: &[TrackedPath]) -> Vec<f64> {
     let mut state = QuantumState::new(DIM);
-    model.encoding.encode_amplitude_into(features, &mut state);
     let mut z = [0.0; N_QUBITS];
     paths
         .iter()
         .map(|p| {
-            model.run(&mut state, p.params, p.dru_scales, features, &mut z);
+            model.encode_and_run(&mut state, p.params, p.dru_scales, features, &mut z);
             let mut pred = p.logp_bias;
             for q in 0..N_QUBITS {
                 pred += p.logp_weights[q] * z[q];
@@ -496,7 +495,7 @@ mod tests {
     }
 
     #[test]
-    fn tracked_paths_continue_from_the_previous_paths_state() {
+    fn each_tracked_path_starts_from_a_fresh_encoding() {
         let (ansatz, encoding, params, dru, alphas) = circuit();
         let model = Model {
             ansatz: &ansatz,
@@ -519,8 +518,8 @@ mod tests {
         let fresh: f64 = z.iter().map(|v| v * 0.1).sum();
         let tracked = track_molecule(&model, &features, &[path, path]);
         assert!((tracked[0] - fresh).abs() < 1e-12);
-        // ... but the same parameters again start from the evolved state, so differ.
-        assert!((tracked[1] - tracked[0]).abs() > 1e-6);
+        // ... and so does every later path: the same parameters again give the same answer.
+        assert!((tracked[1] - tracked[0]).abs() < 1e-12);
     }
 
     #[test]
