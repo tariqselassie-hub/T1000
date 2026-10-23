@@ -29,6 +29,7 @@ pub mod compiler;
 pub mod datasets;
 pub mod device_noise;
 pub mod diagonal;
+pub mod directed_heptal_walk;
 pub mod engine;
 pub mod feature_head;
 pub mod feature_map;
