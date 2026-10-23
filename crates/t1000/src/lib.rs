@@ -51,6 +51,7 @@ pub mod molecular_walk_screener;
 pub mod molfeatures;
 pub mod optimizer;
 pub mod parallel;
+pub mod photonic_interferometer;
 pub mod plaquette;
 pub mod polynomial;
 pub mod protocol;
