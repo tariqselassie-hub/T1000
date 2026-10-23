@@ -75,6 +75,7 @@ pub mod tiled_butterfly;
 pub mod topological_sorter;
 pub mod trainer;
 pub mod ultrametric_tree;
+pub mod vqe;
 pub mod zinc_data;
 pub mod zinc_holdout_eval;
 pub mod zinc_kernel_bench;

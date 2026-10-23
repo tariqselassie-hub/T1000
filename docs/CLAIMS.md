@@ -35,6 +35,7 @@ runs; the root `results/` files come from the reference host.
 | 22 | Cepheus hardware exit probability 0.652 (652/1000), predictive accuracy 84.43 %, simulator 0.7722 | `experiments/cepheus_glued_trees_30q/cepheus_hardware_results.json` (job `ef387a4a-…`, raw counts in `cepheus_physical_1000shots_raw.json`); `data/cepheus_glued_trees_telemetry.json` |
 | 27 | QEC threshold 8.14 %, 41.67× suppression at p = 0.001, 20.72 M decodes/s | `data/vnni_qec_threshold_report.json` |
 | 28 | Coulomb eigenspectrum 14,352.5 mol/s; QM9 ingestion 4,056.4 mol/s | `data/molecular_eigensystem_report.json` |
+| 29 | Ab initio VQE: H₂ FCI energy -1.13727; CH₄ error 0.1853 mHa; BeH₂ (largest) 0.3681 mHa | `hosts/unknown-cpu/data/vqe_molecules_report.json` `fci_energy`, `vqe_error_vs_fci` (full table in `docs/vqe.md`) |
 | M158 | Szegedy walk sink probability 0.7351 | `data/directed_heptal_quantum_walk_report.json` |
 | 4 | Noisy-RCS fidelity gain +5,147 % (14Q) and +13,543 % (16Q) | `rcs_physical_noise_chaos.json` `depth_sweep[*].fidelity_gain_pct` (see context below) |
 
@@ -53,12 +54,16 @@ runs; the root `results/` files come from the reference host.
 
 ## Reference values, not computed
 
-* `chemistry::molecules` holds literature-style Hartree-Fock and ground-state energies per molecule
-  (for example H₂ −1.116699 and −1.137270 Ha). `JordanWignerHamiltonian::from_molecule` builds its
+* `chemistry::molecules` holds tabulated Hartree-Fock and ground-state energies per molecule (for
+  example H₂ -1.116699 and -1.137270 Ha). `JordanWignerHamiltonian::from_molecule` builds its
   one-body and two-body terms from fixed formulas, not molecular integrals, and
   `ground_state_simulation` returns the tabulated energy. README § 3 ("ground-state energies for 9
-  molecules") describes these tabulated values. Computing them from integrals is the next work item
-  (`docs/vqe.md` once it lands).
+  molecules") describes these tabulated values, in a basis and geometry that are not stated.
+* The same nine molecules are now computed from their geometries in `t1000::vqe` (STO-3G, see
+  `docs/vqe.md`). The two sets differ: the tabulated Hartree-Fock energies are -2.9154 (HeH⁺),
+  -56.1654 (NH₃) and -40.1432 (CH₄), against -2.8414, -55.4540 and -39.7268 computed in STO-3G
+  (the computed values match the published STO-3G energies). H₂ and H₂O are close (-1.116699 against
+  -1.116684, -74.9654 against -74.9629). Use the `vqe` figures when a number must be reproducible.
 
 ## Context for comparisons
 

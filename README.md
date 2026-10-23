@@ -256,6 +256,13 @@
 
 ---
 
+### 29. Ab Initio Molecular VQE (`vqe_molecules`, `vqe_dissociation`)
+* **Computed, not tabulated:** STO-3G Gaussian integrals from the geometry (McMurchie-Davidson), restricted Hartree-Fock with DIIS, a frozen-core active space, and the Jordan-Wigner qubit Hamiltonian (14 to 4,688 Pauli terms on 4 to 16 qubits).
+* **Exact reference:** full configuration interaction by Lanczos in the particle-number sector.
+* **UCCSD-VQE with analytic gradients:** all nine Period 1-2 molecules (H₂, HeH⁺, LiH, HF, BeH₂, H₂O, BH₃, NH₃, CH₄) land within chemical accuracy (1.59 mHa) of FCI; the largest error is 0.37 mHa (BeH₂).
+* **Bond stretching:** H₂ Hartree-Fock is 278 mHa off at 3 Å while the VQE tracks the exact curve; at 6 Å the exact energy equals twice the hydrogen-atom energy.
+* Validated against the Szabo & Ostlund H₂ tables, published STO-3G Hartree-Fock energies, and an independent determinant-basis Hamiltonian. Detailed documentation: [`docs/vqe.md`](docs/vqe.md).
+
 ## System Startup & Execution Guide
 
 > **Where results go.** Benchmark and training binaries write to a git-ignored scratch

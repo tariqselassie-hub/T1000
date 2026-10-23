@@ -63,7 +63,11 @@ pub fn solve_symmetric_eigensystem(
     };
 
     householder_tridiagonalize(matrix, n, &mut d, &mut e, &mut v, compute_vectors);
-    symmetric_ql_algorithm(n, &mut d, &mut e, &mut v, compute_vectors)?;
+    if symmetric_ql_algorithm(n, &mut d, &mut e, &mut v, compute_vectors).is_err() {
+        // The QL iteration can stall on matrices with exactly degenerate, decoupled blocks
+        // (for example the atomic p shells of a Fock matrix); Jacobi rotations always converge.
+        return jacobi_fallback(matrix, n, compute_vectors);
+    }
 
     // Sort eigenvalues descending and permute eigenvectors accordingly
     let mut indices: Vec<usize> = (0..n).collect();
@@ -90,6 +94,20 @@ pub fn solve_symmetric_eigensystem(
         eigenvalues: sorted_eigenvalues,
         eigenvectors: sorted_eigenvectors,
     })
+}
+
+/// Descending-order result from the Jacobi solver, for matrices the QL iteration cannot handle.
+fn jacobi_fallback(
+    matrix: &[f64],
+    n: usize,
+    compute_vectors: bool,
+) -> Result<SymmetricEigensystem, String> {
+    let (ascending, columns) = crate::vqe::linalg::symmetric_eigh(matrix, n)?;
+    let eigenvalues: Vec<f64> = ascending.iter().rev().copied().collect();
+    let eigenvectors = compute_vectors.then(|| {
+        (0..n).map(|k| (0..n).map(|row| columns[row * n + (n - 1 - k)]).collect()).collect()
+    });
+    Ok(SymmetricEigensystem { dim: n, eigenvalues, eigenvectors })
 }
 
 /// Stack-allocated zero-heap eigensolver for 50x50 Coulomb matrices.
@@ -462,5 +480,31 @@ mod tests {
         assert_eq!(eigs.len(), 50);
         assert!((eigs[0] - 50.0).abs() < 1e-8);
         assert!((eigs[49] - 1.0).abs() < 1e-8);
+    }
+
+    /// A Fock matrix in an orthogonal basis for LiH (STO-3G): two decoupled, exactly degenerate
+    /// p orbitals. The QL iteration stalled on it before the Jacobi fallback was added.
+    #[test]
+    fn test_degenerate_decoupled_block_does_not_stall() {
+        let m = [
+            -2.2921217337156565, -0.3535096804702416, 0.0, 0.0, 0.02436310823964883,
+            -0.03856898097799294, -0.3535096804702415, -0.0004328633060700221, 0.0, 0.0,
+            0.022851335917031437, -0.2726670761831723, 0.0, 0.0, 0.16482699777050702, 0.0, 0.0,
+            0.0, 0.0, 0.0, 0.0, 0.16482699777050702, 0.0, 0.0, 0.02436310823964884,
+            0.022851335917031403, 0.0, 0.0, 0.16017491672356213, -0.3197765385590379,
+            -0.038568980977992995, -0.27266707618317226, 0.0, 0.0, -0.31977653855903804,
+            0.12918858750283455,
+        ];
+        let n = 6;
+        let sys = solve_symmetric_eigensystem(&m, n, true).expect("must converge");
+        let trace: f64 = (0..n).map(|i| m[i * n + i]).sum();
+        assert!((sys.spectral_trace() - trace).abs() < 1e-12);
+        let vecs = sys.eigenvectors.unwrap();
+        for (k, col) in vecs.iter().enumerate() {
+            for r in 0..n {
+                let av: f64 = (0..n).map(|c| m[r * n + c] * col[c]).sum();
+                assert!((av - sys.eigenvalues[k] * col[r]).abs() < 1e-10);
+            }
+        }
     }
 }

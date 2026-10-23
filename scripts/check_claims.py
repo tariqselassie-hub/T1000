@@ -48,6 +48,9 @@ CLAIMS = [
     ("28", "QM9 ingestion molecules per second", ["data/molecular_eigensystem_report.json"], "4056.4", "throughput_mols_per_sec"),
     ("4", "noisy RCS fidelity gain 14Q % (best depth)", ["rcs_physical_noise_chaos.json"], "5147", "fidelity_gain_pct"),
     ("4", "noisy RCS fidelity gain 16Q % (best depth)", ["rcs_physical_noise_chaos.json"], "13543", "fidelity_gain_pct"),
+    ("29", "VQE H2 exact (FCI) energy", ["hosts/unknown-cpu/data/vqe_molecules_report.json"], "-1.13727", "fci_energy"),
+    ("29", "VQE CH4 error vs FCI (mHa)", ["hosts/unknown-cpu/data/vqe_molecules_report.json"], "0.1853", "vqe_error_vs_fci"),
+    ("29", "VQE BeH2 error vs FCI (mHa, largest)", ["hosts/unknown-cpu/data/vqe_molecules_report.json"], "0.3681", "vqe_error_vs_fci"),
     ("M158", "Szegedy quantum hit", ["data/directed_heptal_quantum_walk_report.json"], "0.7351", "peak_quantum_sink_prob"),
 ]
 

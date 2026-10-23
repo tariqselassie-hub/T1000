@@ -77,6 +77,14 @@ name = "vnni_threshold_bench"
 path = "src/bin/measurements/vnni_threshold_bench.rs"
 
 [[bin]]
+name = "vqe_dissociation"
+path = "src/bin/measurements/vqe_dissociation.rs"
+
+[[bin]]
+name = "vqe_molecules"
+path = "src/bin/measurements/vqe_molecules.rs"
+
+[[bin]]
 name = "molecular_eigensystem_bench"
 path = "src/bin/measurements/molecular_eigensystem_bench.rs"
 

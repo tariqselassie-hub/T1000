@@ -5,6 +5,11 @@
 //!
 //! Maps molecular orbitals to qubit operators, computes expectation values,
 //! orbital electron densities, and quantum orbital entanglement entropy.
+//!
+//! **Model Hamiltonian.** The one- and two-body coefficients here are fixed formulas and
+//! `ground_state_simulation` returns the tabulated energy from `molecules`. For a Hamiltonian
+//! computed from molecular integrals, with a variational solver and an exact reference, use
+//! [`crate::vqe`].
 
 use crate::chemistry::molecules::Period12Molecule;
 use crate::QuantumState;
