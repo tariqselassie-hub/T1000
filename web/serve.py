@@ -39,10 +39,6 @@ SOVEREIGN_FPGA_BAUD = int(os.getenv("T1000_QPU_BAUD", "3000000"))
 # Hardware protocol opcodes
 CMD_PING = bytes([0xAA])
 RESP_PING_READY = 0x10
-CMD_RUN_LAYER = bytes([0x10])
-RESP_LAYER_ACK = 0xEE
-CMD_RUN_MULTI = 0x20
-CMD_STREAM_CHAOS = 0x30
 
 
 def probe_com6_hardware() -> Dict[str, Any]:
@@ -1188,43 +1184,11 @@ class SovereignHandler(http.server.SimpleHTTPRequestHandler):
         data_dir = WEB_DIR / "data"
         summary = {}
 
-        # 1. PC vs FPGA Scaling
-        scaling_path = data_dir / "pc_vs_fpga_26q_scaling.json"
-        if scaling_path.exists():
-            try:
-                summary["pc_vs_fpga_scaling"] = json.loads(scaling_path.read_text(encoding="utf-8"))
-            except Exception:
-                pass
-
         # 2. MNIST QNN Training Run
         mnist_path = data_dir / "mnist_qnn_training.json"
         if mnist_path.exists():
             try:
                 summary["mnist_qnn"] = json.loads(mnist_path.read_text(encoding="utf-8"))
-            except Exception:
-                pass
-
-        # 3. Frontier RCS FPGA Results
-        rcs_path = data_dir / "frontier_rcs_fpga_results.json"
-        if rcs_path.exists():
-            try:
-                summary["frontier_rcs"] = json.loads(rcs_path.read_text(encoding="utf-8"))
-            except Exception:
-                pass
-
-        # 4. NIST Entropy Audit
-        entropy_path = data_dir / "nist_entropy_audit.json"
-        if entropy_path.exists():
-            try:
-                summary["nist_entropy"] = json.loads(entropy_path.read_text(encoding="utf-8"))
-            except Exception:
-                pass
-
-        # 5. FPGA 26Q Telemetry
-        fpga_26q_path = data_dir / "fpga_26q_scaling_telemetry.json"
-        if fpga_26q_path.exists():
-            try:
-                summary["fpga_26q"] = json.loads(fpga_26q_path.read_text(encoding="utf-8"))
             except Exception:
                 pass
 
@@ -1279,52 +1243,25 @@ class SovereignHandler(http.server.SimpleHTTPRequestHandler):
         sim_res = simulate_quantum_circuit(n_qubits, layers)
         sim_duration_us = (time.perf_counter() - t_sim_0) * 1e6
 
-        depth = sim_res["depth"]
         total_gates = sim_res["total_gates"]
 
-        # Calculate hardware cycle-accurate metrics
-        # 100 MHz oscillator = 10 ns clock cycle
-        # Hardware: 1024 clock cycles per layer (8 DSP48E1 lanes ping-pong butterfly)
-        cycles_per_layer = 1024
-        total_cycles = depth * cycles_per_layer
-        pure_silicon_us = depth * 10.24  # 1024 * 10ns = 10.24 us per layer
-
         if target == "fpga":
-            # Attempt live physical probe if hardware bitstream is online
-            fpga_probe = probe_com6_hardware()
-            is_live_silicon = fpga_probe.get("online", False)
-
-            # Roundtrip latency includes FTDI USB-UART UART bridge (3.0 MBaud)
-            uart_wire_overhead_us = 1027.32  # ~1.027 ms measured on COM6
-            wall_time_us = pure_silicon_us + uart_wire_overhead_us
-
-            sim_res["target_executed"] = "Xilinx Artix-7 XC7A35T (1000_QPU Silicon)"
-            sim_res["hardware_mode"] = "PHYSICAL_SILICON" if is_live_silicon else "CYCLE_ACCURATE_FPGA_EMULATION"
+            # The circuit is simulated on the host. It is not sent to the board: the 1000_QPU
+            # protocol (LOAD/GATE/READ/EXPECT_Z) needs the circuit compiled to 2x2 gates, which the
+            # dashboard does not do. Only the board's presence is reported, from a live handshake.
+            sim_res["target_executed"] = "Host simulation (circuit not run on the board)"
+            sim_res["hardware_mode"] = "NOT_EXECUTED_ON_HARDWARE"
+            sim_res["hardware_probe"] = probe_com6_hardware()
             sim_res["com_port"] = SOVEREIGN_FPGA_PORT
             sim_res["baud_rate"] = SOVEREIGN_FPGA_BAUD
-            sim_res["wall_time_us"] = round(wall_time_us, 2)
-            sim_res["wall_time_ms"] = round(wall_time_us / 1000.0, 3)
-            sim_res["pure_silicon_us"] = round(pure_silicon_us, 2)
-            sim_res["pure_silicon_ms"] = round(pure_silicon_us / 1000.0, 4)
-            sim_res["clock_cycles"] = total_cycles
-            sim_res["clock_mhz"] = 100.0
-            sim_res["dsp_lanes"] = 8
-            sim_res["dsp_slices"] = "DSP48E1"
-            sim_res["power_dissipation_watts"] = 0.254
-            sim_res["attestation_hash"] = f"0x1000_QPU_{format(total_cycles & 0xFFFF, '04X')}_EE"
-            sim_res["gate_throughput"] = round((total_gates / (pure_silicon_us / 1e6)), 0) if pure_silicon_us > 0 else 0
         else:
-            # CPU AVX2 SIMD Engine (Intel Core Ultra 7)
-            # L2 Tiled Butterfly SIMD execution
-            cpu_simd_time_us = max(4.2, sim_duration_us * 0.45)
-            sim_res["target_executed"] = "Host CPU (AVX2+FMA L2 Tiled Butterfly)"
-            sim_res["hardware_mode"] = "AVX2_SIMD_SOA"
-            sim_res["wall_time_us"] = round(cpu_simd_time_us, 2)
-            sim_res["wall_time_ms"] = round(cpu_simd_time_us / 1000.0, 4)
-            sim_res["cpu_cores_active"] = 16
-            sim_res["vector_width_bits"] = 256
-            sim_res["l2_cache_tiling"] = "64-byte aligned blocks"
-            sim_res["gate_throughput"] = round((total_gates / (cpu_simd_time_us / 1e6)), 0) if cpu_simd_time_us > 0 else 0
+            sim_res["target_executed"] = "Host simulation"
+            sim_res["hardware_mode"] = "HOST_SIMULATION"
+        sim_res["wall_time_us"] = round(sim_duration_us, 2)
+        sim_res["wall_time_ms"] = round(sim_duration_us / 1000.0, 4)
+        sim_res["gate_throughput"] = (
+            round(total_gates / (sim_duration_us / 1e6), 0) if sim_duration_us > 0 else 0
+        )
 
         self.send_json_response(sim_res)
 

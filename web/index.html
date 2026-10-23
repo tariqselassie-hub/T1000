@@ -120,7 +120,6 @@
                             <optgroup label="Fault-Tolerant &amp; Co-Processor Breakthroughs">
                                 <option value="data/virtual_36q_cut_bridge_report.json">36Q Virtual Cut-Bridge Telemetry (M155)</option>
                                 <option value="data/qm9_magic_w7_training_report.json">Universal FT-QNN Magic Distillation (M156)</option>
-                                <option value="data/pc_vs_fpga_26q_scaling.json">PC vs Artix-7 FPGA 26-Qubit Scaling</option>
                             </optgroup>
                         </select>
 
@@ -475,7 +474,7 @@
                             </tr>
                             <tr>
                                 <td>Attestation Hash</td>
-                                <td id="comp-attestation-hash" class="val-col" style="font-size:9px; color:var(--text-slate);">0x1000_QPU_0C00_EE</td>
+                                <td id="comp-attestation-hash" class="val-col" style="font-size:9px; color:var(--text-slate);">--</td>
                             </tr>
                         </table>
                     </div>
@@ -814,47 +813,6 @@
                             <tr>
                                 <td>Non-Separable Entanglement Witness</td>
                                 <td class="val-col" style="color:var(--quantum-green); font-weight:700;">W = 0.1898 &gt; 0 (Entangled)</td>
-                            </tr>
-                        </table>
-                    </div>
-
-                    <!-- Card 2: PC vs FPGA 26-Qubit Scaling Benchmark -->
-                    <div class="telemetry-card">
-                        <div class="card-header">
-                            <span class="card-title">2. Silicon Hardware Benchmarks &amp; 26Q Scaling</span>
-                            <div style="display:flex; gap:8px;">
-                                <button id="btn-refresh-telemetry" class="btn-tiny">[R] REFRESH</button>
-                            </div>
-                        </div>
-                        <p class="card-desc">
-                            Direct cycle-accurate comparison between Host CPU (Core Ultra 7 AVX2+FMA) and AMD Artix-7 FPGA (COM6 @ 3.0 MBaud).
-                        </p>
-                        <div class="table-scroll-container">
-                            <table class="matrix-table" id="table-scaling-telemetry">
-                                <thead>
-                                    <tr>
-                                        <th>Qubits</th>
-                                        <th>States</th>
-                                        <th>Host PC (ms)</th>
-                                        <th>FPGA Silicon (ms)</th>
-                                        <th>UART Wire (ms)</th>
-                                        <th>Speedup</th>
-                                        <th>XEB Fidelity</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Populated dynamically via JS -->
-                                </tbody>
-                            </table>
-                        </div>
-                        <table class="comparison-table">
-                            <tr>
-                                <td>NIST Entropy Minimum H_min</td>
-                                <td class="val-col" style="color:var(--quantum-green); font-weight:700;">0.9998 (100% Passed)</td>
-                            </tr>
-                            <tr>
-                                <td>Artix-7 FPGA Oscillator</td>
-                                <td class="val-col">100.0 MHz (10 ns clock)</td>
                             </tr>
                         </table>
                     </div>

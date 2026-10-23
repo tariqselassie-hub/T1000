@@ -1,6 +1,0 @@
-test_name,p_value,threshold,status
-monobit,0.000000,0.01,FAILED
-block_frequency,0.000000,0.01,FAILED
-runs,0.000000,0.01,FAILED
-longest_run,0.000000,0.01,FAILED
-approx_entropy,0.000000,0.01,FAILED

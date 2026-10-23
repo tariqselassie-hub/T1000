@@ -28,12 +28,13 @@ use crate::state::QuantumState;
 use crate::telemetry::QuantumTelemetryReport;
 use crate::zipper::{BlochZipperEngine, ZipperConfig, ZipperExecutionReport};
 
-/// Diagnostic device information for the physical Artix-7 FPGA coprocessor.
+/// Static description of the 1000_QPU design on the Basys 3 (`fpga/1000_qpu`). It does not probe the
+/// board; `scripts/fpga/verify_1000_qpu.py` is the check that the hardware answers.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FpgaDeviceInfo {
     pub target_device: String,
     pub bram_memory_kb: usize,
-    pub dsp_lanes: usize,
+    pub dsp_slices: usize,
     pub uart_port: String,
     pub baud_rate: u32,
     pub is_emulated: bool,
@@ -228,12 +229,12 @@ impl T1000Engine {
     // 8. Hardware Silicon Coprocessor Status
     // =========================================================================
 
-    /// Queries the operational status of the physical AMD/Xilinx Artix-7 FPGA coprocessor.
+    /// Describes the FPGA design (resources from the Vivado 2026.1 implementation report).
     pub fn fpga_status(&self) -> FpgaDeviceInfo {
         FpgaDeviceInfo {
             target_device: "AMD Artix-7 XC7A35T-1CPG236C (Basys 3)".to_string(),
             bram_memory_kb: 128,
-            dsp_lanes: 8,
+            dsp_slices: 40,
             uart_port: "COM6".to_string(),
             baud_rate: 3_000_000,
             is_emulated: false,
@@ -281,7 +282,7 @@ impl T1000Engine {
             author: "Terrence A. Jones SR".to_string(),
             license: "MIT OR Apache-2.0".to_string(),
             sim_backend: "256-bit AVX2 + FMA SOA".to_string(),
-            fpga_target: "Artix-7 1000_QPU (14 Qubits / 128 KB BRAM)".to_string(),
+            fpga_target: "Artix-7 1000_QPU (14 qubits, 2 x 64 KB BRAM banks, 40 DSP48E1)".to_string(),
             max_dense_qubits: 26,
             zipper_max_qubits: 200,
             plaquette_2d_max_qubits: 2000,

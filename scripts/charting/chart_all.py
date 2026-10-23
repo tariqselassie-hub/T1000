@@ -23,9 +23,6 @@ from chart_qnn_scaling import chart_qnn_scaling
 from chart_lattice_phase import chart_lattice_phase
 from chart_lattice_quench import chart_lattice_quench
 from chart_frontier_rcs import chart_frontier_rcs
-from chart_pc_vs_fpga import chart_pc_vs_fpga
-from chart_fpga_26q import chart_fpga_26q
-from chart_frontier_rcs_fpga import chart_frontier_rcs_fpga
 from chart_exascale_showdown import chart_exascale_showdown
 
 def run_all_charts() -> None:
@@ -91,36 +88,6 @@ def run_all_charts() -> None:
         print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
     else:
         print(f" [!] Skipped Frontier RCS: {rcs_json.name} not found.")
-
-    # 6. PC vs FPGA 26-Qubit Scaling
-    pc_fpga_csv = exp_dir / "pc_vs_fpga_26q_scaling.csv"
-    if pc_fpga_csv.exists():
-        png = chart_pc_vs_fpga(pc_fpga_csv, chart_dir)
-        size_kb = png.stat().st_size / 1024.0
-        generated.append(("PC vs FPGA 26-Qubit Scaling", png.name, f"{size_kb:.1f} KB"))
-        print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
-    else:
-        print(f" [!] Skipped PC vs FPGA Scaling: {pc_fpga_csv.name} not found.")
-
-    # 7. 26-Qubit FPGA Silicon Accelerator Telemetry
-    fpga_26q_json = exp_dir / "fpga_26q_scaling_telemetry.json"
-    if fpga_26q_json.exists():
-        png = chart_fpga_26q(fpga_26q_json, chart_dir)
-        size_kb = png.stat().st_size / 1024.0
-        generated.append(("26-Qubit FPGA Silicon Accelerator", png.name, f"{size_kb:.1f} KB"))
-        print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
-    else:
-        print(f" [!] Skipped 26-Qubit FPGA Telemetry: {fpga_26q_json.name} not found.")
-
-    # 8. 14-Qubit 36-Depth Frontier RCS FPGA Hardware Benchmark
-    rcs_fpga_json = exp_dir / "frontier_rcs_fpga_results.json"
-    if rcs_fpga_json.exists():
-        png = chart_frontier_rcs_fpga(rcs_fpga_json, chart_dir)
-        size_kb = png.stat().st_size / 1024.0
-        generated.append(("14Q 36D RCS FPGA Benchmark", png.name, f"{size_kb:.1f} KB"))
-        print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
-    else:
-        print(f" [!] Skipped RCS FPGA Benchmark: {rcs_fpga_json.name} not found.")
 
     # 9. Search 3: ZINC Quantum Chemical Anomalies
     anom_json = exp_dir / "zinc_quantum_anomalies.json"

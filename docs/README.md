@@ -36,7 +36,7 @@ docs/
 
 ### [Dashboard & Lego-Block Circuit Composer](dashboard_and_circuit_composer.md)
 * **Tri-Deck Cockpit:** Deck 1 (3D Molecular Manifold & Force-Directed Distance Geometry), Deck 2 (Lego-Block Circuit Composer on $q_0 \dots q_{11}$ wires), and Deck 3 (Run Telemetry Matrix).
-* **Hardware Bridge:** Real-time UART execution over `COM6` @ 3.0 MBaud to physical Artix-7 FPGA or AVX2+FMA host CPU.
+* **Hardware Bridge:** UART handshake over `COM6` @ 3.0 MBaud with the Artix-7 FPGA board; circuits run on the AVX2+FMA host CPU.
 * **Cohesion Protocols:** Quantum Zeno sentry subspace pinning, XY4 dynamical decoupling echoes, and zero-noise extrapolation.
 
 ### [True Cohesion Architecture](cohesion_architecture.md)

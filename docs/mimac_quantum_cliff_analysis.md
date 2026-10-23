@@ -85,11 +85,3 @@ All four compounds share the core meta-substituted benzylamine scaffold `[R]-c1c
 
 ---
 
-## 4. Hardware Verification & Telemetry
-
-The 10-qubit quantum state evolution was validated on physical silicon:
-- **Target Silicon:** AMD Artix-7 XC7A35T FPGA (Digilent Basys 3)
-- **Communications:** Hardware UART over `COM6` at 3,000,000 Baud
-- **Execution Protocol:** 12-layer quantum butterfly sweep (`0x30`)
-- **Execution Latency:** $122.88\,\mu\text{s}$ on-chip ($1.071\,\text{ms}$ total roundtrip)
-- **Status:** Verified with zero frame errors

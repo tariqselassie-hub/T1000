@@ -163,4 +163,4 @@ where $\lambda_m$ are the diagonal generators of $\mathfrak{su}(7)$.
 1. **Module Integration:** Connect the sliding-window controller with [`crates/t1000/src/heptal_wave.rs`](file:///c:/Users/zoddj/zenith_workspace_divizion/T1000/crates/t1000/src/heptal_wave.rs).
 2. **Heptal Singlet Coupling:** Implement two-qudit entangling gate enforcing $q_i + q_{i+1} \equiv 0 \pmod 7$.
 3. **Simplex Feedback Driver:** Probability-weighted modular shift generator across $\Delta^6$.
-4. **Artix-7 FPGA Protocol:** Stream zipper states to hardware via the existing `COM6` UART bridge.
+4. **Artix-7 FPGA (not planned for this phase):** the 1000_QPU holds at most 14 qubits (`docs/fpga_architecture.md`), so zipper states beyond that do not fit.

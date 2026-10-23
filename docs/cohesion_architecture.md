@@ -117,7 +117,7 @@ Interoperability   (Compile-Mitigate) (PT + Coherence)  (Master API)      (FPGA 
      * `molecule_similarity(a, b)`: Fubini-Study Hilbert state fidelity metric.
      * `run_bloch_zipper(N)`: Executes 1D MPS linear Bloch-zipper ($O(N)$ cache-resident linear scaling).
      * `run_heptal_wave(N)`: Evolves $N$ radix-7 qudits with exact $SU(7)$ modular complementarity.
-     * `fpga_status()`: Queries hardware coprocessor state, DSP configuration, and UART bus parameters.
+     * `fpga_status()`: Static description of the 1000_QPU design (resources, UART parameters); it does not probe the board.
      * `system_manifest()`: Summarizes version, author attribution, and architectural bounds.
 
 ### Verification Matrix
@@ -148,7 +148,7 @@ Interoperability   (Compile-Mitigate) (PT + Coherence)  (Master API)      (FPGA 
 ### Architectural Bounds & Rationale
 1. **Physical FPGA Coprocessor (Artix-7 XC7A35T):**
    * Locked to **14 qubits** ($2^{14} = 16,384$ complex amplitudes).
-   * Exact physical constraint: 128 KB on-chip Block RAM (BRAM) ping-pong buffer in Q1.15 fixed-point format.
+   * Exact physical constraint: 2 x 64 KB on-chip Block RAM banks holding 32-bit real and imaginary components (see `docs/fpga_architecture.md`).
 2. **Host CPU 256-bit AVX2 Default:**
    * Promoted from 14 to **18 qubits** ($2^{18} = 262,144$ complex amplitudes).
    * Memory footprint: Exactly 4.0 MB per buffer (real + imag SOA buffers), strictly resident within CPU L3 cache.

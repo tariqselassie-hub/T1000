@@ -53,10 +53,7 @@ Visual telemetry suite adhering strictly to the Deen OS Sovereign Visual Specifi
 * **`chart_nighthawk_99_plaquettes.py`**: M124 IBM Quantum Nighthawk 99-plaquette contraction & Qrack comparison.
 * **`chart_nighthawk_layout.py`**: 120-qubit IBM Nighthawk R2 and Kagome strip layout rendering.
 * **`chart_exascale_showdown.py`**: Desktop CPU/FPGA vs supercomputing infrastructure comparison.
-* **`chart_pc_vs_fpga.py`**: AVX2 CPU vs Artix-7 FPGA execution cycles and throughput scaling.
-* **`chart_fpga_26q.py`**: 26-qubit hardware co-processor UART streaming telemetry.
 * **`chart_frontier_rcs.py`**: 14-qubit, 36-depth random circuit sampling with Porter-Thomas chaos.
-* **`chart_frontier_rcs_fpga.py`**: FPGA cycle-accurate execution vs simulated statevector.
 * **`chart_lattice_phase.py`**: 2D transverse Ising lattice quantum phase transition.
 * **`chart_lattice_quench.py`**: Non-equilibrium quantum quench and Lieb-Robinson magnon spreading.
 * **`chart_lead_109_attractor.py`**: Convergence dynamics of the 3 magic molecular attractor switches.

@@ -1,0 +1,56 @@
+{
+  "timestamp_utc": "2026-10-23T23:06:43+00:00",
+  "port": "COM6",
+  "baud": 3000000,
+  "vectors": "C:\\Users\\zoddj\\GuddaLM_workspace\\T1000\\fpga\\1000_qpu\\sim\\vectors",
+  "all_passed": true,
+  "stages": [
+    {
+      "stage": "0 port and passive listen",
+      "passed": true,
+      "details": {
+        "port": "COM6",
+        "description": "USB Serial Port (COM6)",
+        "usb_vid_pid": "0403:6010",
+        "unsolicited_bytes": ""
+      },
+      "notes": []
+    },
+    {
+      "stage": "1 identity: ping and version",
+      "passed": true,
+      "details": {
+        "ping": "10",
+        "version": "51505501ee"
+      },
+      "notes": []
+    },
+    {
+      "stage": "2 golden-vector replay against the Rust model",
+      "passed": true,
+      "details": {
+        "frames": 456,
+        "stimulus_bytes": 13577,
+        "reply_bytes_expected": 2536,
+        "reply_bytes_received": 2536,
+        "first_mismatch_byte": null,
+        "seconds": 0.132
+      },
+      "notes": []
+    },
+    {
+      "stage": "3 gate throughput at 14 qubits",
+      "passed": true,
+      "details": {
+        "gates": 400,
+        "acknowledged": 400,
+        "microseconds_per_gate": 122.6,
+        "uart_floor_microseconds": 120.0,
+        "fabric_microseconds_at_100mhz": 81.9
+      },
+      "notes": [
+        "per-gate time is limited by the 36-byte frame on the UART, not by the fabric"
+      ]
+    }
+  ]
+}

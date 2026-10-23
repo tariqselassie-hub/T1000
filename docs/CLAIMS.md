@@ -87,7 +87,10 @@ were acknowledged at 8.48 µs per layer (expected 10.24 µs from 1,024 cycles at
 never explained), and the entropy stream `0x30` returned the same counter `00 01 … 1f` in every
 seed (1 distinct seed in 128, 31 % ones). That design had no state load or read-back, so its layers
 acted on an all-zero state, and the earlier README statements on NIST SP 800-22 compliance, the
-169x layer speedup and the 26-qubit scaling did not hold. The design and its scripts were removed.
+169x layer speedup and the 26-qubit scaling did not hold. The entropy audit committed on
+2026-10-15 agrees: 1,280,008 bits from 5,000 seeds, 31.3 % ones, 5.0 bits/byte, every NIST test
+failed. The design, its scripts and its datasets were removed, and the web dashboard no longer
+reports hardware figures it did not measure.
 
 **Current design (`fpga/1000_qpu`, `docs/fpga_architecture.md`).** Evidence in the repository:
 
@@ -101,7 +104,7 @@ acted on an all-zero state, and the earlier README statements on NIST SP 800-22 
 
 ## Not checked
 
-The README quantities with no committed result file are not covered: FPGA figures (§ 6), the Q-SSM
+The README quantities with no committed result file are not covered: the Q-SSM
 token rates (§ 12), the MPS zipper and heptal-qudit timings (§§ 10, 11), compile/fusion speedups
 (§§ 1, 2), and the speed comparison with Qiskit Aer. These come from benchmark binaries that print
 to the terminal; re-run them on the target host to confirm.

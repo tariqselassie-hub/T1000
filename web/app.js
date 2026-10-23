@@ -512,7 +512,6 @@ class QuantumMolecularDashboard {
             // Check if array has scaling or molecular records
             if (data.length > 0 && data[0].qubits !== undefined) {
                 // Scaling dataset selected in dropdown
-                this.renderScalingTable(data);
                 const first = data[0];
                 molecules.push({
                     id: `Q${first.qubits}`,
@@ -2505,20 +2504,11 @@ class QuantumMolecularDashboard {
             }
         });
 
-        const pureSiliconUs = layers.length * 10.24;
-        const cycles = layers.length * 1024;
         const isFpga = (target === 'fpga');
 
         return {
-            target_executed: isFpga ? 'Xilinx Artix-7 XC7A35T (COM6 @ 3.0MBaud)' : 'Host CPU (AVX2+FMA SIMD)',
-            wall_time_us: isFpga ? (pureSiliconUs + 1027.32) : 4.8,
-            pure_silicon_us: pureSiliconUs,
-            clock_cycles: cycles,
-            dsp_lanes: 8,
-            gate_throughput: Math.round(totalGates / (pureSiliconUs / 1e6)),
-            f_xeb: 0.9998,
-            shannon_entropy: 5.64,
-            attestation_hash: `0x1000_QPU_${(cycles & 0xFFFF).toString(16).toUpperCase()}_EE`,
+            target_executed: isFpga ? 'Browser simulation (circuit not run on the board)' : 'Browser simulation',
+            hardware_mode: isFpga ? 'NOT_EXECUTED_ON_HARDWARE' : 'HOST_SIMULATION',
             pauli_z: pauli_z,
             bloch_vectors: bloch_vectors,
             top_states: topStates
@@ -2542,19 +2532,19 @@ class QuantumMolecularDashboard {
         safeSet('tel-throughput', throughput);
         safeSet('comp-gate-throughput', data.gate_throughput ? `${data.gate_throughput.toLocaleString()} gates/s` : '--');
 
-        safeSet('tel-fxeb', data.f_xeb ? data.f_xeb.toFixed(4) : '0.9998');
+        safeSet('tel-fxeb', data.f_xeb ? data.f_xeb.toFixed(4) : '--');
 
         const targetName = data.target_executed || 'Silicon Target';
         safeSet('tel-target-name', targetName);
         safeSet('comp-target-name', targetName);
 
-        safeSet('tel-dsp-lanes', `${data.dsp_lanes || 8} DSP48E1 Slices`);
-        const cycles = `${(data.clock_cycles || 0).toLocaleString()} Cycles @ 100MHz`;
+        safeSet('tel-dsp-lanes', data.dsp_lanes ? `${data.dsp_lanes} DSP48E1 Slices` : '--');
+        const cycles = data.clock_cycles ? `${data.clock_cycles.toLocaleString()} Cycles @ 100MHz` : '--';
         safeSet('tel-cycles', cycles);
-        safeSet('comp-clock-cycles', `${(data.clock_cycles || 0).toLocaleString()} cycles`);
+        safeSet('comp-clock-cycles', data.clock_cycles ? `${data.clock_cycles.toLocaleString()} cycles` : '--');
 
-        safeSet('tel-entropy', `${data.shannon_entropy || 5.82} bits`);
-        const hash = data.attestation_hash || '0x1000_QPU_EE';
+        safeSet('tel-entropy', data.shannon_entropy ? `${data.shannon_entropy} bits` : '--');
+        const hash = data.attestation_hash || '--';
         safeSet('tel-hash', hash);
         safeSet('comp-attestation-hash', hash);
 
@@ -2649,25 +2639,16 @@ class QuantumMolecularDashboard {
     }
 
     async loadTelemetryMatrix() {
-        let scalingData = null;
         let mnistData = null;
 
         try {
             const res = await fetch('/api/telemetry_data');
             if (res.ok) {
                 const data = await res.json();
-                scalingData = data.pc_vs_fpga_scaling;
                 mnistData = data.mnist_qnn;
             }
         } catch (e) {
             console.warn('API /api/telemetry_data not reachable, loading static JSON files directly.');
-        }
-
-        if (!scalingData) {
-            try {
-                const r = await fetch('data/pc_vs_fpga_26q_scaling.json');
-                if (r.ok) scalingData = await r.json();
-            } catch {}
         }
 
         if (!mnistData) {
@@ -2677,29 +2658,7 @@ class QuantumMolecularDashboard {
             } catch {}
         }
 
-        if (scalingData) this.renderScalingTable(scalingData);
         if (mnistData) this.renderMnistAsciiChart(mnistData);
-    }
-
-    renderScalingTable(data) {
-        const tbody = document.querySelector('#table-scaling-telemetry tbody');
-        if (!tbody || !Array.isArray(data)) return;
-        tbody.innerHTML = '';
-
-        data.forEach(row => {
-            const tr = document.createElement('tr');
-            const speedupStr = `${row.silicon_speedup_ratio.toFixed(1)}x`;
-            tr.innerHTML = `
-                <td style="color:var(--hardware-gold); font-weight:700;">${row.qubits}Q</td>
-                <td>${row.num_states.toLocaleString()}</td>
-                <td>${row.pc_total_ms.toFixed(3)} ms</td>
-                <td style="color:var(--quantum-green); font-weight:700;">${(row.fpga_silicon_total_ms || 0).toFixed(4)} ms</td>
-                <td>${(row.fpga_uart_per_layer_ms || 1.027).toFixed(2)} ms</td>
-                <td style="color:var(--quantum-green); font-weight:700;">${speedupStr}</td>
-                <td>${(row.fpga_f_xeb || 1.0).toFixed(4)}</td>
-            `;
-            tbody.appendChild(tr);
-        });
     }
 
     renderMnistAsciiChart(data) {

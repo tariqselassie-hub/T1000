@@ -46,9 +46,6 @@ results/
 | **03** | **`lattice_phase_transition.png`** | 2D transverse Ising lattice quantum phase transition. | `experiments/lattice_phase_transition.json` |
 | **04** | **`lattice_quench_dynamics.png`** | Non-equilibrium quantum quench and Lieb-Robinson magnon spreading. | `experiments/lattice_quench_dynamics.json` |
 | **05** | **`frontier_rcs_14q_36d_telemetry.png`** | 14-Qubit, 36-Depth Random Circuit Sampling with Porter-Thomas chaos. | `experiments/frontier_rcs_results.json` |
-| **06** | **`pc_vs_fpga_26q_scaling.png`** | AVX2 CPU vs. Artix-7 FPGA execution cycles and throughput. | `experiments/pc_vs_fpga_26q_scaling.json` |
-| **07** | **`fpga_26q_telemetry.png`** | 26-Qubit hardware co-processor UART streaming telemetry. | `experiments/fpga_26q_scaling_telemetry.json` |
-| **08** | **`frontier_rcs_fpga_comparison.png`** | FPGA cycle-accurate execution vs. simulated statevector. | `experiments/frontier_rcs_fpga_results.json` |
 | **09** | **`zinc_quantum_anomalies.png`** | ZINC 250k Search 3: Zwitterion and topological quantum anomalies. | `experiments/zinc_quantum_anomalies.json` |
 | **10** | **`zinc_pareto_leads.png`** | ZINC 250k Search 1: Frontier Pareto drug leads and binding affinities. | `experiments/zinc_pareto_leads.json` |
 | **11** | **`mimac_quantum_activity_cliffs.png`** | Chemical latent space activity cliffs and structure-activity landscapes. | `experiments/mimac_quantum_activity_cliffs.json` |
