@@ -19,6 +19,7 @@ import webbrowser
 from typing import Dict, Any, List
 
 import numpy as np
+import qpu_board
 
 try:
     import serial
@@ -188,6 +189,12 @@ def simulate_quantum_circuit(n_qubits: int, layers: List[Dict[str, Any]]) -> Dic
                             psi[i], psi[pair] = psi[pair], psi[i]
                 total_gates += 1
 
+    return state_report(psi, n_qubits, len(layers), total_gates)
+
+
+def state_report(psi, n_qubits: int, depth: int, total_gates: int) -> Dict[str, Any]:
+    """Observables of a statevector: the same analysis for the host simulation and the board's state."""
+    dim = 1 << n_qubits
     # Normalize statevector with symplectic gauge projection
     norm_sq = float(np.sum(np.abs(psi) ** 2))
     if norm_sq > 1e-12:
@@ -271,19 +278,15 @@ def simulate_quantum_circuit(n_qubits: int, layers: List[Dict[str, Any]]) -> Dic
     p_nz = probabilities[probabilities > 1e-15]
     shannon_entropy = float(-np.sum(p_nz * np.log2(p_nz))) if len(p_nz) > 0 else 0.0
 
-    # Theoretical linear XEB against ideal uniform 1/D
+    # Linear XEB statistic of the output distribution against the uniform 1/D
     f_xeb = float(dim * np.sum(probabilities ** 2) - 1.0)
     f_xeb_clamped = max(0.0, min(1.05, f_xeb))
-
-    # Quantum Zeno quadratic survival probability
-    tau_dt = 0.01 * len(layers)
-    zeno_survival = max(0.9990, min(1.0, 1.0 - (0.05 * tau_dt) ** 2))
 
     return {
         "n_qubits": n_qubits,
         "dim": dim,
         "total_gates": total_gates,
-        "depth": len(layers),
+        "depth": depth,
         "pauli_z": pauli_z,
         "bloch_vectors": bloch_vectors,
         "top_states": top_states,
@@ -292,9 +295,7 @@ def simulate_quantum_circuit(n_qubits: int, layers: List[Dict[str, Any]]) -> Dic
         "coherence_l1": round(l1_raw, 3),
         "coherence_norm": round(l1_normalized, 4),
         "purity": round(purity, 4),
-        "bipartite_entropy_bits": round(bipartite_entropy, 3),
-        "zeno_survival_prob": round(zeno_survival, 4),
-        "cohesion_status": "LOCKED_IN_COHERENT_SUBSPACE"
+        "bipartite_entropy_bits": round(bipartite_entropy, 3)
     }
 
 
@@ -1246,14 +1247,38 @@ class SovereignHandler(http.server.SimpleHTTPRequestHandler):
         total_gates = sim_res["total_gates"]
 
         if target == "fpga":
-            # The circuit is simulated on the host. It is not sent to the board: the 1000_QPU
-            # protocol (LOAD/GATE/READ/EXPECT_Z) needs the circuit compiled to 2x2 gates, which the
-            # dashboard does not do. Only the board's presence is reported, from a live handshake.
-            sim_res["target_executed"] = "Host simulation (circuit not run on the board)"
-            sim_res["hardware_mode"] = "NOT_EXECUTED_ON_HARDWARE"
-            sim_res["hardware_probe"] = probe_com6_hardware()
             sim_res["com_port"] = SOVEREIGN_FPGA_PORT
             sim_res["baud_rate"] = SOVEREIGN_FPGA_BAUD
+            try:
+                board = qpu_board.run_on_board(SOVEREIGN_FPGA_PORT, SOVEREIGN_FPGA_BAUD, n_qubits, layers)
+            except Exception as e:  # board absent, busy, or running another bitstream
+                sim_res["target_executed"] = "Host simulation (the board did not run the circuit)"
+                sim_res["hardware_mode"] = "NOT_EXECUTED_ON_HARDWARE"
+                sim_res["hardware_error"] = str(e)
+                sim_res["hardware_probe"] = probe_com6_hardware()
+            else:
+                psi_board = board["psi"]
+                host_probs = sim_res["pauli_z"]
+                report = state_report(psi_board, sim_res["n_qubits"], sim_res["depth"], sim_res["total_gates"])
+                max_dz = max((abs(a - b) for a, b in zip(report["pauli_z"], host_probs)), default=0.0)
+                report.update(
+                    target_executed="Xilinx Artix-7 XC7A35T (1000_QPU, executed on the board)",
+                    hardware_mode="PHYSICAL_SILICON_EXECUTED",
+                    com_port=SOVEREIGN_FPGA_PORT,
+                    baud_rate=SOVEREIGN_FPGA_BAUD,
+                    board_gates_sent=board["gates_sent"],
+                    board_uart_bytes_sent=board["uart_bytes_sent"],
+                    board_norm_squared=round(board["board_norm_squared"], 6),
+                    board_expect_z=board["board_expect_z"],
+                    max_abs_pauli_z_error_vs_host=round(max_dz, 6),
+                    wall_time_us=round(board["wall_time_us"], 2),
+                    wall_time_ms=round(board["wall_time_us"] / 1000.0, 3),
+                    gate_phase_us=round(board["gate_phase_us"], 2),
+                    gate_throughput=round(board["gates_sent"] / (board["gate_phase_us"] / 1e6), 0)
+                    if board["gate_phase_us"] > 0 and board["gates_sent"] else 0,
+                )
+                self.send_json_response(report)
+                return
         else:
             sim_res["target_executed"] = "Host simulation"
             sim_res["hardware_mode"] = "HOST_SIMULATION"

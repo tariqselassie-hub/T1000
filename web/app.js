@@ -2552,7 +2552,7 @@ class QuantumMolecularDashboard {
         safeSet('tel-coherence-l1', cohVal);
         safeSet('comp-coherence-l1', cohVal);
 
-        const zenoVal = (data.zeno_survival_prob !== undefined) ? `${(data.zeno_survival_prob * 100).toFixed(2)}%` : '99.98%';
+        const zenoVal = (data.zeno_survival_prob !== undefined) ? `${(data.zeno_survival_prob * 100).toFixed(2)}%` : '--';
         safeSet('tel-zeno-surv', zenoVal);
 
         const purityVal = (data.purity !== undefined) ? data.purity.toFixed(3) : '1.000';

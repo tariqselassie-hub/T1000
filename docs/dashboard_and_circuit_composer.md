@@ -9,7 +9,7 @@ This document specifies the architecture, operational protocols, visual telemetr
 
 ## 1. System Overview & Dual-Mission Cockpit
 
-The T-1000 web dashboard provides an empirical interface connecting molecular latent space exploration with physical quantum circuit execution. Built in vanilla HTML5, WebGL (Three.js), and pure CSS/JavaScript, it communicates locally with `web/serve.py` over high-speed HTTP/JSON REST APIs and a UART handshake with the FPGA board (`COM6` @ 3.0 MBaud).
+The T-1000 web dashboard provides an empirical interface connecting molecular latent space exploration with physical quantum circuit execution. Built in vanilla HTML5, WebGL (Three.js), and pure CSS/JavaScript, it communicates locally with `web/serve.py` over high-speed HTTP/JSON REST APIs and the FPGA board (`COM6` @ 3.0 MBaud).
 
 ### Sovereign 4-Deck Workspace Layout
 
@@ -25,7 +25,7 @@ The T-1000 web dashboard provides an empirical interface connecting molecular la
 | Deck | Workspace Scope | Key Subsystems & Telemetry Readouts |
 | :--- | :--- | :--- |
 | **Deck 1** | 3D Molecular Manifold & CTQW Screener | Force-directed distance-geometry relaxation, CPK atomic spheres, electron orbital density mesh, Coulomb Laplacian eigenvalues, ballistic hitting times $t_{\text{hit}}$, Zeno sentry fidelity ($99.9999\%$), and `→ TO COMPOSER` circuit export. |
-| **Deck 2** | Lego-Block Quantum Circuit Composer | Visual quantum wire grid ($q_0 \dots q_{11}$), time layers ($L_0 \dots L_{15}$), modular snap-in gate blocks, floating parameter slider HUD ($\theta \in [0, 2\pi]$), Auto-DD scheduler, and a CPU/FPGA target selector (the FPGA target reports a board handshake; the circuit runs on the host). |
+| **Deck 2** | Lego-Block Quantum Circuit Composer | Visual quantum wire grid ($q_0 \dots q_{11}$), time layers ($L_0 \dots L_{15}$), modular snap-in gate blocks, floating parameter slider HUD ($\theta \in [0, 2\pi]$), Auto-DD scheduler, and a CPU/FPGA target selector (the FPGA target runs the circuit on the board). |
 | **Deck 3** | Fault-Tolerant QEC & Magic State Deck | 18-Qubit Transversal Steane-Wheel $W_7$ ($7\text{ data} + 11\text{ in-register ancillas}$), Bravyi-Kitaev 15-to-1 magic state distillation factory ($P_e \le 35 p^3$), Rotated $[[9, 1, 3]]$ Surface Code, and AVX-512 VNNI parity engine. |
 | **Deck 4** | 36Q Virtual Cut-Bridge & Silicon Matrix | $131,072\times$ L3 cache compression ($1.00\text{ TB} \to 8\text{ MB}$), mid-circuit checkpointing, Intel Xe Graphics OpenCL UMA bridge, PC vs Artix-7 FPGA 26Q scaling table, IBM Nighthawk 99-plaquette dual-graph heatmap, and Ultrametric Tree QMUX. |
 
@@ -94,17 +94,24 @@ To prevent phase decoherence and numerical gauge drift across deep circuits ($D 
 
 ## 4. Execution targets
 
-`POST /api/run_circuit` simulates the circuit on the host (NumPy statevector in `web/serve.py`) for
-both targets. The `fpga` target does not send the circuit to the board: it adds a live handshake
-with the 1000_QPU on `COM6` (ping at 3 Mbaud) and labels the result `NOT_EXECUTED_ON_HARDWARE`.
-No silicon time, cycle count, DSP figure, fidelity or attestation hash is reported for it, because
+`POST /api/run_circuit` with `target: "cpu"` simulates the circuit on the host (NumPy statevector in
+`web/serve.py`).
+
+With `target: "fpga"` the server compiles the circuit to the 1000_QPU protocol
+(`web/qpu_board.py`: RX, RY, RZ, H, X, Z, S, T as 2x2 gates with 25-bit coefficients; CZ and CX as
+controlled gates; SWAP as three CNOTs), resets the board to |0...0>, streams the gates, reads the
+full statevector back and computes the observables from the board's amplitudes. The response is
+labelled `PHYSICAL_SILICON_EXECUTED` and carries `board_norm_squared`, the board's own `EXPECT_Z`
+per qubit (`board_expect_z`), `max_abs_pauli_z_error_vs_host` (the host simulation of the same
+circuit), and the measured `wall_time_ms` and `gate_phase_us`. If the board is absent, busy or runs
+another bitstream, the result is the host simulation labelled `NOT_EXECUTED_ON_HARDWARE` with the
+reason in `hardware_error`. No cycle count, DSP figure, fidelity or attestation hash is reported:
 none is measured.
 
-The board runs circuits through the protocol in [`fpga_architecture.md`](fpga_architecture.md)
-(RESET, LOAD, GATE, READ, EXPECT_Z with 25-bit coefficients and a 32-bit state, up to 14 qubits).
-Its fixed-point arithmetic is checked against the Rust model by
-`scripts/fpga/verify_1000_qpu.py`. Compiling the composer's gates (RX, RY, RZ, H, X, Z, S, T, CZ,
-CNOT) to that protocol and executing them on the board is not implemented in the dashboard.
+Time per gate is limited by the 36-byte gate frame on the 3 Mbaud UART (about 120 µs), not by the
+fabric. Up to 14 qubits; the arithmetic is specified in [`fpga_architecture.md`](fpga_architecture.md).
+`python scripts/fpga/verify_dashboard_circuits.py` runs three circuits on the board through the
+server and checks them against the host.
 
 ---
 
@@ -143,19 +150,19 @@ Executes an arbitrary circuit payload on the requested hardware target:
     "target": "fpga"
   }
   ```
-- **Response Telemetry (host simulation; the `fpga` target adds `hardware_probe`):**
+- **Response Telemetry (`fpga` target, executed on the board):**
   ```json
   {
-    "target_executed": "Host simulation (circuit not run on the board)",
-    "hardware_mode": "NOT_EXECUTED_ON_HARDWARE",
-    "hardware_probe": { "detected": true, "online": true, "port": "COM6", "latency_us": 1042.6 },
-    "wall_time_us": 4007.1,
-    "gate_throughput": 250.0,
-    "pauli_z": [0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
-    "top_states": [
-      { "index": 0, "basis": "|000000⟩", "prob": 0.5, "real": 0.7071, "imag": 0.0 },
-      { "index": 1, "basis": "|000001⟩", "prob": 0.5, "real": 0.7071, "imag": 0.0 }
-    ]
+    "target_executed": "Xilinx Artix-7 XC7A35T (1000_QPU, executed on the board)",
+    "hardware_mode": "PHYSICAL_SILICON_EXECUTED",
+    "board_gates_sent": 132,
+    "board_norm_squared": 1.0,
+    "board_expect_z": [0.8791, 0.6904, 0.0256],
+    "max_abs_pauli_z_error_vs_host": 0.0,
+    "wall_time_ms": 168.243,
+    "gate_phase_us": 17299.5,
+    "pauli_z": [0.8791, 0.6904, 0.0256],
+    "top_states": [ { "index": 0, "basis": "|000000⟩", "prob": 0.5, "real": 0.7071, "imag": 0.0 } ]
   }
   ```
 
@@ -178,7 +185,7 @@ T1000_QPU_PORT=COM6 T1000_QPU_BAUD=3000000 PORT=8000 python web/serve.py --no-br
 ### Operational URLs & Endpoints
 - **Main Dashboard Deck:** `http://localhost:8000/index.html`
   - **[Deck 1] Molecular & CTQW:** 3D force-directed molecule viewer, SMILES featurizer, and Continuous Topological Walk ballistic hitting telemetry.
-  - **[Deck 2] Circuit Composer:** 12-wire quantum wire grid ($q_0 \dots q_{11}$), gate palette, parameter HUD, Auto-DD scheduler, and a CPU/FPGA target selector (host simulation; board handshake only).
+  - **[Deck 2] Circuit Composer:** 12-wire quantum wire grid ($q_0 \dots q_{11}$), gate palette, parameter HUD, Auto-DD scheduler, and a CPU/FPGA target selector (the FPGA target runs the circuit on the board).
   - **[Deck 3] Fault-Tolerant QEC:** 18-Qubit Transversal Steane-Wheel $W_7$, Bravyi-Kitaev 15-to-1 magic state distillation factory, and Rotated Surface Code.
   - **[Deck 4] 36Q Virtual Bridge:** 36-Qubit Virtual Cut-Bridge ($131,072\times$ L3 compression), Intel Xe Graphics OpenCL bridge, and IBM Nighthawk 99-plaquette heatmap.
 - **Quantum Life (Fractional Fermi QCA Simulator):** `http://localhost:8000/qgol.html`

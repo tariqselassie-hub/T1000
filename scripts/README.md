@@ -69,6 +69,7 @@ Visual telemetry suite adhering strictly to the Deen OS Sovereign Visual Specifi
 
 ### 3. `scripts/fpga/`
 * **`verify_1000_qpu.py`**: Replays the golden vectors from the Rust model on the Basys 3 over UART (`COM6`, 3.0 MBaud) and compares every reply byte; also reports gate throughput at 14 qubits.
+* **`verify_dashboard_circuits.py`**: Starts `web/serve.py`, runs three dashboard circuits on the board through the `fpga` target and checks the board's observables against the host simulation.
 
 ### 4. `scripts/qec/`
 * **`heterogeneous_bridge_pipeline.py`**: Orchestrates concurrent dual-register evaluation across CPU L3 cache (AVX2+FMA) and Intel Arc Xe iGPU (OpenCL), evaluating non-local Tsirelson CHSH Bell inequality witnesses ($S = 2.82842712$).
