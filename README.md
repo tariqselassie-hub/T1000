@@ -10,6 +10,8 @@
 
 ---
 
+> Where each headline number comes from, and how to regenerate it: [`docs/CLAIMS.md`](docs/CLAIMS.md) (`python scripts/check_claims.py`).
+
 ## Architecture Overview
 
 ```
