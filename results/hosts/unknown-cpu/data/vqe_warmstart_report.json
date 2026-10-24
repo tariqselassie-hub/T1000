@@ -1,0 +1,236 @@
+[
+  {
+    "formula": "H2",
+    "parameters": 3,
+    "hf_error_mha": 20.585787628310204,
+    "cold": {
+      "start_error_mha": 20.585787628310204,
+      "iterations": 4,
+      "evaluations": 6,
+      "final_error_mha": -2.220446049250313e-13,
+      "converged": true
+    },
+    "pt1": {
+      "start_error_mha": 0.006260550120540387,
+      "iterations": 2,
+      "evaluations": 4,
+      "final_error_mha": -2.220446049250313e-13,
+      "converged": true
+    },
+    "oracle": {
+      "start_error_mha": 0.00037930693452814523,
+      "iterations": 2,
+      "evaluations": 4,
+      "final_error_mha": 0.0,
+      "converged": true
+    }
+  },
+  {
+    "formula": "HeH+",
+    "parameters": 3,
+    "hf_error_mha": 9.641540044452501,
+    "cold": {
+      "start_error_mha": 9.641540044452501,
+      "iterations": 6,
+      "evaluations": 9,
+      "final_error_mha": 1.7763568394002505e-12,
+      "converged": true
+    },
+    "pt1": {
+      "start_error_mha": 0.33647237831768706,
+      "iterations": 4,
+      "evaluations": 8,
+      "final_error_mha": 2.6201263381153694e-11,
+      "converged": true
+    },
+    "oracle": {
+      "start_error_mha": 0.000012022834283698103,
+      "iterations": 5,
+      "evaluations": 8,
+      "final_error_mha": 1.7763568394002505e-12,
+      "converged": true
+    }
+  },
+  {
+    "formula": "LiH",
+    "parameters": 24,
+    "hf_error_mha": 20.150645874263517,
+    "cold": {
+      "start_error_mha": 20.150645874263517,
+      "iterations": 10,
+      "evaluations": 11,
+      "final_error_mha": 8.393286066166183e-10,
+      "converged": true
+    },
+    "pt1": {
+      "start_error_mha": 0.5740858732314891,
+      "iterations": 8,
+      "evaluations": 9,
+      "final_error_mha": 2.1440627051561023e-9,
+      "converged": true
+    },
+    "oracle": {
+      "start_error_mha": 0.0021867886097481914,
+      "iterations": 8,
+      "evaluations": 9,
+      "final_error_mha": 1.5276668818842154e-10,
+      "converged": true
+    }
+  },
+  {
+    "formula": "HF",
+    "parameters": 24,
+    "hf_error_mha": 25.808244930544788,
+    "cold": {
+      "start_error_mha": 25.808244930544788,
+      "iterations": 14,
+      "evaluations": 22,
+      "final_error_mha": 7.105427357601002e-11,
+      "converged": true
+    },
+    "pt1": {
+      "start_error_mha": 0.6547876454874313,
+      "iterations": 13,
+      "evaluations": 21,
+      "final_error_mha": 2.842170943040401e-10,
+      "converged": true
+    },
+    "oracle": {
+      "start_error_mha": 0.0005084911265385017,
+      "iterations": 11,
+      "evaluations": 19,
+      "final_error_mha": 5.400124791776761e-10,
+      "converged": true
+    }
+  },
+  {
+    "formula": "BeH2",
+    "parameters": 92,
+    "hf_error_mha": 34.52561811119104,
+    "cold": {
+      "start_error_mha": 34.52561811119104,
+      "iterations": 18,
+      "evaluations": 23,
+      "final_error_mha": 0.3680605230709233,
+      "converged": true
+    },
+    "pt1": {
+      "start_error_mha": 1.4052364754313373,
+      "iterations": 17,
+      "evaluations": 23,
+      "final_error_mha": 0.3680605228684186,
+      "converged": true
+    },
+    "oracle": {
+      "start_error_mha": 0.3952833529634603,
+      "iterations": 11,
+      "evaluations": 19,
+      "final_error_mha": 0.3680605233338241,
+      "converged": true
+    }
+  },
+  {
+    "formula": "H2O",
+    "parameters": 92,
+    "hf_error_mha": 49.39725234972059,
+    "cold": {
+      "start_error_mha": 49.39725234972059,
+      "iterations": 28,
+      "evaluations": 41,
+      "final_error_mha": 0.10057130742779918,
+      "converged": true
+    },
+    "pt1": {
+      "start_error_mha": 1.9449606005537134,
+      "iterations": 19,
+      "evaluations": 35,
+      "final_error_mha": 0.10057130819518534,
+      "converged": true
+    },
+    "oracle": {
+      "start_error_mha": 0.10396752543329058,
+      "iterations": 21,
+      "evaluations": 32,
+      "final_error_mha": 0.10057130728569064,
+      "converged": true
+    }
+  },
+  {
+    "formula": "BH3",
+    "parameters": 204,
+    "hf_error_mha": 52.89597491468356,
+    "cold": {
+      "start_error_mha": 52.89597491468356,
+      "iterations": 23,
+      "evaluations": 37,
+      "final_error_mha": 0.3649016293998386,
+      "converged": true
+    },
+    "pt1": {
+      "start_error_mha": 1.433419554697224,
+      "iterations": 25,
+      "evaluations": 35,
+      "final_error_mha": 0.3649016298936658,
+      "converged": true
+    },
+    "oracle": {
+      "start_error_mha": 0.38266962025446105,
+      "iterations": 14,
+      "evaluations": 25,
+      "final_error_mha": 0.3649016295845797,
+      "converged": true
+    }
+  },
+  {
+    "formula": "NH3",
+    "parameters": 204,
+    "hf_error_mha": 64.88691271808733,
+    "cold": {
+      "start_error_mha": 64.88691271808733,
+      "iterations": 30,
+      "evaluations": 47,
+      "final_error_mha": 0.17412534065641694,
+      "converged": true
+    },
+    "pt1": {
+      "start_error_mha": 2.434542097965675,
+      "iterations": 22,
+      "evaluations": 39,
+      "final_error_mha": 0.17412534044325412,
+      "converged": true
+    },
+    "oracle": {
+      "start_error_mha": 0.17909372181890149,
+      "iterations": 10,
+      "evaluations": 23,
+      "final_error_mha": 0.17412534145933023,
+      "converged": true
+    }
+  },
+  {
+    "formula": "CH4",
+    "parameters": 360,
+    "hf_error_mha": 78.4522232966367,
+    "cold": {
+      "start_error_mha": 78.4522232966367,
+      "iterations": 20,
+      "evaluations": 37,
+      "final_error_mha": 0.18534785166934853,
+      "converged": true
+    },
+    "pt1": {
+      "start_error_mha": 2.651102588671961,
+      "iterations": 18,
+      "evaluations": 33,
+      "final_error_mha": 0.18534785216672844,
+      "converged": true
+    },
+    "oracle": {
+      "start_error_mha": 0.1932910283173328,
+      "iterations": 19,
+      "evaluations": 30,
+      "final_error_mha": 0.18534785056090186,
+      "converged": true
+    }
+  }
+]

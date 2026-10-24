@@ -107,6 +107,43 @@ From `results/hosts/unknown-cpu/data/vqe_noise_report.json`:
 Shots are the total over all terms with the variance-optimal split and no commuting-term grouping,
 so they overstate what grouped measurement needs. The next section measures by how much.
 
+### Classical warm starts (`vqe_warmstart`)
+
+```bash
+cargo run --release -p t1000 --bin vqe_warmstart
+```
+
+The driver starts the optimizer at `θ = 0` (the Hartree-Fock state). `PT1` starts from first-order
+perturbation amplitudes: `c_I = -H_{I0} / (H_II - H_00)` over the determinants, with the Hamiltonian's own
+diagonal as denominators, projected on each excitation's first-order response from the reference; it costs
+one matrix-vector product and the diagonal. The `oracle` projects the exact full-CI coefficients the same
+way (an upper bound that needs the answer). From `results/hosts/unknown-cpu/data/vqe_warmstart_report.json`
+(same BFGS and tolerances as the driver):
+
+| Molecule | Parameters | Start error, cold (HF) | Start error, PT1 | Iterations cold / PT1 / oracle | Evaluations cold / PT1 / oracle |
+| :--- | ---: | ---: | ---: | :--- | :--- |
+| H₂ | 3 | 20.6 mHa | 0.01 mHa | 4 / 2 / 2 | 6 / 4 / 4 |
+| HeH⁺ | 3 | 9.6 | 0.34 | 6 / 4 / 5 | 9 / 8 / 8 |
+| LiH | 24 | 20.2 | 0.57 | 10 / 8 / 8 | 11 / 9 / 9 |
+| HF | 24 | 25.8 | 0.65 | 14 / 13 / 11 | 22 / 21 / 19 |
+| BeH₂ | 92 | 34.5 | 1.41 | 18 / 17 / 11 | 23 / 23 / 19 |
+| H₂O | 92 | 49.4 | 1.94 | 28 / 19 / 21 | 41 / 35 / 32 |
+| BH₃ | 204 | 52.9 | 1.43 | 23 / 25 / 14 | 37 / 35 / 25 |
+| NH₃ | 204 | 64.9 | 2.43 | 30 / 22 / 10 | 47 / 39 / 23 |
+| CH₄ | 360 | 78.5 | 2.65 | 20 / 18 / 19 | 37 / 33 / 30 |
+
+* **The starting point is much better**: PT1 removes 96 % to 99.95 % of the energy error before any
+  optimisation, and six of the nine molecules start inside chemical accuracy (1.59 mHa): H₂, HeH⁺, LiH, HF, BeH₂
+  and BH₃. All three starts converge to the same energy (the final error against full CI is identical to
+  0.0001 mHa for every molecule).
+* **The saving in optimizer work is modest** with exact gradients: PT1 saves 0 to 9 iterations
+  (BH₃ takes 2 more, 25 against 23) and 0 to 8 gradient evaluations; the oracle does better on the
+  larger molecules but not uniformly. The iteration count is set mostly by the final convergence to the
+  gradient tolerance, not by the first descent.
+* **What it is worth on a device**: where every energy evaluation costs shots, a starting point already
+  inside chemical accuracy means the first measured energy is already usable; the optimizer then only refines.
+  That is an argument from the starting energies, not something measured here.
+
 ### Check of the noise model against sampled Pauli noise (`vqe_noise_check`)
 
 ```bash
