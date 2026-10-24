@@ -44,22 +44,22 @@
 ### 1. Shape-Shifting Circuit Compilation & Scheduling (`t1000::compiler`)
 * **Per-qubit dependency DAG (`CircuitDag`):** Tracks gate commutation and dependencies along wire order.
 * **Gate Fusion:** Greedy grouping of non-overlapping single-qubit rotations and multi-qubit diagonal interactions into unified stages.
-* **Fused Diagonal Kernel (`t1000::diagonal`):** Vectorized 256-bit AVX2+FMA streaming memory sweep (`_mm256_fmadd_pd`, dual 8-amplitude unrolling) executing entire layers of $R_z$ and $CZ$ gates in a single pass (**$1.93\times$ faster** than per-qubit loops, reducing 18Q depth-12 adjoint passes from $0.1002\text{ s}$ to $0.0921\text{ s}$).
+* **Fused Diagonal Kernel (`t1000::diagonal`):** Vectorized 256-bit AVX2+FMA streaming memory sweep (`_mm256_fmadd_pd`, dual 8-amplitude unrolling) executing entire layers of $R_z$ and $CZ$ gates in a single pass (**$1.7\text{–}1.8\times$ faster** than per-qubit loops on that diagonal layer, re-measured; the gain on a whole 18Q depth-12 adjoint pass is much smaller, reported earlier as $0.1002\text{ s}$ to $0.0921\text{ s}$ and not re-run).
 
 ### 2. AVX2 + FMA SIMD Statevector Engine (`t1000::simd`, `t1000::tiled_butterfly`)
 * **Structure-of-Arrays (SOA):** Separated contiguous arrays of double-precision real and imaginary amplitudes.
 * **Modular Architectural Decomposition:** Subsystem partitioned into focused domain modules (`guards`, `rotations`, `algebra`, `measurements`, `model`), all conforming strictly to $\le 800$ LoC per file and $\le 80$ LoC per function.
 * **Strongly-Typed SIMD Domain Models (`SimdStateView`, `SimdStateViewMut`, `SimdBackend`):** Zero-copy, chainable unitary evolution (`.ry()`, `.rz()`, `.cz()`, `.rademacher_phase()`, `.normalize()`) and direct expectation reductions directly on statevector buffers.
 * **L2-Resident Tiled Butterfly Kernels:** Cache-conscious stride access for high qubit indices ($q \ge 16$).
-* **Beats Industry Baselines:** Up to **1.9x faster than Qiskit Aer** at 8 threads on deep Random Circuit Sampling benchmarks.
+* **Speed:** the 18-qubit, 36-layer RCS circuit runs $11\text{–}14\times$ faster than the repository's textbook scalar reference simulator on 20 threads (`frontier_rcs`). A comparison with Qiskit Aer is not reproducible from this repository (`frontier_rcs --export` writes the circuit, but `scripts/aer_rcs_benchmark.py` is missing), so no Aer figure is claimed.
 
 ### 3. SMILES Molecular Exploration & Whole-Library 250k Screening (`zinc_dual_search`)
 * **Chemical Featurizer:** Native parser for OpenSMILES strings generating 19 molecular descriptors (atom counts, aromaticity, ring closures, molecular weight, heteroatom ratio).
 * **Quantum Feature Map:** Direct parameterized injection into Hilbert space ($|\psi(\text{SMILES})\rangle$) via parameterized $R_y(x_i)$ rotations.
-* **Whole-Library ZINC 250k Engine:** Screens all 249,455 drug candidates in **1.17 seconds** (**213,351 molecules/sec**) across 20 threads.
+* **Whole-Library ZINC 250k Engine:** Screens all 249,455 drug candidates in **1.17 seconds** (**213,351 molecules/sec**) across 20 threads (the author's run; not re-run here because the ZINC 250k table is not shipped).
 * **Search 3 (Quantum Anomalies & Outliers):** Mines extreme zwitterions, highly charged amidinium/guanidinium motifs, and topological outliers based on Hilbert space dispersion.
 * **Search 1 (Frontier Pareto Drug Candidates):** Discovers top golden leads with $\text{QED} > 0.88$, $\text{SAS} < 1.45$, and $\text{logP} \in [2.4, 3.1]$.
-* **Period 1 & 2 Molecular Quantum Shells (`t1000::chemistry`):** Second-quantized Jordan-Wigner Hamiltonian simulations for 9 fundamental molecules from $\text{H}_2$ ($4\text{Q}$) up to all-electron Methane $\text{CH}_4$ ($18\text{Q}$), evaluating ground-state energies, 18-body Pauli-Z orbital occupations, and single-orbital Von Neumann entanglement entropies.
+* **Period 1 & 2 molecular shells (`t1000::chemistry`):** tabulated reference energies and fixed-formula Hamiltonians for 9 molecules, not computed from molecular integrals. Use §29 (`t1000::vqe`) for ab initio energies.
 * Detailed Documentation: [`docs/zinc_quantum_screening.md`](docs/zinc_quantum_screening.md).
 
 ### 4. Statistical Quantum Verification (`t1000::rcs`)
@@ -67,14 +67,14 @@
 * **Dual-Engine Precision:** Machine precision numerical agreement (fidelity $1.000000000000$, max amplitude error $< 3.1 \times 10^{-17}$).
 * **Cross-Entropy Benchmarking (XEB):** Validates linear XEB convergence ($F_{\text{XEB}} \approx 1.0045$) against ideal Haar-random Porter-Thomas distributions.
 * **Kolmogorov-Smirnov & Entropy Tests:** Automated confirmation of Porter-Thomas chaos ($D_{\text{KS}} = 0.0021 < D_{\text{critical}} = 0.0027$, $\Delta S = 0.4243\text{ nats} \to 1 - \gamma$).
-* **Adjoint Differentiation:** Evaluates analytical gradients across 1,296 parameters in $0.250\text{ s}$ ($2,592\times$ circuit evaluation avoidance over parameter shift).
-* **Coherence Frontier Push (`coherence_frontier_push`):** Dual-mark physical experiment tracking quantum $\ell_1$-norm coherence capacity ($C_{\text{norm}}$) up to 26 qubits dense ($2^{26}$ amplitudes, 1.02 GB RAM), 64 qubits via 2D tensor network belief propagation ($2^{64}$ states), and sovereign Heptal wave qudits ($7^9$ states, $d=7$).
-* **Physical Noise & Coherence Horizon (`rcs_coherence_chaos_bench`):** Layer-by-layer open-system Lindbladian decoherence ($T_1 = 45\,\mu\text{s}, T_2^* = 60\,\mu\text{s}, p_{\text{depol}} \in [10^{-4}, 0.02]$) across $N = 14$ and $N = 16$ qubits. Discovers the quantum speckle fidelity cliff and demonstrates that split-step CPMG/XY4 refocusing paired with symplectic manifold re-projection rescues cross-XEB fidelity, prevents negative speckle correlation collapse ($-0.0025 \to +0.0124$), and yields up to **$+5,147\%$** ($14Q$) and **$+13,543\%$** ($16Q$) state fidelity retention. Documented in [`docs/findings/rcs_physical_noise_chaos_transition.md`](docs/findings/rcs_physical_noise_chaos_transition.md).
+* **Adjoint Differentiation:** analytical gradients for 1,296 parameters on 18 qubits in about $0.12\text{ s}$ (re-measured; parameter shift would need 2,592 circuit runs). At 12 qubits and 96 parameters the adjoint gradient is $47\text{–}61\times$ faster than parameter shift and agrees to $3\times 10^{-16}$.
+* **Coherence Frontier Push (`coherence_frontier_push`):** Dual-mark physical experiment tracking quantum $\ell_1$-norm coherence capacity ($C_{\text{norm}}$) up to 26 qubits dense ($2^{26}$ amplitudes, 1.02 GB RAM). The 2D tensor-network stage to 64 qubits (approximate, bond-dimension-truncated) and the heptal stage ($7^9$ states) did not finish within a 150 s cap in the audit run.
+* **Physical Noise & Coherence Horizon (`rcs_coherence_chaos_bench`):** Layer-by-layer open-system Lindbladian decoherence ($T_1 = 45\,\mu\text{s}, T_2^* = 60\,\mu\text{s}, p_{\text{depol}} \in [10^{-4}, 0.02]$) across $N = 14$ and $N = 16$ qubits. Discovers the quantum speckle fidelity cliff and demonstrates that split-step CPMG/XY4 refocusing paired with symplectic manifold re-projection rescues cross-XEB fidelity, prevents negative speckle correlation collapse ($-0.0025 \to +0.0124$), and raises state fidelity at 14 qubits from $0.0004$ to $0.021$. The percentage gains (up to $+5,147\%$ and $+13,543\%$) are relative to a near-zero baseline, absolute fidelity stays near 2%, and the sweep also has negative entries. Documented in [`docs/findings/rcs_physical_noise_chaos_transition.md`](docs/findings/rcs_physical_noise_chaos_transition.md).
 
 ### 5. Quantum Vision & BNN Benchmark (`mnist_qnn_train`)
 * **Amplitude Encoding:** Exact injection of 784-dimensional image spaces directly into a 10-qubit Hilbert space ($2^{10} = 1024$ amplitudes).
 * **Bipartite Entanglement Observables:** 55 quantum expectation operators (10 single-qubit $\langle Z_i \rangle$ + 45 two-body $\langle Z_i Z_j \rangle$ correlators) with analytical reverse-mode `adjoint_gradient`.
-* **Surpasses Classical BNN & HDC Baselines:**
+* **Compared with the repository's own BNN and HDC baselines (not a standard classical model):**
 
 | Architecture Model | Test Accuracy % | Space Representation | State Coherence $C_{\ell_1}$ | Throughput |
 | :--- | :---: | :---: | :---: | :---: |
@@ -82,6 +82,8 @@
 | **GuddaNetworks BNN Baseline (MAP)** | 79.40% | 4096-dim Multiply-Add-Permute | Classical | Classical MAP |
 | **GuddaNetworks HDC-10k Dimension** | 81.25% | 10,000-bit BSC Space | Classical | Classical BSC |
 | **T-1000 10-Qubit VQC (AVX2)** | **84.50%** | **1024-dim ($2^{10}$) Hilbert Space** | **350.94** | **34.38 $\mu$s / sample** |
+
+On the same 10,000-train / 2,000-test split, standard classical models score higher: logistic regression on the 784 pixels 87.0%, 3-nearest-neighbours 92.35%. The 10-qubit VQC beats only the hyperdimensional baselines above.
 
 ### 6. Fixed-Point Statevector Engine on the Basys 3 (`fpga/1000_qpu`)
 * **Target hardware:** AMD/Xilinx Artix-7 XC7A35T-1CPG236C (Digilent Basys 3), 100 MHz, UART at 3 Mbaud on `COM6`.
@@ -95,7 +97,7 @@
 * **3x3 Planar Surface Code $[[9, 1, 3]]$:** Rotated lattice topology embedding 9 physical data qubits with 8 syndrome measurement plaquettes (4 weight-2/4 $X$-checks and 4 weight-2/4 $Z$-checks).
 * **Closed-Form Transversal Code Space:** Exact stabilizer subspace generation via generator algebra (`[27, 432, 6, 192]`) guaranteeing 16 closed-form logical codewords with zero runtime allocation.
 * **Standard Stabilizer Suite:** Native support for 3-qubit bit-flip $[[3,1,1]]$, 3-qubit phase-flip $[[3,1,1]]$, 5-qubit perfect code $[[5,1,3]]$, 7-qubit Steane code $[[7,1,3]]$, and 9-qubit Shor code $[[9,1,3]]$.
-* **AVX-VNNI Symplectic Syndrome Decoder (`t1000::qec::vnni`):** Hardware-accelerated 32-way INT8 vector dot-product engine (`{{vex}} vpdpbusd`) evaluating all 8 surface code plaquettes simultaneously in **$26.11\text{ ns}$** (**$38.30\text{ Million decodings/sec}$**, $3.26\text{ ns}$ per stabilizer) and executing Clifford+$T$ symplectic commutation checks at **$34.81\text{ Million checks/sec}$** (`vnni_syndrome_bench`).
+* **AVX-VNNI Symplectic Syndrome Decoder (`t1000::qec::vnni`):** Hardware-accelerated 32-way INT8 vector dot-product engine (`{{vex}} vpdpbusd`) evaluating all 8 surface code plaquettes simultaneously in about $27\text{ ns}$ (about $37\text{ Million decodings/sec}$, $3.4\text{ ns}$ per stabilizer, re-measured) and executing Clifford+$T$ symplectic commutation checks at about $34\text{ Million checks/sec}$ (`vnni_syndrome_bench`).
 
 ### 8. Canonical Quantum Algorithms & Readout Error Mitigation (`t1000::canonical`)
 * **Foundational Algorithmic Kernels:**
@@ -115,32 +117,32 @@
 * **Continuous Bloch Probability Steering:** Dynamically computes single-qubit polar rotation angles $\theta_i = \pi \cdot P_i(0)$ directly from amplitude geometry without projective wavefunction collapse.
 * **Sliding Window Cache Residency:** Sliding local statevector window ($W \le 4$, 8–16 complex amplitudes = 128–256 bytes) remaining $100\%$ resident in the 32 KB CPU L1 data cache with zero DRAM bus traffic.
 * **Partial-Trace Epoxy Freezing:** As each qubit locks into its deterministic pole ($|\langle Z_i \rangle| \ge 0.999$), the boundary density matrix is reduced via partial trace, advancing the front and releasing scratch memory.
-* **Ultra-Fast Linear Scaling:** Executes 200 entangled qubits in **$105.8\,\mu\text{s}$** (~$529\text{ ns/qubit}$ constant latency) with $100\%$ anti-correlation fidelity.
+* **Linear scaling:** 200 qubits take $22\,\mu\text{s}$ with a 3-qubit window and $47\,\mu\text{s}$ with a 4-qubit window (about $110$ and $236\text{ ns/qubit}$, re-measured, constant from 14 to 200 qubits). The benchmark reports only the fraction of neighbouring pairs found anti-correlated, not an entanglement measure.
 * Detailed Documentation: [`docs/bloch_zipper_mps_specification.md`](docs/bloch_zipper_mps_specification.md).
 
 ### 11. Heptal Qudit $SU(7)$ Modular Complementarity Engine (`t1000::heptal_wave`)
 * **Radix-7 Hilbert State Evolution:** Native $d = 7$ qudit simulation simulating high-dimensional quantum systems ($7^N$ state spaces).
 * **Modular Inversion Unitaries:** Sliding 2-qudit window (49 amplitudes = 784 bytes, strictly L1 resident) applying cyclic shift and reflection operations: $|j, k\rangle \mapsto |j, (k - j) \pmod 7\rangle$.
 * **Exact Modular Complementarity:** Enforces deterministic pairwise complementary locking across the qudit chain: $(q_i + q_{i+1}) \equiv 0 \pmod 7$.
-* **High-Dimensional Throughput:** Evolves 200 qudits ($7^{200} \approx 4.6 \times 10^{169}$ effective Hilbert space) in **$7.58\text{ ms}$** (~$37.9\,\mu\text{s/qudit}$) with $100\%$ modular complementarity verification.
+* **Throughput:** 200 qudits in about $4.9\text{ ms}$ ($24\,\mu\text{s/qudit}$, re-measured) with $100\%$ modular complementarity. Only a 49-amplitude window is simulated at a time; $7^{200}$ is the nominal size of the space the chain would span, not a state held or evolved in full.
 
 ### 12. Quantum State-Space Autoencoder & Sequence Classifier (`t1000::qssm`)
 * **Quantum Mamba / Q-SSM Architecture:** Combines streaming 1D MPS sliding window recurrence ($W=3$, 128 bytes in L1 cache) with a dual-head latent bottleneck.
 * **Dual-Head Topology:**
   * **Latent Classifier Head:** Extracts expectation observables $\langle Z_k \rangle$ from the compressed quantum state to output sequence class probabilities.
   * **Unzipping Decoder Head:** Reverses continuous Bloch steering to autoregressively reconstruct the input feature sequence $\hat{X}$ from the latent bottleneck.
-* **Extreme Streaming Throughput:** Evaluates sequence lengths $T \in [10, 500]$ at **$66.6\text{–}95.8\text{ ns per token}$** (**$> 13\text{–}15\text{ million tokens/second}$**), with 100% test classification accuracy on complex physical signal dynamics.
+* **Streaming throughput:** sequence lengths $T \in [10, 500]$ at $64\text{–}84\text{ ns per token}$ ($12\text{–}15.6\text{ million tokens/second}$, re-measured), with 100% test accuracy on a synthetic coherent-versus-chaotic burst task. The harder quench variant (`qssm_quench_bench`) ranges from 70.8% to 100% test accuracy across epochs. The full-suite benchmark's $1.8\,\mu\text{s}$ per token includes classification overhead.
 
 ### 13. Automated Clifford+T Single-Qubit Synthesis (`t1000::clifford_t`)
 * **Cyclotomic Ring $\mathbb{Z}[\omega]$ Arithmetic:** Exact integer coordinate representation modulo $\omega^4 + 1 = 0$ ($\omega = e^{i\pi/4} = \frac{1+i}{\sqrt{2}}$) with algebraic norm, conjugation, and exact division by $\lambda = 1+\omega$.
 * **Hierarchical Grid Solver:** Synthesizes arbitrary continuous single-qubit rotations ($R_z(\theta), R_x(\theta), R_y(\theta)$) into minimal-length discrete gate sequences over $\{H, S, S^\dagger, T, T^\dagger, X, Y, Z\}$.
 * **Matsumoto-Amano Normal Form & Peephole Optimization:** Deterministic parity state-machine reduction with multi-pass peephole cancellations ($H^2 \to I$, $T T^\dagger \to I$, $T^2 \to S$, $S^2 \to Z$, $Z^2 \to I$), guaranteeing $\|U_{\text{exact}} - U_{\text{discrete}}\|_\infty \le \varepsilon$.
 ### 14. Heterogeneous Co-Processor Pipeline & 36-Qubit Cut-Bridge Verification (`cut_bridge_chsh_bench`, `cut_bridge_36q_bench`)
-* **L3-Cache Resident Virtual 36-Qubit VQC:** Partitions 36-qubit lattice into dual 18-qubit sub-registers resident in 8.38 MB working set inside CPU L3 cache (avoiding 1.00 Terabyte dense statevector RAM).
+* **L3-Cache Resident Virtual 36-Qubit VQC:** Partitions a 36-qubit lattice into dual 18-qubit sub-registers joined by a single cut $CZ$ (this circuit form only, not general 36-qubit circuits) resident in 8.38 MB working set inside CPU L3 cache (avoiding 1.00 Terabyte dense statevector RAM).
 * **Quasiprobability Contraction:** Decomposes cross-fragment $CZ$ bridge into local Pauli-$Z$ insertions, reconstructing exact non-local expectation values.
 * **Exact Tsirelson Bell Witness Violation:** Evaluates $\langle \mathcal{B}_{\text{CHSH}} \rangle_{\text{bridge}} = \langle A_0 \otimes B_0 \rangle + \langle A_0 \otimes B_1 \rangle + \langle A_1 \otimes B_0 \rangle - \langle A_1 \otimes B_1 \rangle = 2.82842712$ across boundary bridge pair $(q_4, q_{13})$ ($|S - 2\sqrt{2}| = 2.22 \times 10^{-15}$) in **$35.86\text{ ms}$** inner AVX2 latency.
 * **Mid-Circuit Checkpointing (`cut_bridge_36q_bench`):** Evaluates a 12-layer sandwich topology (`[Layers 1..6] -> [Cut CZ] -> [Layers 7..12]`) pre-computing prefix evolution once in **$316.50\text{ ms}$** and cloning cache-resident 18Q statevectors across 4 branches, confirming non-separable 36Q entanglement ($\Delta = +0.0001056229$) in **$1.608\text{ s}$**.
-* **Intel iGPU OpenCL Offload & Native Rust Bridge (`t1000::gpu`):** Dynamically wires `QuantumState` SOA buffers directly into the Intel Xe Graphics OpenCL runtime using `CL_MEM_USE_HOST_PTR` unified memory mappings. Automatically routes dense registers $N \ge 22$ ($64\text{ MB}\text{–}1\text{ GB}$) to the iGPU, completing in **$7.796\text{ ms}$** (**$2.13\times$ faster than host CPU AVX2**) with exact $1.0000000$ cross-backend fidelity (`igpu_bridge_bench`).
+* **Intel iGPU OpenCL Offload & Native Rust Bridge (`t1000::gpu`):** Dynamically wires `QuantumState` SOA buffers directly into the Intel Xe Graphics OpenCL runtime using `CL_MEM_USE_HOST_PTR` unified memory mappings. Automatically routes dense registers $N \ge 22$ ($64\text{ MB}\text{–}1\text{ GB}$) to the iGPU, completing in about $9.5\text{ ms}$ against $17.4\text{ ms}$ on the CPU at 22 qubits ($1.8\times$, re-measured; the iGPU is slower below 20 qubits) with $1.0000000$ cross-backend fidelity (`igpu_bridge_bench`).
 * Detailed Documentation: [`docs/findings/heterogeneous_co_processor_pipeline.md`](docs/findings/heterogeneous_co_processor_pipeline.md) and [`docs/findings/cut_bridge_36q_checkpointing.md`](docs/findings/cut_bridge_36q_checkpointing.md).
 
 ### 15. Quantum Vision & Subpopulation Sorter Engine (`birds_hybrid_qnn_train`, `path_a_vs_c_sorter_bench`)
@@ -156,10 +158,10 @@
 * **Extreme Subpopulation Throughput:** With only 45 quantum parameters (zero classical weights), reaches **$70.69\%$** coarse accuracy on the Waterbirds 11k test set with **$4.14\,\mu\text{s/sample}$** inference latency (**241,500 samples/sec**).
 * Detailed Documentation: [`docs/findings/ultrametric_tree_sorter_qmux.md`](docs/findings/ultrametric_tree_sorter_qmux.md).
 
-### 17. Glued-Trees Traversal & Exponential Quantum Walk Speedup (`glued_trees_bench`)
-* **Exponential Speedup Milestone (Childs et al. STOC 2003):** Continuous-Time Quantum Walk (CTQW) on two balanced binary trees welded at leaves by a random cycle ($2 \cdot (2^{n+1}-1)$ vertices).
+### 17. Glued-Trees Quantum Walk (`glued_trees_bench`)
+* **Welded-tree walk (Childs et al. STOC 2003):** Continuous-Time Quantum Walk (CTQW) on two balanced binary trees welded at leaves by a random cycle ($2 \cdot (2^{n+1}-1)$ vertices).
 * **Column-Symmetric Invariant Subspace:** Destructive interference cancels all paths into the orthogonal subspace, collapsing the exponential $2^n$ weld bottleneck into an exact 1D chain of length $2n+2$.
-* **Hitting Time Scaling:** At depth $n = 10$ ($4,094$ vertices), classical hitting success drops to **$49.40\%$** within 10,000 steps ($7,373$ mean steps), while quantum walk hits the exit root in $O(n)$ time ($t=17.3$) with **$54.16\%$ peak probability** ($43.1\times$ speedup factor).
+* **Hitting Time Scaling:** At depth $n = 10$ ($4,094$ vertices), classical hitting success drops to **$49.40\%$** within 10,000 steps ($7,373$ mean steps), while the simulated quantum walk reaches the exit root at $t=17.3$ with **$54.16\%$ peak probability**. The comparison is with an unbiased classical random walker on an explicitly given graph; a classical algorithm that reads the graph solves it in linear time, so this is not a demonstration of quantum speedup (the oracle-model separation of Childs et al. is a different claim).
 * **Defect Steering Recovery:** Unitary phase counter-rotation restores coherence across the weld, achieving **$100.0\%$ defect recovery fidelity**.
 * Detailed Documentation: [`docs/findings/glued_trees_exponential_speedup.md`](docs/findings/glued_trees_exponential_speedup.md).
 
@@ -183,6 +185,7 @@
 * **$719\times$ Contrast Explosion:** Extinction of incorrect branches increases from $2.85:1$ (discrete QMUX) to **$2,050.00:1$**.
 * **Intermediate Weld Zeno Sentry:** Intersperse high-frequency projective monitoring at the intermediate weld roots, increasing target ballistic exit hitting probability from $0.4992 \to 0.5089$ and escaping the classical random walk dispersion trap ($25.20\%$).
 ### 21. 2D Plaquette Routing, Multi-Chiplet Seam Mitigation & Architecture Showdown (`plaquette_1234_bench`, `nighthawk_99_plaquette_bench`, `cepheus_108q_bench`)
+* **Scope:** the fidelities in this section come from a noise-model simulation with assumed error rates (for example 0.8% intra-die and 2.2% seam two-qubit error); they are not hardware measurements. The only hardware data is §22.
 * **Measurement-Based 4-Edge Plaquette Teleportation:** Replaces lossy multi-hop sequential SWAP chains ($1 \to 2 \to 4$) with single-tick 4-edge measurement-based teleportation across intermediate diagonal mediators ($1+(2,3)=4$).
 * **Active Classical Pauli-Z Frame Recovery:** Software frame tracking decodes $X$-basis syndrome outcomes $s_2 \in \{0, 1\}$ with zero physical gate delay, doubling post-selection acceptance from **$48.4\% \to 96.8\%$** while locking Bell state fidelity at **$0.9606$**.
 * **Global 20-Hop Cross-Chip Diagonal Routing:** Across the 120-qubit monolithic **IBM Quantum Nighthawk R2** ($12 \times 10$ grid), standard 60-CNOT SWAP cascades crash link fidelity to **$0.2119$**; 4-edge plaquette teleportation sustains **$0.6687$** (**$+45.7\%$ boost**) entirely within 384 bytes of CPU L1 cache.
@@ -192,7 +195,7 @@
 ### 22. Empirical Physical QPU Quantum Walk: Rigetti Cepheus-1-108Q (`experiments/cepheus_glued_trees_30q`)
 * **Physical Hardware Execution:** 1,000 physical projective measurement shots dispatched to **Rigetti Cepheus-1-108Q** (Modular 12-Chiplet Superconducting Transmon QPU, Job ID: `ef387a4a-1898-4214-a686-8ee1c088942a`, Backend: `7433acb8-ae52-4bc9-9030-6df68c696538`).
 * **Childs et al. Welded-Tree Traversal:** 30-qubit continuous-time quantum walk across dual balanced binary trees ($n=3$, 8 columns) welded at leaves, collapsed into an 8-column symmetric invariant subspace.
-* **Empirical Quantum Advantage ($> 39.0\times$):** Physical hitting probability at the terminal exit root ($q_7$) reaches **$65.20\%$** ($652/1000$ hits), decisively escaping the classical random walk weld trap floor ($\sim 1.67\%$).
+* **Hitting probability against a random walker ($39\times$):** the physical hitting probability at the terminal exit root ($q_7$) is **$65.20\%$** ($652/1000$ hits), against about $1.67\%$ for an unbiased classical random walk on the weld. This compares with a random walker, not with the best classical method, and is not a claim of quantum advantage.
 * **T-1000 Simulation Validation ($84.43\%$ Accuracy):** T-1000 predicted $77.22\%$ at $t=6.80$; observed hardware hitting of $65.20\%$ achieves **$84.43\%$ predictive accuracy** ($|\Delta P| = 12.02\%$), with delta precisely attributed to transmon relaxation ($T_1 = 32.5\,\mu\text{s}$), inter-die seam error ($p_{\text{seam}} = 0.0220$), and SPAM readout noise ($\approx 2.5\%$).
 * **Sovereign Visual Suite (300 DPI):**
   - **Overview Showdown:** [`cepheus_glued_trees_showdown.png`](experiments/cepheus_glued_trees_30q/cepheus_glued_trees_showdown.png) (1.34 MB)
@@ -202,22 +205,21 @@
 * Detailed Documentation: [`docs/findings/cepheus_physical_glued_trees_qpu_run.md`](docs/findings/cepheus_physical_glued_trees_qpu_run.md) and [`experiments/cepheus_glued_trees_30q/README.md`](experiments/cepheus_glued_trees_30q/README.md).
 
 ### 23. Lie-Algebraic Geometric Quantum Graph Neural Network (`t1000::qgnn`)
-* **Barren Plateau Resilience:** Maps OpenSMILES molecular bond graphs into Lie-algebraic equivariant graph convolutions whose dynamical Lie algebra scales polynomially ($\dim(\mathfrak{g}) \sim \mathcal{O}(N)$) rather than exponentially ($\dim(\mathfrak{su}(2^N)) = 4^N - 1$), maintaining non-vanishing gradient variance ($\text{Var} = 4.2931 \times 10^{-2}$ at 14Q) across deep registers.
+* **Gradient variance (not evidence of barren-plateau resilience):** maps OpenSMILES molecular bond graphs into Lie-algebraic equivariant graph convolutions with shared weights. The measured gradient variance of one parameter is $4.29\times 10^{-2}$ at every size from 4 to 14 qubits (a local observable on shared-weight layers, so it cannot depend on size), and the hardware-efficient baseline's variance ($0.08\text{–}0.16$) is larger at every size tested and does not decay in this range either. The sweep therefore does not show resilience.
 * **Exact Permutation Equivariance:** Invariant node projection and Heisenberg exchange entangling layers ($U = \exp(-i \frac{\phi}{2}(XX+YY+\Delta ZZ))$) guarantee exact permutation invariance under graph automorphisms ($|\Delta y| = 0.0000 \times 10^0$).
-* **ZINC Molecular Screening:** Microsecond AVX2+FMA inference latency of **$2.46\,\mu\text{s}$ per molecule** (**$406,273$ molecules/second**) on real drug candidates.
+* **Inference latency:** about $2.7\,\mu\text{s}$ per molecule (about $370{,}000$ molecules/second, re-measured on a 6-node benzene graph).
 * **Sovereign Publication Visual:** 4-panel showdown chart rendered at 300 DPI ([`results/charts/qgnn_geometric_showdown.png`](results/charts/qgnn_geometric_showdown.png)).
 * Detailed Documentation: [`docs/findings/geometric_qgnn_barren_plateau_resilience.md`](docs/findings/geometric_qgnn_barren_plateau_resilience.md).
 
 ### 24. Full Quantum Neural Network (QNN) Suite Benchmark (`full_qnn_suite_bench`)
-* **Comprehensive 7-Pillar Evaluation:** Unifies and tests all mathematical subsystems across the entire quantum neural architecture on host AVX2+FMA hardware:
-  1. *Geometric QGNN:* $392,634\text{ mols/s}$ ($2.55\,\mu\text{s}$), $|\Delta y|=0.0000$, $\text{Var}=4.29\times 10^{-2}$ at 14Q.
-  2. *Continuous Walk Sorter:* $25,711\text{ samps/s}$ ($38.89\,\mu\text{s}$), $400:1$ routing contrast, $45.7\%$ ballistic peak.
-  3. *Ultrametric Tree Sorter:* $11,210,762\text{ samps/s}$ ($0.09\,\mu\text{s}$), $0$ Strong Triangle Inequality violations.
-  4. *Q-SSM Mamba (1D MPS):* $555,556\text{ tokens/s}$ ($1,800\text{ ns}$), $128\text{ B}$ L1 cache pinned, $\text{MSE}=0.1923$.
-  5. *Radix-7 Heptal Qudit MPS:* $2,261\text{ mols/s}$ ($442.3\,\mu\text{s}$), $784\text{ B}$ L1 active window ($2.33\times 10^{14}\times$ state compression over $7^{19}$ Hilbert space).
-  6. *Dense Molecular VQC (14Q):* $184,963\text{ evals/s}$ ($5.41\,\mu\text{s}$), $262\text{ KB}$ L2 resident, unitary norm drift $0.000000000000$.
-  7. *Reverse-Mode Adjoint Diff:* $1.34\text{ ms}$ for 96 parameters across 12Q (**$153.6\times$ speedup** over parameter-shift rule), $0$ heap allocations in backward pass.
-* **Sovereign Publication Visual:** 4-panel showdown chart rendered at 300 DPI ([`results/charts/full_qnn_suite_showdown.png`](results/charts/full_qnn_suite_showdown.png)).
+* **Seven-pillar suite (re-measured on the audit host; latencies vary by run):**
+  1. *Geometric QGNN:* about $2.6\,\mu\text{s}$ per molecule (benzene graph), permutation drift $0$.
+  2. *Continuous walk sorter:* about $37\,\mu\text{s}$ per sample, $400:1$ routing contrast, $45.7\%$ ballistic peak.
+  3. *Ultrametric tree sorter:* about $0.07\,\mu\text{s}$ per sample, $0$ strong-triangle-inequality violations.
+  4. *Q-SSM (1D MPS):* about $1.8\,\mu\text{s}$ per token including classification, $128\text{ B}$ window, reconstruction MSE $0.19$.
+  5. *Radix-7 heptal MPS:* about $420\text{–}470\,\mu\text{s}$ per molecule, $784\text{ B}$ active window.
+  6. *Dense molecular VQC (14Q):* about $6\text{–}7\,\mu\text{s}$ per pass, $262\text{ KB}$ state, norm drift $0$.
+  7. *Adjoint differentiation:* 96 parameters on 12 qubits in about $0.4\text{ ms}$, about $50\times$ faster than parameter shift (measured; maximum difference $3\times 10^{-16}$). An earlier version of this benchmark computed that speedup from a formula ($153.6\times$); the figure was removed.
 ### 25. Unitary Quantum Cellular Automata via Fractional Fermi Seas (`t1000_conway`)
 * **Physical Basis:** Inspired by Guardado-Sanchez et al. (Innsbruck, arXiv:2602.17657v2), couples local Conway cell states to closed interaction holonomy cycles across a Confinement-Induced Resonance ($g_{1D}: 0 \to +\infty \to -\infty \to 0$), realizing Haldane Generalized Exclusion Statistics ($\alpha = \ell = 2$).
 * **Exact Global Unitarity:** Split-step checkerboard decomposition ($U_{\text{step}} = U_{\mathcal{B}} \cdot U_{\mathcal{A}}$) maintains exact machine-precision unitarity ($|\|\psi\|^2 - 1.0| \le 1.55 \times 10^{-15}$) across thousands of steps with zero numerical dissipation.
@@ -237,14 +239,15 @@
 
 ### 27. Real-Time Surface Code Threshold Engine & AVX-VNNI Minimum-Weight Decoder (`vnni_threshold_bench`)
 * **Closed-Loop Monte Carlo Threshold Simulation:** Full physical depolarizing error channel sweeping error rates $p \in [0.001, 0.150]$ across 3.5 Million Monte Carlo shots on the rotated $[[9, 1, 3]]$ planar surface code.
-* **Empirical Fault-Tolerant Threshold ($p_{\text{th}} = 8.14\%$):** Decisively crosses the unencoded physical error baseline $P_{\text{unencoded}} = 1 - (1 - \frac{2}{3}p)^9 \approx 6p$, proving fault-tolerant error suppression below threshold.
+* **Pseudo-threshold ($8.14\%$):** the logical error rate of the distance-3 code crosses the failure probability of nine unencoded qubits, $P_{\text{unencoded}} = 1 - (1 - \frac{2}{3}p)^9 \approx 6p$, at $p = 8.14\%$. Against a single unencoded qubit ($2p/3$) the crossing is near 5%. This is a code-capacity result (perfect syndrome extraction), not a circuit-level fault-tolerance threshold, which needs several code distances.
 * **Quadratic Error Suppression ($d = 3$):** In the sub-threshold regime ($p \le 0.05$), logical error scales strictly quadratically as $P_L \approx 24.0 \cdot p^2$, delivering up to **$41.67\times$ error suppression** at $p = 0.001$ ($P_L = 0.014\%$ vs $P_{\text{unencoded}} = 0.60\%$).
-* **Extreme Throughput Real-Time Decoding:** Evaluates syndrome extraction and minimum-weight homologous correction lookup in **$48.2\text{ ns per shot}$** (**$20.72\text{ Million decodings/sec}$**), completely bypassing slow graph-matching heuristic trees and enabling real-time QEC loop closure at hardware clock speeds.
+* **Extreme Throughput Real-Time Decoding:** Evaluates syndrome extraction and minimum-weight homologous correction lookup in about $42\text{–}58\text{ ns per shot}$ (about $21\text{ Million decodings/sec}$, re-measured), completely bypassing slow graph-matching heuristic trees and enabling real-time QEC loop closure at hardware clock speeds.
 * **Zero-Allocation L1-Resident Architecture:** Pre-allocated 16-element boundary/bulk correction lookup tables fit entirely in $128\text{ bytes}$ of CPU L1 data cache with zero dynamic heap allocation in inner decoding loops.
 * **Sovereign Publication Visual:** 4-panel showdown chart rendered at 300 DPI ([`results/plots/vnni_qec_threshold_dynamics.png`](results/plots/vnni_qec_threshold_dynamics.png)).
 * Detailed Documentation: [`docs/findings/vnni_qec_threshold_dynamics.md`](docs/findings/vnni_qec_threshold_dynamics.md).
 
 ### 28. Real-Symmetric Molecular Eigensystem Engine & Zero-Allocation QM9 Streaming Ingestion (`molecular_eigensystem_bench`)
+* **Data required:** the figures below come from the author's run with the roboBohr table (`Ground_state_energies.zip`) and `QM9.zip`. Without them `molecular_eigensystem_bench` evaluates 0 molecules, so they are not reproducible from this repository.
 * **50x50 Coulomb Matrix Householder-QL Eigensolver (`t1000::simd::eigensystem`, `t1000::chemistry::coulomb`):** Vectorized bare-metal symmetric reduction of dense $50 \times 50$ Coulomb matrices ($1,275$ packed upper-triangular entries) into exact 50-dimensional eigenspectra at **$14,352.5\text{ molecules/second}$** ($69.67\,\mu\text{s}$ per molecule).
 * **Machine-Precision Spectral Preservation:** Guaranteed spectral trace conservation ($\sum \lambda_i = \mathrm{Tr}(C)$) with maximum drift bounded at **$2.73 \times 10^{-12}$**, verifying exact mathematical rigor across thousands of real molecules from `roboBohr.csv`.
 * **Complete Invariance under $SO(3) \times S_N$:** Reconstructed eigenspectra are strictly invariant under molecular 3D rotation, translation, and identical atom permutation, providing an ideal coordinate-free representation for quantum VQC and QGNN training.

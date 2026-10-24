@@ -51,7 +51,6 @@ runs; the root `results/` files come from the reference host.
 | README § | README says | Committed output says | Note |
 | :--- | :--- | :--- | :--- |
 | 5 | 34.38 µs / sample | `experiments/mnist_qnn_training.json` `per_sample_latency_us` = 30.23 | Different runs; latency varies by host and load. Accuracy and coherence match. |
-| 14 | 316.50 ms prefix, Δ = 0.0001056229 (36Q checkpointing) | `experiments/cut_bridge_36q_results.json`: total 218.33 ms, covariance delta 0.01255 | The README and `docs/findings/cut_bridge_36q_checkpointing.md` quote one run and the JSON holds another; the two have not been reconciled. |
 
 ## Reference values, not computed
 
@@ -113,9 +112,50 @@ reports hardware figures it did not measure.
 | The analytic depolarising energy bias overstates sampled gate-level Pauli noise at small error rates by 1.4x to 1.5x (H₂, HeH⁺) and 5.3x to 5.6x (LiH, H₂O); the tolerable two-qubit error for 1.59 mHa is 1.4x to 5.6x higher than the analytic value (H₂ 3.1e-5, HeH⁺ 2.2e-5, LiH 2.7e-6, H₂O 2.2e-7) | `hosts/unknown-cpu/data/vqe_noise_check_report.json`; `cargo run --release -p t1000 --bin vqe_noise_check`; table in `docs/vqe.md`; standard errors 1 to 3 % of the bias |
 | Fixed-point infidelity of the 1000_QPU arithmetic is about 0.07 · gates · 2^n · 4^(-fraction bits), measured on random circuits of 4 to 14 qubits | `hosts/unknown-cpu/data/qpu_scaling_report.json`; `cargo run --release -p t1000 --bin qpu_scaling`; fit over 51 cells, individual cells 0.01 to 0.09 |
 
+## README audit (2026-10-23)
+
+Every benchmark binary named in the README that needs no external data was rebuilt and re-run on the
+reference host (Core Ultra 7 265, 20 threads) and compared with the README. Timings vary by 10 to 30 %
+between runs, so a re-measured value within that band counts as reproduced. Column "Action" says what
+the README now says.
+
+| README § | Claim as it was | Re-run result | Action |
+| :--- | :--- | :--- | :--- |
+| 1 | Fused diagonal kernel 1.93x faster; adjoint pass 0.1002 s to 0.0921 s | Rademacher layer 1.74x to 1.84x (18Q); whole-pass effect not re-run | Qualified |
+| 2 | Up to 1.9x faster than Qiskit Aer | No reproduction path: `frontier_rcs` refers to `scripts/aer_rcs_benchmark.py`, which is not in the repository. Against the scalar reference: 11.5x to 14.0x | Removed; scalar-reference speedup stated |
+| 3 | 9 molecules' ground-state energies from Jordan-Wigner Hamiltonians | Tabulated reference values and fixed formulas, not integrals (see "Reference values") | Rewritten; points to § 29 |
+| 3 | ZINC 250k in 1.17 s (213,351 molecules/s) | Needs the ZINC 250k table (not shipped) | Marked not re-run |
+| 4 | Adjoint 1,296 parameters in 0.250 s | 0.113 s to 0.118 s; 47x to 61x faster than parameter shift at 12 qubits, max difference 3e-16 | Corrected |
+| 4 | Dense coherence to 26 qubits, 64 qubits by tensor-network belief propagation, heptal 7^9 | Dense stage reproduces (26Q in 5.8 s). The tensor-network and heptal stages did not finish within 150 s | Qualified (approximate, not reproduced) |
+| 4 | Noisy RCS fidelity gains +5,147 % and +13,543 % | Baseline fidelity 0.0004, stabilised 0.021 at 14Q; gains are relative to a near-zero baseline | Rewritten with absolute values |
+| 5 | MNIST VQC "surpasses classical" baselines | Only the repository's BNN/HDC baselines. On the same split: logistic regression 87.0 %, 3-nearest-neighbours 92.35 %, VQC 84.50 % | Rewritten |
+| 7, 27 | VNNI syndrome 26.11 ns, 38.30 M/s; commutation 34.81 M/s; decode 48.2 ns, 20.72 M/s | 27.0 ns, 37.0 M/s; 33.9 M/s; 41 to 58 ns, 21.1 M/s | Reproduced within host variance |
+| 27 | "Fault-tolerant threshold" 8.14 % | Number reproduces (8.14 %, 41.67x at p = 0.001, P_L = 24 p^2). It is the crossing with nine unencoded qubits (about 6p); against one qubit (2p/3) it is near 5 %. Code-capacity noise, one code distance | Renamed pseudo-threshold, scope stated |
+| 10 | 200 qubits in 105.8 us | 22.1 us (window 3), 47.2 us (window 4). The benchmark measures anti-correlation of neighbours, not entanglement | Corrected |
+| 11 | 200 qudits in 7.58 ms | 4.88 ms; only a 49-amplitude window is simulated | Corrected |
+| 12 | 66.6 to 95.8 ns/token; 100 % accuracy | 64 to 84 ns (11.9 to 15.6 M tokens/s). 100 % is a synthetic coherent-versus-chaotic task; the quench variant gives 70.8 % to 100 % | Corrected |
+| 14 | 36Q checkpoint 316.50 ms, delta 0.0001056229, 1.608 s | 318.46 ms, 0.0001056229, 1.607 s: reproduces (the committed JSON is a different run) | Reproduced; "Differs" entry removed |
+| 14 | CHSH S = 2.82842712, deviation 2.22e-15 | Reproduces (kernel 29.6 ms against 35.86 ms) | Reproduced |
+| 14 | iGPU 2.13x faster than CPU at N >= 22 | 1.8x at 22 qubits (9.5 ms against 17.4 ms); slower than the CPU below 20 qubits | Corrected |
+| 17 to 19 | Glued trees 49.40 % / 54.16 %; valve 77.16 %, contrast about 1,700:1; cascaded 60.31 %, 2,489:1 | All reproduce. The classical baseline is a random walker capped at 10,000 steps; "43.1x speedup" has no stated definition | Interpretation corrected; speedup figure removed |
+| 21 | Nighthawk 0.2119 to 0.6687; Cepheus corner 0.8588 to 0.9146 | Reproduce; they are noise-model estimates with assumed error rates | Labelled as modelled |
+| 22 | "Empirical quantum advantage > 39x" | 65.2 % against about 1.67 % for an unbiased random walker; not a comparison with the best classical method | Reworded |
+| 23, 24 | QGNN "barren-plateau resilience", variance 4.2931e-2 at 14Q | Computed, but identical at 4 to 14 qubits (local observable, shared weights) and smaller than the hardware-efficient baseline's 0.08 to 0.16 at every size | Reworded; not evidence of resilience |
+| 24 | Adjoint "153.6x speedup over parameter shift" | The benchmark computed it as `2 * parameters * 0.8` and then crashed on a wrong workspace size. Fixed: measured 47x to 61x. The chart that hard-coded the curves was removed | Corrected; chart deleted |
+| 26 | Lattice surgery truth table, Bell fidelity 1.0, 15-to-1 distillation 4.365e-6 at 0.5 % | Reproduce (23.4 ms against 25.15 ms; epsilon_out 4.3653e-6) | Reproduced |
+| 28 | Eigensystem 14,352.5 mol/s, QM9 4,056.4 mol/s | The benchmark evaluates 0 molecules without the roboBohr and QM9 files | Marked not reproducible from the repository |
+| 25 | Conway QCA | `qgol_sim` runs; its numbers were not compared | Not checked |
+
+Unit tests: 394 library tests pass (`cargo test --release --workspace`).
+
 ## Not checked
 
-The README quantities with no committed result file are not covered: the Q-SSM
-token rates (§ 12), the MPS zipper and heptal-qudit timings (§§ 10, 11), compile/fusion speedups
-(§§ 1, 2), and the speed comparison with Qiskit Aer. These come from benchmark binaries that print
-to the terminal; re-run them on the target host to confirm.
+* Claims whose data files are not shipped: ZINC 250k screening speeds (§ 3), the QM9 and roboBohr
+  throughputs (§ 28), the Waterbirds sorter results (§§ 15, 16; they match the committed result JSON, but the
+  runs were not repeated), and the QM9 training monographs.
+* § 8 (canonical algorithms), § 9 (scheduler), § 13 (Clifford+T): covered only by unit tests.
+* § 25 (Conway QCA) numbers and § 26 timings.
+* The findings documents under `docs/findings/` repeat several of the README claims above in longer form;
+  only `full_quantum_neural_network_suite_benchmarks.md` has been rewritten. The others may still contain
+  the wording corrected in the README (for example "exponential speedup", "barren-plateau resilience",
+  "quantum advantage").

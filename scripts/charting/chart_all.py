@@ -248,17 +248,6 @@ def run_all_charts() -> None:
             generated.append(("Geometric QGNN Showdown", png.name, f"{size_kb:.1f} KB"))
             print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
 
-    # 25. Full Quantum Neural Network (QNN) 7-Pillar Suite Telemetry
-    full_qnn_json = ws_root / "results" / "data" / "full_qnn_suite_telemetry.json"
-    if full_qnn_json.exists():
-        import chart_full_qnn_suite
-        chart_full_qnn_suite.main()
-        png = ws_root / "results" / "charts" / "full_qnn_suite_showdown.png"
-        if png.exists():
-            size_kb = png.stat().st_size / 1024.0
-            generated.append(("Full QNN Suite 7-Pillar Showdown", png.name, f"{size_kb:.1f} KB"))
-            print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
-
     print("\n╔═══════════════════════════════════════════════════════════════════════════════╗")
     print("║                        RENDERED ARTIFACT MANIFEST                             ║")
     print("╠═════════════════════════════════════╦══════════════════════════════════╦══════════╣")

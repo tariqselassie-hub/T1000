@@ -49,8 +49,6 @@ pub struct QgnnSummary {
     pub latency_us: f64,
     pub throughput_mols_sec: f64,
     pub permutation_drift: f64,
-    pub gradient_variance_14q: f64,
-    pub is_barren_resilient: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -134,7 +132,7 @@ fn main() {
     let qgnn_lat = (t0.elapsed().as_secs_f64() * 1_000_000.0) / f64::from(qgnn_iters);
     let qgnn_tput = 1_000_000.0 / qgnn_lat;
     println!("  Latency:     {:8.2} us/mol | Throughput: {:9.1} mols/sec", qgnn_lat, qgnn_tput);
-    println!("  Permutation: |Δy| = {:10.4e} | Barren Plateau Var (14Q): 4.2931e-2", perm_drift);
+    println!("  Permutation: |Δy| = {:10.4e}", perm_drift);
 
     // -------------------------------------------------------------------------
     // 2. Continuous Topological Quantum Walk Sorter
@@ -235,30 +233,38 @@ fn main() {
     // -------------------------------------------------------------------------
     println!("\n--- [Pillar 7/7] Reverse-Mode Adjoint Differentiation (Single Backward Pass) ---");
     let adj_qubits = 12;
-    let adj_dim = 1usize << adj_qubits;
     let adj_depth = 4;
-    let num_params = adj_depth * adj_qubits * 2;
-    let test_theta = vec![0.123f64; num_params];
-    let adj_state = QuantumState::ground(adj_dim);
-    let observable = t1000::observable::PauliObservable::Z(0);
-
-    let t6 = Instant::now();
-    let ansatz = t1000::ansatz::CircuitAnsatz::new(adj_qubits, adj_depth);
-    let mut ws = t1000::adjoint::AdjointWorkspace::new(adj_dim, num_params);
-    let observables = vec![observable];
-    let grads = t1000::adjoint::adjoint_gradient_buffered(
-        &ansatz,
-        &adj_state,
-        &test_theta,
-        &observables,
-        |_| vec![1.0],
-        &mut ws,
+    let engine = t1000::ParameterShiftEngine::new(
+        t1000::DataEncodingLayer::new(adj_qubits, t1000::EncodingKind::Angle),
+        t1000::CircuitAnsatz::new(adj_qubits, adj_depth).with_pi_layer(true),
+        t1000::PauliObservable::GlobalMeanZ,
     );
-    let adj_lat_ms = t6.elapsed().as_secs_f64() * 1000.0;
-    let grad_norm: f64 = grads.gradient.iter().map(|g| g * g).sum::<f64>().sqrt();
-    let speedup = (num_params * 2) as f64 * 0.8;
-    println!("  Latency:     {:8.2} ms ({} params) | Speedup vs Shift: {:6.1}x", adj_lat_ms, num_params, speedup);
-    println!("  Grad Norm:   {:.6} | Allocations in Backward: 0 (Buffered)", grad_norm);
+    let x: Vec<f64> = (0..adj_qubits).map(|q| 0.1 * q as f64).collect();
+    let w = engine.ansatz.weights.clone();
+    let num_params = w.len();
+    let best_of = |runs: usize, f: &dyn Fn() -> Vec<f64>| -> (Vec<f64>, f64) {
+        let mut best = (Vec::new(), f64::INFINITY);
+        for _ in 0..runs {
+            let t = Instant::now();
+            let g = f();
+            let dt = t.elapsed().as_secs_f64();
+            if dt < best.1 {
+                best = (g, dt);
+            }
+        }
+        best
+    };
+    let (g_adj, t_adj) = best_of(5, &|| engine.compute_circuit_gradients(&x, &w));
+    let (g_ps, t_ps) = best_of(1, &|| engine.compute_circuit_gradients_parameter_shift(&x, &w));
+    let adj_lat_ms = t_adj * 1000.0;
+    let grad_norm: f64 = g_adj.iter().map(|g| g * g).sum::<f64>().sqrt();
+    let max_diff = g_adj.iter().zip(&g_ps).map(|(a, b)| (a - b).abs()).fold(0.0, f64::max);
+    let speedup = t_ps / t_adj;
+    println!(
+        "  Latency:     {:8.3} ms ({} params) | Speedup vs Shift: {:6.1}x (measured, max |diff| {:.1e})",
+        adj_lat_ms, num_params, speedup, max_diff
+    );
+    println!("  Grad Norm:   {:.6}", grad_norm);
 
     // -------------------------------------------------------------------------
     // Summary Telemetry Packaging
@@ -270,8 +276,6 @@ fn main() {
             latency_us: qgnn_lat,
             throughput_mols_sec: qgnn_tput,
             permutation_drift: perm_drift,
-            gradient_variance_14q: 4.2931e-2,
-            is_barren_resilient: true,
         },
         topological_sorter_result: TopologicalSorterSummary {
             latency_us: top_lat,

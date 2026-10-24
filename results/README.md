@@ -61,7 +61,6 @@ results/
 | **21** | **`cepheus_108q_showdown.png`** | Rigetti Cepheus-1-108Q physical QPU 30-qubit glued-tree run vs. T-1000 simulation. | `data/cepheus_108q_telemetry.json` |
 | **22** | **`qec_lattice_surgery_showdown.png`** | 18-Qubit dual surface code patch lattice surgery & Bell pair generation. | `experiments/qec_fault_tolerance_telemetry.json` |
 | **23** | **`qgnn_geometric_showdown.png`** | Lie-algebraic geometric QGNN barren plateau resilience & permutation equivariance. | `data/qgnn_molecular_telemetry.json` |
-| **24** | **`full_qnn_suite_showdown.png`** | Comprehensive 7-pillar full QNN suite showdown across all architectures. | `data/full_qnn_suite_telemetry.json` |
 
 ---
 
