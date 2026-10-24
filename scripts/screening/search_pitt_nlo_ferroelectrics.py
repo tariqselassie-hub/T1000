@@ -51,10 +51,11 @@ def main() -> None:
                 continue
 
             # Filtering thresholds:
-            # High dipole (|D| >= 20 Debye) but excluding calculation artifacts (> 60 Debye)
-            # Optical transparency (gap >= 3.0 eV)
-            # Processable mass (mw <= 500 Da)
-            if 20.0 <= dip <= 60.0 and gap >= 3.0 and mw <= 500.0:
+            # 1. Single contiguous molecule (exclude disconnected salts/solvents/adducts)
+            # 2. High dipole (|D| >= 20 Debye) but excluding calculation artifacts (> 60 Debye)
+            # 3. Optical transparency (gap >= 3.0 eV)
+            # 4. Processable mass (mw <= 500 Da)
+            if "." not in row["smiles"] and 20.0 <= dip <= 60.0 and gap >= 3.0 and mw <= 500.0:
                 fom = dip * alpha
                 candidates.append({
                     "inchikey": row["inchikey"],
