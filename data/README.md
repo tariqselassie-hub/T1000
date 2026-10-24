@@ -8,6 +8,7 @@ below; everything under `data/` except the readmes and `mnist_demo/` is git-igno
 | `data/mnist_demo/` | 1,000 training and 200 test digits (100 and 20 per class), IDX format, tracked in git | included; enough to run `mnist_qnn_train` and `mnist_ultrametric_sorter` as a demo |
 | `data/mnist/` | Full MNIST (`train-images.idx3-ubyte`, `train-labels.idx1-ubyte`, `t10k-images.idx3-ubyte`, `t10k-labels.idx1-ubyte`) | https://yann.lecun.com/exdb/mnist/ ; if present it is used instead of the demo set |
 | `data/qm9/` | QM9 properties (`qm9.csv`) | see [`qm9/README.md`](qm9/README.md) |
+| `data/pitt/` | Pitt Quantum Repository PM7 properties (`pitt_quantum.csv`) | see [`pitt/README.md`](pitt/README.md) |
 | `data/birds/`, `data/mimac/` | Waterbirds features and the MIMAC chemistry tables described below | built by the extraction and screening scripts in `scripts/`; the Waterbirds images come from the public Waterbirds benchmark |
 
 Results measured on the demo subset are not comparable with results on full MNIST.
@@ -23,7 +24,8 @@ This directory houses scientific datasets, binary feature maps, chemical descrip
 ```
 data/
 ├── birds/      # Waterbirds 11k dataset (raw pixels, binary labels, 10-D PCA embeddings)
-└── mimac/      # Molecular Interaction Map & Activity Cliffs (MIMAC) chemical datasets
+├── mimac/      # Molecular Interaction Map & Activity Cliffs (MIMAC) chemical datasets
+└── pitt/       # University of Pittsburgh Quantum Repository (106k molecules, PM7)
 ```
 
 ---

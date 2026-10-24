@@ -44,3 +44,7 @@ data/*
 !data/qm9/
 data/qm9/*
 !data/qm9/README.md
+!data/pitt/
+data/pitt/*
+!data/pitt/README.md
+!data/pitt/pitt_quantum_summary.json

@@ -1,0 +1,96 @@
+{
+  "dataset_name": "University of Pittsburgh Quantum Repository (PM7)",
+  "source_archive": "C:\\Users\\zoddj\\Models\\pitt-quantum-repository.zip",
+  "total_records_ingested": 106066,
+  "valid_molecules_written": 105926,
+  "skipped_missing_smiles": 140,
+  "csv_output_file": "data\\pitt\\pitt_quantum.csv",
+  "csv_file_size_mb": 35.2,
+  "top_elements": {
+    "C": 105069,
+    "H": 103444,
+    "O": 90135,
+    "N": 64738,
+    "S": 17908,
+    "Cl": 8446,
+    "P": 7993,
+    "F": 6965,
+    "Br": 2533,
+    "I": 1268,
+    "Si": 281,
+    "B": 256,
+    "Fe": 108,
+    "Se": 82,
+    "Mg": 67,
+    "Ge": 54,
+    "Li": 51,
+    "V": 48,
+    "As": 45,
+    "Co": 45
+  },
+  "top_point_groups": {
+    "C1": 95250,
+    "Cs": 7203,
+    "C2": 1295,
+    "C2v": 872,
+    "C2h": 286,
+    "C*v": 185,
+    "C3v": 162,
+    "D2h": 128,
+    "Ci": 121,
+    "D3h": 65,
+    "D*h": 62,
+    "C3": 53
+  },
+  "properties_statistics": {
+    "molecular_weight": {
+      "count": 105926,
+      "min": 2.0159,
+      "max": 2857.1433,
+      "median": 281.349,
+      "mean": 304.2048
+    },
+    "homo_ev": {
+      "count": 105926,
+      "min": -16.085,
+      "max": 6.423,
+      "median": -9.126,
+      "mean": -8.7321
+    },
+    "lumo_ev": {
+      "count": 105926,
+      "min": -7.413,
+      "max": 18.791,
+      "median": 0.201,
+      "mean": 0.8659
+    },
+    "gap_ev": {
+      "count": 105926,
+      "min": 0.0,
+      "max": 30.307,
+      "median": 9.684,
+      "mean": 9.598
+    },
+    "dipole_debye": {
+      "count": 105926,
+      "min": 0.0,
+      "max": 5621.951,
+      "median": 3.478,
+      "mean": 4.0808
+    },
+    "polarizability": {
+      "count": 104449,
+      "min": -823.9045,
+      "max": 11539.4854,
+      "median": 29.7049,
+      "mean": 33.1505
+    },
+    "heat_of_formation_kj_mol": {
+      "count": 105926,
+      "min": -9677.4568,
+      "max": 6268662.5408,
+      "median": -343.4099,
+      "mean": -346.2898
+    }
+  }
+}

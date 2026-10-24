@@ -63,6 +63,7 @@ Visual telemetry suite adhering strictly to the Deen OS Sovereign Visual Specifi
 * **`chart_zinc_pareto.py`**: ZINC 250k Search 1: Frontier Pareto drug leads and binding affinities.
 
 ### 2. `scripts/data/`
+* **`extract_pitt_quantum.py`**: High-throughput zero-copy extraction and normalization engine for the 106k-molecule University of Pittsburgh Quantum Repository (`Pitt_Quantum_Repository_Data.json`). Streams PM7 calculations into `data/pitt/pitt_quantum.csv` (105,926 valid SMILES) and computes comprehensive property and point group metadata.
 * **`extract_birds_features.py`**: Deep visual transfer feature extraction from full-resolution Waterbirds images using PyTorch MobileNetV3-Small. Performs CPU-accelerated inference (~245 img/s), extracts 576-D embeddings, computes PCA projection down to 10 principal components ($37.48\%$ visual variance), and writes standardized $[-\pi, \pi]^{10}$ binary tensors to `data/birds/`.
 * **`extract_birds.py`**: Utility to extract and verify the Waterbirds image archive.
 
