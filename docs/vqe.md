@@ -107,6 +107,38 @@ From `results/hosts/unknown-cpu/data/vqe_noise_report.json`:
 Shots are the total over all terms with the variance-optimal split and no commuting-term grouping,
 so they overstate what grouped measurement needs. The next section measures by how much.
 
+### Check of the noise model against sampled Pauli noise (`vqe_noise_check`)
+
+```bash
+cargo run --release -p t1000 --bin vqe_noise_check
+```
+
+The analytic model above says every error anywhere destroys every non-identity term, so the bias is
+`(1 - F)(E - c₀)`. To test it, the compiled gate-level circuit (`qpu::compile`: basis changes, CNOT
+ladders, Rz) is run as a state vector with a random Pauli after each gate: with probability `p₁ = p₂/10` on a
+one-qubit gate (X, Y or Z) and `p₂` on a CNOT (one of 15 two-qubit Paulis). Each trajectory's exact energy is
+averaged. Errors are rare, so every trajectory is conditioned on at least one error (the first error's gate is
+drawn in proportion to its probability of being first), which keeps the standard error at about 1 to 3 % of the
+bias. The analytic model uses the same gate counts as the simulated circuit (LiH: 1,376 CNOT and 1,776
+one-qubit gates). From `results/hosts/unknown-cpu/data/vqe_noise_check_report.json`:
+
+| Molecule | Qubits | Gates | Bias, analytic / sampled at the smallest rate | Sampled / analytic (small `p₂`) | Max `p₂` for 1.59 mHa, analytic | Max `p₂` for 1.59 mHa, sampled |
+| :--- | ---: | ---: | :--- | ---: | ---: | ---: |
+| H₂ | 4 | 196 | 0.080 / 0.052 mHa at 1e-6 | 0.65 | 2.0e-5 | 3.1e-5 |
+| HeH⁺ | 4 | 196 | 0.101 / 0.074 mHa at 1e-6 | 0.74 | 1.6e-5 | 2.2e-5 |
+| LiH | 10 | 3,152 | 0.334 / 0.060 mHa at 1e-7 | 0.18 | 4.8e-7 | 2.7e-6 |
+| H₂O | 12 | 15,104 | 0.386 / 0.072 mHa at 1e-8 | 0.19 | 4.1e-8 | 2.2e-7 |
+
+* **The analytic model is conservative, not wrong in kind.** At small error rates the sampled bias is a
+  constant fraction of the analytic one (0.65 and 0.74 for the 4-qubit molecules, 0.18 to 0.19 for LiH and H₂O):
+  a gate error that happens to commute with, or be undone by, the rest of the circuit does not shift the
+  energy. The tolerable two-qubit error is therefore 1.4x to 5.6x higher than the table above states.
+* **The ratio grows with the error rate** (H₂ 0.65 to 0.74 from `p₂` = 1e-6 to 1e-2; LiH 0.18 to 0.30 from 1e-7 to 1e-3):
+  with many errors per shot the model's "one error ruins everything" becomes closer to true.
+* The orders of magnitude do not change: the tolerable `p₂` stays near 1e-5 for 4 qubits and 1e-6 to 1e-7 for
+  12 qubits, far below today's devices. Only Pauli gate noise is simulated (no readout, idle or coherent
+  error, no mitigation), on the uncompiled circuit with naive CNOT ladders, with `p₁ = p₂/10` assumed.
+
 ### Measurement grouping (`vqe_grouping`)
 
 ```bash

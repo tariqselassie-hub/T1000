@@ -108,6 +108,7 @@ reports hardware figures it did not measure.
 | Claim | Evidence |
 | :--- | :--- |
 | Qubit-wise commuting measurement groups cut the ideal-device shot budget for 1.59 mHa by 1.0x (H₂), 6.3x to 25.3x (HeH⁺ to CH₄); the grouped estimator reproduces the energy to 1e-13 | `hosts/unknown-cpu/data/vqe_grouping_report.json`; `cargo run --release -p t1000 --bin vqe_grouping`; table in `docs/vqe.md` |
+| The analytic depolarising energy bias overstates sampled gate-level Pauli noise at small error rates by 1.4x to 1.5x (H₂, HeH⁺) and 5.3x to 5.6x (LiH, H₂O); the tolerable two-qubit error for 1.59 mHa is 1.4x to 5.6x higher than the analytic value (H₂ 3.1e-5, HeH⁺ 2.2e-5, LiH 2.7e-6, H₂O 2.2e-7) | `hosts/unknown-cpu/data/vqe_noise_check_report.json`; `cargo run --release -p t1000 --bin vqe_noise_check`; table in `docs/vqe.md`; standard errors 1 to 3 % of the bias |
 | Fixed-point infidelity of the 1000_QPU arithmetic is about 0.07 · gates · 2^n · 4^(-fraction bits), measured on random circuits of 4 to 14 qubits | `hosts/unknown-cpu/data/qpu_scaling_report.json`; `cargo run --release -p t1000 --bin qpu_scaling`; fit over 51 cells, individual cells 0.01 to 0.09 |
 
 ## Not checked
