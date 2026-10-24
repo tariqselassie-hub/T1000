@@ -15,6 +15,7 @@ docs/
 ├── dashboard_and_circuit_composer.md         # Tri-Deck Web HUD, 3D molecular manifold & Lego-block composer
 ├── cohesion_architecture.md                  # Substrate bridges (t1000_core <-> t1000) & true cohesion
 ├── fpga_architecture.md                      # 1000_QPU fixed-point statevector engine (Artix-7 XC7A35T)
+├── quantum_kernel_benchmark.md               # quantum vs classical kernels under nested cross-validation, with controls
 ├── zinc_quantum_screening.md                 # ZINC 250k whole-library VQC screening & Pareto drug mining
 ├── bloch_zipper_mps_specification.md         # 1D Matrix Product State (MPS) linear Bloch-zipper theory
 ├── mimac_quantum_cliff_analysis.md           # Molecular activity cliffs & chemical latent space dispersion

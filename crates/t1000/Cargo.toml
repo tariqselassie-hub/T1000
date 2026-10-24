@@ -105,6 +105,10 @@ name = "vqe_warmstart"
 path = "src/bin/measurements/vqe_warmstart.rs"
 
 [[bin]]
+name = "quantum_kernel_bench"
+path = "src/bin/measurements/quantum_kernel_bench.rs"
+
+[[bin]]
 name = "vqe_noise"
 path = "src/bin/measurements/vqe_noise.rs"
 
