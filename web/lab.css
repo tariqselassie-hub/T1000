@@ -1,0 +1,88 @@
+/* SPDX-License-Identifier: MIT OR Apache-2.0 */
+/* Copyright (c) 2026 Terrence A. Jones SR. All rights reserved. */
+
+:root {
+    --bg: #05080d;
+    --panel: #0f172a;
+    --panel-2: #152238;
+    --line: #1e293b;
+    --line-2: #334155;
+    --green: #00e676;
+    --gold: #ffb300;
+    --red: #ef4444;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --faint: #64748b;
+    --mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+    --sans: 'Inter', -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 var(--sans); }
+a { color: var(--green); }
+code, .mono { font-family: var(--mono); font-size: 12.5px; }
+
+header.bar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px;
+    padding: 12px 20px; border-bottom: 1px solid var(--line); background: #080c14;
+}
+header.bar h1 { margin: 0; font-size: 17px; letter-spacing: 0.04em; color: var(--green); }
+header.bar .sub { color: var(--muted); font-size: 12.5px; }
+header.bar .spacer { flex: 1; }
+.pill { font: 12px var(--mono); padding: 2px 10px; border: 1px solid var(--line-2); border-radius: 999px; color: var(--muted); }
+.pill.on { border-color: var(--green); color: var(--green); }
+.pill.off { border-color: var(--faint); }
+
+nav.tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 10px 20px 0; border-bottom: 1px solid var(--line); background: #080c14; }
+nav.tabs button {
+    background: none; color: var(--muted); border: 1px solid transparent; border-bottom: none;
+    padding: 8px 16px; cursor: pointer; font: 13px var(--sans); border-radius: 6px 6px 0 0;
+}
+nav.tabs button:hover { color: var(--text); }
+nav.tabs button.active { color: var(--green); background: var(--bg); border-color: var(--line); position: relative; top: 1px; }
+
+main { padding: 18px 20px 60px; max-width: 1500px; margin: 0 auto; }
+section.tab { display: none; }
+section.tab.active { display: block; }
+
+.grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); align-items: start; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; }
+.card h2 { margin: 0 0 4px; font-size: 14px; color: var(--gold); letter-spacing: 0.03em; }
+.card .src { color: var(--faint); font-size: 12px; margin: 0 0 10px; }
+.card .src b { color: var(--muted); font-weight: 600; }
+
+.row { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: end; margin: 6px 0; }
+label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); }
+input, select, textarea {
+    background: #0b1220; color: var(--text); border: 1px solid var(--line-2); border-radius: 4px;
+    padding: 5px 8px; font: 13px var(--mono); min-width: 0;
+}
+input[type=number] { width: 92px; }
+input[type=text] { width: 150px; }
+input[type=range] { padding: 0; width: 160px; accent-color: var(--green); }
+textarea { width: 100%; min-height: 110px; resize: vertical; }
+button.go, button.mini {
+    background: #0b2a1a; color: var(--green); border: 1px solid var(--green); border-radius: 4px;
+    padding: 6px 14px; cursor: pointer; font: 13px var(--sans);
+}
+button.go:hover { background: #0e3a24; }
+button.mini { background: #0b1220; color: var(--muted); border-color: var(--line-2); padding: 3px 9px; font-size: 12px; }
+button.mini:hover { color: var(--text); border-color: var(--muted); }
+
+canvas { background: #080c14; border: 1px solid var(--line); border-radius: 4px; max-width: 100%; display: block; }
+.out { margin-top: 8px; font: 12.5px/1.55 var(--mono); color: var(--text); white-space: pre-wrap; word-break: break-word; }
+.out .k { color: var(--muted); }
+.out .good { color: var(--green); }
+.out .bad { color: var(--red); }
+.out .warn { color: var(--gold); }
+.note { color: var(--muted); font-size: 12.5px; margin: 6px 0; }
+.err { color: var(--red); font-size: 13px; margin-top: 6px; }
+
+table.t { border-collapse: collapse; font: 12.5px var(--mono); margin-top: 6px; }
+table.t td, table.t th { border: 1px solid var(--line); padding: 3px 9px; text-align: right; }
+table.t th { color: var(--muted); font-weight: 600; }
+
+.cells { display: flex; flex-wrap: wrap; gap: 3px; margin: 6px 0; }
+.cells span { width: 26px; height: 24px; border-radius: 3px; font: 12px/24px var(--mono); text-align: center; color: #05080d; }
+
+footer { color: var(--faint); font-size: 12px; padding: 20px; border-top: 1px solid var(--line); }

@@ -148,6 +148,23 @@ the README now says.
 
 Unit tests: 394 library tests pass (`cargo test --release --workspace`).
 
+## Lab bench (2026-10-23)
+
+The dashboard was rebuilt as a bench (`web/index.html`); the old decks moved to `web/archive.html`. Two old
+endpoints returned results that were not computed (`/api/canonical/run`: hard-coded Bernstein-Vazirani
+probabilities and a uniform Grover distribution; `/api/smiles/evaluate`: invented logP, QED and SAS formulas)
+and were removed.
+
+| Component | Check |
+| :--- | :--- |
+| Number theory (`web/lab_nt.js`) | `node web/test_lab_nt.js`: 12 test groups against known values (for example 600851475143 = 71 x 839 x 1471 x 6857, 2^64 + 1 = 274177 x 67280421310721, order of 2 mod 9 = 6, Pisano periods 60, 24 and 16, chi-square tail values), Euler's criterion for every odd prime below 100, and the digit-root facts over 3,000 integers. |
+| Geometry (`web/lab_geom.js`) | `node web/test_lab_geom.js`: the Hopf map returns the Bloch vector, every point of a fibre maps to one base point, two fibres have linking number 1 (numerically 1.00 +/- 0.05), polytope vertex and edge counts (5, 16, 8, 24 vertices; 10, 32, 24, 96 edges), V - E + F - C = 0, 4D rotations are orthogonal. |
+| Algorithms and probability (`web/lab_api.py`) | `python web/test_lab_api.py`: 33 checks. Grover equals sin^2((2k+1) theta) at every step (to 1e-15); Bernstein-Vazirani and Deutsch-Jozsa are certain; phase estimation is exact for representable phases and within 1/2^t otherwise with probability at least 4/pi^2; the FFT construction of order finding equals an explicit QFT matrix; 7 mod 15 has four equal peaks at multiples of 64 and yields the factors 3 and 5; quantum walk return probability is cos^2(t) on two nodes and the classical one (1 + exp(-2t))/2; p-values of repeated null experiments are uniform. |
+
+Limits stated in the interface: the order-finding simulation builds the state after the modular
+exponentiations directly (equal to the ideal circuit's output, not a gate-level multiplier circuit); walks and
+algorithms run on the host in exact arithmetic, only the circuit composer can use the board (up to 14 qubits).
+
 ## Not checked
 
 * Claims whose data files are not shipped: ZINC 250k screening speeds (§ 3), the QM9 and roboBohr

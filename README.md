@@ -279,29 +279,19 @@ The `T-1000` sovereign engine comprises 10 specialized quantum and neural system
 
 ---
 
-### System 1: Sovereign Web Dashboard & Telemetry Bridge
-Serves the 4-deck operational workspace (3D Molecular Manifold & CTQW, Lego Circuit Composer, Fault-Tolerant QEC, and 36Q Virtual Bridge) alongside the Quantum Life QCA simulator.
+### System 1: Lab Bench (web dashboard)
+A bench for running things: quantum algorithms with shots, a gate-list circuit composer that runs on the host or the Basys 3, probability tools (Born-rule sampling with chi-square tests, Porter-Thomas statistics, quantum against classical walks on graphs you define), exact number theory with digit roots and the times-table circle, and geometry (Bloch sphere, Hopf fibres, 4-polytopes). Every panel names the source of its numbers and each source is tested. Recorded results of earlier benchmark runs are on a separate archive page.
 
 ```bash
-# Standard startup (automatically launches browser at http://localhost:8000)
-python web/serve.py
-
-# Headless background startup (e.g., remote server, CI/CD, or automated agents)
+python web/serve.py              # opens http://localhost:8000/
 python web/serve.py --no-browser
+T1000_QPU_PORT=COM6 python web/serve.py   # serial port of the Basys 3
 
-# Launch with explicit FPGA serial port, baud rate, and custom HTTP port overrides
-T1000_QPU_PORT=COM6 T1000_QPU_BAUD=3000000 PORT=8000 python web/serve.py --no-browser
+node web/test_lab_nt.js && node web/test_lab_geom.js && python web/test_lab_api.py
 ```
 
-* **Operational Endpoints:**
-  - Main Dashboard (Decks 1–4): `http://localhost:8000/index.html`
-  - Deck 1: 3D Molecular Manifold & CTQW Screener (Monograph M154)
-  - Deck 2: Lego Quantum Circuit Composer & Silicon Execution Dock (AVX2 / FPGA COM6)
-  - Deck 3: Fault-Tolerant QEC & Magic State Distillation Deck (Monographs M153 & M156)
-  - Deck 4: 36Q Virtual Cut-Bridge & 99-Plaquette Heatmap (Monographs M151 & M155)
-  - Quantum Life (Fractional Fermi QCA Simulator, Monograph M152): `http://localhost:8000/qgol.html`
-  - REST Health Status: `http://localhost:8000/api/status`
-  - Unified Experiment Telemetry Feed: `http://localhost:8000/api/telemetry_data`
+* **Pages:** lab bench `http://localhost:8000/`; recorded results `http://localhost:8000/archive.html`; Quantum Life QCA simulator `http://localhost:8000/qgol.html`; health `http://localhost:8000/api/status`.
+* Details, endpoints and the tests behind each tab: [`docs/dashboard_and_circuit_composer.md`](docs/dashboard_and_circuit_composer.md).
 
 ---
 

@@ -30,3 +30,32 @@ jobs:
 
       - name: Workspace Test Suite
         run: cargo test --workspace --verbose
+
+  lab-tests:
+    name: Lab bench tests (number theory, geometry, algorithms)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install numpy
+        run: pip install numpy
+
+      - name: Number theory
+        run: node web/test_lab_nt.js
+
+      - name: Geometry
+        run: node web/test_lab_geom.js
+
+      - name: Algorithms, probability and walks
+        run: python web/test_lab_api.py
