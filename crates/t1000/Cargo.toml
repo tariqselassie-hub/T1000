@@ -81,12 +81,20 @@ name = "vqe_dissociation"
 path = "src/bin/measurements/vqe_dissociation.rs"
 
 [[bin]]
+name = "qpu_scaling"
+path = "src/bin/measurements/qpu_scaling.rs"
+
+[[bin]]
 name = "qpu_precision"
 path = "src/bin/measurements/qpu_precision.rs"
 
 [[bin]]
 name = "qpu_vectors"
 path = "src/bin/measurements/qpu_vectors.rs"
+
+[[bin]]
+name = "vqe_grouping"
+path = "src/bin/measurements/vqe_grouping.rs"
 
 [[bin]]
 name = "vqe_noise"

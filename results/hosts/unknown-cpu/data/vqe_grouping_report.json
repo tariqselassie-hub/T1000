@@ -1,0 +1,92 @@
+[
+  {
+    "formula": "H2",
+    "qubits": 4,
+    "pauli_terms": 14,
+    "groups": 5,
+    "shots_term_by_term": 49138.81211223233,
+    "shots_grouped": 49138.812112232314,
+    "reduction_factor": 1.0000000000000002,
+    "energy_check_error": 4.440892098500626e-16
+  },
+  {
+    "formula": "HeH+",
+    "qubits": 4,
+    "pauli_terms": 26,
+    "groups": 9,
+    "shots_term_by_term": 281513.8518351716,
+    "shots_grouped": 41089.27886379633,
+    "reduction_factor": 6.851272634118015,
+    "energy_check_error": 8.881784197001252e-16
+  },
+  {
+    "formula": "LiH",
+    "qubits": 10,
+    "pauli_terms": 275,
+    "groups": 83,
+    "shots_term_by_term": 3217331.228289522,
+    "shots_grouped": 226545.3706568242,
+    "reduction_factor": 14.201708112425765,
+    "energy_check_error": 3.552713678800501e-15
+  },
+  {
+    "formula": "HF",
+    "qubits": 10,
+    "pauli_terms": 275,
+    "groups": 75,
+    "shots_term_by_term": 31376673.446403593,
+    "shots_grouped": 1240967.494444454,
+    "reduction_factor": 25.284041352307973,
+    "energy_check_error": 1.4210854715202004e-14
+  },
+  {
+    "formula": "BeH2",
+    "qubits": 12,
+    "pauli_terms": 326,
+    "groups": 107,
+    "shots_term_by_term": 12545879.96721754,
+    "shots_grouped": 1710182.126727824,
+    "reduction_factor": 7.335990577344059,
+    "energy_check_error": 7.105427357601002e-15
+  },
+  {
+    "formula": "H2O",
+    "qubits": 12,
+    "pauli_terms": 550,
+    "groups": 187,
+    "shots_term_by_term": 62940793.739927664,
+    "shots_grouped": 4956213.957145223,
+    "reduction_factor": 12.699369777849851,
+    "energy_check_error": 1.4210854715202004e-14
+  },
+  {
+    "formula": "BH3",
+    "qubits": 14,
+    "pauli_terms": 1533,
+    "groups": 547,
+    "shots_term_by_term": 74785229.68157287,
+    "shots_grouped": 11903239.582422735,
+    "reduction_factor": 6.282762702013211,
+    "energy_check_error": 4.263256414560601e-14
+  },
+  {
+    "formula": "NH3",
+    "qubits": 14,
+    "pauli_terms": 2325,
+    "groups": 869,
+    "shots_term_by_term": 143422798.33536488,
+    "shots_grouped": 20549380.582896154,
+    "reduction_factor": 6.9794219712267065,
+    "energy_check_error": 1.4210854715202004e-14
+  },
+  {
+    "formula": "CH4",
+    "qubits": 16,
+    "pauli_terms": 4688,
+    "groups": 1569,
+    "shots_term_by_term": 259707765.10996768,
+    "shots_grouped": 34882150.843568005,
+    "reduction_factor": 7.445291039381414,
+    "energy_check_error": 1.4210854715202004e-14
+  }
+]

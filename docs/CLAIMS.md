@@ -103,6 +103,13 @@ reports hardware figures it did not measure.
 | Dashboard circuits on the board (`scripts/fpga/verify_dashboard_circuits.py`) | Bell pair, 12-qubit and 14-qubit RY/CZ/T/SWAP circuits (132 gates) run through `web/serve.py`: board norm 1.0, Pauli-Z from the board's state equals the host simulation and the board's `EXPECT_Z` to 1e-3 (agreement to 4 decimals in the first run). |
 | Board (`scripts/fpga/verify_1000_qpu.py`, Basys 3 on `COM6`, 3 Mbaud, 2026-10-23) | PASS: the 2,536 reply bytes of the golden stream match the model, and so do the 5,885 reply bytes of the stream extended with the full LiH UCCSD circuit (3,152 gates, 127,095 stimulus bytes). 400 gates at 14 qubits took 121.9 µs each, against a 120.0 µs UART floor and 81.9 µs of fabric time. |
 
+## Experiments from the 2026 literature scan (2026-10-23)
+
+| Claim | Evidence |
+| :--- | :--- |
+| Qubit-wise commuting measurement groups cut the ideal-device shot budget for 1.59 mHa by 1.0x (H₂), 6.3x to 25.3x (HeH⁺ to CH₄); the grouped estimator reproduces the energy to 1e-13 | `hosts/unknown-cpu/data/vqe_grouping_report.json`; `cargo run --release -p t1000 --bin vqe_grouping`; table in `docs/vqe.md` |
+| Fixed-point infidelity of the 1000_QPU arithmetic is about 0.07 · gates · 2^n · 4^(-fraction bits), measured on random circuits of 4 to 14 qubits | `hosts/unknown-cpu/data/qpu_scaling_report.json`; `cargo run --release -p t1000 --bin qpu_scaling`; fit over 51 cells, individual cells 0.01 to 0.09 |
+
 ## Not checked
 
 The README quantities with no committed result file are not covered: the Q-SSM

@@ -83,6 +83,27 @@ energy of the compiled UCCSD circuit minus the same circuit in double precision.
 | BH3 | 14 | 37,264 | 2.9e-2 mHa | 1.2e-4 mHa | 2e-6 mHa |
 | NH3 | 14 | 37,264 | 0.14 mHa | 4.3e-5 mHa | 2.1e-5 mHa |
 
+Error against qubit count and depth (`qpu_scaling`, random circuits of single-qubit rotations,
+H, S, T and CZ/CNOT, median of three per cell, infidelity against double precision with the ideal
+gate matrices):
+
+| Qubits | Gates | 16 fraction bits | 20 | 24 | 28 |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 4 | 384 | 1.2e-7 | 4.3e-10 | 1.7e-12 | 2.4e-13 |
+| 8 | 768 | 3.8e-6 | 1.3e-8 | 5.2e-11 | 6.9e-13 |
+| 12 | 1,152 | 8.6e-5 | 3.3e-7 | 1.3e-9 | 5.9e-12 |
+| 14 | 1,344 | 4.0e-4 | 1.6e-6 | 6.1e-9 | 2.5e-11 |
+
+The infidelity follows `1 - F ≈ c · gates · 2^n · 4^{-F_bits}` with `c ≈ 0.07` (fitted over 51 cells
+with the three smallest word lengths; individual cells lie between 0.01 and 0.09): it grows
+linearly with the number of gates, doubles per added qubit (random states spread amplitude as
+`2^{-n/2}`, so a fixed absolute rounding step is a larger relative error), and falls by a factor of
+256 for every four extra fraction bits. The floor at 28 to 30 bits (1e-14 to 1e-11) is the 25-bit
+coefficient rounding. For a target infidelity `ε` at 14 qubits and `G` gates, about
+`½ log2(0.07 · G · 2^14 / ε)` fraction bits are needed: 23 bits for the 37,264-gate UCCSD circuit at
+`ε = 1e-6`, consistent with the molecule study above. This is an empirical rule from random
+circuits up to 14 qubits, not a bound; structured circuits with concentrated amplitudes behave better.
+
 Chemical accuracy is 1.59 mHa. The norm of the state drifts by up to 1.6e-3 over 37,000 gates
 because the 25-bit coefficients are not exactly unitary; this does not enter the normalised energy.
 

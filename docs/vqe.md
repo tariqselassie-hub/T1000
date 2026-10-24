@@ -36,6 +36,7 @@ cargo run --release -p t1000 --bin vqe_dissociation              # H2 and LiH bo
 | `optimize` | BFGS with an Armijo line search. |
 | `driver` | The pipeline and the serialisable `VqeReport` (`solve_detailed` keeps the intermediates). |
 | `circuit` | UCCSD as Pauli rotations, CNOT / one-qubit gate counts, and a qubit-state simulator that checks them. |
+| `grouping` | Qubit-wise commuting measurement groups and their variances (shot budgets with grouping). |
 | `noise` | Depolarising gate error, readout error, shot noise, mitigation, shot budgets, tolerable error rates. |
 | `noisy_vqe` | SPSA driven only by sampled, attenuated energies. |
 
@@ -104,7 +105,36 @@ From `results/hosts/unknown-cpu/data/vqe_noise_report.json`:
 | CH₄ | 16 | 4,688 | 36,480 | 23,936 | 2.6e8 | 9.1e-9 |
 
 Shots are the total over all terms with the variance-optimal split and no commuting-term grouping,
-so they overstate what grouped measurement needs.
+so they overstate what grouped measurement needs. The next section measures by how much.
+
+### Measurement grouping (`vqe_grouping`)
+
+```bash
+cargo run --release -p t1000 --bin vqe_grouping
+```
+
+Terms that agree on every qubit they share (qubit-wise commuting) are read out together from one
+product-basis measurement. `grouping` builds the groups greedily (largest coefficients first) and
+computes each group's exact single-shot variance on the converged UCCSD state, covariances between
+its terms included; the total for standard error `ε` with the variance-optimal split is
+`(Σ_G σ_G)² / ε²`. The sum of group means plus `c₀` reproduces the energy to 1e-13, so the grouped
+estimator is unbiased. From `results/hosts/unknown-cpu/data/vqe_grouping_report.json`:
+
+| Molecule | Pauli terms | Groups | Shots, term by term | Shots, grouped | Reduction |
+| :--- | ---: | ---: | ---: | ---: | ---: |
+| H₂ | 14 | 5 | 4.9e4 | 4.9e4 | 1.0x |
+| HeH⁺ | 26 | 9 | 2.8e5 | 4.1e4 | 6.9x |
+| LiH | 275 | 83 | 3.2e6 | 2.3e5 | 14.2x |
+| HF | 275 | 75 | 3.1e7 | 1.2e6 | 25.3x |
+| BeH₂ | 326 | 107 | 1.3e7 | 1.7e6 | 7.3x |
+| H₂O | 550 | 187 | 6.3e7 | 5.0e6 | 12.7x |
+| BH₃ | 1,533 | 547 | 7.5e7 | 1.2e7 | 6.3x |
+| NH₃ | 2,325 | 869 | 1.4e8 | 2.1e7 | 7.0x |
+| CH₄ | 4,688 | 1,569 | 2.6e8 | 3.5e7 | 7.4x |
+
+Grouping cuts the ideal-device shot budget by 6x to 25x (H₂ gains nothing). The grouping is greedy
+qubit-wise; general commuting groups or classical shadows could cut further, at the price of deeper
+measurement circuits. The shot counts are for the ideal device; they are not changed by gate error.
 
 What it says:
 

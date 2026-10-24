@@ -8,6 +8,7 @@ pub mod basis;
 pub mod boys;
 pub mod circuit;
 pub mod driver;
+pub mod grouping;
 pub mod fermion;
 pub mod integrals;
 pub mod lanczos;
