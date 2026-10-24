@@ -68,9 +68,10 @@ fn locate_mnist_file(filename_candidates: &[&str]) -> Option<PathBuf> {
     let candidate_dirs = [
         "data/mnist",
         "../data/mnist",
+        "data/mnist_demo",
+        "../data/mnist_demo",
         "data",
         "../data",
-        "C:\\Users\\zoddj\\zenith_workspace_divizion\\GuddaLM\\data",
         "../GuddaLM/data",
         "../../GuddaLM/data",
     ];
@@ -361,7 +362,7 @@ fn main() {
     let n_train = 10000;
     let n_test = 2000;
     println!(
-        "\n [INGEST] Parsing MNIST partitions: {} train, {} test...",
+        "\n [INGEST] Parsing MNIST partitions: up to {} train, {} test...",
         n_train, n_test
     );
 
@@ -370,6 +371,9 @@ fn main() {
     let train_labels = parse_mnist_labels(&train_lbl_path, Some(n_train));
     let test_pixels = parse_mnist_images(&test_img_path, Some(n_test));
     let test_labels = parse_mnist_labels(&test_lbl_path, Some(n_test));
+    // A smaller set (the bundled demo subset) yields fewer samples than requested.
+    let n_train = train_pixels.len().min(train_labels.len());
+    let n_test = test_pixels.len().min(test_labels.len());
     println!(
         " [INGEST] Binary parse completed in {:.2} ms",
         t0_load.elapsed().as_secs_f64() * 1000.0

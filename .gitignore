@@ -33,13 +33,14 @@ tests/benchmarks/**/*.png
 tests/benchmarks/**/*.html
 
 # Dataset transient renders and raw archives
-data/mimac/*.gif
-data/mimac/*.png
-data/mimac/*.png.png
-data/mimac/*.pdf
-data/birds/*.bin
-data/mnist/*.idx*-ubyte
 *.zip
 *.tar.gz
 
-data/qm9/qm9.csv
+# Datasets are not distributed: fetch your own (see data/README.md). Only the readmes and a small
+# MNIST demo subset are tracked.
+data/*
+!data/README.md
+!data/mnist_demo/
+!data/qm9/
+data/qm9/*
+!data/qm9/README.md
