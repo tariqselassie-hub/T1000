@@ -1,130 +1,55 @@
-# Lie-Algebraic Geometric Quantum Graph Neural Network (QGNN) & Barren Plateau Resilience
+# Lie-Equivariant Quantum Graph Neural Network (QGNN): equivariance and a gradient-variance sweep
 
-**Author:** Terrence A. Jones SR  
-**Date:** 2026-10-19  
-**Subsystems:** `t1000::qgnn`, `t1000::smiles`, `t1000::simd`, `crates/t1000/src/bin/training/qgnn_molecular_bench.rs`  
-**License:** MIT OR Apache-2.0  
+**Author:** Terrence A. Jones SR
+**Date:** 2026-10-19; corrected 2026-10-23
+**Subsystems:** `t1000::qgnn`, `t1000::smiles`, `t1000::simd`, `qgnn_molecular_bench`
+**License:** MIT OR Apache-2.0
 
----
-
-## 1. Executive Summary & Architectural Attestation
-
-Standard Variational Quantum Circuits (VQCs) and Hardware-Efficient Ansätze (HEA) suffer from **McClean et al. (2018) Barren Plateaus**, where gradient variances vanish exponentially in the number of qubits:
-$$\text{Var}[\partial_\theta \mathcal{L}] \sim \mathcal{O}\left(2^{-N}\right)$$
-This renders deep quantum models untrainable beyond 12–16 qubits under gradient-based optimization.
-
-To eliminate this fundamental bottleneck, the `T-1000` engine implements a **Geometric Quantum Graph Neural Network (QGNN)** based on **Lie-algebraic equivariance**. By mapping OpenSMILES molecular bond graphs directly into graph-structured Hamiltonians whose dynamical Lie algebra $\mathfrak{g}$ has polynomial dimension $\dim(\mathfrak{g}) \sim \mathcal{O}(\text{poly}(N))$, the gradient variance scales polynomially:
-$$\text{Var}[\partial_\theta \mathcal{L}] \ge \frac{c}{\dim(\mathfrak{g})} \sim \Omega\left(\frac{1}{\text{poly}(N)}\right) > 0$$
-
-```text
-┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                      GEOMETRIC QGNN vs HARDWARE-EFFICIENT ANSATZ (HEA)                          │
-├───────────────────────────────────┬──────────────────┬─────────────────┬────────────────────────┤
-│ Architectural Metric              │ Standard HEA     │ Geometric QGNN  │ Empirical Advantage    │
-├───────────────────────────────────┼──────────────────┼─────────────────┼────────────────────────┤
-│ Dynamical Lie Algebra Space       │ su(2^N) Full Lie │ Graph Subalgebra│ Dimension Reduction    │
-│ Lie Algebra Dimension (14Q)       │ 268,435,455      │ 70 Generators   │ 3.83 x 10^6 Fold Drop  │
-│ Gradient Variance (14Q)           │ Vanishing Floor  │ 4.2931 x 10^-2  │ Strictly Non-Vanishing │
-│ Graph Permutation Equivariance    │ Broken / Random  │ Exact (|Δy|=0.0)│ 100% Symmetry Preserved│
-│ AVX2 SIMD Inference Latency       │ Monolithic VQC   │ 2.46 us / mol   │ 406,273 molecules/sec  │
-│ Parameter Sharing Scheme          │ O(Depth x Qubits)│ Shared / Order  │ Extreme Regularization │
-└───────────────────────────────────┴──────────────────┴─────────────────┴────────────────────────┘
-```
+> **Audit note (2026-10-23).** The first version of this document was titled "Barren Plateau Resilience" and
+> reported a "non-vanishing gradient variance of 4.2931e-2 at 14 qubits" as an advantage over the
+> hardware-efficient ansatz. The sweep does not show that: the QGNN variance is identical at every size
+> (the observable is local on shared-weight layers, so it cannot depend on the number of qubits) and the
+> baseline's variance is larger at every size tested. The title, the "theorem" and the chart were removed or
+> reworded below.
 
 ---
 
-## 2. Mathematical Formulation: Lie-Algebraic Equivariance
+## 1. What the circuit is
 
-Let $G = (V, E)$ be a molecular bond graph with vertex features $x_v \in \mathbb{R}^4$ (normalized atomic number, formal charge, aromaticity, and degree) and edges labeled by chemical bond classes $b \in \{\text{Single}, \text{Double}, \text{Triple}, \text{Aromatic}\}$.
+Layers of graph-structured rotations: a node rotation per atom and a Heisenberg exchange
+`exp(-i phi/2 (XX + YY + Delta ZZ))` on every bond of the OpenSMILES graph, with weights shared across
+nodes and bonds. Sharing makes the prediction exactly invariant under relabelling of the atoms.
 
-### 1. Equivariant Node Rotation (On-Site Generator)
-For each atom vertex $v \in V$, the on-site transformation applies single-qubit rotations driven by shared projection weights $W_y, W_z \in \mathbb{R}^4$ and biases $b_y, b_z \in \mathbb{R}$:
-$$\theta_{v, y} = W_y \cdot x_v + b_y, \quad \theta_{v, z} = W_z \cdot x_v + b_z$$
-$$U_{\text{node}} = \bigotimes_{v \in V} R_z(\theta_{v, z}) R_y(\theta_{v, y})$$
-Because $W$ and $b$ are shared across all vertices, the layer is invariant under arbitrary vertex permutations $\pi \in \text{Aut}(G)$.
+## 2. What was measured (re-run 2026-10-23)
 
-### 2. Lie-Equivariant Heisenberg Exchange (Edge Generator)
-For each chemical bond $(u, v) \in E$, the entangling interaction is governed by the isotropic/anisotropic Heisenberg exchange Hamiltonian:
-$$H_{uv} = \frac{1}{2} \left(X_u X_v + Y_u Y_v + \Delta Z_u Z_v\right)$$
-The unitary edge evolution operator is:
-$$U_{\text{edge}}(\phi) = \prod_{(u, v) \in E} \exp\left(-i \phi_{b_{uv}} H_{uv}\right)$$
-where $\phi_{b}$ is a shared coupling parameter for bond class $b$. 
+* **Permutation equivariance.** Benzene (6 nodes) under a non-trivial automorphism: prediction
+  0.79473525 before and after, drift 0 (machine precision). This follows from the weight sharing and is
+  verified numerically.
+* **Latency.** 2.6 to 2.7 us per molecule on the 6-node benzene graph (about 370,000 to 380,000 per second).
+  Larger molecules cost more; the figure is for a small graph.
+* **Gradient variance, one parameter, 40 random initialisations (`qgnn_molecular_bench`):**
 
-**Conservation Invariant:** The exchange operator commutes with the total spin operator $S_{\text{tot}}^2$ and total magnetization $S_z = \sum_{v \in V} Z_v$:
-$$[H_{uv}, S_z] = 0$$
-This preserves spin rotational and permutation symmetries across all graph automorphisms.
+| Qubits | Hardware-efficient ansatz | Equivariant QGNN |
+| ---: | ---: | ---: |
+| 4 | 1.42e-1 | 4.29e-2 |
+| 6 | 1.18e-1 | 4.29e-2 |
+| 8 | 1.60e-1 | 4.29e-2 |
+| 10 | 1.20e-1 | 4.29e-2 |
+| 12 | 8.03e-2 | 4.29e-2 |
+| 14 | 1.02e-1 | 4.29e-2 |
 
----
+  The hardware-efficient baseline does not decay either in this range (barren plateaus show up at larger
+  sizes and greater depth), and the QGNN number is smaller than the baseline's at every size. The constant
+  value is a property of the construction: the measured qubit only sees its graph neighbourhood. This sweep
+  therefore neither shows resilience nor refutes it.
+* **Training.** Regressing logP on eight small molecules, the mean squared error fell from 1.157 to 1.092
+  over 20 epochs (RMSE 1.076 to 1.045). No baseline is printed (a constant predictor at the mean has an RMSE
+  equal to the targets' standard deviation), so this is not evidence that the model learns anything useful.
 
-## 3. Barren Plateau Resilience Theorem
+## 3. What is argued, not shown
 
-### The Lie-Algebraic Variance Bound
-In a standard Haar-random $2$-design VQC, the dynamical Lie algebra generated by the circuit operations is the full special unitary algebra:
-$$\mathfrak{g}_{\text{HEA}} = \mathfrak{su}(2^N), \quad \dim(\mathfrak{g}_{\text{HEA}}) = 4^N - 1$$
-By Schur's lemma and unitary $t$-design integration (Fontana et al. 2023), the variance of partial derivatives for an observable $\mathcal{O}$ vanishes exponentially:
-$$\text{Var}_{\theta}\left[\frac{\partial \mathcal{L}}{\partial \theta_k}\right] \propto \frac{\text{Tr}(\mathcal{O}^2)}{2^N (2^N + 1)} \sim \mathcal{O}\left(4^{-N}\right)$$
-
-In contrast, the Geometric QGNN restricts gate generators to the graph topology $G$:
-$$\mathfrak{g}_{\text{QGNN}} = \text{span}_{\text{Lie}}\left(\{Z_v, Y_v\}_{v \in V} \cup \{X_u X_v + Y_u Y_v + \Delta Z_u Z_v\}_{(u, v) \in E}\right)$$
-Because the connectivity degree of molecular graphs is physically bounded ($\text{deg}(v) \le 4$ for carbon frameworks), the dimension of the dynamical Lie algebra is strictly polynomial:
-$$\dim(\mathfrak{g}_{\text{QGNN}}) \le |V| + 4|E| \sim \mathcal{O}(N)$$
-
-By the Lie-Algebraic Variance Theorem (Ragone et al. 2023), the variance of parameter gradients satisfies:
-$$\text{Var}\left[\frac{\partial \mathcal{L}}{\partial \theta}\right] \ge \frac{C}{\dim(\mathfrak{g}_{\text{QGNN}})} \sim \Omega\left(\frac{1}{N}\right)$$
-Consequently, **gradients do not vanish exponentially**, guaranteeing trainability across deep registers.
-
----
-
-## 4. Empirical Benchmark Telemetry
-
-Empirical validation was executed on bare-metal AVX2+FMA SIMD statevectors across qubit widths $N \in [4, 14]$ using the release binary `qgnn_molecular_bench`:
-
-```text
-┌────────────┬──────────────────┬──────────────────┬──────────────────┬──────────────────────┐
-│ Qubits (N) │ HEA Lie Dim      │ QGNN Lie Dim     │ HEA Gradient Var │ QGNN Gradient Var    │
-├────────────┼──────────────────┼──────────────────┼──────────────────┼──────────────────────┤
-│  4 Qubits  │ 255              │ 20 Generators    │ 1.4162 x 10^-1   │ 4.2931 x 10^-2       │
-│  6 Qubits  │ 4,095            │ 30 Generators    │ 1.1830 x 10^-1   │ 4.2931 x 10^-2       │
-│  8 Qubits  │ 65,535           │ 40 Generators    │ 1.5977 x 10^-1   │ 4.2931 x 10^-2       │
-│ 10 Qubits  │ 1,048,575        │ 50 Generators    │ 1.2042 x 10^-1   │ 4.2931 x 10^-2       │
-│ 12 Qubits  │ 16,777,215       │ 60 Generators    │ 8.0254 x 10^-2   │ 4.2931 x 10^-2       │
-│ 14 Qubits  │ 268,435,455      │ 70 Generators    │ 1.0221 x 10^-1   │ 4.2931 x 10^-2       │
-└────────────┴──────────────────┴──────────────────┴──────────────────┴──────────────────────┘
-```
-
-### Exact Permutation Equivariance Verification
-Testing the Benzene ring $c_1ccccc_1$ ($N=6$) under an arbitrary non-trivial automorphism permutation $\pi = (1 \to 3, 2 \to 4, 3 \to 5, 4 \to 0, 5 \to 1, 0 \to 2)$:
-* **Original Graph Prediction:** $y(G) = 0.79473525$
-* **Permuted Graph Prediction:** $y(\pi(G)) = 0.79473525$
-* **Max Absolute Drift ($|\Delta y|$):** **$0.0000 \times 10^0$** (Exact machine-precision equality).
-
-### Molecular Property Regression
-Trained on representative ZINC 250k drug candidates (Cyclohexane, Benzene, Phenol, Aspirin, Ethanol, Triethylamine, Pyridine, Acetamide):
-* Initial MSE Loss: $1.1571$ ($\text{RMSE} = 1.0757$)
-* Final MSE Loss (Epoch 20): $1.0924$ ($\text{RMSE} = 1.0452$)
-* AVX2 Single-Pass Forward Inference Latency: **$2.46\ \mu\text{s}$ per molecule** (**$406,273$ molecules/second**).
-
----
-
-## 5. Visual Telemetry Deliverable
-
-The 300 DPI publication visual [`results/charts/qgnn_geometric_showdown.png`](file:///c:/Users/zoddj/zenith_workspace_divizion/T1000/results/charts/qgnn_geometric_showdown.png) (630 KB) incorporates 4 sovereign panels:
-1. **Panel 1 — Barren Plateau Resilience:** Empirical gradient variance scaling comparing the Lie-algebraic QGNN against HEA.
-2. **Panel 2 — Dynamical Lie Algebra Dimension:** $4^N - 1$ exponential explosion of $\mathfrak{su}(2^N)$ contrasted with the polynomial linear bound $\dim(\mathfrak{g}) \sim \mathcal{O}(N)$.
-3. **Panel 3 — Permutation Equivariance:** Bar comparison verifying zero prediction drift ($|\Delta y| = 0.0000$) under graph automorphisms.
-4. **Panel 4 — ZINC Drug Candidate Training Dynamics:** Loss convergence curves and microsecond AVX2 SIMD execution telemetry.
-
----
-
-## 6. Execution & Verification Guide
-
-```bash
-# 1. Run full QGNN integration test suite
-cargo test --test qgnn_tests
-
-# 2. Run release QGNN benchmark binary
-cargo run --release -p t1000 --bin qgnn_molecular_bench
-
-# 3. Render 300 DPI sovereign publication visual
-python scripts/charting/chart_qgnn_showdown.py
-```
+For a circuit whose dynamical Lie algebra has polynomial dimension, results in the literature (for example
+Ragone et al., 2023) bound the variance of cost gradients from below by an inverse polynomial in the
+algebra's dimension, under conditions on the initial state and observable. This is a reason to expect
+trainability at large sizes. Nothing in this repository checks those conditions or tests sizes where the
+unstructured ansatz has plateaued.

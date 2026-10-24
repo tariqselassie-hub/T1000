@@ -3,6 +3,9 @@
 
 # Universal Fault-Tolerant Quantum Neural Networks: Eastin-Knill Bypass via Bravyi-Kitaev 15-to-1 Magic State Distillation & Transversal [[7, 1, 3]] Steane-Wheel Injection (Monograph M156)
 
+> **Audit note (2026-10-23).** The QM9 data is not shipped, so the run was not repeated in the audit. Where a trained circuit has been compared with classical ridge regression on the same task (`docs/host_tuning_and_result_recording.md` sections 5 and 6, summarised in `docs/CLAIMS.md`), the circuit matched but did not beat the classical model.
+
+
 ## 1. Executive Summary
 
 We formulate, implement, and benchmark **Universal Fault-Tolerant Quantum Neural Networks (FT-QNN)** (`t1000::qec::magic_w7_injection`) operating on 18-qubit L3-resident registers ($262,144$ complex double amplitudes, $4.00\text{ MB}$). By the celebrated **Eastin-Knill Theorem**, no quantum error-correcting code can implement a universal gate set using strictly transversal gates. While the $[[7, 1, 3]]$ Steane-Wheel code permits bitwise transversal logical $\text{CZ}_L = \bigotimes_{k=0}^6 \text{CZ}(k, k+7)$ in $\mathcal{O}(1)$ depth, it is bounded by the Clifford group, which by the **Gottesman-Knill Theorem** is classically efficiently simulable and lacks universal expressivity.

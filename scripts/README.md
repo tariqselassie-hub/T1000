@@ -52,7 +52,6 @@ Visual telemetry suite adhering strictly to the Deen OS Sovereign Visual Specifi
 * **`chart_birds_hybrid.py`**: M132 Waterbirds subpopulation robustness and accuracy trajectories.
 * **`chart_nighthawk_99_plaquettes.py`**: M124 IBM Quantum Nighthawk 99-plaquette contraction & Qrack comparison.
 * **`chart_nighthawk_layout.py`**: 120-qubit IBM Nighthawk R2 and Kagome strip layout rendering.
-* **`chart_exascale_showdown.py`**: Desktop CPU/FPGA vs supercomputing infrastructure comparison.
 * **`chart_frontier_rcs.py`**: 14-qubit, 36-depth random circuit sampling with Porter-Thomas chaos.
 * **`chart_lattice_phase.py`**: 2D transverse Ising lattice quantum phase transition.
 * **`chart_lattice_quench.py`**: Non-equilibrium quantum quench and Lieb-Robinson magnon spreading.

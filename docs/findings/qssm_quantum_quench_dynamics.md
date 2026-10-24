@@ -1,5 +1,8 @@
 # Empirical Findings: Quantum State-Space Autoencoding of Non-Equilibrium Quench Dynamics
 
+> **Audit note (2026-10-23).** Re-run on 2026-10-23: streaming cost is 64 to 84 ns per step in the autoencoder benchmark. In the quench benchmark the test accuracy swings between 70.8 % and 100 % across epochs on a 24-sample test set (each sample is worth 4.2 points), so '100 %' is not a stable figure.
+
+
 **Document ID:** `T1000-FINDING-2026-001`  
 **Classification:** Scientific Ground Truth / Reproducible Benchmark  
 **Subsystems Involved:** `crates/t1000/src/qssm.rs`, `crates/t1000/src/lattice.rs`, `src/bin/training/qssm_quench_bench.rs`  

@@ -1,5 +1,8 @@
 # Monograph M150 — QM9 Ab Initio VQC Training, Atomic Baseline Decomposition & Dual-Angle Quantum Phase Map
 
+> **Audit note (2026-10-23).** The QM9 data is not shipped, so the run was not repeated in the audit. Where a trained circuit has been compared with classical ridge regression on the same task (`docs/host_tuning_and_result_recording.md` sections 5 and 6, summarised in `docs/CLAIMS.md`), the circuit matched but did not beat the classical model.
+
+
 **Author:** Terrence A. Jones SR  
 **Date:** October 19, 2026  
 **License:** MIT OR Apache-2.0  

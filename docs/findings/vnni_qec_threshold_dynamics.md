@@ -1,5 +1,7 @@
 # Empirical Findings: AVX-VNNI Real-Time Fault-Tolerant Surface Code Threshold & Quadratic Error Suppression
 
+> **Audit note (2026-10-23).** The 8.14 % crossing is the point where the logical error rate of the distance-3 code meets the failure probability of nine unencoded qubits, about 6p. Against one unencoded qubit (2p/3) the crossing is near 5 %. The noise is code-capacity (perfect syndrome extraction), and one code distance cannot give a threshold in the usual sense, which is where curves for several distances cross. The numbers reproduce on re-run (41.67x suppression at p = 0.001, P_L = 24 p^2, about 21 million decodes/s).
+
 **Author:** Terrence A. Jones SR  
 **Date:** 2026-10-19  
 **Registry ID:** `T1000-FINDING-2026-022`  
@@ -17,7 +19,7 @@ We have designed, implemented, and empirically validated a closed-loop, bare-met
 Operating with zero heap allocations in CPU L1 cache, the pipeline continuously injects physical depolarizing error channels ($\mathcal{E}(\rho) = (1-p)\rho + \frac{p}{3}(X\rho X + Y\rho Y + Z\rho Z)$), vectorizes stabilizer syndrome extraction into single-cycle Intel AVX-VNNI dot products (`vpdpbusd`), executes $O(1)$ minimum-weight homologous correction lookup, and audits residual logical operator commutation.
 
 ### Core Empirical Findings:
-1. **Empirical Fault-Tolerant Threshold ($p_{\text{th}} = 8.14\%$):**
+1. **Pseudo-threshold ($p = 8.14\%$):**
    Across 3,500,000 Monte Carlo trials, the logical error curve crosses the unencoded physical error reference line at $p_{\text{th}} = 0.0814$ ($8.14\%$). For any physical error rate $p < p_{\text{th}}$, the $[[9, 1, 3]]$ surface code actively suppresses physical decoherence.
 2. **Deterministic Quadratic Error Suppression ($P_L \approx 24.0 \cdot p^2$):**
    In the sub-threshold regime ($p \le 0.020$), logical error rate conforms to the distance $d=3$ suppression law:

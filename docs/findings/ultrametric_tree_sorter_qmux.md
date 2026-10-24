@@ -1,5 +1,8 @@
 # T-1000 Scientific Finding: Ultrametric Tree Sorter & Quantum Multiplexor (QMUX) Architecture
 
+> **Audit note (2026-10-23).** The 70.69 % coarse accuracy matches the committed result file, but the run was not repeated in the audit (the Waterbirds features are not shipped) and no standard classical classifier is given on the same features. The 'rigorous' and 'directly synthesizable' wording is design intent, not a measured result.
+
+
 **Document ID:** `T1000-FINDING-2026-007`  
 **Author:** Terrence A. Jones SR  
 **Date:** 2026-10-17  

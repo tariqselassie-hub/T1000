@@ -5,6 +5,9 @@ Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
 
 # Zero-Copy Intel Xe iGPU Co-Processor Bridge & UMA Quantum Simulation
 
+> **Audit note (2026-10-23).** Re-measured on 2026-10-23: 9.5 ms on the iGPU against 17.4 ms on the CPU at 22 qubits (1.8x). The 2.13x in this document is from an earlier run. Below 20 qubits the iGPU is slower than the CPU (16 qubits: 8.2 ms against 0.06 ms).
+
+
 ## 1. Executive Summary
 
 This report documents the architectural design, zero-copy memory mechanics, and empirical scaling of the **Zero-Copy Intel Xe Integrated GPU (iGPU) Co-Processor Bridge** (`t1000::gpu::IGpuBridge`) implemented in `T-1000`.

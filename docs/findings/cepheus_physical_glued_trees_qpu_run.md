@@ -1,5 +1,7 @@
 # Empirical Physical Execution: 30-Qubit Glued-Tree Quantum Walk on Rigetti Cepheus-1-108Q
 
+> **Audit note (2026-10-23).** The hardware numbers are as recorded (`cepheus_hardware_results.json`, 1,000 shots). Their interpretation was overstated. The eight wire marginals are 0.478, 0.427, 0.378, 0.240, 0.269, 0.382, 0.663 and 0.652; they sum to 3.49, whereas one walker on eight wires gives a sum of 1. The measured state is therefore a noisy, nearly random register (a fair coin gives 0.5 on every wire), not a single-walker distribution. The exit wire's 65.2 % is 15 points above 0.5 and no higher than its neighbour q6 (66.3 %). Comparing it with the 1.67 % hitting probability of a classical random walker (a single-walker quantity) is not like for like, and the '84.43 % predictive accuracy' compares a single-walker simulation value (77.22 %) with a wire marginal. This run does not demonstrate ballistic transport or a quantum advantage.
+
 **Author:** Terrence A. Jones SR  
 **Date:** 2026-10-19  
 **Target Architecture:** Rigetti Cepheus-1-108Q (Modular 12-Chiplet Superconducting Transmon QPU)  
@@ -26,7 +28,7 @@ The empirical run was dispatched via the OpenQuantum Cloud REST API to the 108-q
 │ Physical QPU Job Identifier       │ --               │ --              │ ef387a4a-1898-4214     │
 │ Physical Measurement Shots        │ --               │ --              │ 1000 Physical Shots    │
 │ Exit Probability P(Root B / q7)   │ ~1.67% (Trap)    │ 77.22% (Opt.)   │ 65.20% (652/1000 Hits) │
-│ Quantum Advantage Over Classical  │ 1.0x (Baseline)  │ 46.2x           │ > 39.0x Acceleration   │
+│ Ratio to random-walker floor      │ 1.0x (Baseline)  │ 46.2x           │ 39x (see audit note)   │
 │ T-1000 Predictive Accuracy        │ --               │ Reference Model │ 84.43% Real Match      │
 │ Exit Delta (|Sim - Run|)          │ --               │ Baseline        │ 12.02% (Transmon T1)   │
 │ Mean Spatial Absolute Error       │ --               │ Baseline        │ 20.08% Across 8 Wires  │
@@ -107,7 +109,7 @@ The 1,000 physical measurement shots returned 216 unique bitstring configuration
 ```
 
 ### Key Physical Observations
-1. **Empirical Quantum Advantage:** Physical hitting probability at the exit root ($q_7$) reached **$65.20\%$** ($652 / 1000$ shots), exceeding the classical random walk weld trap floor ($\sim 1.67\%$) by **$> 39.0\times$**.
+1. **Exit-wire marginal (not a demonstrated advantage):** the physical probability of finding wire $q_7$ excited reached **$65.20\%$** ($652 / 1000$ shots), exceeding the classical random walk weld trap floor ($\sim 1.67\%$) by **$> 39.0\times$**.
 2. **Simulation Predictive Accuracy:** T-1000 predicted $77.22\%$ exit probability at $t=6.80$. The observed hardware value of $65.20\%$ yields a predictive accuracy of **$84.43\%$** ($|\Delta P| = 12.02\%$).
 3. **Seam Dip Signature:** Both Column 3 ($24.00\%$) and Column 4 ($26.90\%$) exhibit a localized probability minimum relative to adjacent columns, confirming that the inter-die bump-bond seam induces elastic scattering and localized reflection without destroying global ballistic coherence.
 4. **Thermal State Retention:** Root A retains $47.80\%$ probability on physical hardware (predicted $0.00\%$ under pure unitary evolution), matching the open-system excitation floor and transmon readout state preparation and measurement (SPAM) error.

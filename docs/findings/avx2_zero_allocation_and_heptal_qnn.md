@@ -1,5 +1,8 @@
 # Empirical Findings: AVX2 Zero-Allocation Dense VQC & Sovereign Heptal Qudit MPS QNN
 
+> **Audit note (2026-10-23).** The heptal 'compression' figures compare a 784-byte active window with the full `7^19` amplitude space, which the method never represents; they describe the window size, not a saving over a method that computes the same thing. Latencies vary by 10 to 30 % between runs (re-run: 6 to 7 us per 14-qubit pass, 420 to 470 us per heptal molecule).
+
+
 **Document ID:** `T1000-FINDING-2026-004`  
 **Classification:** Scientific Ground Truth / Reproducible Benchmark  
 **Subsystems Involved:** `crates/t1000/src/adjoint.rs`, `crates/t1000/src/measurements/observable.rs`, `crates/t1000/src/heptal_qnn.rs`, `src/bin/benchmarks/zinc_scaled_14q_16q_bench.rs`, `src/bin/benchmarks/zinc_heptal_qnn_bench.rs`  

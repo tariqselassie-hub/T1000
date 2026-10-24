@@ -50,7 +50,6 @@ results/
 | **10** | **`zinc_pareto_leads.png`** | ZINC 250k Search 1: Frontier Pareto drug leads and binding affinities. | `experiments/zinc_pareto_leads.json` |
 | **11** | **`mimac_quantum_activity_cliffs.png`** | Chemical latent space activity cliffs and structure-activity landscapes. | `experiments/mimac_quantum_activity_cliffs.json` |
 | **12** | **`lead_109_attractor_analysis.png`** | Convergence dynamics of the 3 magic molecular attractor switches. | `experiments/lead_109_convergence_analysis.json` |
-| **13** | **`exascale_desktop_showdown.png`** | T-1000 desktop AVX2/FPGA throughput vs. Frontier & Summit supercomputers. | Comparative synthetic benchmark |
 | **14** | **`nighthawk_r2_kagome_layout.png`** | 120-qubit IBM Quantum Nighthawk R2 & Kagome strip plaquette layout. | Plaquette geometric layout |
 | **15** | **`nighthawk_99_plaquette_showdown.png`** | IBM Nighthawk 99-plaquette contraction & Qrack comparison. | `data/nighthawk_99_plaquette_telemetry.json` |
 | **16** | **`waterbirds_hybrid_qnn_telemetry.png`** | Waterbirds 11k visual transfer QNN robustness and subpopulation generalization. | `experiments/path_a_vs_c_comparison_report.json` |

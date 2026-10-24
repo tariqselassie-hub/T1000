@@ -1,5 +1,8 @@
 # Empirical Findings: Quantum Sorter vs. Classifier Theory & Headless Eigenvalue Sorter
 
+> **Audit note (2026-10-23).** The accuracies match the committed result files (`experiments/path_a_vs_c_comparison_report.json`) but the runs were not repeated in the audit (the Waterbirds features are not shipped). The comparison is between two quantum readouts of the repository's own circuit; no standard classical classifier is given on the same features. The 'rigidity theorem' is an argument plus a numerical check, not a formal proof.
+
+
 **Document ID:** `T1000-FINDING-2026-006`  
 **Classification:** Theoretical Derivation & Empirical Verification  
 **Subsystems Involved:** `crates/t1000/src/bin/benchmarks/fidelity_orthogonality_bench.rs`, `crates/t1000/src/bin/benchmarks/path_a_vs_c_sorter_bench.rs`, `crates/t1000/src/bin/training/birds_hybrid_qnn_train.rs`, `scripts/data/extract_birds_features.py`  

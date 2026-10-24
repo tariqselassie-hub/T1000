@@ -1,5 +1,8 @@
 # High-Depth RCS Chaos & Physical Noise Coherence Horizon
 
+> **Audit note (2026-10-23).** The percentage gains are relative to a near-zero baseline: at 14 qubits the unprotected overlap fidelity is 0.0004 and the stabilised one 0.021, so absolute fidelity stays near 2 %. The depth sweep also contains negative gains (-97.8 %, -72.8 %, -99.4 %, -18.4 %). The noise model (T1 = 45 us, T2* = 60 us, depolarising kicks) is assumed, not measured on a device.
+
+
 ```
 // SPDX-License-Identifier: MIT OR Apache-2.0
 // Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.

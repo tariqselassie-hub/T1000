@@ -1,5 +1,7 @@
 # Continuous Topological Walk Sorter with Weld Zeno Sentry
 
+> **Audit note (2026-10-23).** The '719x contrast explosion' and the 24.50 % to 82.00 % accuracy change compare a discrete-circuit sorter with a walk architecture that routes by construction, under the same assumed noise model, on a small evaluation set; they are two different models, not a measured physical improvement. The 25.20 % classical figure is an unbiased random walker.
+
 ```
 // SPDX-License-Identifier: MIT OR Apache-2.0
 // Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.

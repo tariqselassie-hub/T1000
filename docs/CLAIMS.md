@@ -139,7 +139,7 @@ the README now says.
 | 14 | iGPU 2.13x faster than CPU at N >= 22 | 1.8x at 22 qubits (9.5 ms against 17.4 ms); slower than the CPU below 20 qubits | Corrected |
 | 17 to 19 | Glued trees 49.40 % / 54.16 %; valve 77.16 %, contrast about 1,700:1; cascaded 60.31 %, 2,489:1 | All reproduce. The classical baseline is a random walker capped at 10,000 steps; "43.1x speedup" has no stated definition | Interpretation corrected; speedup figure removed |
 | 21 | Nighthawk 0.2119 to 0.6687; Cepheus corner 0.8588 to 0.9146 | Reproduce; they are noise-model estimates with assumed error rates | Labelled as modelled |
-| 22 | "Empirical quantum advantage > 39x" | 65.2 % against about 1.67 % for an unbiased random walker; not a comparison with the best classical method | Reworded |
+| 22 | "Empirical quantum advantage > 39x"; "84.43 % predictive accuracy" | The recorded numbers are real (652/1000 on `q7`, job `ef387a4a-...`). The eight wire marginals sum to 3.49 (0.478, 0.427, 0.378, 0.240, 0.269, 0.382, 0.663, 0.652), so the measured state is nearly random, not a single walker; `q7` (65.2 %) is no higher than `q6` (66.3 %). The 1.67 % comparison is a single-walker quantity | Reworded: no advantage or ballistic transport is claimed |
 | 23, 24 | QGNN "barren-plateau resilience", variance 4.2931e-2 at 14Q | Computed, but identical at 4 to 14 qubits (local observable, shared weights) and smaller than the hardware-efficient baseline's 0.08 to 0.16 at every size | Reworded; not evidence of resilience |
 | 24 | Adjoint "153.6x speedup over parameter shift" | The benchmark computed it as `2 * parameters * 0.8` and then crashed on a wrong workspace size. Fixed: measured 47x to 61x. The chart that hard-coded the curves was removed | Corrected; chart deleted |
 | 26 | Lattice surgery truth table, Bell fidelity 1.0, 15-to-1 distillation 4.365e-6 at 0.5 % | Reproduce (23.4 ms against 25.15 ms; epsilon_out 4.3653e-6) | Reproduced |
@@ -155,7 +155,10 @@ Unit tests: 394 library tests pass (`cargo test --release --workspace`).
   runs were not repeated), and the QM9 training monographs.
 * § 8 (canonical algorithms), § 9 (scheduler), § 13 (Clifford+T): covered only by unit tests.
 * § 25 (Conway QCA) numbers and § 26 timings.
-* The findings documents under `docs/findings/` repeat several of the README claims above in longer form;
-  only `full_quantum_neural_network_suite_benchmarks.md` has been rewritten. The others may still contain
-  the wording corrected in the README (for example "exponential speedup", "barren-plateau resilience",
-  "quantum advantage").
+* The findings documents under `docs/findings/`: 26 now carry an audit note at the top (second pass,
+  2026-10-23) and the QGNN one was rewritten. The remaining ones (Hopf S4, directed heptal walk, the QCA
+  documents, ZINC and QM9 screening, plaquette zipper) were not re-run or re-read for wording.
+* The chart scripts under `scripts/charting/` read result files and were not re-checked individually, except
+  that two were removed because their curves were hard-coded: `chart_full_qnn_suite.py` (adjoint scaling) and
+  `chart_exascale_showdown.py` (a desktop-against-supercomputer comparison with typed-in numbers that compared
+  a dense simulation with a sliding-window method that does not represent the same state).

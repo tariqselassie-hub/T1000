@@ -1,5 +1,8 @@
 # Empirical Findings: 1D MPS Bloch-Zipper & Heptal SU(7) Scaling Benchmarks
 
+> **Audit note (2026-10-23).** Re-run on 2026-10-23: 200 qubits take 22 us (window 3) or 47 us (window 4); 200 qudits take 4.9 ms. The 'anti-correlation ratio' is the fraction of neighbouring pairs found with opposite polarity; the benchmark does not measure entanglement. Only a 49-amplitude window of the heptal chain is simulated, so `7^N` is the nominal size of the space the chain would span, not a state that is held or evolved.
+
+
 **Document ID:** `T1000-FINDING-2026-002`  
 **Classification:** Scientific Ground Truth / Reproducible Benchmark  
 **Subsystems Involved:** `crates/t1000/src/zipper.rs`, `crates/t1000/src/heptal_wave.rs`, `src/bin/measurements/bloch_zipper_bench.rs`  

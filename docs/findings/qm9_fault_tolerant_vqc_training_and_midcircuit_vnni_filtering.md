@@ -3,6 +3,9 @@
 
 # T1000-FINDING-2026-025: 18-Qubit Fault-Tolerant QM9 VQC Training, Mid-Circuit AVX-VNNI Syndrome Filtering & Subspace Confinement
 
+> **Audit note (2026-10-23).** The QM9 data is not shipped, so the run was not repeated in the audit. Where a trained circuit has been compared with classical ridge regression on the same task (`docs/host_tuning_and_result_recording.md` sections 5 and 6, summarised in `docs/CLAIMS.md`), the circuit matched but did not beat the classical model.
+
+
 **Sovereign System Archive Identification:** `M151`  
 **Dual-Housed System Registry:** `Research_Divzion/deen_heptal_workspace/docs/research/M151_qm9_fault_tolerant_vqc_training_and_midcircuit_vnni_filtering.md`  
 **Subsystems Involved:** `t1000::qec::vnni`, `t1000::chemistry::qm9`, `t1000::simd`, `crates/t1000/src/bin/training/qm9_fault_tolerant_train.rs`  

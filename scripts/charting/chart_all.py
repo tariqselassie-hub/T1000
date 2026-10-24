@@ -23,7 +23,6 @@ from chart_qnn_scaling import chart_qnn_scaling
 from chart_lattice_phase import chart_lattice_phase
 from chart_lattice_quench import chart_lattice_quench
 from chart_frontier_rcs import chart_frontier_rcs
-from chart_exascale_showdown import chart_exascale_showdown
 
 def run_all_charts() -> None:
     ws_root = current_dir.parents[1]
@@ -128,12 +127,6 @@ def run_all_charts() -> None:
         size_kb = png.stat().st_size / 1024.0
         generated.append(("Lead #109 Attractor Convergence", png.name, f"{size_kb:.1f} KB"))
         print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
-
-    # 13. T-1000 Desktop vs Exascale Supercomputer Showdown
-    png = chart_exascale_showdown(chart_dir)
-    size_kb = png.stat().st_size / 1024.0
-    generated.append(("Exascale Desktop Showdown", png.name, f"{size_kb:.1f} KB"))
-    print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
 
     # 14. IBM Quantum Nighthawk R2 & Kagome Embedding
     import chart_nighthawk_layout

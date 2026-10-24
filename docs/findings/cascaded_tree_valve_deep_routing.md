@@ -1,5 +1,7 @@
 # T-1000 Scientific Finding: Cascaded Multi-Tier Glued-Tree Valve & Deep Quantum Routing
 
+> **Audit note (2026-10-23).** The numbers reproduce on re-run (2x2 peak 60.31 %, contrast 2,489:1; 2x4 contrast 831:1). The classical comparator is an unbiased random walker and the near-constant contrast is a leakage floor of an exactly symmetric simulation. See `glued_trees_exponential_speedup.md` for the oracle-model caveat.
+
 **Document ID:** `T1000-FINDING-2026-010`  
 **Author:** Terrence A. Jones SR  
 **Date:** 2026-10-17  

@@ -1,4 +1,6 @@
-# T-1000 Scientific Finding: Exponential Quantum Speedup via Glued-Trees Traversal
+# T-1000 Scientific Finding: Continuous-Time Quantum Walk on the Glued-Trees Graph
+
+> **Audit note (2026-10-23).** The Childs et al. separation is a statement about query complexity in the black-box oracle model, where an algorithm sees only randomly labelled vertices. Here the full graph is given and the walk is simulated classically inside the column-symmetric subspace, compared with an unbiased random walker. Both are real, but neither is a demonstration of quantum speedup: a classical algorithm that reads the graph solves it in linear time. The 'Speedup Est.' column has no stated definition and is not claimed. Re-run on 2026-10-23: classical success 49.40 % and quantum peak 54.16 % at depth 10 reproduce exactly.
 
 **Document ID:** `T1000-FINDING-2026-008`  
 **Author:** Terrence A. Jones SR  
@@ -10,7 +12,7 @@
 
 ## 1. Executive Summary
 
-The **Welded / Glued Binary Tree Problem** (Childs, Cleve, Deotto, Farhi, Gutmann, Spielman, STOC 2003) is one of the foundational milestones of quantum information theory, establishing a **provable, oracle-independent exponential speedup** for a quantum walk over any possible classical algorithm.
+The **Welded / Glued Binary Tree Problem** (Childs, Cleve, Deotto, Farhi, Gutmann, Spielman, STOC 2003) is one of the foundational milestones of quantum information theory, establishing an exponential separation in query complexity, in the black-box oracle model, between a quantum walk and any classical algorithm.
 
 While classical random walkers become irreversibly trapped in the exponentially large ($2^n$) middle weld layer with hitting time $\Omega(2^{n/2})$, the Continuous-Time Quantum Walk (CTQW) preserves a **column-symmetric invariant subspace**:
 $$|\text{col}_j\rangle = \frac{1}{\sqrt{N_j}} \sum_{v \in \text{col } j} |v\rangle$$

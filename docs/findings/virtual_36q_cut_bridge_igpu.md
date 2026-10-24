@@ -3,6 +3,9 @@
 
 # 36-Qubit Virtual Cut-Bridge & Heterogeneous Co-Processor Pipeline (Monograph M155)
 
+> **Audit note (2026-10-23).** The method applies to circuits made of two 18-qubit halves joined by one cut CZ, not to general 36-qubit circuits. Re-measured iGPU result: 9.5 ms against 17.4 ms on the CPU at 22 qubits (1.8x); the iGPU is slower than the CPU below 20 qubits.
+
+
 ## 1. Executive Summary
 
 We formulate, implement, and benchmark the **36-Qubit Virtual Cut-Bridge & Heterogeneous Co-Processor Engine** (`t1000::ansatz::virtual_cut_engine`). A direct statevector simulation of 36 qubits requires $2^{36} = 68,719,476,736$ double-precision complex amplitudes, consuming **$1,099.51\text{ GB}$ ($1.00\text{ TB}$) of dense physical RAM**, rendering high-depth variational circuits inaccessible on local workstations.

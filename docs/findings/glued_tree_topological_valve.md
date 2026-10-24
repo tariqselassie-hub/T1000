@@ -1,5 +1,7 @@
 # T-1000 Scientific Finding: Multi-Exit Topological Glued-Tree Valve & Quantum Router
 
+> **Audit note (2026-10-23).** The numbers reproduce on re-run (K = 2 peak 77.16 %, contrast about 1,700:1; K = 4 peak 77.03 %, about 522:1). The classical comparator is an unbiased random walker, and the contrast ratio (target probability over leakage) is almost constant across depths because it is the leakage floor of an exactly symmetric simulation, not a measured isolation of a device. The oracle-model caveat of `glued_trees_exponential_speedup.md` applies.
+
 **Document ID:** `T1000-FINDING-2026-009`  
 **Author:** Terrence A. Jones SR  
 **Date:** 2026-10-17  
@@ -10,7 +12,7 @@
 
 ## 1. Executive Summary
 
-In `T1000-FINDING-2026-008`, we confirmed the foundational theorem of Childs et al. (STOC 2003): a continuous-time quantum walk (CTQW) achieves an exponential speedup over any classical algorithm on a 2-tree glued graph ($1 \text{ Entrance} \to 1 \text{ Exit}$) by preserving a 1D column-symmetric subspace that traverses the $2^n$-vertex weld bottleneck in $O(n)$ time.
+In `T1000-FINDING-2026-008`, we confirmed the foundational theorem of Childs et al. (STOC 2003): a continuous-time quantum walk (CTQW) has an exponential query-complexity separation from classical algorithms (in the black-box oracle model) on a 2-tree glued graph ($1 \text{ Entrance} \to 1 \text{ Exit}$) by preserving a 1D column-symmetric subspace that traverses the $2^n$-vertex weld bottleneck in $O(n)$ time.
 
 This investigation expands the paradigm beyond symmetric two-terminal traversal to solve the **Multi-Exit Quantum Routing Problem**:
 How can a quantum wavepacket traversing an exponentially sprawling hierarchical tree be deterministically steered into one of $K$ distinct exit trees ($T_{\text{out}}^{(0)}, T_{\text{out}}^{(1)}, \dots, T_{\text{out}}^{(K-1)}$) without classical entropic dispersion?

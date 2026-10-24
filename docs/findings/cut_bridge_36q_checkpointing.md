@@ -5,6 +5,9 @@ Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
 
 # 36-Qubit Mid-Circuit Checkpointed Cut-Bridge Telemetry & Benchmark
 
+> **Audit note (2026-10-23).** Re-run on 2026-10-23: the checkpoint time (318 ms), the witness delta (0.0001056229) and the total (1.607 s) reproduce. The method applies to circuits made of two 18-qubit halves joined by one cut CZ, not to general 36-qubit circuits.
+
+
 This document formalizes the architecture, checkpointing mechanics, and empirical telemetry of the **36-Qubit Mid-Circuit Checkpointed Cut-Bridge Engine** (`cut_bridge_36q_bench`) in `t1000`.
 
 ---

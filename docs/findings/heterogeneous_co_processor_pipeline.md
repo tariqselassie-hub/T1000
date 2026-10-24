@@ -5,6 +5,9 @@ Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
 
 # Heterogeneous Co-Processor Pipeline: CPU L3 (AVX2) + Intel iGPU (OpenCL)
 
+> **Audit note (2026-10-23).** Re-measured iGPU result: 9.5 ms against 17.4 ms on the CPU at 22 qubits (1.8x, not 2.13x); the iGPU is slower than the CPU below 20 qubits. The CHSH value 2.82842712 is the exact Tsirelson value for the Bell-like state the circuit prepares; it checks the simulator, it is not an experimental violation.
+
+
 This document formalizes the empirical architecture, mathematical derivations, and hardware telemetry of the **Heterogeneous Co-Processor Pipeline** bridging the native Rust `T-1000` SIMD AVX2+FMA engine on CPU P-Cores with the Intel Arc / Integrated Graphics OpenCL coprocessor (`QrackAceBackend`).
 
 ---

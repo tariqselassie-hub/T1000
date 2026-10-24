@@ -1,5 +1,8 @@
 # T1000-FINDING-2026-011: 2D Plaquette Routing, Rigetti Cepheus-1-108Q Seam Mitigation & Monolithic IBM Nighthawk R2 Showdown
 
+> **Audit note (2026-10-23).** The fidelities (0.2119 to 0.6687 for 20 hops; 0.8588 to 0.9146 at chiplet corners) reproduce on re-run, but they come from a noise-model simulation with assumed error rates (0.8 % intra-die, 2.2 % seam two-qubit error), not from hardware measurements.
+
+
 **Author:** Terrence A. Jones SR  
 **Date:** 2026-10-18  
 **Registry ID:** `T1000-FINDING-2026-011`  

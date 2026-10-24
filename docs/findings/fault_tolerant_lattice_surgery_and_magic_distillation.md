@@ -3,6 +3,9 @@
 
 # T1000-FINDING-2026-013: Fault-Tolerant Planar Surface Code Lattice Surgery & Bravyi-Kitaev 15-to-1 Magic State Distillation
 
+> **Audit note (2026-10-23).** Re-run on 2026-10-23: the lattice-surgery truth table, Bell-pair fidelity 1.0 (23.4 ms) and the 15-to-1 distillation output error (4.3653e-6 at 0.5 % input) reproduce. They are noiseless or analytic-noise state-vector results, not a threshold or a hardware measurement.
+
+
 **Registry ID:** `T1000-FINDING-2026-013`  
 **Classification:** Empirical Research Finding & Theoretical Architecture  
 **Author:** Terrence A. Jones SR  

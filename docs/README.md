@@ -64,7 +64,7 @@ docs/
 
 ## 3. Sovereign Research Monographs (`docs/findings/`)
 
-The `findings/` directory contains 31 formally registered, immutable research monographs documenting empirical discoveries across the T-1000 engine. All monographs are dual-housed with the Deen OS Sovereign System Archive:
+The `findings/` directory contains 31 lab notes documenting experiments on the T-1000 engine. They are not peer-reviewed; `docs/CLAIMS.md` records which numbers were re-run and corrected. All monographs are dual-housed with the Deen OS Sovereign System Archive:
 
 * **M153:** 18-Qubit Transversal [[7, 1, 3]] Steane-Wheel FT-QNN & In-Register Physical Ancillas ([`qm9_transversal_w7_fault_tolerant_training.md`](findings/qm9_transversal_w7_fault_tolerant_training.md))
 * **M152:** Non-Abelian Geometric Holonomy, Quantized Vortex Dipoles & Floquet Chaos Scrambling in Unitary QCA ([`qgol_geometric_holonomy_and_topological_solitons.md`](findings/qgol_geometric_holonomy_and_topological_solitons.md))

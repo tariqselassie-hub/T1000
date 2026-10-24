@@ -3,6 +3,9 @@
 
 # T1000-FINDING-2026-027: 18-Qubit Transversal [[7, 1, 3]] Steane-Wheel FT-QNN & In-Register Physical Ancilla QEC
 
+> **Audit note (2026-10-23).** The QM9 data is not shipped, so the run was not repeated in the audit. Where a trained circuit has been compared with classical ridge regression on the same task (`docs/host_tuning_and_result_recording.md` sections 5 and 6, summarised in `docs/CLAIMS.md`), the circuit matched but did not beat the classical model.
+
+
 **Registry ID:** `T1000-FINDING-2026-027`  
 **Deen Monograph:** `M153`  
 **Classification:** Empirical Fault-Tolerant Quantum Machine Learning & Transversal Entanglement  

@@ -1,5 +1,8 @@
 # T1000-FINDING-2026-010: IBM Quantum Nighthawk R2 Architecture Mapping, Qrack Patch-Cut Comparison & Optimal Kagome Embedding
 
+> **Audit note (2026-10-23).** The fidelities reproduce on re-run, but they come from a noise-model simulation with assumed error rates, not from measurements on an IBM device.
+
+
 **Author:** Terrence A. Jones SR  
 **Date:** 2026-10-17  
 **Registry ID:** `T1000-FINDING-2026-010`  

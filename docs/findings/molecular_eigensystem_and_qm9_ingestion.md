@@ -1,5 +1,8 @@
 # Empirical Findings: Real-Symmetric Molecular Eigensystem Engine & Zero-Allocation QM9 Streaming Ingestion
 
+> **Audit note (2026-10-23).** The throughputs need the roboBohr table and `QM9.zip`, which are not shipped; without them the benchmark evaluates 0 molecules. They are not reproducible from this repository.
+
+
 **Author:** Terrence A. Jones SR  
 **Date:** 2026-10-19  
 **Registry ID:** `T1000-FINDING-2026-023`  
