@@ -1,0 +1,744 @@
+{
+  "timestamp_utc": "2026-10-25T22:18:43+00:00",
+  "hardware_target": "Xilinx Artix-7 XC7A35T (Basys 3)",
+  "port": "COM6",
+  "physical_fpga_executed": true,
+  "total_qubits_graph": 30,
+  "symmetric_chain_dimension": 8,
+  "classical_peak_exit_prob": 0.18753329489923484,
+  "seam_noisy_peak_exit_prob": 0.7428250381954431,
+  "fpga_mitigated_peak_exit_prob": 0.5041012832039627,
+  "fpga_time_to_peak": 3.3000000000000003,
+  "quantum_speedup_vs_classical": 2.6880628502518755,
+  "trajectory": [
+    {
+      "step": 0,
+      "time": 0.0,
+      "p_exit_classical": 0.0,
+      "p_exit_noisy": 0.0,
+      "p_exit_fpga_hardware": 0.0,
+      "fidelity_retention_pct": 0.0,
+      "speedup_vs_classical": 0.0
+    },
+    {
+      "step": 1,
+      "time": 0.1,
+      "p_exit_classical": 0.0,
+      "p_exit_noisy": 0.0,
+      "p_exit_fpga_hardware": 0.0,
+      "fidelity_retention_pct": 0.0,
+      "speedup_vs_classical": 0.0
+    },
+    {
+      "step": 2,
+      "time": 0.2,
+      "p_exit_classical": 0.0,
+      "p_exit_noisy": 0.0,
+      "p_exit_fpga_hardware": 0.0,
+      "fidelity_retention_pct": 0.0,
+      "speedup_vs_classical": 0.0
+    },
+    {
+      "step": 3,
+      "time": 0.3,
+      "p_exit_classical": 0.0,
+      "p_exit_noisy": 1.4350362731519293e-13,
+      "p_exit_fpga_hardware": 1.5322465518607942e-13,
+      "fidelity_retention_pct": 1.5322465518607942e-05,
+      "speedup_vs_classical": 1.5322465518607942e-06
+    },
+    {
+      "step": 4,
+      "time": 0.4,
+      "p_exit_classical": 0.0,
+      "p_exit_noisy": 1.3721386056126265e-11,
+      "p_exit_fpga_hardware": 1.4776027623675244e-11,
+      "fidelity_retention_pct": 0.0014776027623675243,
+      "speedup_vs_classical": 0.00014776027623675245
+    },
+    {
+      "step": 5,
+      "time": 0.5,
+      "p_exit_classical": 0.0,
+      "p_exit_noisy": 3.651419082963679e-10,
+      "p_exit_fpga_hardware": 3.9758564496228383e-10,
+      "fidelity_retention_pct": 0.03975856449622838,
+      "speedup_vs_classical": 0.003975856449622839
+    },
+    {
+      "step": 6,
+      "time": 0.6,
+      "p_exit_classical": 0.0,
+      "p_exit_noisy": 4.8817073210710965e-09,
+      "p_exit_fpga_hardware": 5.375748096669852e-09,
+      "fidelity_retention_pct": 0.5375748096669852,
+      "speedup_vs_classical": 0.05375748096669852
+    },
+    {
+      "step": 7,
+      "time": 0.7,
+      "p_exit_classical": 1.6000000000000008e-06,
+      "p_exit_noisy": 4.171753838447977e-08,
+      "p_exit_fpga_hardware": 4.6439880302395764e-08,
+      "fidelity_retention_pct": 4.643988030239576,
+      "speedup_vs_classical": 0.02902492518899734
+    },
+    {
+      "step": 8,
+      "time": 0.8,
+      "p_exit_classical": 9.600000000000003e-06,
+      "p_exit_noisy": 2.591834197115877e-07,
+      "p_exit_fpga_hardware": 2.912886512551616e-07,
+      "fidelity_retention_pct": 29.128865125516164,
+      "speedup_vs_classical": 0.030342567839079328
+    },
+    {
+      "step": 9,
+      "time": 0.9,
+      "p_exit_classical": 3.268800000000001e-05,
+      "p_exit_noisy": 1.266347228768177e-06,
+      "p_exit_fpga_hardware": 1.434003495628944e-06,
+      "fidelity_retention_pct": 98.21900380895828,
+      "speedup_vs_classical": 0.04386941677768427
+    },
+    {
+      "step": 10,
+      "time": 1.0,
+      "p_exit_classical": 8.314880000000003e-05,
+      "p_exit_noisy": 5.1256863946410696e-06,
+      "p_exit_fpga_hardware": 5.8323361483841865e-06,
+      "fidelity_retention_pct": 97.84624702413578,
+      "speedup_vs_classical": 0.07014335923530086
+    },
+    {
+      "step": 11,
+      "time": 1.1,
+      "p_exit_classical": 0.0001759164800000001,
+      "p_exit_noisy": 1.782522706918611e-05,
+      "p_exit_fpga_hardware": 2.0310634189349416e-05,
+      "fidelity_retention_pct": 97.4295286937346,
+      "speedup_vs_classical": 0.11545611979815311
+    },
+    {
+      "step": 12,
+      "time": 1.2,
+      "p_exit_classical": 0.0003273509760000001,
+      "p_exit_noisy": 5.469374671244626e-05,
+      "p_exit_fpga_hardware": 6.215136914036744e-05,
+      "fidelity_retention_pct": 96.96640051028838,
+      "speedup_vs_classical": 0.18986156662739692
+    },
+    {
+      "step": 13,
+      "time": 1.3,
+      "p_exit_classical": 0.0005540304480000002,
+      "p_exit_noisy": 0.0001510405393303245,
+      "p_exit_fpga_hardware": 0.00017039547428550347,
+      "fidelity_retention_pct": 96.45476465331083,
+      "speedup_vs_classical": 0.3075561549019837
+    },
+    {
+      "step": 14,
+      "time": 1.4,
+      "p_exit_classical": 0.0008717316819200004,
+      "p_exit_noisy": 0.00038112501510328885,
+      "p_exit_fpga_hardware": 0.0004248369171302724,
+      "fidelity_retention_pct": 95.8920157605165,
+      "speedup_vs_classical": 0.48734825857718456
+    },
+    {
+      "step": 15,
+      "time": 1.5,
+      "p_exit_classical": 0.0012946710883040007,
+      "p_exit_noisy": 0.0008889591682998894,
+      "p_exit_fpga_hardware": 0.0009745836448408207,
+      "fidelity_retention_pct": 95.27515960823524,
+      "speedup_vs_classical": 0.7527654349009295
+    },
+    {
+      "step": 16,
+      "time": 1.6,
+      "p_exit_classical": 0.0018350121112576008,
+      "p_exit_noisy": 0.001933612982603093,
+      "p_exit_fpga_hardware": 0.0020763137924926373,
+      "fidelity_retention_pct": 94.60087653291403,
+      "speedup_vs_classical": 1.1314986858967724
+    },
+    {
+      "step": 17,
+      "time": 1.7,
+      "p_exit_classical": 0.002502607733202081,
+      "p_exit_noisy": 0.00394847933139054,
+      "p_exit_fpga_hardware": 0.004139128612679622,
+      "fidelity_retention_pct": 93.86534489497603,
+      "speedup_vs_classical": 1.653926245717948
+    },
+    {
+      "step": 18,
+      "time": 1.8,
+      "p_exit_classical": 0.0033049310035772814,
+      "p_exit_noisy": 0.007607324001608743,
+      "p_exit_fpga_hardware": 0.007768383161401007,
+      "fidelity_retention_pct": 93.06418120080933,
+      "speedup_vs_classical": 2.350543219508199
+    },
+    {
+      "step": 19,
+      "time": 1.9,
+      "p_exit_classical": 0.004247144077720142,
+      "p_exit_noisy": 0.013880128551636188,
+      "p_exit_fpga_hardware": 0.013795850567736967,
+      "fidelity_retention_pct": 92.19237048219784,
+      "speedup_vs_classical": 3.2482652613806664
+    },
+    {
+      "step": 20,
+      "time": 2.0,
+      "p_exit_classical": 0.005332260972584226,
+      "p_exit_noisy": 0.0240518022780591,
+      "p_exit_fpga_hardware": 0.02327945323998631,
+      "fidelity_retention_pct": 91.24412511158961,
+      "speedup_vs_classical": 4.365775298635498
+    },
+    {
+      "step": 21,
+      "time": 2.1,
+      "p_exit_classical": 0.0065613670307455504,
+      "p_exit_noisy": 0.03967323091038801,
+      "p_exit_fpga_hardware": 0.03745442291189574,
+      "fidelity_retention_pct": 90.21275847706868,
+      "speedup_vs_classical": 5.708326136366113
+    },
+    {
+      "step": 22,
+      "time": 2.2,
+      "p_exit_classical": 0.007933866489808697,
+      "p_exit_noisy": 0.06242383021223113,
+      "p_exit_fpga_hardware": 0.05762089044843446,
+      "fidelity_retention_pct": 89.09051839567816,
+      "speedup_vs_classical": 7.262649368054065
+    },
+    {
+      "step": 23,
+      "time": 2.3,
+      "p_exit_classical": 0.009447737293607913,
+      "p_exit_noisy": 0.09388892725592499,
+      "p_exit_fpga_hardware": 0.08496169659143996,
+      "fidelity_retention_pct": 87.86837912368868,
+      "speedup_vs_classical": 8.992808960609306
+    },
+    {
+      "step": 24,
+      "time": 2.4,
+      "p_exit_classical": 0.011099778799621816,
+      "p_exit_noisy": 0.1352842962604135,
+      "p_exit_fpga_hardware": 0.12029849171236456,
+      "fidelity_retention_pct": 86.53577743754637,
+      "speedup_vs_classical": 10.837917933685606
+    },
+    {
+      "step": 25,
+      "time": 2.5,
+      "p_exit_classical": 0.01288584320304031,
+      "p_exit_noisy": 0.18717783660856177,
+      "p_exit_fpga_hardware": 0.1638121720121708,
+      "fidelity_retention_pct": 85.0803056104266,
+      "speedup_vs_classical": 12.712569090823692
+    },
+    {
+      "step": 26,
+      "time": 2.6,
+      "p_exit_classical": 0.014801045401570241,
+      "p_exit_noisy": 0.24925492977688693,
+      "p_exit_fpga_hardware": 0.21477171319581168,
+      "fidelity_retention_pct": 83.48730125886885,
+      "speedup_vs_classical": 14.51057728483331
+    },
+    {
+      "step": 27,
+      "time": 2.7,
+      "p_exit_classical": 0.016839948851589293,
+      "p_exit_noisy": 0.32015559488663253,
+      "p_exit_fpga_hardware": 0.27132901517368874,
+      "fidelity_retention_pct": 81.73934211937963,
+      "speedup_vs_classical": 16.11222323564728
+    },
+    {
+      "step": 28,
+      "time": 2.8,
+      "p_exit_classical": 0.018996726925740646,
+      "p_exit_noisy": 0.3973949697186965,
+      "p_exit_fpga_hardware": 0.3304413770770455,
+      "fidelity_retention_pct": 79.81559778475598,
+      "speedup_vs_classical": 17.394647950079023
+    },
+    {
+      "step": 29,
+      "time": 2.9,
+      "p_exit_classical": 0.02126530057300057,
+      "p_exit_noisy": 0.47737630788061935,
+      "p_exit_fpga_hardware": 0.3879741760578737,
+      "fidelity_retention_pct": 77.69100898508765,
+      "speedup_vs_classical": 18.244471773442225
+    },
+    {
+      "step": 30,
+      "time": 3.0,
+      "p_exit_classical": 0.02363945387566337,
+      "p_exit_noisy": 0.5555159575324928,
+      "p_exit_fpga_hardware": 0.4390127517645672,
+      "fidelity_retention_pct": 75.33522574600414,
+      "speedup_vs_classical": 18.571188407043845
+    },
+    {
+      "step": 31,
+      "time": 3.1,
+      "p_exit_classical": 0.026112929532688955,
+      "p_exit_noisy": 0.6265094506821852,
+      "p_exit_fpga_hardware": 0.4783767693669356,
+      "fidelity_retention_pct": 72.71124060475917,
+      "speedup_vs_classical": 18.31953664057834
+    },
+    {
+      "step": 32,
+      "time": 3.2,
+      "p_exit_classical": 0.02867950648411,
+      "p_exit_noisy": 0.6847615837405069,
+      "p_exit_fpga_hardware": 0.5012879377541514,
+      "fidelity_retention_pct": 69.77363006570863,
+      "speedup_vs_classical": 17.47895968962688
+    },
+    {
+      "step": 33,
+      "time": 3.3,
+      "p_exit_classical": 0.03133306190892112,
+      "p_exit_noisy": 0.7249729438053281,
+      "p_exit_fpga_hardware": 0.5041012832039627,
+      "fidelity_retention_pct": 66.46629396817994,
+      "speedup_vs_classical": 16.088478191798917
+    },
+    {
+      "step": 34,
+      "time": 3.4,
+      "p_exit_classical": 0.03406761973962516,
+      "p_exit_noisy": 0.7428250381954431,
+      "p_exit_fpga_hardware": 0.48498099651869414,
+      "fidelity_retention_pct": 62.71960211910038,
+      "speedup_vs_classical": 14.235834502831347
+    },
+    {
+      "step": 35,
+      "time": 3.5,
+      "p_exit_classical": 0.03687738768386581,
+      "p_exit_noisy": 0.7356535360699503,
+      "p_exit_fpga_hardware": 0.4443925014684346,
+      "fidelity_retention_pct": 58.446930537972555,
+      "speedup_vs_classical": 12.050541792114531
+    },
+    {
+      "step": 36,
+      "time": 3.6,
+      "p_exit_classical": 0.039756784557741925,
+      "p_exit_noisy": 0.7029687761170696,
+      "p_exit_fpga_hardware": 0.3852979718064039,
+      "fidelity_retention_pct": 53.540826090453194,
+      "speedup_vs_classical": 9.691376606345143
+    },
+    {
+      "step": 37,
+      "time": 3.7,
+      "p_exit_classical": 0.04270045953712945,
+      "p_exit_noisy": 0.6466940529120584,
+      "p_exit_fpga_hardware": 0.31298346777183933,
+      "fidelity_retention_pct": 47.869854377845655,
+      "speedup_vs_classical": 7.329744718547817
+    },
+    {
+      "step": 38,
+      "time": 3.8,
+      "p_exit_classical": 0.045703304736151036,
+      "p_exit_noisy": 0.571047113275302,
+      "p_exit_fpga_hardware": 0.2345063748283379,
+      "fidelity_retention_pct": 41.27951810066342,
+      "speedup_vs_classical": 5.131059475505385
+    },
+    {
+      "step": 39,
+      "time": 3.9,
+      "p_exit_classical": 0.04876046233423863,
+      "p_exit_noisy": 0.48207005796875363,
+      "p_exit_fpga_hardware": 0.15782130869721472,
+      "fidelity_retention_pct": 33.60745768248808,
+      "speedup_vs_classical": 3.236665551187683
+    },
+    {
+      "step": 40,
+      "time": 4.0,
+      "p_exit_classical": 0.05186732729985167,
+      "p_exit_noisy": 0.386888319364753,
+      "p_exit_fpga_hardware": 0.09070745486673527,
+      "fidelity_retention_pct": 24.74409358029402,
+      "speedup_vs_classical": 1.7488361091433118
+    },
+    {
+      "step": 41,
+      "time": 4.1,
+      "p_exit_classical": 0.05501954660220554,
+      "p_exit_noisy": 0.2928273068488815,
+      "p_exit_fpga_hardware": 0.039666492094548096,
+      "fidelity_retention_pct": 14.839354592866606,
+      "speedup_vs_classical": 0.7209527257892381
+    },
+    {
+      "step": 42,
+      "time": 4.2,
+      "p_exit_classical": 0.05821301566305625,
+      "p_exit_noisy": 0.2065286115215532,
+      "p_exit_fpga_hardware": 0.008976685105670859,
+      "fidelity_retention_pct": 5.014318216026357,
+      "speedup_vs_classical": 0.15420408998614613
+    },
+    {
+      "step": 43,
+      "time": 4.3,
+      "p_exit_classical": 0.061443872678352975,
+      "p_exit_noisy": 0.13319369076567877,
+      "p_exit_fpga_hardware": 7.035926963573634e-05,
+      "fidelity_retention_pct": 0.0657242892876397,
+      "speedup_vs_classical": 0.001145098226540078
+    },
+    {
+      "step": 44,
+      "time": 4.4,
+      "p_exit_classical": 0.0647084913334471,
+      "p_exit_noisy": 0.07605387825131589,
+      "p_exit_fpga_hardware": 0.011350390842638449,
+      "fidelity_retention_pct": 20.936803293423342,
+      "speedup_vs_classical": 0.17540805864487152
+    },
+    {
+      "step": 45,
+      "time": 4.5,
+      "p_exit_classical": 0.06800347234422131,
+      "p_exit_noisy": 0.03612996992410761,
+      "p_exit_fpga_hardware": 0.038485766228133114,
+      "fidelity_retention_pct": 186.63527679099798,
+      "speedup_vs_classical": 0.5659382514075915
+    },
+    {
+      "step": 46,
+      "time": 4.6,
+      "p_exit_classical": 0.07132563417850239,
+      "p_exit_noisy": 0.01230571740823959,
+      "p_exit_fpga_hardware": 0.07514089386799191,
+      "fidelity_retention_pct": 1903.4911394626843,
+      "speedup_vs_classical": 1.0534907222828374
+    },
+    {
+      "step": 47,
+      "time": 4.7,
+      "p_exit_classical": 0.07467200324594059,
+      "p_exit_noisy": 0.0016986330874096019,
+      "p_exit_fpga_hardware": 0.11401506936848416,
+      "fidelity_retention_pct": 271983.0665498143,
+      "speedup_vs_classical": 1.5268784070645967
+    },
+    {
+      "step": 48,
+      "time": 4.8,
+      "p_exit_classical": 0.07803980378871941,
+      "p_exit_noisy": 0.00027187255240682584,
+      "p_exit_fpga_hardware": 0.1480129034967353,
+      "fidelity_retention_pct": 3875.6859364436496,
+      "speedup_vs_classical": 1.8966334653718135
+    },
+    {
+      "step": 49,
+      "time": 4.9,
+      "p_exit_classical": 0.08142644765863637,
+      "p_exit_noisy": 0.0035982736758030593,
+      "p_exit_fpga_hardware": 0.1713445598535682,
+      "fidelity_retention_pct": 1672.2687185716304,
+      "speedup_vs_classical": 2.1042863195002073
+    },
+    {
+      "step": 50,
+      "time": 5.0,
+      "p_exit_classical": 0.08482952412702194,
+      "p_exit_noisy": 0.007666908170643617,
+      "p_exit_fpga_hardware": 0.18037049675507574,
+      "fidelity_retention_pct": 1182.4019933741922,
+      "speedup_vs_classical": 2.1262702886909133
+    },
+    {
+      "step": 51,
+      "time": 5.1,
+      "p_exit_classical": 0.08824678984152327,
+      "p_exit_noisy": 0.00961498422827744,
+      "p_exit_fpga_hardware": 0.17405537476011915,
+      "fidelity_retention_pct": 1060.1085283684674,
+      "speedup_vs_classical": 1.9723706105649166
+    },
+    {
+      "step": 52,
+      "time": 5.2,
+      "p_exit_classical": 0.0916761590169809,
+      "p_exit_noisy": 0.00827137805427799,
+      "p_exit_fpga_hardware": 0.1539693948469662,
+      "fidelity_retention_pct": 1157.9379007618109,
+      "speedup_vs_classical": 1.6794922092934426
+    },
+    {
+      "step": 53,
+      "time": 5.3,
+      "p_exit_classical": 0.09511569392560647,
+      "p_exit_noisy": 0.004410948208677812,
+      "p_exit_fpga_hardware": 0.12385773344343667,
+      "fidelity_retention_pct": 1676.3482936343032,
+      "speedup_vs_classical": 1.3021797805555666
+    },
+    {
+      "step": 54,
+      "time": 5.4,
+      "p_exit_classical": 0.09856359573367572,
+      "p_exit_noisy": 0.0006451021491071677,
+      "p_exit_fpga_hardware": 0.08887378347401526,
+      "fidelity_retention_pct": 5127.152282647328,
+      "speedup_vs_classical": 0.9016897447020614
+    },
+    {
+      "step": 55,
+      "time": 5.5,
+      "p_exit_classical": 0.10201819571733615,
+      "p_exit_noisy": 0.000923184303435935,
+      "p_exit_fpga_hardware": 0.054625804897527185,
+      "fidelity_retention_pct": 22654.002124910567,
+      "speedup_vs_classical": 0.5354515879586813
+    },
+    {
+      "step": 56,
+      "time": 5.6,
+      "p_exit_classical": 0.10547794687834039,
+      "p_exit_noisy": 0.009697099485031896,
+      "p_exit_fpga_hardware": 0.02621029945300113,
+      "fidelity_retention_pct": 380.9352426137368,
+      "speedup_vs_classical": 0.24849080048204222
+    },
+    {
+      "step": 57,
+      "time": 5.7,
+      "p_exit_classical": 0.10894141597108031,
+      "p_exit_noisy": 0.030896947809271734,
+      "p_exit_fpga_hardware": 0.00739660497012573,
+      "fidelity_retention_pct": 29.736512471374844,
+      "speedup_vs_classical": 0.06789525273004748
+    },
+    {
+      "step": 58,
+      "time": 5.8,
+      "p_exit_classical": 0.11240727594481453,
+      "p_exit_noisy": 0.06694335061141678,
+      "p_exit_fpga_hardware": 8.971702126917001e-05,
+      "fidelity_retention_pct": 0.16011546628680481,
+      "speedup_vs_classical": 0.0007981424735638632
+    },
+    {
+      "step": 59,
+      "time": 5.9,
+      "p_exit_classical": 0.1158742987991138,
+      "p_exit_noisy": 0.1180377046910325,
+      "p_exit_fpga_hardware": 0.00414142066844543,
+      "fidelity_retention_pct": 4.127431784149311,
+      "speedup_vs_classical": 0.03574063197245517
+    },
+    {
+      "step": 60,
+      "time": 6.0,
+      "p_exit_classical": 0.11934134884601057,
+      "p_exit_noisy": 0.18190175628804328,
+      "p_exit_fpga_hardware": 0.017515471637370023,
+      "fidelity_retention_pct": 11.240408202579397,
+      "speedup_vs_classical": 0.14676783702160698
+    },
+    {
+      "step": 61,
+      "time": 6.1,
+      "p_exit_classical": 0.12280737636889094,
+      "p_exit_noisy": 0.2540060231152281,
+      "p_exit_fpga_hardware": 0.03675303786089982,
+      "fidelity_retention_pct": 16.800217097521024,
+      "speedup_vs_classical": 0.2992738624307094
+    },
+    {
+      "step": 62,
+      "time": 6.2,
+      "p_exit_classical": 0.1262714116656103,
+      "p_exit_noisy": 0.32819326364873924,
+      "p_exit_fpga_hardware": 0.057639932029265234,
+      "fidelity_retention_pct": 20.28764520131356,
+      "speedup_vs_classical": 0.45647649985814903
+    },
+    {
+      "step": 63,
+      "time": 6.3,
+      "p_exit_classical": 0.12973255946147924,
+      "p_exit_noisy": 0.3975261290778785,
+      "p_exit_fpga_hardware": 0.0759534460493006,
+      "fidelity_retention_pct": 21.942985144032313,
+      "speedup_vs_classical": 0.5854617095707036
+    },
+    {
+      "step": 64,
+      "time": 6.4,
+      "p_exit_classical": 0.13318999367651774,
+      "p_exit_noisy": 0.45518577165967006,
+      "p_exit_fpga_hardware": 0.08816549235386618,
+      "fidelity_retention_pct": 22.089084846297776,
+      "speedup_vs_classical": 0.6619528233329313
+    },
+    {
+      "step": 65,
+      "time": 6.5,
+      "p_exit_classical": 0.13664295253059405,
+      "p_exit_noisy": 0.49529599612500014,
+      "p_exit_fpga_hardware": 0.09199746779138841,
+      "fidelity_retention_pct": 20.99905432876012,
+      "speedup_vs_classical": 0.6732690276931068
+    },
+    {
+      "step": 66,
+      "time": 6.6,
+      "p_exit_classical": 0.1400907339696592,
+      "p_exit_noisy": 0.5136034363800106,
+      "p_exit_fpga_hardware": 0.08675517285968591,
+      "fidelity_retention_pct": 18.88728193489063,
+      "speedup_vs_classical": 0.6192784519101406
+    },
+    {
+      "step": 67,
+      "time": 6.7,
+      "p_exit_classical": 0.1435326913961751,
+      "p_exit_noisy": 0.5079774886168165,
+      "p_exit_fpga_hardware": 0.07341175184037875,
+      "fidelity_retention_pct": 15.931207463667196,
+      "speedup_vs_classical": 0.5114636333108922
+    },
+    {
+      "step": 68,
+      "time": 6.8,
+      "p_exit_classical": 0.1469682296869532,
+      "p_exit_noisy": 0.47869841898019977,
+      "p_exit_fpga_hardware": 0.05444587761130847,
+      "fidelity_retention_pct": 12.307089509523488,
+      "speedup_vs_classical": 0.3704601853562491
+    },
+    {
+      "step": 69,
+      "time": 6.9,
+      "p_exit_classical": 0.15039680148191553,
+      "p_exit_noisy": 0.4284936231291883,
+      "p_exit_fpga_hardware": 0.03347533530948638,
+      "fidelity_retention_pct": 8.24851139291737,
+      "speedup_vs_classical": 0.22258010130296305
+    },
+    {
+      "step": 70,
+      "time": 7.0,
+      "p_exit_classical": 0.15381790372771964,
+      "p_exit_noisy": 0.36228442654220994,
+      "p_exit_fpga_hardware": 0.014748941161280853,
+      "fidelity_retention_pct": 4.160456392762711,
+      "speedup_vs_classical": 0.09588572463832723
+    },
+    {
+      "step": 71,
+      "time": 7.1,
+      "p_exit_classical": 0.15723107446071513,
+      "p_exit_noisy": 0.28663655000486543,
+      "p_exit_fpga_hardware": 0.002571174973405033,
+      "fidelity_retention_pct": 0.8774201636886128,
+      "speedup_vs_classical": 0.016352842351449123
+    },
+    {
+      "step": 72,
+      "time": 7.2,
+      "p_exit_classical": 0.16063588981429797,
+      "p_exit_noisy": 0.20896568987487332,
+      "p_exit_fpga_hardware": 0.000734357801739499,
+      "fidelity_retention_pct": 0.32371393140632004,
+      "speedup_vs_classical": 0.004571567428601718
+    },
+    {
+      "step": 73,
+      "time": 7.3,
+      "p_exit_classical": 0.1640319612363718,
+      "p_exit_noisy": 0.13661436905823282,
+      "p_exit_fpga_hardware": 0.012025005779140369,
+      "fidelity_retention_pct": 7.441272988522359,
+      "speedup_vs_classical": 0.07330891911858695
+    },
+    {
+      "step": 74,
+      "time": 7.4,
+      "p_exit_classical": 0.16741893290329823,
+      "p_exit_noisy": 0.07595643266982494,
+      "p_exit_fpga_hardware": 0.03785665257365989,
+      "fidelity_retention_pct": 36.890946812496416,
+      "speedup_vs_classical": 0.22611930393515303
+    },
+    {
+      "step": 75,
+      "time": 7.5,
+      "p_exit_classical": 0.17079647931740466,
+      "p_exit_noisy": 0.03167979495129893,
+      "p_exit_fpga_hardware": 0.07806385230068094,
+      "fidelity_retention_pct": 143.32086007864865,
+      "speedup_vs_classical": 0.45705773686124224
+    },
+    {
+      "step": 76,
+      "time": 7.6,
+      "p_exit_classical": 0.17416430307580616,
+      "p_exit_noisy": 0.006348273628057077,
+      "p_exit_fpga_hardware": 0.13087345556222407,
+      "fidelity_retention_pct": 637.5820223830387,
+      "speedup_vs_classical": 0.7514367367534582
+    },
+    {
+      "step": 77,
+      "time": 7.7,
+      "p_exit_classical": 0.1775221327989806,
+      "p_exit_noisy": 0.0002732494369104612,
+      "p_exit_fpga_hardware": 0.1930512681024878,
+      "fidelity_retention_pct": 7087.485750492823,
+      "speedup_vs_classical": 1.0874771785278843
+    },
+    {
+      "step": 78,
+      "time": 7.8,
+      "p_exit_classical": 0.18086972120820466,
+      "p_exit_noisy": 0.011664986049139407,
+      "p_exit_fpga_hardware": 0.2602058707801527,
+      "fidelity_retention_pct": 18326.669987988782,
+      "speedup_vs_classical": 1.438636987119706
+    },
+    {
+      "step": 79,
+      "time": 7.9,
+      "p_exit_classical": 0.1842068433416085,
+      "p_exit_noisy": 0.037000014928294786,
+      "p_exit_fpga_hardware": 0.32721727557786956,
+      "fidelity_retention_pct": 2120.2452713434054,
+      "speedup_vs_classical": 1.7763578683721897
+    },
+    {
+      "step": 80,
+      "time": 8.0,
+      "p_exit_classical": 0.18753329489923484,
+      "p_exit_noisy": 0.07153524245848336,
+      "p_exit_fpga_hardware": 0.3887465967048559,
+      "fidelity_retention_pct": 920.8595409510714,
+      "speedup_vs_classical": 2.0729470834165036
+    }
+  ]
+}
