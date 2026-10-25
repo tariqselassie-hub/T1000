@@ -24,6 +24,8 @@ runs; the root `results/` files come from the reference host.
 | 4 | KS D = 0.0021 (critical 0.0027) | same file, `porter_thomas.ks_statistic` = 0.002063, `ks_critical_value` = 0.002652 |
 | 5 | MNIST 10-qubit VQC 84.50 % | `experiments/mnist_qnn_training.json` `final_test_acc_pct` |
 | 5 | State coherence 350.94 | same file, `history[15].mean_coherence_l1` |
+| 5 | MNIST Hybrid QCNN 95.45 % | `experiments/mnist_hybrid_qnn_training.json` `final_test_acc_pct` |
+| 5 | Hybrid State coherence 450.69 | same file, `history[15].mean_coherence_l1` |
 | 15 | Path A worst-group accuracy 61.91 %, G2 71.81 % | `experiments/path_a_vs_c_comparison_report.json` |
 | 16 | QMUX coarse accuracy 70.69 % | `experiments/ultrametric_tree_sorter_report.json` `test_overall_coarse_accuracy` |
 | 17 | Glued trees: classical 49.40 %, quantum peak 54.16 % at depth 10 | `experiments/glued_trees_report.json` `depths[8]` |

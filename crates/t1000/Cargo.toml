@@ -162,6 +162,10 @@ name = "mnist_qnn_train"
 path = "src/bin/training/mnist_qnn_train.rs"
 
 [[bin]]
+name = "mnist_hybrid_qnn"
+path = "src/bin/training/mnist_hybrid_qnn.rs"
+
+[[bin]]
 name = "mnist_ultrametric_sorter"
 path = "src/bin/training/mnist_ultrametric_sorter.rs"
 
