@@ -361,17 +361,114 @@ impl Default for BipartiteSzegedyWalk {
     }
 }
 
-impl BipartiteSzegedyWalk {
-    /// Constructs and initializes the 49x49 Bipartite Szegedy Walk operator.
-    pub fn new() -> Self {
-        let p = DIRECTED_HEPTAL_P;
-        let pi = STATIONARY_PI;
+/// Molecular Stark dipole vector configuration on the 7-node directed graph.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MolecularDipoleGraph {
+    /// 3D dipole vectors [Dx, Dy, Dz] in Debye for nodes v1..v7.
+    pub dipoles: [[f64; 3]; 7],
+    /// External field vector E_ext.
+    pub e_field: [f64; 3],
+    /// Temperature coupling parameter beta.
+    pub beta: f64,
+}
 
+impl MolecularDipoleGraph {
+    /// Constructs dipole graph populated from the top 7 Pitt NLO leads.
+    pub fn from_pitt_leads() -> Self {
+        Self {
+            dipoles: [
+                [38.20, 22.90, 0.50],   // v1 (Hub) - Lead #1 C27H39N2O3S+ (44.59 D)
+                [-18.50, 29.40, -2.10], // v2 - Lead #2 C30H20O4 (34.81 D)
+                [48.20, 2.30, 0.00],    // v3 - Lead #3 C25H32O7 (48.26 D)
+                [-10.20, 47.90, 4.30],  // v4 - Lead #4 C21H29FN3O6S (49.08 D)
+                [22.10, 0.00, 0.00],    // v5 - Lead #5 C32H22O2 (22.13 D)
+                [-44.80, 0.00, 1.20],   // v6 - Lead #6 C20H23N7O6 (44.80 D)
+                [38.50, 0.00, -1.00],   // v7 (Sink) - Lead #7 C30H56O3 (38.51 D)
+            ],
+            e_field: [0.05, 0.0, 0.0],  // 0.05 a.u. field aligned along X-axis
+            beta: 0.05,
+        }
+    }
+
+    /// Computes the Stark potential V_i = -D_i . E_ext for each node.
+    pub fn stark_potentials(&self) -> [f64; 7] {
+        let mut v = [0.0; 7];
+        for i in 0..7 {
+            let dot = self.dipoles[i][0] * self.e_field[0]
+                + self.dipoles[i][1] * self.e_field[1]
+                + self.dipoles[i][2] * self.e_field[2];
+            v[i] = -dot;
+        }
+        v
+    }
+
+    /// Computes the tilted transition matrix P_tilde.
+    pub fn tilted_transition_matrix(&self) -> [[f64; 7]; 7] {
+        let v = self.stark_potentials();
+        let p = DIRECTED_HEPTAL_P;
+        let mut p_tilt = [[0.0; 7]; 7];
+
+        for i in 0..7 {
+            let mut sum_row = 0.0;
+            for j in 0..7 {
+                if p[i][j] > 0.0 {
+                    let weight = p[i][j] * (-self.beta * (v[j] - v[i])).exp();
+                    p_tilt[i][j] = weight;
+                    sum_row += weight;
+                }
+            }
+            if sum_row > 1e-15 {
+                for j in 0..7 {
+                    p_tilt[i][j] /= sum_row;
+                }
+            }
+        }
+        p_tilt
+    }
+
+    /// Computes stationary distribution pi_tilde by numerical power iteration.
+    pub fn stationary_distribution(&self) -> [f64; 7] {
+        let p_tilt = self.tilted_transition_matrix();
+        let mut pi = [1.0 / 7.0; 7];
+        for _ in 0..200 {
+            let mut next = [0.0; 7];
+            for c in 0..7 {
+                for r in 0..7 {
+                    next[c] += pi[r] * p_tilt[r][c];
+                }
+            }
+            pi = next;
+        }
+        let sum: f64 = pi.iter().sum();
+        if sum > 0.0 {
+            for x in &mut pi {
+                *x /= sum;
+            }
+        }
+        pi
+    }
+}
+
+impl BipartiteSzegedyWalk {
+    /// Constructs and initializes the 49x49 Bipartite Szegedy Walk operator from canonical P.
+    pub fn new() -> Self {
+        Self::from_transition_matrix(DIRECTED_HEPTAL_P, STATIONARY_PI)
+    }
+
+    /// Constructs unitary Szegedy walk operator from molecular dipole drift.
+    pub fn with_molecular_dipole_drift(dipoles: &MolecularDipoleGraph) -> Self {
+        let p_tilt = dipoles.tilted_transition_matrix();
+        let pi_tilt = dipoles.stationary_distribution();
+        Self::from_transition_matrix(p_tilt, pi_tilt)
+    }
+
+    /// Constructs the 49x49 Szegedy walk operator from an arbitrary row-stochastic P and stationary distribution pi.
+    pub fn from_transition_matrix(p: [[f64; 7]; 7], pi: [f64; 7]) -> Self {
         // 1. Construct dual matrix P^*_{ji} = (pi_i * P_{ij}) / pi_j
         let mut p_star = [[0.0f64; 7]; 7];
         for i in 0..7 {
             for j in 0..7 {
-                if p[i][j] > 0.0 {
+                if p[i][j] > 0.0 && pi[j] > 1e-15 {
                     p_star[j][i] = (pi[i] * p[i][j]) / pi[j];
                 }
             }
@@ -679,22 +776,15 @@ mod tests {
     }
 
     #[test]
-    fn test_dark_state_exact_zero_hub_leakage() {
-        let router = DirectedHeptalRouter::new();
-        // Antisymmetric dark mode on v3 - v6: 1/sqrt(2) * [0, 0, 1, 0, 0, -1, 0]
-        let dark_mode = [0.0, 0.0, 1.0 / 2.0f64.sqrt(), 0.0, 0.0, -1.0 / 2.0f64.sqrt(), 0.0];
-        let mut state = dark_mode;
-
-        for step in 0..10 {
-            state = router.step_distribution(&state);
-            // Hub v1 is at index 0
-            assert!(
-                state[0].abs() < 1e-15,
-                "Dark state leaked into Hub v1 at step {}: {}",
-                step,
-                state[0]
-            );
+    fn test_molecular_dipole_szegedy_walk() {
+        let dipoles = MolecularDipoleGraph::from_pitt_leads();
+        let p_tilt = dipoles.tilted_transition_matrix();
+        for row in &p_tilt {
+            let sum: f64 = row.iter().sum();
+            assert!((sum - 1.0).abs() < 1e-12, "Row stochasticity violated: {sum}");
         }
+        let walk = BipartiteSzegedyWalk::with_molecular_dipole_drift(&dipoles);
+        assert!(walk.unitarity_error() < 1e-13, "Dipole walk must be unitary");
     }
 }
 

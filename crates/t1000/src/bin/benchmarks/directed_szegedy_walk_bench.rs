@@ -16,8 +16,8 @@ use std::fs;
 use std::path::Path;
 
 use t1000::directed_heptal_walk::{
-    BipartiteSzegedyWalk, DirectedHeptalRouter, DIRECTED_HEPTAL_P, EIGENVALUES_ANALYTICAL,
-    STATIONARY_PI,
+    BipartiteSzegedyWalk, DirectedHeptalRouter, MolecularDipoleGraph, DIRECTED_HEPTAL_P,
+    EIGENVALUES_ANALYTICAL, STATIONARY_PI,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -56,8 +56,16 @@ pub struct DirectedQuantumWalkReport {
     pub dark_state_final_fidelity: f64,
     pub bright_state_final_fidelity: f64,
     pub dark_state_max_hub_leakage: f64,
+    pub molecular_dipoles: [[f64; 3]; 7],
+    pub molecular_tilted_p: [[f64; 7]; 7],
+    pub molecular_stationary_pi: [f64; 7],
+    pub molecular_szegedy_unitarity_error: f64,
+    pub peak_molecular_sink_prob: f64,
+    pub peak_molecular_sink_step: usize,
+    pub molecular_quantum_speedup_ratio: f64,
     pub walk_trajectory: Vec<TrajectoryStep>,
     pub dark_noise_trajectory: Vec<DarkStateNoiseStep>,
+    pub molecular_walk_trajectory: Vec<TrajectoryStep>,
     pub conclusion: String,
 }
 
@@ -204,9 +212,68 @@ fn main() {
     println!("  - Dark State Final Fidelity:              {:.12}", final_dark_fid);
     println!("  - Bright State Final Fidelity:            {:.6} (Dephased / Dispersed)\n", final_bright_fid);
 
+    // 4. Molecular Stark Dipole Walk Showdown (Top 7 Pitt Leads)
+    println!("[Phase 4] Molecular Stark Dipole Walk Showdown (Top 7 Pitt Leads)...");
+    let dipoles = MolecularDipoleGraph::from_pitt_leads();
+    let p_tilt = dipoles.tilted_transition_matrix();
+    let pi_tilt = dipoles.stationary_distribution();
+    let mut mol_szegedy = BipartiteSzegedyWalk::with_molecular_dipole_drift(&dipoles);
+    let mol_unitarity_err = mol_szegedy.unitarity_error();
+
+    mol_szegedy.set_localized(0); // Embedded on Hub v1
+    let mut mol_p_classical = [0.0f64; 7];
+    mol_p_classical[0] = 1.0;
+
+    let mut mol_walk_steps = Vec::with_capacity(31);
+    let mut max_sink_mol_c = 0.0f64;
+    let mut max_sink_mol_q = 0.0f64;
+    let mut max_sink_mol_q_step = 0;
+
+    for t in 0..=30 {
+        let q_probs = mol_szegedy.node_probabilities();
+        let sink_c = mol_p_classical[6];
+        let sink_q = q_probs[6];
+        let hub_c = mol_p_classical[0];
+        let hub_q = q_probs[0];
+
+        if sink_c > max_sink_mol_c {
+            max_sink_mol_c = sink_c;
+        }
+        if sink_q > max_sink_mol_q {
+            max_sink_mol_q = sink_q;
+            max_sink_mol_q_step = t;
+        }
+
+        mol_walk_steps.push(TrajectoryStep {
+            step: t,
+            classical_probs: mol_p_classical,
+            quantum_probs: q_probs,
+            classical_sink_prob: sink_c,
+            quantum_sink_prob: sink_q,
+            classical_hub_prob: hub_c,
+            quantum_hub_prob: hub_q,
+        });
+
+        // Step classical Markov chain with tilted matrix P_tilde
+        let mut next_c = [0.0f64; 7];
+        for c in 0..7 {
+            for r in 0..7 {
+                next_c[c] += mol_p_classical[r] * p_tilt[r][c];
+            }
+        }
+        mol_p_classical = next_c;
+        mol_szegedy.step();
+    }
+
+    let mol_speedup = max_sink_mol_q / max_sink_mol_c;
+    println!("  - Molecular Szegedy W_49 Unitarity Error: {:.3e}", mol_unitarity_err);
+    println!("  - Peak Classical Tilted Sink Probability: {:.4}", max_sink_mol_c);
+    println!("  - Peak Molecular Quantum Sink Prob:       {:.4} (t = {})", max_sink_mol_q, max_sink_mol_q_step);
+    println!("  - Molecular Quantum Hitting Speedup:      {:.2}x\n", mol_speedup);
+
     // Assemble Report
     let report = DirectedQuantumWalkReport {
-        timestamp_rfc3339: "2026-10-22T22:25:00Z".to_string(),
+        timestamp_rfc3339: "2026-10-24T16:20:00Z".to_string(),
         matrix_p: DIRECTED_HEPTAL_P,
         stationary_pi: STATIONARY_PI,
         analytical_eigenvalues: EIGENVALUES_ANALYTICAL,
@@ -220,9 +287,20 @@ fn main() {
         dark_state_final_fidelity: final_dark_fid,
         bright_state_final_fidelity: final_bright_fid,
         dark_state_max_hub_leakage: max_dark_leakage,
+        molecular_dipoles: dipoles.dipoles,
+        molecular_tilted_p: p_tilt,
+        molecular_stationary_pi: pi_tilt,
+        molecular_szegedy_unitarity_error: mol_unitarity_err,
+        peak_molecular_sink_prob: max_sink_mol_q,
+        peak_molecular_sink_step: max_sink_mol_q_step,
+        molecular_quantum_speedup_ratio: mol_speedup,
         walk_trajectory: walk_steps,
         dark_noise_trajectory: noise_steps,
-        conclusion: "Unitary Szegedy walk operator achieves 2.94x ballistic peak hitting on Sink v7 over classical diffusion, while the v3-v6 anti-phase dark mode demonstrates exact zero hub leakage (0.000e+00) and 100% fidelity under continuous hub dephasing.".to_string(),
+        molecular_walk_trajectory: mol_walk_steps,
+        conclusion: format!(
+            "Unitary Szegedy walk achieves {:.2}x ballistic speedup on canonical graph and {:.2}x under molecular Stark dipole tilt, while v3-v6 anti-phase dark mode demonstrates exact zero hub leakage under hub dephasing.",
+            speedup_ratio, mol_speedup
+        ),
     };
 
     let data_dir = Path::new("results").join("data");
