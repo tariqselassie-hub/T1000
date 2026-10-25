@@ -1,0 +1,146 @@
+{
+  "timestamp_rfc3339": "2026-10-25T14:30:00Z",
+  "dataset": "ECLEKTIK_multilingual_main",
+  "registers": "H_C(2Q) x H_F(2Q) x H_E(6Q)",
+  "n_qubits": 10,
+  "total_parameters": 78,
+  "train_samples": 3686,
+  "test_samples": 922,
+  "training_time_sec": 6.8473013,
+  "inference_per_sample_us": 47.288503253796094,
+  "test_coarse_family_accuracy_pct": 32.32104121475054,
+  "test_fine_within_family_accuracy_pct": 32.64642082429501,
+  "test_joint_12way_accuracy_pct": 12.147505422993492,
+  "geometry": {
+    "identical_leaf_overlap": 0.26928165437116375,
+    "sibling_family_overlap": 0.24493488188404755,
+    "disjoint_family_overlap": 0.2611314714087253,
+    "strong_triangle_inequality_holds": true,
+    "gamma1_sibling": 0.5,
+    "gamma2_disjoint": 1.0
+  },
+  "family_metrics": [
+    {
+      "family": "Germanic",
+      "total": 145,
+      "correct": 73,
+      "accuracy_pct": 50.3448275862069
+    },
+    {
+      "family": "Romance",
+      "total": 315,
+      "correct": 136,
+      "accuracy_pct": 43.17460317460318
+    },
+    {
+      "family": "EastAsian",
+      "total": 216,
+      "correct": 11,
+      "accuracy_pct": 5.092592592592593
+    },
+    {
+      "family": "AfroIndic",
+      "total": 246,
+      "correct": 78,
+      "accuracy_pct": 31.70731707317073
+    }
+  ],
+  "language_metrics": [
+    {
+      "code": "en",
+      "name": "English",
+      "family": "Germanic",
+      "total": 73,
+      "correct": 53,
+      "accuracy_pct": 72.6027397260274
+    },
+    {
+      "code": "de",
+      "name": "German",
+      "family": "Germanic",
+      "total": 72,
+      "correct": 0,
+      "accuracy_pct": 0.0
+    },
+    {
+      "code": "es",
+      "name": "Spanish",
+      "family": "Romance",
+      "total": 87,
+      "correct": 26,
+      "accuracy_pct": 29.88505747126437
+    },
+    {
+      "code": "fr",
+      "name": "French",
+      "family": "Romance",
+      "total": 71,
+      "correct": 7,
+      "accuracy_pct": 9.859154929577464
+    },
+    {
+      "code": "it",
+      "name": "Italian",
+      "family": "Romance",
+      "total": 82,
+      "correct": 24,
+      "accuracy_pct": 29.268292682926827
+    },
+    {
+      "code": "pt",
+      "name": "Portuguese",
+      "family": "Romance",
+      "total": 75,
+      "correct": 0,
+      "accuracy_pct": 0.0
+    },
+    {
+      "code": "zh",
+      "name": "Chinese",
+      "family": "EastAsian",
+      "total": 71,
+      "correct": 2,
+      "accuracy_pct": 2.8169014084507045
+    },
+    {
+      "code": "ja",
+      "name": "Japanese",
+      "family": "EastAsian",
+      "total": 73,
+      "correct": 0,
+      "accuracy_pct": 0.0
+    },
+    {
+      "code": "ko",
+      "name": "Korean",
+      "family": "EastAsian",
+      "total": 72,
+      "correct": 0,
+      "accuracy_pct": 0.0
+    },
+    {
+      "code": "he",
+      "name": "Hebrew",
+      "family": "AfroIndic",
+      "total": 78,
+      "correct": 0,
+      "accuracy_pct": 0.0
+    },
+    {
+      "code": "hi",
+      "name": "Hindi",
+      "family": "AfroIndic",
+      "total": 96,
+      "correct": 0,
+      "accuracy_pct": 0.0
+    },
+    {
+      "code": "id",
+      "name": "Indonesian",
+      "family": "AfroIndic",
+      "total": 72,
+      "correct": 0,
+      "accuracy_pct": 0.0
+    }
+  ]
+}

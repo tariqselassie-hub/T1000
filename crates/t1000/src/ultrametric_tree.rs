@@ -395,21 +395,14 @@ impl UltrametricTreeSorter {
         self.trunk_params.len() + branch_total + self.sink_couplings.len()
     }
 
-    /// Executes the 3-stage Ultrametric Tree circuit forward on input feature angles:
-    /// 1. State initialization + angle injection
-    /// 2. Stage 1: Global Trunk (U_trunk)
-    /// 3. Stage 2: QMUX Branching (U_QMUX)
-    /// 4. Stage 3: Spurious Cooling Bridges (U_sink)
-    pub fn forward(&self, features: &[f64]) -> Vec<Complex64> {
+    /// Executes the 3-stage Ultrametric Tree circuit forward on an input statevector:
+    /// 1. Stage 1: Global Trunk (U_trunk)
+    /// 2. Stage 2: QMUX Branching (U_QMUX)
+    /// 3. Stage 3: Spurious Cooling Bridges (U_sink)
+    pub fn forward_state(&self, input_state: &[Complex64]) -> Vec<Complex64> {
         let total_q = self.cfg.total_qubits();
-        let mut state = vec![Complex64::default(); self.cfg.dim()];
-        state[0] = Complex64::new(1.0, 0.0); // |0...0>
-
-        // Feature encoding: Ry(x_i) on each wire
-        for q in 0..total_q {
-            let angle = if q < features.len() { features[q] } else { 0.0 };
-            apply_single_qubit_gate(&mut state, q, &gate_ry(angle));
-        }
+        assert_eq!(input_state.len(), self.cfg.dim());
+        let mut state = input_state.to_vec();
 
         // Stage 1: Global Trunk Feature Extraction (entangled backbone)
         let mut p_idx = 0;
@@ -464,6 +457,25 @@ impl UltrametricTreeSorter {
         }
 
         state
+    }
+
+    /// Executes the 3-stage Ultrametric Tree circuit forward on input feature angles:
+    /// 1. State initialization + angle injection
+    /// 2. Stage 1: Global Trunk (U_trunk)
+    /// 3. Stage 2: QMUX Branching (U_QMUX)
+    /// 4. Stage 3: Spurious Cooling Bridges (U_sink)
+    pub fn forward(&self, features: &[f64]) -> Vec<Complex64> {
+        let total_q = self.cfg.total_qubits();
+        let mut state = vec![Complex64::default(); self.cfg.dim()];
+        state[0] = Complex64::new(1.0, 0.0); // |0...0>
+
+        // Feature encoding: Ry(x_i) on each wire
+        for q in 0..total_q {
+            let angle = if q < features.len() { features[q] } else { 0.0 };
+            apply_single_qubit_gate(&mut state, q, &gate_ry(angle));
+        }
+
+        self.forward_state(&state)
     }
 
     /// Predicts coarse class `y` and fine subpopulation `s` via leaf argmax.
@@ -578,15 +590,10 @@ impl UltrametricTreeSorter {
         }
     }
 
-    /// Evaluates the analytical gradient with respect to branch parameters
-    /// using the exact two-term Parameter-Shift Rule:
-    /// d<P(y,s)>/d\theta_{y, k} = 0.5 * (P_{+\pi/2} - P_{-\pi/2}).
-    ///
-    /// For observables diagonal in H_C, shifts to branch y do not perturb branch y' != y,
-    /// enabling simultaneous parallel parameter shifting across all d_C branches.
-    pub fn parameter_shift_branch_grad(
+    /// Evaluates the analytical gradient with respect to branch parameters on an input statevector.
+    pub fn parameter_shift_branch_grad_state(
         &mut self,
-        features: &[f64],
+        input_state: &[Complex64],
         f_offset: usize,
         is_rz: bool,
         target_y: usize,
@@ -601,25 +608,48 @@ impl UltrametricTreeSorter {
         for y in 0..d_c {
             self.branch_params[y][p_idx] += shift;
         }
-        let state_plus = self.forward(features);
+        let state_plus = self.forward_state(input_state);
         let probs_plus = compute_ultrametric_branch_distribution(&state_plus, &self.cfg);
 
         // Parallel backward shift across all branches y
         for y in 0..d_c {
             self.branch_params[y][p_idx] -= 2.0 * shift;
         }
-        let state_minus = self.forward(features);
+        let state_minus = self.forward_state(input_state);
         let probs_minus = compute_ultrametric_branch_distribution(&state_minus, &self.cfg);
 
         // Restore baseline parameter and record shift derivative
-        for y in 0..d_c {
+        for (y, grad) in grads.iter_mut().enumerate() {
             self.branch_params[y][p_idx] += shift;
-            let p_plus = probs_plus[target_y][target_s];
-            let p_minus = probs_minus[target_y][target_s];
-            grads[y] = 0.5 * (p_plus - p_minus);
+            if y == target_y {
+                let p_plus = probs_plus[target_y][target_s];
+                let p_minus = probs_minus[target_y][target_s];
+                *grad = 0.5 * (p_plus - p_minus);
+            }
         }
 
         grads
+    }
+
+    /// Evaluates the analytical gradient with respect to branch parameters
+    /// using the exact two-term Parameter-Shift Rule:
+    /// d<P(y,s)>/d\theta_{y, k} = 0.5 * (P_{+\pi/2} - P_{-\pi/2}).
+    pub fn parameter_shift_branch_grad(
+        &mut self,
+        features: &[f64],
+        f_offset: usize,
+        is_rz: bool,
+        target_y: usize,
+        target_s: usize,
+    ) -> Vec<f64> {
+        let total_q = self.cfg.total_qubits();
+        let mut state = vec![Complex64::default(); self.cfg.dim()];
+        state[0] = Complex64::new(1.0, 0.0);
+        for q in 0..total_q {
+            let angle = if q < features.len() { features[q] } else { 0.0 };
+            apply_single_qubit_gate(&mut state, q, &gate_ry(angle));
+        }
+        self.parameter_shift_branch_grad_state(&state, f_offset, is_rz, target_y, target_s)
     }
 }
 

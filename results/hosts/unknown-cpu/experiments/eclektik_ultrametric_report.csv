@@ -1,0 +1,13 @@
+code,name,family,total,correct,accuracy_pct
+en,English,Germanic,73,73,100.00
+de,German,Germanic,72,62,86.11
+es,Spanish,Romance,87,87,100.00
+fr,French,Romance,71,68,95.77
+it,Italian,Romance,82,33,40.24
+pt,Portuguese,Romance,75,61,81.33
+zh,Chinese,EastAsian,71,71,100.00
+ja,Japanese,EastAsian,73,73,100.00
+ko,Korean,EastAsian,72,72,100.00
+he,Hebrew,AfroIndic,78,78,100.00
+hi,Hindi,AfroIndic,96,96,100.00
+id,Indonesian,AfroIndic,72,68,94.44

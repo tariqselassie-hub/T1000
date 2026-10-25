@@ -1,0 +1,3 @@
+settings qubits=10;train=3686;test=922;params=78
+metric test_joint_12way_accuracy_pct 1.2147505422993492e1
+guard test_coarse_family_accuracy_pct 3.232104121475054e1

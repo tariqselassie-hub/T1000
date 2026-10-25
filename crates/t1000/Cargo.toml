@@ -170,6 +170,10 @@ name = "mnist_ultrametric_sorter"
 path = "src/bin/training/mnist_ultrametric_sorter.rs"
 
 [[bin]]
+name = "eclektik_ultrametric_sorter"
+path = "src/bin/training/eclektik_ultrametric_sorter.rs"
+
+[[bin]]
 name = "birds_qnn_train"
 path = "src/bin/training/birds_qnn_train.rs"
 
