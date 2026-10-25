@@ -69,6 +69,10 @@ name = "virtual_36q_cut_bridge_bench"
 path = "src/bin/measurements/virtual_36q_cut_bridge_bench.rs"
 
 [[bin]]
+name = "multi_cut_plaquette_bench"
+path = "src/bin/measurements/multi_cut_plaquette_bench.rs"
+
+[[bin]]
 name = "vnni_syndrome_bench"
 path = "src/bin/measurements/vnni_syndrome_bench.rs"
 

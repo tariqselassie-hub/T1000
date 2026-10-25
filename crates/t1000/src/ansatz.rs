@@ -17,10 +17,17 @@ pub mod cut_bridge;
 pub mod dispatch;
 pub mod layers;
 pub mod pre_init;
+pub mod multi_cut_plaquette;
 pub mod reupload;
 pub mod virtual_cut_engine;
 
 // Re-export the primary public surface so call-sites are unchanged.
+pub use multi_cut_plaquette::{
+    execute_multi_cut_plaquette_contraction, generate_joint_cz_branches,
+    truncate_marginal_tensor_svd, BoundaryEdge, JointBranchAssignment, MultiCutReport,
+    PlaquetteBoundaryTopology, QuasiprobabilityOptimizer, SvdTruncationReport,
+    MULTI_CUT_DEFAULT_CLUSTER_QUBITS,
+};
 pub use core::CircuitAnsatz;
 pub use cut_bridge::{
     eval_36q_bipartite_bridge, eval_36q_bipartite_midcircuit, eval_cut_bridge_general,

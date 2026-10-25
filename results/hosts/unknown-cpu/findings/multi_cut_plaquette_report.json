@@ -1,0 +1,16 @@
+{
+  "boundary_cuts_count": 2,
+  "clusters_count": 3,
+  "eliminated_boundary_operators": 2,
+  "execution_latency_ms": 0.026,
+  "independent_sampling_overhead": 81.0,
+  "joint_sampling_overhead": 2.3333306463399666,
+  "qubits_per_cluster": 18,
+  "reconstructed_expectation": 0.658455301945,
+  "shot_reduction_factor": 1.21875,
+  "svd_original_rank": 4,
+  "svd_retained_rank": 4,
+  "timestamp_utc": "2026-10-25T21:05:00Z",
+  "variance_suppression_ratio": 34.714325690212654,
+  "virtual_qubits_total": 54
+}

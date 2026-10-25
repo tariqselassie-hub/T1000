@@ -1,5 +1,5 @@
 {
-  "timestamp_utc": "2026-10-23T23:06:43+00:00",
+  "timestamp_utc": "2026-10-25T21:00:38+00:00",
   "port": "COM6",
   "baud": 3000000,
   "vectors": "C:\\Users\\zoddj\\GuddaLM_workspace\\T1000\\fpga\\1000_qpu\\sim\\vectors",
@@ -34,7 +34,7 @@
         "reply_bytes_expected": 2536,
         "reply_bytes_received": 2536,
         "first_mismatch_byte": null,
-        "seconds": 0.132
+        "seconds": 0.143
       },
       "notes": []
     },
@@ -44,7 +44,7 @@
       "details": {
         "gates": 400,
         "acknowledged": 400,
-        "microseconds_per_gate": 122.6,
+        "microseconds_per_gate": 122.1,
         "uart_floor_microseconds": 120.0,
         "fabric_microseconds_at_100mhz": 81.9
       },
