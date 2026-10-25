@@ -170,6 +170,10 @@ name = "mnist_hybrid_qnn"
 path = "src/bin/training/mnist_hybrid_qnn.rs"
 
 [[bin]]
+name = "nmr2d_spectroscopy_qnn"
+path = "src/bin/training/nmr2d_spectroscopy_qnn.rs"
+
+[[bin]]
 name = "mnist_ultrametric_sorter"
 path = "src/bin/training/mnist_ultrametric_sorter.rs"
 

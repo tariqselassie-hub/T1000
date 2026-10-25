@@ -10,6 +10,7 @@ pub mod baseline;
 pub mod coulomb;
 pub mod hamiltonian;
 pub mod molecules;
+pub mod nmr2d;
 pub mod qm9;
 pub mod topological_walk;
 
