@@ -101,18 +101,19 @@ module qpu_top #(
 
     // ---- command state ----------------------------------------------------------
     localparam [7:0] OP_PING = 8'hAA, OP_VERSION = 8'h01, OP_SET_N = 8'h02, OP_RESET = 8'h03,
-                     OP_LOAD = 8'h04, OP_READ = 8'h05, OP_GATE = 8'h06, OP_EXPECT = 8'h07;
+                     OP_LOAD = 8'h04, OP_READ = 8'h05, OP_GATE = 8'h06, OP_EXPECT = 8'h07,
+                     OP_LOAD_CIRCUIT = 8'h08, OP_RUN_BURST = 8'h09, OP_RUN_BURST_EXPECT = 8'h0A;
     localparam [7:0] ACK = 8'hEE, ERR = 8'hE1, UNKNOWN = 8'hE0;
 
-    localparam [4:0]
-        S_IDLE = 5'd0,  S_ARGS = 5'd1,  S_EXEC = 5'd2,  S_OUT = 5'd3,   S_OUTW = 5'd4,
-        S_ACK = 5'd5,   S_ERR = 5'd6,   S_RST = 5'd7,   S_LDB = 5'd8,   S_LDW = 5'd9,
-        S_RD = 5'd10,   S_RD1 = 5'd11,  S_RD2 = 5'd12,  S_GST = 5'd13,  S_GWAIT = 5'd14,
-        S_EZ = 5'd15,   S_EZ1 = 5'd16,  S_EZ2 = 5'd17,  S_EZ3 = 5'd18,  S_EZ4 = 5'd19,
-        S_EZW = 5'd20;
+    localparam [5:0]
+        S_IDLE = 6'd0,  S_ARGS = 6'd1,  S_EXEC = 6'd2,  S_OUT = 6'd3,   S_OUTW = 6'd4,
+        S_ACK = 6'd5,   S_ERR = 6'd6,   S_RST = 6'd7,   S_LDB = 6'd8,   S_LDW = 6'd9,
+        S_RD = 6'd10,   S_RD1 = 6'd11,  S_RD2 = 6'd12,  S_GST = 6'd13,  S_GWAIT = 6'd14,
+        S_EZ = 6'd15,   S_EZ1 = 6'd16,  S_EZ2 = 6'd17,  S_EZ3 = 6'd18,  S_EZ4 = 6'd19,
+        S_EZW = 6'd20,  S_LC_BYTE = 6'd21, S_BST_ST = 6'd22, S_BST_WAIT = 6'd23;
 
-    reg [4:0]  state    = S_IDLE;
-    reg [4:0]  out_next = S_IDLE;
+    reg [5:0]  state    = S_IDLE;
+    reg [5:0]  out_next = S_IDLE;
     reg [7:0]  op       = 8'd0;
     reg [7:0]  args [0:35];
     reg [5:0]  acnt     = 6'd0;
@@ -128,6 +129,27 @@ module qpu_top #(
     reg [3:0]  ldb      = 4'd0;
     reg [12:0] j        = 13'd0;
     reg        gate_start = 1'b0;
+
+    // ---- on-chip circuit microcode memory (up to 128 gates) ---------------------
+    localparam MAX_CIRC_GATES = 128;
+    reg [7:0]   cm_target [0:MAX_CIRC_GATES-1];
+    reg [15:0]  cm_ctrl   [0:MAX_CIRC_GATES-1];
+    reg [31:0]  cm_m00r   [0:MAX_CIRC_GATES-1];
+    reg [31:0]  cm_m00i   [0:MAX_CIRC_GATES-1];
+    reg [31:0]  cm_m01r   [0:MAX_CIRC_GATES-1];
+    reg [31:0]  cm_m01i   [0:MAX_CIRC_GATES-1];
+    reg [31:0]  cm_m10r   [0:MAX_CIRC_GATES-1];
+    reg [31:0]  cm_m10i   [0:MAX_CIRC_GATES-1];
+    reg [31:0]  cm_m11r   [0:MAX_CIRC_GATES-1];
+    reg [31:0]  cm_m11i   [0:MAX_CIRC_GATES-1];
+    reg [7:0]   cm_wptr   = 8'd0;
+    reg [7:0]   cm_rptr   = 8'd0;
+    reg [7:0]   cm_len    = 8'd0;
+    reg         burst_mode = 1'b0;
+    reg         expect_after_burst = 1'b0;
+    reg [15:0]  burst_mask = 16'd0;
+    reg [7:0]   g_buf [0:34];
+    reg [5:0]   gb_idx = 6'd0;
 
     // expect-Z datapath
     reg signed [31:0] ez_re = 32'sd0, ez_im = 32'sd0;
@@ -149,6 +171,7 @@ module qpu_top #(
     wire        g_ok     = (args[0] < {4'd0, n}) && ((g_ctrl16 >> n) == 16'd0)
                            && !g_ctrl16[args[0][3:0]];
     wire [15:0] z_mask16 = {args[1], args[0]};
+    wire [15:0] circ_cnt = {args[1], args[0]};
 
     // gate: args[0] target, args[1..2] control mask, args[3..34] eight little-endian words
     wire signed [24:0] c00r = {args[6][0],  args[5],  args[4],  args[3]};
@@ -160,11 +183,25 @@ module qpu_top #(
     wire signed [24:0] c11r = {args[30][0], args[29], args[28], args[27]};
     wire signed [24:0] c11i = {args[34][0], args[33], args[32], args[31]};
 
+    // gate multiplexer between single UART gate and burst microcode memory
+    wire [7:0]  cur_target = burst_mode ? cm_target[cm_rptr]          : args[0];
+    wire [15:0] cur_ctrl16 = burst_mode ? cm_ctrl[cm_rptr]            : g_ctrl16;
+    wire signed [24:0] cur_m00r = burst_mode ? cm_m00r[cm_rptr][24:0] : c00r;
+    wire signed [24:0] cur_m00i = burst_mode ? cm_m00i[cm_rptr][24:0] : c00i;
+    wire signed [24:0] cur_m01r = burst_mode ? cm_m01r[cm_rptr][24:0] : c01r;
+    wire signed [24:0] cur_m01i = burst_mode ? cm_m01i[cm_rptr][24:0] : c01i;
+    wire signed [24:0] cur_m10r = burst_mode ? cm_m10r[cm_rptr][24:0] : c10r;
+    wire signed [24:0] cur_m10i = burst_mode ? cm_m10i[cm_rptr][24:0] : c10i;
+    wire signed [24:0] cur_m11r = burst_mode ? cm_m11r[cm_rptr][24:0] : c11r;
+    wire signed [24:0] cur_m11i = burst_mode ? cm_m11i[cm_rptr][24:0] : c11i;
+    wire cur_g_ok = (cur_target < {4'd0, n}) && ((cur_ctrl16 >> n) == 16'd0)
+                    && !cur_ctrl16[cur_target[3:0]];
+
     qpu_gate u_gate (
-        .clk(clk), .rst(rst), .start(gate_start), .n(n), .target(args[0][3:0]),
-        .ctrl(g_ctrl16[13:0]),
-        .m00r(c00r), .m00i(c00i), .m01r(c01r), .m01i(c01i),
-        .m10r(c10r), .m10i(c10i), .m11r(c11r), .m11i(c11i),
+        .clk(clk), .rst(rst), .start(gate_start), .n(n), .target(cur_target[3:0]),
+        .ctrl(cur_ctrl16[13:0]),
+        .m00r(cur_m00r), .m00i(cur_m00i), .m01r(cur_m01r), .m01i(cur_m01i),
+        .m10r(cur_m10r), .m10i(cur_m10i), .m11r(cur_m11r), .m11i(cur_m11i),
         .busy(g_busy), .ra0(g_ra0), .ra1(g_ra1), .rd0(rd0), .rd1(rd1),
         .we0(g_we0), .we1(g_we1), .wa0(g_wa0), .wa1(g_wa1), .wd0(g_wd0), .wd1(g_wd1)
     );
@@ -176,6 +213,8 @@ module qpu_top #(
             state <= S_IDLE; out_next <= S_IDLE; n <= 4'd14;
             tx_start <= 1'b0; gate_start <= 1'b0; h_we0 <= 1'b0; h_we1 <= 1'b0;
             rptr <= 9'd0; txn <= 4'd0;
+            burst_mode <= 1'b0; cm_len <= 8'd0; cm_wptr <= 8'd0; cm_rptr <= 8'd0;
+            gb_idx <= 6'd0; expect_after_burst <= 1'b0;
         end else begin
             tx_start   <= 1'b0;
             gate_start <= 1'b0;
@@ -189,15 +228,25 @@ module qpu_top #(
                     op   <= rxb;
                     acnt <= 6'd0;
                     case (rxb)
-                        OP_PING:    begin txsr <= 80'h10; txn <= 4'd1; out_next <= S_IDLE; state <= S_OUT; end
-                        OP_VERSION: begin txsr <= 80'h01_55_50_51; txn <= 4'd4; out_next <= S_ACK; state <= S_OUT; end
-                        OP_SET_N:   begin anum <= 6'd1;  state <= S_ARGS; end
-                        OP_RESET:   begin anum <= 6'd4;  state <= S_ARGS; end
-                        OP_LOAD:    begin anum <= 6'd4;  state <= S_ARGS; end
-                        OP_READ:    begin anum <= 6'd4;  state <= S_ARGS; end
-                        OP_GATE:    begin anum <= 6'd35; state <= S_ARGS; end
-                        OP_EXPECT:  begin anum <= 6'd2;  state <= S_ARGS; end
-                        default:    begin txsr <= {72'd0, UNKNOWN}; txn <= 4'd1; out_next <= S_IDLE; state <= S_OUT; end
+                        OP_PING:             begin txsr <= 80'h10; txn <= 4'd1; out_next <= S_IDLE; state <= S_OUT; end
+                        OP_VERSION:          begin txsr <= 80'h01_55_50_51; txn <= 4'd4; out_next <= S_ACK; state <= S_OUT; end
+                        OP_SET_N:            begin anum <= 6'd1;  state <= S_ARGS; end
+                        OP_RESET:            begin anum <= 6'd4;  state <= S_ARGS; end
+                        OP_LOAD:             begin anum <= 6'd4;  state <= S_ARGS; end
+                        OP_READ:             begin anum <= 6'd4;  state <= S_ARGS; end
+                        OP_GATE:             begin anum <= 6'd35; state <= S_ARGS; end
+                        OP_EXPECT:           begin anum <= 6'd2;  state <= S_ARGS; end
+                        OP_LOAD_CIRCUIT:     begin anum <= 6'd2;  state <= S_ARGS; end
+                        OP_RUN_BURST:        begin
+                            if (cm_len > 8'd0) begin
+                                cm_rptr <= 8'd0;
+                                burst_mode <= 1'b1;
+                                expect_after_burst <= 1'b0;
+                                state <= S_BST_ST;
+                            end else state <= S_ERR;
+                        end
+                        OP_RUN_BURST_EXPECT: begin anum <= 6'd2;  state <= S_ARGS; end
+                        default:             begin txsr <= {72'd0, UNKNOWN}; txn <= 4'd1; out_next <= S_IDLE; state <= S_OUT; end
                     endcase
                 end
 
@@ -245,6 +294,25 @@ module qpu_top #(
                                 ez_acc  <= 80'sd0;
                                 k       <= 15'd0;
                                 state   <= S_EZ;
+                            end else state <= S_ERR;
+                        end
+                        OP_LOAD_CIRCUIT: begin
+                            if (circ_cnt <= 16'd128) begin
+                                cm_wptr <= 8'd0;
+                                cm_len  <= circ_cnt[7:0];
+                                remain  <= circ_cnt;
+                                gb_idx  <= 6'd0;
+                                if (circ_cnt == 16'd0) state <= S_ACK;
+                                else                   state <= S_LC_BYTE;
+                            end else state <= S_ERR;
+                        end
+                        OP_RUN_BURST_EXPECT: begin
+                            if (cm_len > 8'd0 && z_mask16 < {1'b0, dim}) begin
+                                cm_rptr <= 8'd0;
+                                burst_mode <= 1'b1;
+                                expect_after_burst <= 1'b1;
+                                burst_mask <= z_mask16;
+                                state <= S_BST_ST;
                             end else state <= S_ERR;
                         end
                         default: state <= S_IDLE;
@@ -341,6 +409,57 @@ module qpu_top #(
                     txn      <= 4'd10;
                     out_next <= S_ACK;
                     state    <= S_OUT;
+                end
+
+                // ---- CIRCUIT LOAD (OP_LOAD_CIRCUIT): 35 bytes per gate -----------------
+                S_LC_BYTE: if (have) begin
+                    rptr <= rptr + 9'd1;
+                    g_buf[gb_idx] <= rxb;
+                    gb_idx <= gb_idx + 6'd1;
+                    if (gb_idx == 6'd34) begin
+                        cm_target[cm_wptr] <= g_buf[0];
+                        cm_ctrl[cm_wptr]   <= {g_buf[2], g_buf[1]};
+                        cm_m00r[cm_wptr]   <= {g_buf[6],  g_buf[5],  g_buf[4],  g_buf[3]};
+                        cm_m00i[cm_wptr]   <= {g_buf[10], g_buf[9],  g_buf[8],  g_buf[7]};
+                        cm_m01r[cm_wptr]   <= {g_buf[14], g_buf[13], g_buf[12], g_buf[11]};
+                        cm_m01i[cm_wptr]   <= {g_buf[18], g_buf[17], g_buf[16], g_buf[15]};
+                        cm_m10r[cm_wptr]   <= {g_buf[22], g_buf[21], g_buf[20], g_buf[19]};
+                        cm_m10i[cm_wptr]   <= {g_buf[26], g_buf[25], g_buf[24], g_buf[23]};
+                        cm_m11r[cm_wptr]   <= {g_buf[30], g_buf[29], g_buf[28], g_buf[27]};
+                        cm_m11i[cm_wptr]   <= {rxb,       g_buf[33], g_buf[32], g_buf[31]};
+                        cm_wptr            <= cm_wptr + 8'd1;
+                        remain             <= remain - 16'd1;
+                        gb_idx             <= 6'd0;
+                        if (remain == 16'd1) state <= S_ACK;
+                        else                 state <= S_LC_BYTE;
+                    end
+                end
+
+                // ---- BURST EXECUTION (OP_RUN_BURST / OP_RUN_BURST_EXPECT) --------------
+                S_BST_ST: begin
+                    if (cur_g_ok) begin
+                        gate_start <= 1'b1;
+                        state      <= S_BST_WAIT;
+                    end else begin
+                        burst_mode <= 1'b0;
+                        state      <= S_ERR;
+                    end
+                end
+                S_BST_WAIT: if (!g_busy && !gate_start) begin
+                    if (cm_rptr + 8'd1 < cm_len) begin
+                        cm_rptr <= cm_rptr + 8'd1;
+                        state   <= S_BST_ST;
+                    end else begin
+                        burst_mode <= 1'b0;
+                        if (expect_after_burst) begin
+                            ez_mask <= burst_mask[13:0];
+                            ez_acc  <= 80'sd0;
+                            k       <= 15'd0;
+                            state   <= S_EZ;
+                        end else begin
+                            state   <= S_ACK;
+                        end
+                    end
                 end
 
                 default: state <= S_IDLE;

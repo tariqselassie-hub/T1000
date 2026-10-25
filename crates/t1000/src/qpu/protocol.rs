@@ -32,6 +32,9 @@ pub const LOAD: u8 = 0x04;
 pub const READ: u8 = 0x05;
 pub const GATE: u8 = 0x06;
 pub const EXPECT_Z: u8 = 0x07;
+pub const LOAD_CIRCUIT: u8 = 0x08;
+pub const RUN_BURST: u8 = 0x09;
+pub const RUN_BURST_EXPECT: u8 = 0x0A;
 
 pub const ACK: u8 = 0xEE;
 pub const ERR: u8 = 0xE1;
@@ -99,6 +102,29 @@ pub fn frame_gate(g: &Gate) -> Vec<u8> {
 
 pub fn frame_expect_z(mask: u16) -> Vec<u8> {
     let mut f = vec![EXPECT_Z];
+    f.extend(mask.to_le_bytes());
+    f
+}
+
+pub fn frame_load_circuit(gates: &[Gate]) -> Vec<u8> {
+    let mut f = vec![LOAD_CIRCUIT];
+    f.extend((gates.len() as u16).to_le_bytes());
+    for g in gates {
+        f.push(g.target);
+        f.extend(g.ctrl.to_le_bytes());
+        for &c in &g.m {
+            f.extend((c as i32).to_le_bytes());
+        }
+    }
+    f
+}
+
+pub fn frame_run_burst() -> Vec<u8> {
+    vec![RUN_BURST]
+}
+
+pub fn frame_run_burst_expect(mask: u16) -> Vec<u8> {
+    let mut f = vec![RUN_BURST_EXPECT];
     f.extend(mask.to_le_bytes());
     f
 }
@@ -205,6 +231,41 @@ impl Session {
                 }
                 Some(3)
             }
+            LOAD_CIRCUIT => {
+                need(3)?;
+                let count = usize::from(le16(&b[1..3]));
+                let total = need(3 + 35 * count)?;
+                let mut gates = Vec::with_capacity(count);
+                for i in 0..count {
+                    let base = 3 + 35 * i;
+                    let mut m = [0i64; 8];
+                    for (k, c) in m.iter_mut().enumerate() {
+                        *c = le32(&b[base + 3 + 4 * k..]);
+                    }
+                    gates.push(Gate {
+                        target: b[base],
+                        ctrl: le16(&b[base + 1..base + 3]),
+                        m,
+                    });
+                }
+                out.push(if self.model.load_circuit(gates) { ACK } else { ERR });
+                Some(total)
+            }
+            RUN_BURST => {
+                out.push(if self.model.run_burst() { ACK } else { ERR });
+                Some(1)
+            }
+            RUN_BURST_EXPECT => {
+                need(3)?;
+                match self.model.run_burst_expect(usize::from(le16(&b[1..3]))) {
+                    Some(v) => {
+                        out.extend(encode_i80(v));
+                        out.push(ACK);
+                    }
+                    None => out.push(ERR),
+                }
+                Some(3)
+            }
             _ => {
                 out.push(UNKNOWN);
                 Some(1)
@@ -278,5 +339,34 @@ mod tests {
         let mut cmds = frame_ping();
         cmds.extend(&frame_gate(&h(0))[..10]);
         assert_eq!(s.process(&cmds), vec![PING_REPLY]);
+    }
+
+    #[test]
+    fn burst_circuit_execution_matches_sequential_execution() {
+        let one = quantize_state(1.0, 28);
+        let mut s_seq = Session::new();
+        s_seq.process(&frame_set_n(3));
+        s_seq.process(&frame_reset(one));
+        s_seq.process(&frame_gate(&h(0)));
+        s_seq.process(&frame_gate(&cnot(0, 1)));
+        s_seq.process(&frame_gate(&cnot(1, 2)));
+        let out_seq = s_seq.process(&frame_expect_z(0));
+
+        let mut s_burst = Session::new();
+        s_burst.process(&frame_set_n(3));
+        s_burst.process(&frame_reset(one));
+        let circuit = vec![h(0), cnot(0, 1), cnot(1, 2)];
+        let load_reply = s_burst.process(&frame_load_circuit(&circuit));
+        assert_eq!(load_reply, vec![ACK]);
+        let run_reply = s_burst.process(&frame_run_burst());
+        assert_eq!(run_reply, vec![ACK]);
+        let out_burst = s_burst.process(&frame_expect_z(0));
+
+        assert_eq!(out_seq, out_burst);
+
+        // Also test RUN_BURST_EXPECT
+        s_burst.process(&frame_reset(one));
+        let out_combo = s_burst.process(&frame_run_burst_expect(0));
+        assert_eq!(out_seq, out_combo);
     }
 }

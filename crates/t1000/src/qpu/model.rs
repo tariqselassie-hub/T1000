@@ -35,11 +35,12 @@ pub struct QpuModel {
     n: usize,
     re: Vec<i64>,
     im: Vec<i64>,
+    circuit: Vec<Gate>,
 }
 
 impl Default for QpuModel {
     fn default() -> Self {
-        QpuModel { n: MAX_QUBITS, re: vec![0; MAX_DIM], im: vec![0; MAX_DIM] }
+        QpuModel { n: MAX_QUBITS, re: vec![0; MAX_DIM], im: vec![0; MAX_DIM], circuit: Vec::new() }
     }
 }
 
@@ -149,6 +150,34 @@ impl QpuModel {
                 })
                 .sum(),
         )
+    }
+
+    /// Loads a microcode circuit sequence (up to 128 gates).
+    pub fn load_circuit(&mut self, gates: Vec<Gate>) -> bool {
+        if gates.len() > 128 {
+            return false;
+        }
+        self.circuit = gates;
+        true
+    }
+
+    /// Executes the loaded microcode circuit burst sequence.
+    pub fn run_burst(&mut self) -> bool {
+        let circuit = self.circuit.clone();
+        for g in &circuit {
+            if !self.apply_gate(g) {
+                return false;
+            }
+        }
+        true
+    }
+
+    /// Executes the loaded microcode circuit burst, then evaluates Expect-Z.
+    pub fn run_burst_expect(&mut self, mask: usize) -> Option<i128> {
+        if !self.run_burst() {
+            return None;
+        }
+        self.expect_z(mask)
     }
 }
 

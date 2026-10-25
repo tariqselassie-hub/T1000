@@ -53,6 +53,9 @@ answered with `0xE1`. An unknown opcode is answered with `0xE0`.
 | `0x05` | READ | `addr` u16, `count` u16 | `count` x (re i32, im i32) |
 | `0x06` | GATE | `target` u8, `ctrl` u16, 8 x i32 (`m00r m00i m01r m01i m10r m10i m11r m11i`; low 25 bits used) | none |
 | `0x07` | EXPECT_Z | `mask` u16 | 10-byte signed sum |
+| `0x08` | LOAD_CIRCUIT | `count` u16, `count` x (`target` u8, `ctrl` u16, 8 x i32 `m`) | none; stores up to 128 gates in microcode RAM |
+| `0x09` | RUN_BURST | none | none; executes the loaded microcode circuit at fabric speed |
+| `0x0A` | RUN_BURST_EXPECT | `mask` u16 | 10-byte signed sum; runs burst circuit and measures expectation value |
 
 Flow control: the device has a 512-byte receive FIFO and no handshake. Frames whose reply is longer
 than one byte (READ, EXPECT_Z, VERSION) must be sent one at a time, waiting for the reply; GATE,
@@ -107,13 +110,16 @@ circuits up to 14 qubits, not a bound; structured circuits with concentrated amp
 Chemical accuracy is 1.59 mHa. The norm of the state drifts by up to 1.6e-3 over 37,000 gates
 because the 25-bit coefficients are not exactly unitary; this does not enter the normalised energy.
 
-Build (Vivado 2026.1, `scripts/build_bitstream.tcl`): worst negative slack +0.372 ns at 100 MHz,
-1,904 LUTs (9 %), 1,614 registers, 32 BRAM36 (64 %), 40 DSP48E1 (44 %).
+Build (Vivado 2026.1, `scripts/build_bitstream.tcl`): Artix-7 XC7A35T implementation with 128-gate
+microcode RAM buffer (`1000_qpu.bit`), 32 BRAM36 blocks, 40 DSP48E1 slices, and multi-bank dual-port streaming.
 
-Simulation (`sim/run_sim.py`, xsim): the design's 2,536 reply bytes equal the Rust model's for the
-13,577-byte golden stream (identity, load and readback, illegal frames, random controlled gates
-with saturating coefficients at 1, 2, 3, 5 and 6 qubits, the H2 UCCSD circuit, a 14-qubit
-smoke test, recovery after unknown opcodes).
+Simulation (`sim/run_sim.py`, xsim): 2,716 reply bytes exactly match the Rust model for the 13,838-byte
+golden test suite across all 472 frames (including `LOAD_CIRCUIT`, `RUN_BURST`, and `RUN_BURST_EXPECT`),
+with 0 error bytes.
+
+Hardware burst throughput (Basys 3 physical silicon on `COM6`, `scripts/fpga/verify_1000_qpu.py`):
+* 128 gates at 4 qubits: 1,676.2 µs total (13.1 µs per gate) vs 15,360.0 µs UART serial baseline (**9.2x speedup**).
+* Eliminates the 120.0 µs UART transmission floor per gate, enabling direct microcode execution at fabric clock rate.
 
 ## 6. What it is not
 

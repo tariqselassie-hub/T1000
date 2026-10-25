@@ -1,5 +1,5 @@
 {
-  "timestamp_utc": "2026-10-25T21:00:38+00:00",
+  "timestamp_utc": "2026-10-25T21:54:47+00:00",
   "port": "COM6",
   "baud": 3000000,
   "vectors": "C:\\Users\\zoddj\\GuddaLM_workspace\\T1000\\fpga\\1000_qpu\\sim\\vectors",
@@ -29,12 +29,12 @@
       "stage": "2 golden-vector replay against the Rust model",
       "passed": true,
       "details": {
-        "frames": 456,
-        "stimulus_bytes": 13577,
-        "reply_bytes_expected": 2536,
-        "reply_bytes_received": 2536,
+        "frames": 472,
+        "stimulus_bytes": 13838,
+        "reply_bytes_expected": 2716,
+        "reply_bytes_received": 2716,
         "first_mismatch_byte": null,
-        "seconds": 0.143
+        "seconds": 0.147
       },
       "notes": []
     },
@@ -50,6 +50,23 @@
       },
       "notes": [
         "per-gate time is limited by the 36-byte frame on the UART, not by the fabric"
+      ]
+    },
+    {
+      "stage": "4 microcode burst execution speedup (128 gates, 4 qubits)",
+      "passed": true,
+      "details": {
+        "gates": 128,
+        "n_qubits": 4,
+        "microcode_loaded_gates": 128,
+        "burst_total_microseconds": 1676.2,
+        "burst_microseconds_per_gate": 13.1,
+        "uart_sequential_baseline_microseconds": 15360.0,
+        "burst_execution_speedup": "9.2x",
+        "run_burst_expect_acknowledged": true
+      },
+      "notes": [
+        "Hardware burst execution achieved 9.2x speedup by eliminating per-gate UART framing"
       ]
     }
   ]

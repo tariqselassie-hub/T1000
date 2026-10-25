@@ -183,7 +183,25 @@ fn main() {
     su.send(frame_expect_z(0x3FFF));
     su.send(frame_expect_z(0x2001));
 
-    // 7. recovery
+    // 7. hardware burst circuit execution
+    su.send(frame_set_n(3));
+    su.send(frame_reset(one));
+    let burst_circuit = vec![
+        h(0),
+        cnot(0, 1),
+        rz(1, 0.4),
+        h(2),
+        cnot(1, 2),
+        s(0),
+    ];
+    su.send(frame_load_circuit(&burst_circuit));
+    su.send(frame_run_burst());
+    su.dump(3);
+    su.send(frame_reset(one));
+    su.send(frame_run_burst_expect(0b011));
+    su.send(frame_run_burst_expect(0b101));
+
+    // 8. recovery
     su.send(vec![0xFF]);
     su.send(frame_ping());
 

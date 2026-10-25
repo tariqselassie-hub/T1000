@@ -35,6 +35,7 @@ DEFAULT_BAUD = int(os.getenv("T1000_QPU_BAUD", "3000000"))
 
 PING, PING_REPLY = 0xAA, 0x10
 VERSION, SET_N, RESET, GATE = 0x01, 0x02, 0x03, 0x06
+LOAD_CIRCUIT, RUN_BURST, RUN_BURST_EXPECT = 0x08, 0x09, 0x0A
 ACK = 0xEE
 IDENT = bytes([0x51, 0x50, 0x55, 0x01])
 H_COEF = round(2**23 / 2**0.5)  # 1/sqrt(2) in Q2.23
@@ -171,6 +172,63 @@ def stage_throughput(ser, gates):
     return s.finish(acks == bytes([ACK]) * gates)
 
 
+def stage_burst_throughput(ser, gates=64, n_qubits=4):
+    """Benchmarks hardware burst-execution speedup vs UART serial transmission."""
+    s = Stage(f"4 microcode burst execution speedup ({gates} gates, {n_qubits} qubits)")
+    setup = exchange(ser, bytes([SET_N, n_qubits]) + bytes([RESET]) + struct.pack("<i", 1 << 28), 2)
+    if setup != bytes([ACK, ACK]):
+        return s.finish(False, setup=setup.hex())
+
+    # Build a 64-gate alternating circuit: H(0), CNOT(0, 1), H(2), CNOT(2, 3), etc.
+    gate_bytes = bytearray()
+    for i in range(gates):
+        t = i % n_qubits
+        ctrl = ((1 << ((t + 1) % n_qubits))) if (i % 2 == 1) else 0
+        words = [H_COEF, 0, H_COEF, 0, H_COEF, 0, -H_COEF, 0]
+        gate_bytes += bytes([t]) + struct.pack("<H", ctrl) + struct.pack("<8i", *words)
+
+    # Load circuit into microcode buffer
+    load_frame = bytes([LOAD_CIRCUIT]) + struct.pack("<H", gates) + gate_bytes
+    load_reply = exchange(ser, load_frame, 1, timeout=2.0)
+    if load_reply != bytes([ACK]):
+        return s.finish(False, load_reply=load_reply.hex(), note="failed to load circuit into microcode RAM")
+
+    # Time execution of RUN_BURST
+    ser.reset_input_buffer()
+    t0 = time.perf_counter()
+    ser.write(bytes([RUN_BURST]))
+    burst_ack = read_exact(ser, 1, 2.0)
+    burst_seconds = time.perf_counter() - t0
+    if burst_ack != bytes([ACK]):
+        return s.finish(False, burst_ack=burst_ack.hex(), note="burst execution did not acknowledge")
+
+    # Time execution of RUN_BURST_EXPECT
+    ser.reset_input_buffer()
+    t1 = time.perf_counter()
+    ser.write(bytes([RUN_BURST_EXPECT, 0x01, 0x00]))
+    expect_reply = read_exact(ser, 11, 2.0)  # 10 bytes i80 + 1 byte ACK
+    burst_expect_seconds = time.perf_counter() - t1
+
+    # In UART sequential mode: each gate took 36 bytes * 10 bits / 3,000,000 = 120 us
+    uart_sequential_us = gates * (36 * 10 / ser.baudrate * 1e6)
+    burst_us = burst_seconds * 1e6
+    burst_per_gate_us = burst_us / gates
+    speedup = uart_sequential_us / max(1.0, burst_us)
+
+    s.details.update(
+        gates=gates,
+        n_qubits=n_qubits,
+        microcode_loaded_gates=gates,
+        burst_total_microseconds=round(burst_us, 1),
+        burst_microseconds_per_gate=round(burst_per_gate_us, 2),
+        uart_sequential_baseline_microseconds=round(uart_sequential_us, 1),
+        burst_execution_speedup=f"{speedup:.1f}x",
+        run_burst_expect_acknowledged=len(expect_reply) == 11 and expect_reply[-1] == ACK,
+    )
+    s.notes.append(f"Hardware burst execution achieved {speedup:.1f}x speedup by eliminating per-gate UART framing")
+    return s.finish(burst_ack == bytes([ACK]) and len(expect_reply) == 11 and expect_reply[-1] == ACK)
+
+
 def run(args):
     try:
         ser = serial.Serial(args.port, args.baud, timeout=0.2, write_timeout=2.0)
@@ -183,6 +241,7 @@ def run(args):
     if stages[-1].passed:
         stages.append(stage_replay(ser, Path(args.vectors)))
         stages.append(stage_throughput(ser, 50 if args.quick else 400))
+        stages.append(stage_burst_throughput(ser, 64 if args.quick else 128, 4))
     ser.close()
     return stages
 
@@ -197,7 +256,7 @@ def report(args, stages):
             print(f"        {k}: {v}")
         for n in s.notes:
             print(f"        note: {n}")
-    ok = len(stages) == 4 and all(s.passed for s in stages)
+    ok = len(stages) == 5 and all(s.passed for s in stages)
     print("-" * 79)
     print(f" RESULT: {'ALL STAGES PASSED' if ok else 'NOT VERIFIED'}")
     out = ROOT / "results" / "fpga_runs" / "verify_1000_qpu.json"

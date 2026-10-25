@@ -1,7 +1,7 @@
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2026 Advanced Micro Devices, Inc. All Rights Reserved.
 ---------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2026.1 (win64) Build 6511674 Tue Jun 16 11:02:23 MDT 2026
-| Date         : Fri Oct 23 18:01:04 2026
+| Date         : Sun Oct 25 17:45:00 2026
 | Host         : NeverAgain running 64-bit major release  (build 9200)
 | Command      : report_utilization -file C:/Users/zoddj/GuddaLM_workspace/T1000/fpga/1000_qpu/build/utilization_synth.rpt
 | Design       : qpu_top
@@ -28,21 +28,21 @@ Table of Contents
 1. Slice Logic
 --------------
 
-+----------------------------+------+-------+------------+-----------+-------+
-|          Site Type         | Used | Fixed | Prohibited | Available | Util% |
-+----------------------------+------+-------+------------+-----------+-------+
-| Slice LUTs*                | 2344 |     0 |          0 |     20800 | 11.27 |
-|   LUT as Logic             | 2220 |     0 |          0 |     20800 | 10.67 |
-|   LUT as Memory            |  124 |     0 |          0 |      9600 |  1.29 |
-|     LUT as Distributed RAM |   96 |     0 |            |           |       |
-|     LUT as Shift Register  |   28 |     0 |            |           |       |
-| Slice Registers            | 1614 |     0 |          0 |     41600 |  3.88 |
-|   Register as Flip Flop    | 1614 |     0 |          0 |     41600 |  3.88 |
-|   Register as Latch        |    0 |     0 |          0 |     41600 |  0.00 |
-| F7 Muxes                   |   12 |     0 |          0 |     16300 |  0.07 |
-| F8 Muxes                   |    1 |     0 |          0 |      8150 |  0.01 |
-| Unique Control Sets        |   66 |       |          0 |      8150 |  0.81 |
-+----------------------------+------+-------+------------+-----------+-------+
++----------------------------+-------+-------+------------+-----------+-------+
+|          Site Type         |  Used | Fixed | Prohibited | Available | Util% |
++----------------------------+-------+-------+------------+-----------+-------+
+| Slice LUTs*                | 10549 |     0 |          0 |     20800 | 50.72 |
+|   LUT as Logic             | 10425 |     0 |          0 |     20800 | 50.12 |
+|   LUT as Memory            |   124 |     0 |          0 |      9600 |  1.29 |
+|     LUT as Distributed RAM |    96 |     0 |            |           |       |
+|     LUT as Shift Register  |    28 |     0 |            |           |       |
+| Slice Registers            | 30611 |     0 |          0 |     41600 | 73.58 |
+|   Register as Flip Flop    | 30611 |     0 |          0 |     41600 | 73.58 |
+|   Register as Latch        |     0 |     0 |          0 |     41600 |  0.00 |
+| F7 Muxes                   |  3697 |     0 |          0 |     16300 | 22.68 |
+| F8 Muxes                   |  1792 |     0 |          0 |      8150 | 21.99 |
+| Unique Control Sets        |   225 |       |          0 |      8150 |  2.76 |
++----------------------------+-------+-------+------------+-----------+-------+
 * Warning! The Final LUT count, after physical optimizations and full implementation, is typically lower. Run opt_design after synthesis, if not already completed, for a more realistic count.
 Warning! LUT value is adjusted to account for LUT combining.
 Warning! For any ECO changes, please run place_design if there are unplaced instances
@@ -62,9 +62,9 @@ Warning! For any ECO changes, please run place_design if there are unplaced inst
 | 0     |            _ |       Reset |            - |
 | 0     |          Yes |           - |            - |
 | 4     |          Yes |           - |          Set |
-| 364   |          Yes |           - |        Reset |
+| 452   |          Yes |           - |        Reset |
 | 0     |          Yes |         Set |            - |
-| 1246  |          Yes |       Reset |            - |
+| 30155 |          Yes |       Reset |            - |
 +-------+--------------+-------------+--------------+
 
 
@@ -157,29 +157,29 @@ Warning! For any ECO changes, please run place_design if there are unplaced inst
 7. Primitives
 -------------
 
-+----------+------+---------------------+
-| Ref Name | Used | Functional Category |
-+----------+------+---------------------+
-| FDRE     | 1246 |        Flop & Latch |
-| LUT3     |  771 |                 LUT |
-| LUT6     |  651 |                 LUT |
-| FDCE     |  364 |        Flop & Latch |
-| LUT5     |  348 |                 LUT |
-| LUT2     |  296 |                 LUT |
-| CARRY4   |  254 |          CarryLogic |
-| LUT4     |  159 |                 LUT |
-| LUT1     |  120 |                 LUT |
-| RAMD64E  |   96 |  Distributed Memory |
-| DSP48E1  |   40 |    Block Arithmetic |
-| RAMB36E1 |   32 |        Block Memory |
-| OBUF     |   29 |                  IO |
-| SRL16E   |   28 |  Distributed Memory |
-| MUXF7    |   12 |               MuxFx |
-| FDPE     |    4 |        Flop & Latch |
-| IBUF     |    3 |                  IO |
-| MUXF8    |    1 |               MuxFx |
-| BUFG     |    1 |               Clock |
-+----------+------+---------------------+
++----------+-------+---------------------+
+| Ref Name |  Used | Functional Category |
++----------+-------+---------------------+
+| FDRE     | 30155 |        Flop & Latch |
+| LUT6     |  8363 |                 LUT |
+| MUXF7    |  3697 |               MuxFx |
+| MUXF8    |  1792 |               MuxFx |
+| LUT3     |   906 |                 LUT |
+| LUT5     |   652 |                 LUT |
+| FDCE     |   452 |        Flop & Latch |
+| LUT2     |   370 |                 LUT |
+| CARRY4   |   256 |          CarryLogic |
+| LUT4     |   218 |                 LUT |
+| LUT1     |   122 |                 LUT |
+| RAMD64E  |    96 |  Distributed Memory |
+| DSP48E1  |    40 |    Block Arithmetic |
+| RAMB36E1 |    32 |        Block Memory |
+| OBUF     |    29 |                  IO |
+| SRL16E   |    28 |  Distributed Memory |
+| FDPE     |     4 |        Flop & Latch |
+| IBUF     |     3 |                  IO |
+| BUFG     |     1 |               Clock |
++----------+-------+---------------------+
 
 
 8. Black Boxes
