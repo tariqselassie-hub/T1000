@@ -4,8 +4,8 @@
 //! Differentiable 2-Layer Non-Linear MLP Head with LeakyReLU Activation.
 
 pub const N_CLASSES: usize = 10;
-pub const N_OBSERVABLES: usize = 55; // 10 Z + 45 ZZ
-pub const N_FUSED: usize = N_OBSERVABLES + super::features::N_SPATIAL; // 120
+pub const N_OBSERVABLES: usize = 65; // 10 Z + 10 X + 45 ZZ
+pub const N_FUSED: usize = N_OBSERVABLES + super::features::N_SPATIAL; // 130
 pub const N_HIDDEN: usize = 128;
 
 #[derive(Debug, Clone)]

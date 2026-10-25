@@ -43,6 +43,45 @@ pub struct MnistHybridQnnReport {
     pub history: Vec<EpochTelemetry>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NeuronStat {
+    pub id: usize,
+    pub firing_rate: f64,
+    pub mean_activation: f64,
+    pub max_activation: f64,
+    pub is_dead: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NeuralProbeSample {
+    pub sample_id: usize,
+    pub label: usize,
+    pub prediction: usize,
+    pub is_correct: bool,
+    pub confidence: f64,
+    pub probabilities: Vec<f64>,
+    pub pixels: Vec<f64>,
+    pub spatial_features: Vec<f64>,
+    pub quantum_observables: Vec<f64>,
+    pub neuron_preactivations: Vec<f64>,
+    pub neuron_activations: Vec<f64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MnistNeuralProbeReport {
+    pub timestamp_rfc3339: String,
+    pub test_accuracy_pct: f64,
+    pub test_loss: f64,
+    pub total_neurons: usize,
+    pub dead_neurons_count: usize,
+    pub active_neurons_count: usize,
+    pub dead_neurons: Vec<usize>,
+    pub neuron_stats: Vec<NeuronStat>,
+    pub weights_w1: Vec<Vec<f64>>,
+    pub weights_w2: Vec<Vec<f64>>,
+    pub samples: Vec<NeuralProbeSample>,
+}
+
 pub fn compute_l1_coherence(state: &QuantumState) -> f64 {
     let sum_mag: f64 = (0..state.dim)
         .map(|i| (state.real[i] * state.real[i] + state.imag[i] * state.imag[i]).sqrt())

@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
+<!-- Copyright (c) 2026 Terrence A. Jones SR. All rights reserved. -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>T-1000 // MNIST Quantum Neural Probe & Firing Diagnostics</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        :root {
+            --bg-root: #05080d;
+            --bg-canvas: #080c14;
+            --bg-card: #0f172a;
+            --bg-card-hover: #152238;
+            --border-dim: #1e293b;
+            --border-bright: #334155;
+            --quantum-green: #00e676;
+            --quantum-green-bright: #00ff88;
+            --quantum-green-glow: rgba(0, 230, 118, 0.25);
+            --hardware-gold: #ffb300;
+            --hardware-gold-bright: #ffd700;
+            --alert-red: #ef4444;
+            --alert-red-glow: rgba(239, 68, 68, 0.3);
+            --text-white: #f8fafc;
+            --text-polar: #e2e8f0;
+            --text-slate: #94a3b8;
+            --text-muted: #64748b;
+            --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg-root);
+            color: var(--text-white);
+            font-family: var(--font-sans);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Top Header */
+        header.probe-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 20px;
+            background: #080c14;
+            border-bottom: 1px solid var(--border-dim);
+            flex-shrink: 0;
+        }
+        .probe-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: var(--font-mono);
+        }
+        .probe-logo {
+            font-size: 16px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            color: var(--text-white);
+        }
+        .probe-badge {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 3px;
+            background: rgba(0, 230, 118, 0.12);
+            border: 1px solid var(--quantum-green);
+            color: var(--quantum-green);
+            letter-spacing: 0.5px;
+        }
+        .header-pills {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+        }
+        .hpill {
+            padding: 3px 10px;
+            border-radius: 4px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            color: var(--text-slate);
+        }
+        .hpill strong { color: var(--text-white); }
+        .hpill.green { border-color: rgba(0, 230, 118, 0.4); color: var(--quantum-green); }
+        .hpill.gold { border-color: rgba(255, 179, 0, 0.4); color: var(--hardware-gold); }
+        .hpill.red { border-color: rgba(239, 68, 68, 0.4); color: var(--alert-red); }
+        .nav-btn {
+            color: var(--text-slate);
+            text-decoration: none;
+            padding: 3px 10px;
+            border-radius: 4px;
+            border: 1px solid var(--border-dim);
+            background: #111827;
+            transition: all 0.2s;
+        }
+        .nav-btn:hover { color: var(--quantum-green); border-color: var(--quantum-green); }
+
+        /* Digit Selector Ribbon */
+        .ribbon-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 20px;
+            background: #0b111e;
+            border-bottom: 1px solid var(--border-dim);
+            flex-shrink: 0;
+            font-family: var(--font-mono);
+            font-size: 12px;
+        }
+        .digit-tabs {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .digit-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            color: var(--text-polar);
+            padding: 4px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            font-weight: 700;
+            transition: all 0.15s;
+        }
+        .digit-btn:hover {
+            border-color: var(--quantum-green);
+            color: var(--quantum-green);
+        }
+        .digit-btn.active {
+            background: rgba(0, 230, 118, 0.18);
+            border-color: var(--quantum-green);
+            color: var(--quantum-green);
+            box-shadow: 0 0 8px var(--quantum-green-glow);
+        }
+        .sample-nav-controls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .ctrl-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            color: var(--text-polar);
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            transition: all 0.15s;
+        }
+        .ctrl-btn:hover { border-color: var(--hardware-gold); color: var(--hardware-gold); }
+        .ctrl-btn.auto-play.active { background: rgba(255, 179, 0, 0.2); border-color: var(--hardware-gold); color: var(--hardware-gold); }
+
+        /* Main Workspace Flow */
+        .workspace {
+            display: grid;
+            grid-template-columns: 280px 220px 1fr 300px;
+            gap: 12px;
+            padding: 12px 20px;
+            flex: 1;
+            overflow: hidden;
+            background: var(--bg-root);
+        }
+
+        .panel-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .panel-header {
+            padding: 8px 12px;
+            background: #111827;
+            border-bottom: 1px solid var(--border-dim);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: var(--text-polar);
+        }
+        .panel-header span.tag {
+            color: var(--text-muted);
+            font-weight: 400;
+            font-size: 10px;
+        }
+        .panel-body {
+            padding: 12px;
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Panel 1: Input Retina */
+        .canvas-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        #retina-canvas {
+            width: 224px;
+            height: 224px;
+            background: #000000;
+            border: 2px solid var(--border-bright);
+            border-radius: 4px;
+            image-rendering: pixelated;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+        .digit-stats-box {
+            background: #090e17;
+            border: 1px solid var(--border-dim);
+            border-radius: 4px;
+            padding: 8px 10px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-slate);
+        }
+        .stat-row strong { color: var(--text-white); }
+
+        /* Panel 2: Quantum & Spatial Stream */
+        .feature-stream-col {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .stream-section-title {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--hardware-gold);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .bars-container {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            max-height: 180px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        .fbar-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: var(--font-mono);
+            font-size: 9px;
+            color: var(--text-muted);
+        }
+        .fbar-lbl { width: 34px; flex-shrink: 0; }
+        .fbar-track {
+            flex: 1;
+            height: 6px;
+            background: #090e17;
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+        }
+        .fbar-fill {
+            height: 100%;
+            background: var(--quantum-green);
+            border-radius: 2px;
+            transition: width 0.2s;
+        }
+        .fbar-fill.gold { background: var(--hardware-gold); }
+        .fbar-val { width: 32px; text-align: right; flex-shrink: 0; color: var(--text-polar); }
+
+        /* Panel 3: Hidden Neurons (128 Matrix) */
+        .filter-ribbon {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            background: #090e17;
+            border: 1px solid var(--border-dim);
+            color: var(--text-slate);
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .filter-btn:hover { color: var(--text-white); border-color: var(--border-bright); }
+        .filter-btn.active {
+            background: rgba(0, 230, 118, 0.15);
+            border-color: var(--quantum-green);
+            color: var(--quantum-green);
+        }
+        .filter-btn.dead-filter.active {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: var(--alert-red);
+            color: var(--alert-red);
+        }
+
+        .neurons-grid {
+            display: grid;
+            grid-template-columns: repeat(16, 1fr);
+            gap: 4px;
+            margin-bottom: 10px;
+            user-select: none;
+        }
+        .neuron-cell {
+            aspect-ratio: 1;
+            background: #080d16;
+            border: 1px solid var(--border-dim);
+            border-radius: 3px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-mono);
+            font-size: 9px;
+            cursor: pointer;
+            transition: all 0.15s;
+            position: relative;
+        }
+        .neuron-cell:hover {
+            transform: scale(1.12);
+            z-index: 10;
+            box-shadow: 0 0 10px rgba(0, 230, 118, 0.5);
+            border-color: var(--quantum-green-bright);
+        }
+        .neuron-cell.active-firing {
+            border-color: var(--quantum-green);
+            color: #ffffff;
+            font-weight: 700;
+        }
+        .neuron-cell.suppressed {
+            opacity: 0.35;
+            color: var(--text-muted);
+        }
+        .neuron-cell.dead {
+            border: 1px solid var(--alert-red) !important;
+            background: rgba(239, 68, 68, 0.15) !important;
+            color: var(--alert-red) !important;
+            font-weight: 800;
+            animation: deadPulse 2s infinite ease-in-out;
+        }
+        .neuron-cell.dead::after {
+            content: "DEAD";
+            position: absolute;
+            bottom: 1px;
+            font-size: 6px;
+            letter-spacing: -0.5px;
+            color: var(--alert-red);
+        }
+        @keyframes deadPulse {
+            0%, 100% { box-shadow: 0 0 2px rgba(239, 68, 68, 0.4); }
+            50% { box-shadow: 0 0 8px rgba(239, 68, 68, 0.8); }
+        }
+
+        /* Inspector Card */
+        .neuron-inspector {
+            background: #090e17;
+            border: 1px solid var(--border-dim);
+            border-radius: 4px;
+            padding: 8px 12px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .inspector-title {
+            color: var(--hardware-gold);
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Panel 4: Output Guess Head */
+        .guess-reticle-box {
+            background: #080d16;
+            border: 2px solid var(--border-dim);
+            border-radius: 6px;
+            padding: 16px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+        .guess-reticle-box.correct {
+            border-color: var(--quantum-green);
+            background: rgba(0, 230, 118, 0.05);
+            box-shadow: 0 0 16px var(--quantum-green-glow);
+        }
+        .guess-reticle-box.incorrect {
+            border-color: var(--alert-red);
+            background: rgba(239, 68, 68, 0.05);
+            box-shadow: 0 0 16px var(--alert-red-glow);
+        }
+        .guess-digit-hero {
+            font-family: var(--font-mono);
+            font-size: 54px;
+            font-weight: 900;
+            line-height: 1;
+            letter-spacing: -2px;
+            color: var(--quantum-green-bright);
+        }
+        .guess-digit-hero.incorrect { color: var(--alert-red); }
+        .match-badge {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 800;
+            padding: 3px 10px;
+            border-radius: 3px;
+            letter-spacing: 1px;
+        }
+        .match-badge.correct { background: var(--quantum-green); color: #000000; }
+        .match-badge.incorrect { background: var(--alert-red); color: #ffffff; }
+
+        .confidence-hero {
+            font-family: var(--font-mono);
+            font-size: 13px;
+            color: var(--text-polar);
+        }
+
+        .class-prob-list {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .prob-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+        }
+        .prob-label {
+            width: 20px;
+            color: var(--text-slate);
+            font-weight: 700;
+        }
+        .prob-label.winner { color: var(--quantum-green); }
+        .prob-track {
+            flex: 1;
+            height: 10px;
+            background: #090e17;
+            border-radius: 3px;
+            overflow: hidden;
+            border: 1px solid var(--border-dim);
+        }
+        .prob-fill {
+            height: 100%;
+            background: #1e293b;
+            border-radius: 2px;
+            transition: width 0.25s ease;
+        }
+        .prob-fill.winner { background: var(--quantum-green); box-shadow: 0 0 6px var(--quantum-green-glow); }
+        .prob-fill.true-miss { background: var(--hardware-gold); }
+        .prob-pct {
+            width: 44px;
+            text-align: right;
+            color: var(--text-slate);
+            font-size: 10px;
+        }
+        .prob-pct.winner { color: var(--quantum-green); font-weight: 700; }
+
+        /* Bottom Health Telemetry Strip */
+        footer.probe-footer {
+            padding: 6px 20px;
+            background: #080c14;
+            border-top: 1px solid var(--border-dim);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: var(--text-slate);
+            flex-shrink: 0;
+        }
+        .footer-left { display: flex; gap: 16px; }
+        .footer-left span strong { color: var(--text-white); }
+        .dead-badge-footer { color: var(--alert-red); font-weight: 700; }
+    </style>
+</head>
+<body>
+
+    <!-- Top Sovereign Reticle Header -->
+    <header class="probe-header">
+        <div class="probe-brand">
+            <span class="probe-logo">T-1000</span>
+            <span class="probe-badge">QUANTUM NEURAL PROBE // 10Q VQC + MLP</span>
+            <span style="color:var(--text-muted); font-size:12px;">|</span>
+            <span style="font-size:11px; color:var(--text-slate);">FIRING NEURON DIAGNOSTICS</span>
+        </div>
+
+        <div class="header-pills">
+            <div class="hpill green" id="pill-acc">ACCURACY: <strong>96.05%</strong></div>
+            <div class="hpill green" id="pill-active">ACTIVE NEURONS: <strong>125/128</strong></div>
+            <div class="hpill red" id="pill-dead">DEAD NEURONS: <strong>3 [18, 107, 117]</strong></div>
+            <div class="hpill gold">HILBERT: <strong>1,024 DIM (10Q)</strong></div>
+            <a href="index.html" class="nav-btn">LIVE LAB BENCH</a>
+            <a href="archive.html" class="nav-btn">ARCHIVE</a>
+        </div>
+    </header>
+
+    <!-- Digit Selector Ribbon & Controls -->
+    <div class="ribbon-bar">
+        <div class="digit-tabs">
+            <span style="color:var(--text-muted); margin-right:6px;">SELECT DIGIT CLASS:</span>
+            <button class="digit-btn" data-digit="0">0</button>
+            <button class="digit-btn" data-digit="1">1</button>
+            <button class="digit-btn" data-digit="2">2</button>
+            <button class="digit-btn" data-digit="3">3</button>
+            <button class="digit-btn" data-digit="4">4</button>
+            <button class="digit-btn" data-digit="5">5</button>
+            <button class="digit-btn" data-digit="6">6</button>
+            <button class="digit-btn active" data-digit="7">7</button>
+            <button class="digit-btn" data-digit="8">8</button>
+            <button class="digit-btn" data-digit="9">9</button>
+        </div>
+
+        <div class="sample-nav-controls">
+            <button class="ctrl-btn" id="btn-prev">&lt; PREVIOUS</button>
+            <span id="sample-counter" style="color:var(--hardware-gold); font-weight:700;">SAMPLE 1 / 5</span>
+            <button class="ctrl-btn" id="btn-next">NEXT &gt;</button>
+            <button class="ctrl-btn" id="btn-random">RANDOM</button>
+            <button class="ctrl-btn auto-play" id="btn-autoplay">AUTO-PROBE</button>
+        </div>
+    </div>
+
+    <!-- Main Workspace (Left to Right Flow) -->
+    <main class="workspace">
+
+        <!-- LAYER 1: 28x28 Input Retina -->
+        <section class="panel-card">
+            <div class="panel-header">
+                <span>[1] INPUT DIGIT CANVAS</span>
+                <span class="tag">28x28 PIXELS</span>
+            </div>
+            <div class="panel-body">
+                <div class="canvas-container">
+                    <canvas id="retina-canvas" width="28" height="28"></canvas>
+                </div>
+
+                <div class="digit-stats-box">
+                    <div class="stat-row"><span>Ground Truth:</span><strong id="stat-true-label">7</strong></div>
+                    <div class="stat-row"><span>Sample Index:</span><strong id="stat-sample-id">#0</strong></div>
+                    <div class="stat-row"><span>Total Pixel Mass:</span><strong id="stat-mass">--</strong></div>
+                    <div class="stat-row"><span>Center of Mass:</span><strong id="stat-com">--</strong></div>
+                    <div class="stat-row"><span>L2 Norm:</span><strong id="stat-norm">1.0000</strong></div>
+                </div>
+
+                <div style="margin-top:10px; font-family:var(--font-mono); font-size:10px; color:var(--text-muted); line-height:1.4;">
+                    Input pixels are mapped into 1,024 amplitudes with multi-scale projection profiles, 8x8 coarse pool, and radial boundary moments.
+                </div>
+            </div>
+        </section>
+
+        <!-- LAYER 2: Quantum Observables & Spatial Convolutions -->
+        <section class="panel-card">
+            <div class="panel-header">
+                <span>[2] QUANTUM &amp; SPATIAL</span>
+                <span class="tag">130 FUSED</span>
+            </div>
+            <div class="panel-body">
+                <div class="feature-stream-col">
+                    <div>
+                        <div class="stream-section-title">65 Quantum Observables (Z, X, ZZ)</div>
+                        <div class="bars-container" id="quantum-bars">
+                            <!-- Injected via JS -->
+                        </div>
+                    </div>
+
+                    <div style="margin-top:8px;">
+                        <div class="stream-section-title">65 Spatial Stroke Filters</div>
+                        <div class="bars-container" id="spatial-bars">
+                            <!-- Injected via JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LAYER 3: 128 Hidden Neurons Reticle (The Neural Probe) -->
+        <section class="panel-card">
+            <div class="panel-header">
+                <span>[3] HIDDEN LAYER NEURON RETICLE</span>
+                <span class="tag">128 NEURONS (16x8)</span>
+            </div>
+            <div class="panel-body">
+                <div class="filter-ribbon">
+                    <span style="font-family:var(--font-mono); font-size:10px; color:var(--text-muted);">FILTER:</span>
+                    <button class="filter-btn active" data-filter="all">ALL (128)</button>
+                    <button class="filter-btn" data-filter="firing">FIRING NOW</button>
+                    <button class="filter-btn dead-filter" data-filter="dead">DEAD (3)</button>
+                    <button class="filter-btn" data-filter="top16">TOP 16 FIRING</button>
+                </div>
+
+                <div class="neurons-grid" id="neurons-grid">
+                    <!-- 128 Neuron Tiles Injected via JS -->
+                </div>
+
+                <!-- Inspector Card for Clicked/Hovered Neuron -->
+                <div class="neuron-inspector" id="neuron-inspector">
+                    <div class="inspector-title">
+                        <span id="insp-name">NEURON #--</span>
+                        <span id="insp-status" style="color:var(--quantum-green);">ACTIVE</span>
+                    </div>
+                    <div class="stat-row"><span>Current Activation (a1):</span><strong id="insp-act">--</strong></div>
+                    <div class="stat-row"><span>Pre-Activation (z1):</span><strong id="insp-preact">--</strong></div>
+                    <div class="stat-row"><span>Test Set Firing Frequency:</span><strong id="insp-rate">--</strong></div>
+                    <div class="stat-row"><span>Top Affinity Class:</span><strong id="insp-class">--</strong></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LAYER 4: Output Classification Head & Inference Guess -->
+        <section class="panel-card">
+            <div class="panel-header">
+                <span>[4] CLASSIFICATION GUESS</span>
+                <span class="tag">10 CLASSES (0..9)</span>
+            </div>
+            <div class="panel-body">
+                <div class="guess-reticle-box correct" id="guess-box">
+                    <span style="font-family:var(--font-mono); font-size:10px; color:var(--text-muted); letter-spacing:1px;">MODEL GUESS</span>
+                    <div class="guess-digit-hero" id="guess-hero">7</div>
+                    <div class="match-badge correct" id="match-badge">MATCH CONFIRMED</div>
+                    <div class="confidence-hero">CONFIDENCE: <strong id="confidence-val" style="color:var(--quantum-green);">99.8%</strong></div>
+                </div>
+
+                <div style="margin-bottom:8px; font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--text-polar);">
+                    PROBABILITY DISTRIBUTION:
+                </div>
+                <div class="class-prob-list" id="class-prob-list">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Bottom Telemetry Footer -->
+    <footer class="probe-footer">
+        <div class="footer-left">
+            <span>NETWORK HEALTH: <strong style="color:var(--quantum-green);">97.7% UTILIZATION</strong></span>
+            <span>LEAKY-RELU: <strong>α = 0.05</strong></span>
+            <span>DEAD NEURONS: <span class="dead-badge-footer">3 of 128 [N18, N107, N117]</span></span>
+            <span>TRAIN ENGINE: <strong>PURE RUST AVX2 + ADJOINT</strong></span>
+        </div>
+        <div>
+            <span>COPYRIGHT (C) 2026 TERRENCE A. JONES SR. // MIT OR APACHE-2.0</span>
+        </div>
+    </footer>
+
+    <!-- Interactive Probe Logic -->
+    <script>
+        let probeData = null;
+        let currentDigit = 7;
+        let currentSampleIdxInDigit = 0;
+        let filteredSamples = [];
+        let autoPlayTimer = null;
+        let activeFilter = 'all';
+        let selectedNeuronId = null;
+
+        async function initProbe() {
+            try {
+                const res = await fetch('data/mnist_neural_probe.json');
+                if (!res.ok) throw new Error('Failed to load mnist_neural_probe.json');
+                probeData = await res.json();
+                console.log('[PROBE] Loaded telemetry:', probeData);
+                renderInitialState();
+            } catch (err) {
+                console.error('[PROBE] Telemetry error:', err);
+                document.querySelector('.workspace').innerHTML = 
+                    `<div style="grid-column:1/-1; padding:40px; color:var(--alert-red); font-family:var(--font-mono);">
+                        [ERROR] Telemetry file web/data/mnist_neural_probe.json not found or corrupted.<br>${err.message}
+                    </div>`;
+            }
+        }
+
+        function renderInitialState() {
+            // Update header pills
+            document.getElementById('pill-acc').innerHTML = `ACCURACY: <strong>${probeData.test_accuracy_pct.toFixed(2)}%</strong>`;
+            document.getElementById('pill-active').innerHTML = `ACTIVE NEURONS: <strong>${probeData.active_neurons_count}/${probeData.total_neurons}</strong>`;
+            document.getElementById('pill-dead').innerHTML = `DEAD NEURONS: <strong>${probeData.dead_neurons_count} [${probeData.dead_neurons.join(', ')}]</strong>`;
+
+            setupDigitTabs();
+            setupControls();
+            setupFilterButtons();
+            loadDigitClass(7);
+        }
+
+        function setupDigitTabs() {
+            const tabs = document.querySelectorAll('.digit-btn');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    currentDigit = parseInt(tab.dataset.digit, 10);
+                    currentSampleIdxInDigit = 0;
+                    loadDigitClass(currentDigit);
+                });
+            });
+        }
+
+        function setupControls() {
+            document.getElementById('btn-prev').addEventListener('click', () => {
+                if (filteredSamples.length === 0) return;
+                currentSampleIdxInDigit = (currentSampleIdxInDigit - 1 + filteredSamples.length) % filteredSamples.length;
+                renderCurrentSample();
+            });
+
+            document.getElementById('btn-next').addEventListener('click', () => {
+                if (filteredSamples.length === 0) return;
+                currentSampleIdxInDigit = (currentSampleIdxInDigit + 1) % filteredSamples.length;
+                renderCurrentSample();
+            });
+
+            document.getElementById('btn-random').addEventListener('click', () => {
+                const randDigit = Math.floor(Math.random() * 10);
+                document.querySelectorAll('.digit-btn').forEach(b => {
+                    b.classList.toggle('active', parseInt(b.dataset.digit, 10) === randDigit);
+                });
+                currentDigit = randDigit;
+                loadDigitClass(currentDigit);
+                currentSampleIdxInDigit = Math.floor(Math.random() * filteredSamples.length);
+                renderCurrentSample();
+            });
+
+            const autoBtn = document.getElementById('btn-autoplay');
+            autoBtn.addEventListener('click', () => {
+                if (autoPlayTimer) {
+                    clearInterval(autoPlayTimer);
+                    autoPlayTimer = null;
+                    autoBtn.classList.remove('active');
+                    autoBtn.textContent = 'AUTO-PROBE';
+                } else {
+                    autoBtn.classList.add('active');
+                    autoBtn.textContent = 'STOP PROBE';
+                    autoPlayTimer = setInterval(() => {
+                        currentSampleIdxInDigit++;
+                        if (currentSampleIdxInDigit >= filteredSamples.length) {
+                            currentSampleIdxInDigit = 0;
+                            currentDigit = (currentDigit + 1) % 10;
+                            document.querySelectorAll('.digit-btn').forEach(b => {
+                                b.classList.toggle('active', parseInt(b.dataset.digit, 10) === currentDigit);
+                            });
+                            filteredSamples = probeData.samples.filter(s => s.label === currentDigit);
+                        }
+                        renderCurrentSample();
+                    }, 1400);
+                }
+            });
+        }
+
+        function setupFilterButtons() {
+            const btns = document.querySelectorAll('.filter-btn');
+            btns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    btns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    activeFilter = btn.dataset.filter;
+                    renderNeuronGrid(getCurrentSample());
+                });
+            });
+        }
+
+        function loadDigitClass(digit) {
+            filteredSamples = probeData.samples.filter(s => s.label === digit);
+            if (filteredSamples.length === 0) {
+                filteredSamples = probeData.samples;
+            }
+            renderCurrentSample();
+        }
+
+        function getCurrentSample() {
+            return filteredSamples[currentSampleIdxInDigit] || probeData.samples[0];
+        }
+
+        function renderCurrentSample() {
+            const sample = getCurrentSample();
+            if (!sample) return;
+
+            document.getElementById('sample-counter').textContent = `SAMPLE ${currentSampleIdxInDigit + 1} / ${filteredSamples.length}`;
+
+            // 1. Render Input Retina
+            renderRetina(sample);
+
+            // 2. Render Quantum Observables & Spatial Streams
+            renderFeatureStreams(sample);
+
+            // 3. Render 128 Neuron Matrix
+            renderNeuronGrid(sample);
+
+            // 4. Render Output Guess Head
+            renderGuessHead(sample);
+        }
+
+        function renderRetina(sample) {
+            const canvas = document.getElementById('retina-canvas');
+            const ctx = canvas.getContext('2d');
+            const imgData = ctx.createImageData(28, 28);
+            const pixels = sample.pixels;
+
+            let mass = 0;
+            let comR = 0, comC = 0;
+
+            for (let i = 0; i < 784; i++) {
+                const val = Math.floor(pixels[i] * 255);
+                mass += pixels[i];
+                const r = Math.floor(i / 28);
+                const c = i % 28;
+                comR += r * pixels[i];
+                comC += c * pixels[i];
+
+                const idx = i * 4;
+                // High contrast monochrome
+                imgData.data[idx] = val;
+                imgData.data[idx + 1] = val;
+                imgData.data[idx + 2] = val;
+                imgData.data[idx + 3] = 255;
+            }
+            ctx.putImageData(imgData, 0, 0);
+
+            if (mass > 1e-4) {
+                comR = (comR / mass).toFixed(1);
+                comC = (comC / mass).toFixed(1);
+            } else {
+                comR = '14.0';
+                comC = '14.0';
+            }
+
+            document.getElementById('stat-true-label').textContent = sample.label;
+            document.getElementById('stat-sample-id').textContent = `#${sample.sample_id}`;
+            document.getElementById('stat-mass').textContent = mass.toFixed(2);
+            document.getElementById('stat-com').textContent = `(${comR}, ${comC})`;
+        }
+
+        function renderFeatureStreams(sample) {
+            // Render Quantum Observables (first 10 Z, then 10 X, then sample ZZ)
+            const qContainer = document.getElementById('quantum-bars');
+            qContainer.innerHTML = '';
+            const qObs = sample.quantum_observables;
+
+            for (let i = 0; i < Math.min(16, qObs.length); i++) {
+                const val = qObs[i];
+                const pct = Math.min(100, Math.max(0, (val + 1.0) * 50.0));
+                let label = `Z${i}`;
+                if (i >= 10 && i < 20) label = `X${i-10}`;
+                else if (i >= 20) label = `ZZ`;
+
+                const row = document.createElement('div');
+                row.className = 'fbar-row';
+                row.innerHTML = `
+                    <span class="fbar-lbl">${label}</span>
+                    <div class="fbar-track">
+                        <div class="fbar-fill" style="width:${pct.toFixed(1)}%;"></div>
+                    </div>
+                    <span class="fbar-val">${val.toFixed(2)}</span>
+                `;
+                qContainer.appendChild(row);
+            }
+
+            // Render Spatial Filters
+            const sContainer = document.getElementById('spatial-bars');
+            sContainer.innerHTML = '';
+            const spat = sample.spatial_features;
+            for (let i = 0; i < Math.min(16, spat.length); i++) {
+                const val = spat[i];
+                const pct = Math.min(100, Math.max(0, val * 100.0));
+                const row = document.createElement('div');
+                row.className = 'fbar-row';
+                row.innerHTML = `
+                    <span class="fbar-lbl">S${i}</span>
+                    <div class="fbar-track">
+                        <div class="fbar-fill gold" style="width:${pct.toFixed(1)}%;"></div>
+                    </div>
+                    <span class="fbar-val">${val.toFixed(2)}</span>
+                `;
+                sContainer.appendChild(row);
+            }
+        }
+
+        function renderNeuronGrid(sample) {
+            const grid = document.getElementById('neurons-grid');
+            grid.innerHTML = '';
+
+            const acts = sample.neuron_activations;
+            const preacts = sample.neuron_preactivations;
+            const deadList = probeData.dead_neurons;
+
+            // Sort indices for top16 filter if needed
+            let top16Indices = [];
+            if (activeFilter === 'top16') {
+                top16Indices = acts.map((v, i) => ({ v, i }))
+                    .sort((a, b) => b.v - a.v)
+                    .slice(0, 16)
+                    .map(item => item.i);
+            }
+
+            for (let i = 0; i < 128; i++) {
+                const act = acts[i];
+                const pre = preacts[i];
+                const isDead = deadList.includes(i);
+                const isFiring = act > 0.05;
+
+                // Check filter visibility
+                if (activeFilter === 'firing' && !isFiring) continue;
+                if (activeFilter === 'dead' && !isDead) continue;
+                if (activeFilter === 'top16' && !top16Indices.includes(i)) continue;
+
+                const cell = document.createElement('div');
+                cell.className = 'neuron-cell';
+                cell.dataset.id = i;
+
+                if (isDead) {
+                    cell.classList.add('dead');
+                } else if (isFiring) {
+                    cell.classList.add('active-firing');
+                    // Brightness proportional to activation
+                    const intensity = Math.min(1.0, act / 1.5);
+                    if (intensity > 0.7) {
+                        cell.style.background = `rgba(255, 215, 0, ${0.3 + intensity * 0.5})`;
+                        cell.style.borderColor = 'var(--hardware-gold-bright)';
+                    } else {
+                        cell.style.background = `rgba(0, 230, 118, ${0.2 + intensity * 0.6})`;
+                        cell.style.borderColor = 'var(--quantum-green)';
+                    }
+                } else {
+                    cell.classList.add('suppressed');
+                }
+
+                cell.innerHTML = `<span>${i}</span>`;
+
+                cell.addEventListener('mouseenter', () => inspectNeuron(i, sample));
+                cell.addEventListener('click', () => inspectNeuron(i, sample));
+
+                grid.appendChild(cell);
+            }
+
+            if (selectedNeuronId !== null) {
+                inspectNeuron(selectedNeuronId, sample);
+            } else {
+                inspectNeuron(0, sample);
+            }
+        }
+
+        function inspectNeuron(neuronId, sample) {
+            selectedNeuronId = neuronId;
+            const stat = probeData.neuron_stats.find(s => s.id === neuronId);
+            const isDead = probeData.dead_neurons.includes(neuronId);
+            const act = sample.neuron_activations[neuronId];
+            const pre = sample.neuron_preactivations[neuronId];
+
+            document.getElementById('insp-name').textContent = `NEURON #${neuronId}`;
+            const statusEl = document.getElementById('insp-status');
+
+            if (isDead) {
+                statusEl.textContent = 'DEAD (0% TEST FIRING)';
+                statusEl.style.color = 'var(--alert-red)';
+            } else if (act > 0.05) {
+                statusEl.textContent = 'FIRING NOW';
+                statusEl.style.color = 'var(--quantum-green-bright)';
+            } else {
+                statusEl.textContent = 'SUPPRESSED';
+                statusEl.style.color = 'var(--text-muted)';
+            }
+
+            document.getElementById('insp-act').textContent = act.toFixed(4);
+            document.getElementById('insp-preact').textContent = pre.toFixed(4);
+            document.getElementById('insp-rate').textContent = stat ? `${(stat.firing_rate * 100).toFixed(1)}%` : '--';
+
+            // Find top output class affinity from W2
+            let bestClass = 0;
+            let bestW = -999;
+            for (let c = 0; c < 10; c++) {
+                const w = probeData.weights_w2[c][neuronId];
+                if (w > bestW) {
+                    bestW = w;
+                    bestClass = c;
+                }
+            }
+            document.getElementById('insp-class').textContent = `Class ${bestClass} (weight: +${bestW.toFixed(2)})`;
+        }
+
+        function renderGuessHead(sample) {
+            const guessBox = document.getElementById('guess-box');
+            const hero = document.getElementById('guess-hero');
+            const matchBadge = document.getElementById('match-badge');
+            const confEl = document.getElementById('confidence-val');
+
+            const isMatch = sample.prediction === sample.label;
+            hero.textContent = sample.prediction;
+            confEl.textContent = `${(sample.confidence * 100).toFixed(1)}%`;
+
+            if (isMatch) {
+                guessBox.className = 'guess-reticle-box correct';
+                hero.className = 'guess-digit-hero';
+                matchBadge.className = 'match-badge correct';
+                matchBadge.textContent = 'MATCH CONFIRMED';
+                confEl.style.color = 'var(--quantum-green)';
+            } else {
+                guessBox.className = 'guess-reticle-box incorrect';
+                hero.className = 'guess-digit-hero incorrect';
+                matchBadge.className = 'match-badge incorrect';
+                matchBadge.textContent = `MISMATCH (TRUE: ${sample.label})`;
+                confEl.style.color = 'var(--alert-red)';
+            }
+
+            // Render 10-Class Horizontal Probabilities
+            const list = document.getElementById('class-prob-list');
+            list.innerHTML = '';
+
+            for (let c = 0; c < 10; c++) {
+                const prob = sample.probabilities[c] * 100.0;
+                const isWinner = c === sample.prediction;
+                const isTrue = c === sample.label;
+
+                const item = document.createElement('div');
+                item.className = 'prob-item';
+
+                let fillClass = 'prob-fill';
+                if (isWinner) fillClass += ' winner';
+                else if (isTrue && !isWinner) fillClass += ' true-miss';
+
+                item.innerHTML = `
+                    <span class="prob-label ${isWinner ? 'winner' : ''}">${c}</span>
+                    <div class="prob-track">
+                        <div class="${fillClass}" style="width:${prob.toFixed(1)}%;"></div>
+                    </div>
+                    <span class="prob-pct ${isWinner ? 'winner' : ''}">${prob.toFixed(1)}%</span>
+                `;
+                list.appendChild(item);
+            }
+        }
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', initProbe);
+    </script>
+</body>
+</html>

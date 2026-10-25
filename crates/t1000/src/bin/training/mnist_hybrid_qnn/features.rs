@@ -115,16 +115,94 @@ pub fn extract_spatial_features(pixels: &[f64]) -> [f64; N_SPATIAL] {
     features
 }
 
-pub fn encode_mnist_state(pixels: &[f64]) -> QuantumState {
+pub fn encode_mnist_state(pixels: &[f64], spatial: &[f64; N_SPATIAL]) -> QuantumState {
     let mut state = QuantumState::zero(STATE_DIM);
+    let mut buffer = [0.0; STATE_DIM];
+
+    // 1. Amplitudes 0..784: Raw normalized pixels
+    buffer[..N_PIXELS].copy_from_slice(&pixels[..N_PIXELS]);
+
+    // 2. Amplitudes 784..849 (65 values): 7x7 cell averages + 4-quadrant directional strokes
+    buffer[N_PIXELS..N_PIXELS + N_SPATIAL].copy_from_slice(spatial);
+
+    // 3. Amplitudes 849..877 (28 values): Horizontal row projection profile
+    let off_h = N_PIXELS + N_SPATIAL;
+    for r in 0..28 {
+        let mut row_sum = 0.0;
+        for c in 0..28 {
+            row_sum += pixels[r * 28 + c];
+        }
+        buffer[off_h + r] = row_sum / 28.0;
+    }
+
+    // 4. Amplitudes 877..905 (28 values): Vertical column projection profile
+    let off_v = off_h + 28;
+    for c in 0..28 {
+        let mut col_sum = 0.0;
+        for r in 0..28 {
+            col_sum += pixels[r * 28 + c];
+        }
+        buffer[off_v + c] = col_sum / 28.0;
+    }
+
+    // 5. Amplitudes 905..969 (64 values): 8x8 coarse pooling
+    let off_8x8 = off_v + 28;
+    for r8 in 0..8 {
+        for c8 in 0..8 {
+            let mut sum8 = 0.0;
+            let mut count8 = 0.0;
+            for dr in 0..3 {
+                let r = (r8 * 7 + dr * 2) / 2;
+                if r >= 28 { continue; }
+                for dc in 0..3 {
+                    let c = (c8 * 7 + dc * 2) / 2;
+                    if c >= 28 { continue; }
+                    sum8 += pixels[r * 28 + c];
+                    count8 += 1.0;
+                }
+            }
+            buffer[off_8x8 + r8 * 8 + c8] = if count8 > 0.0 { sum8 / count8 } else { 0.0 };
+        }
+    }
+
+    // 6. Amplitudes 969..1024 (55 values): Center-of-mass radial distance and boundary moments
+    let off_rad = off_8x8 + 64;
+    let mut total_mass = 0.0;
+    let mut com_r = 0.0;
+    let mut com_c = 0.0;
+    for r in 0..28 {
+        for c in 0..28 {
+            let p = pixels[r * 28 + c];
+            total_mass += p;
+            com_r += (r as f64) * p;
+            com_c += (c as f64) * p;
+        }
+    }
+    if total_mass > 1e-6 {
+        com_r /= total_mass;
+        com_c /= total_mass;
+    } else {
+        com_r = 14.0;
+        com_c = 14.0;
+    }
+
+    let n_radial = STATE_DIM - off_rad; // 1024 - 969 = 55 values
+    for i in 0..n_radial {
+        let angle = 2.0 * std::f64::consts::PI * (i as f64) / (n_radial as f64);
+        let sample_r = ((com_r + 8.0 * angle.sin()).round() as isize).clamp(0, 27) as usize;
+        let sample_c = ((com_c + 8.0 * angle.cos()).round() as isize).clamp(0, 27) as usize;
+        buffer[off_rad + i] = pixels[sample_r * 28 + sample_c];
+    }
+
+    // Exact L2 normalization into 10-qubit QuantumState
     let mut norm_sq = 0.0;
-    for &p in pixels {
-        norm_sq += p * p;
+    for &val in &buffer {
+        norm_sq += val * val;
     }
     if norm_sq > 1e-12 {
         let inv_norm = 1.0 / norm_sq.sqrt();
-        for (i, &p) in pixels.iter().enumerate() {
-            state.real[i] = p * inv_norm;
+        for i in 0..STATE_DIM {
+            state.real[i] = buffer[i] * inv_norm;
             state.imag[i] = 0.0;
         }
     } else {
