@@ -210,12 +210,12 @@
     }
   ],
   "fpga_attestation": {
-    "status": "verified_on_silicon",
+    "status": "unverified",
     "port": "COM6",
     "baud": 3000000,
     "layers": 12,
     "silicon_exec_us": 122.88,
-    "ack_ms": 1.0714000018197112,
+    "ack_ms": 0.0,
     "hash_seed": ""
   }
 }

@@ -26,6 +26,33 @@ impl ZincMolecule {
     pub fn targets(&self) -> [f64; 3] {
         [self.log_p, self.qed, self.sas]
     }
+
+    /// Permutes the 19 molecular descriptors into the 12-qubit orthogonal wire register.
+    ///
+    /// Collinear descriptor pairs are mapped to antipodal wires (distance 6 in a 12-qubit ring)
+    /// to prevent adjacent information bottlenecks on the cyclic CZ entangling lattice:
+    /// - `heavy_atoms` (0) on q0 <-> `mw_est` (1) on q6
+    /// - `n_hetero` (12) on q1 <-> `hetero_ratio` (13) on q7
+    /// - `n_o` (4) on q2 <-> `n_n` (3) on q8
+    /// - `n_c` (2) on q3 <-> `n_arom` (10) on q9
+    /// - `n_rings` (18) on q4 <-> `n_branches` (16) on q10
+    /// - `n_double` (14) on q5 <-> `n_hal` (9) on q11
+    pub fn orthogonal_features_12q(&self) -> [f64; 12] {
+        let mut out = [0.0; 12];
+        permute_to_orthogonal_wires_12q(&self.features, &mut out);
+        out
+    }
+}
+
+/// Canonical orthogonal wire allocation indices for 12-qubit register.
+pub const ORTHOGONAL_WIRE_MAP_12Q: [usize; 12] = [0, 12, 4, 2, 18, 14, 1, 13, 3, 10, 16, 9];
+
+/// Permutes raw descriptors into the 12-qubit register with antipodal collinear de-correlation.
+#[inline]
+pub fn permute_to_orthogonal_wires_12q(features: &[f64], out: &mut [f64; 12]) {
+    for (wire, &feat_idx) in ORTHOGONAL_WIRE_MAP_12Q.iter().enumerate() {
+        out[wire] = features.get(feat_idx).copied().unwrap_or(0.0);
+    }
 }
 
 /// Reads up to `max_rows` molecules. Rows with fewer than 23 columns are skipped; numbers that
@@ -153,5 +180,18 @@ mod tests {
         assert_eq!(m.features[18], 19.0);
         assert_eq!(m.targets(), [1.5, 0.7, 2.5]);
         assert!(parse_row("CCO,1,2,3").is_none());
+    }
+
+    #[test]
+    fn test_orthogonal_wire_mapping() {
+        let features: Vec<f64> = (0..19).map(|i| i as f64).collect();
+        let m = molecule(features);
+        let orth = m.orthogonal_features_12q();
+        assert_eq!(orth[0], 0.0); // heavy_atoms
+        assert_eq!(orth[6], 1.0); // mw_est antipodal to heavy_atoms
+        assert_eq!(orth[1], 12.0); // n_hetero
+        assert_eq!(orth[7], 13.0); // hetero_ratio antipodal to n_hetero
+        assert_eq!(orth[2], 4.0); // n_o
+        assert_eq!(orth[8], 3.0); // n_n antipodal to n_o
     }
 }

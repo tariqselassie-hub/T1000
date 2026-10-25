@@ -82,6 +82,31 @@ pub fn measure_fused_ry_z_readout(
 pub fn measure_single_qubit_z(real: &[f64], imag: &[f64], qubit: usize) -> f64 {
     let n_qubits = assert_statevector(real, imag);
     assert_qubit(qubit, n_qubits);
+    #[cfg(all(
+        target_arch = "x86_64",
+        target_feature = "avx2",
+        target_feature = "fma"
+    ))]
+    unsafe {
+        measure_single_qubit_z_avx2(real, imag, qubit)
+    }
+    #[cfg(not(all(
+        target_arch = "x86_64",
+        target_feature = "avx2",
+        target_feature = "fma"
+    )))]
+    {
+        #[cfg(target_arch = "x86_64")]
+        if is_x86_feature_detected!("avx2") && is_x86_feature_detected!("fma") {
+            unsafe {
+                return measure_single_qubit_z_avx2(real, imag, qubit);
+            }
+        }
+        measure_single_qubit_z_scalar(real, imag, qubit)
+    }
+}
+
+pub(crate) fn measure_single_qubit_z_scalar(real: &[f64], imag: &[f64], qubit: usize) -> f64 {
     let mask = 1usize << qubit;
     let mut diff = 0.0;
     for idx in 0..real.len() {
@@ -412,6 +437,74 @@ unsafe fn measure_dual_zx_avx2(real: &[f64], imag: &[f64], z_out: &mut [f64], x_
     }
 }
 
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2", enable = "fma")]
+unsafe fn measure_single_qubit_z_avx2(real: &[f64], imag: &[f64], qubit: usize) -> f64 {
+    let dim = real.len();
+    if qubit == 0 {
+        return accumulate_zx_q0(real, imag, dim).0;
+    }
+    if qubit == 1 {
+        return accumulate_zx_q1(real, imag, dim).0;
+    }
+
+    let block_size = 1usize << qubit;
+    let stride = block_size << 1;
+    let mut z_acc0 = _mm256_setzero_pd();
+    let mut z_acc1 = _mm256_setzero_pd();
+
+    let mut base = 0;
+    while base < dim {
+        let p_base = base + block_size;
+        let mut k = 0;
+        while k + 8 <= block_size {
+            let idx0 = base + k;
+            let idx1 = p_base + k;
+
+            let r0_0 = _mm256_loadu_pd(real.as_ptr().add(idx0));
+            let i0_0 = _mm256_loadu_pd(imag.as_ptr().add(idx0));
+            let r1_0 = _mm256_loadu_pd(real.as_ptr().add(idx1));
+            let i1_0 = _mm256_loadu_pd(imag.as_ptr().add(idx1));
+
+            let r0_1 = _mm256_loadu_pd(real.as_ptr().add(idx0 + 4));
+            let i0_1 = _mm256_loadu_pd(imag.as_ptr().add(idx0 + 4));
+            let r1_1 = _mm256_loadu_pd(real.as_ptr().add(idx1 + 4));
+            let i1_1 = _mm256_loadu_pd(imag.as_ptr().add(idx1 + 4));
+
+            let s0 = _mm256_fmadd_pd(r0_0, r0_0, _mm256_mul_pd(i0_0, i0_0));
+            let diff0 = _mm256_fnmadd_pd(r1_0, r1_0, _mm256_fnmadd_pd(i1_0, i1_0, s0));
+            z_acc0 = _mm256_add_pd(z_acc0, diff0);
+
+            let s1 = _mm256_fmadd_pd(r0_1, r0_1, _mm256_mul_pd(i0_1, i0_1));
+            let diff1 = _mm256_fnmadd_pd(r1_1, r1_1, _mm256_fnmadd_pd(i1_1, i1_1, s1));
+            z_acc1 = _mm256_add_pd(z_acc1, diff1);
+
+            k += 8;
+        }
+        while k < block_size {
+            let idx0 = base + k;
+            let idx1 = p_base + k;
+
+            let r0 = _mm256_loadu_pd(real.as_ptr().add(idx0));
+            let i0 = _mm256_loadu_pd(imag.as_ptr().add(idx0));
+            let r1 = _mm256_loadu_pd(real.as_ptr().add(idx1));
+            let i1 = _mm256_loadu_pd(imag.as_ptr().add(idx1));
+
+            let s = _mm256_fmadd_pd(r0, r0, _mm256_mul_pd(i0, i0));
+            let diff = _mm256_fnmadd_pd(r1, r1, _mm256_fnmadd_pd(i1, i1, s));
+            z_acc0 = _mm256_add_pd(z_acc0, diff);
+
+            k += 4;
+        }
+        base += stride;
+    }
+
+    let z_sum = _mm256_add_pd(z_acc0, z_acc1);
+    let mut temp = [0.0f64; 4];
+    _mm256_storeu_pd(temp.as_mut_ptr(), z_sum);
+    temp[0] + temp[1] + temp[2] + temp[3]
+}
+
 // =========================================================================
 // SCALAR FALLBACK IMPLEMENTATIONS
 // =========================================================================
@@ -445,5 +538,41 @@ pub(crate) fn measure_dual_zx_scalar(
         }
         z_out[q] = z_acc;
         x_out[q] = 2.0 * x_acc;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_measure_single_qubit_z_avx2_matches_scalar() {
+        let n_qubits = 12;
+        let dim = 1 << n_qubits;
+        let mut real = Vec::with_capacity(dim);
+        let mut imag = Vec::with_capacity(dim);
+        for i in 0..dim {
+            let r = ((i as f64) * 0.13).sin();
+            let im = ((i as f64) * 0.29).cos();
+            real.push(r);
+            imag.push(im);
+        }
+        // Normalize
+        let norm: f64 = real.iter().zip(&imag).map(|(&r, &i)| r * r + i * i).sum::<f64>().sqrt();
+        for r in real.iter_mut() {
+            *r /= norm;
+        }
+        for im in imag.iter_mut() {
+            *im /= norm;
+        }
+
+        for q in 0..n_qubits {
+            let scalar_val = measure_single_qubit_z_scalar(&real, &imag, q);
+            let fast_val = measure_single_qubit_z(&real, &imag, q);
+            assert!(
+                (scalar_val - fast_val).abs() < 1e-12,
+                "Qubit {q} mismatch: scalar={scalar_val}, fast={fast_val}"
+            );
+        }
     }
 }

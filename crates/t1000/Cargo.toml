@@ -409,5 +409,9 @@ name = "igpu_fp32_proto"
 path = "src/bin/measurements/igpu_fp32_proto.rs"
 
 [[bin]]
+name = "build_and_test_molecules"
+path = "src/bin/screening/build_and_test_molecules.rs"
+
+[[bin]]
 name = "backend_auto_bench"
 path = "src/bin/measurements/backend_auto_bench.rs"
