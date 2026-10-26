@@ -178,3 +178,28 @@ The Ultrametric Tree Sorter was evaluated on the Waterbirds 11k test set (5,794 
 1. **Unitarity Rigidity Resolution:** The Ultrametric Tree Sorter resolves the tension between global unitarity preservation and hierarchical multi-scale sorting. Rather than applying a single rigid rotation to the Hilbert space, the QMUX conditionally rotates fine subspaces based on the coarse invariant router state.
 2. **Extreme Computational Efficiency:** With only 45 quantum parameters and zero classical weights, the Ultrametric Tree Sorter achieves $70.69\%$ coarse classification accuracy while evaluating each sample in $4.14\,\mu\text{s}$ on CPU.
 3. **Hardware Readiness:** The block-diagonal bitmask QMUX requires zero multi-controlled Toffoli decomposition, making it directly synthesizable on FPGA look-up tables (`fpga/1000_qpu`) and GPU SIMD kernels (`crates/t1000/src/gpu/`).
+
+---
+
+## 8. MNIST 10-Class Hierarchical Sorter Calibration & Spatial Morphology
+
+In October 2026, the Ultrametric Tree Sorter was extended to multi-class handwritten digit recognition on MNIST (`crates/t1000/src/bin/training/mnist_ultrametric_sorter.rs`), configuring a 10-qubit register hierarchy:
+$$\mathcal{H}_{1024} = \mathcal{H}_C(1Q) \otimes \mathcal{H}_F(3Q) \otimes \mathcal{H}_E(6Q)$$
+
+### Parity Router Bottleneck Resolution
+An initial uncalibrated run trapped the coarse parity router at pure random chance ($50.20\%$), as trunk variational parameters $\boldsymbol{\theta}_{\text{trunk}}$ controlling wire 0 ($H_C$) were frozen at initialization. Deriving analytical parameter-shift gradients directly for trunk parameters:
+$$\frac{\partial P(y)}{\partial \theta_k} = \frac{1}{2} \left( P_{+\pi/2}(y) - P_{-\pi/2}(y) \right)$$
+and pairing them with 2D spatial morphology feature pooling (replacing naive 1D chunking) resolved the bottleneck.
+
+### Empirical Calibration Metrics (10,000 Train / 2,000 Test Samples)
+| Metric | Baseline Uncalibrated | Calibrated Coarse Router + 2D Pooling | Absolute Delta |
+| :--- | :---: | :---: | :---: |
+| **Parity Router ($H_C$ Even vs Odd)** | $50.20\%$ | **$63.05\%$** | **$+12.85\%$** |
+| **Fine Sub-digit ($H_F$ Leaves $s \in 0..4$)** | $15.15\%$ | **$20.60\%$** | **$+5.45\%$** |
+| **Joint 10-Class Digit Accuracy** | $8.15\%$ | **$19.60\%$** | **$+11.45\%$ ($>2.4\times$)** |
+| **Sub-Manifold $s=0$ (Digit 0)** | $0.00\%$ | **$90.29\%$** ($158/175$) | $+90.29\%$ |
+| **Sub-Manifold $s=0$ (Digit 1)** | $1.71\%$ | **$98.72\%$** ($231/234$) | $+97.01\%$ |
+| **Inference Latency** | $4.29\,\mu\text{s/sample}$ | **$4.16\,\mu\text{s/sample}$** | $-0.13\,\mu\text{s}$ |
+| **Classical Readout Weights** | **$0$** | **$0$** | Zero overhead |
+| **Strong Triangle Inequality** | **PASS** | **PASS** | Conserved |
+

@@ -651,6 +651,34 @@ impl UltrametricTreeSorter {
         }
         self.parameter_shift_branch_grad_state(&state, f_offset, is_rz, target_y, target_s)
     }
+
+    /// Evaluates the analytical gradient with respect to trunk parameters
+    /// targeting coarse class routing using the Parameter-Shift Rule:
+    /// d<P(target_y)>/d\theta_k = 0.5 * (P_{+\pi/2}(target_y) - P_{-\pi/2}(target_y)).
+    pub fn parameter_shift_trunk_grad(
+        &mut self,
+        features: &[f64],
+        param_idx: usize,
+        target_y: usize,
+    ) -> f64 {
+        assert!(param_idx < self.trunk_params.len());
+        let shift = std::f64::consts::FRAC_PI_2;
+
+        self.trunk_params[param_idx] += shift;
+        let s_plus = self.forward(features);
+        let p_plus: f64 = compute_ultrametric_branch_distribution(&s_plus, &self.cfg)[target_y]
+            .iter()
+            .sum();
+
+        self.trunk_params[param_idx] -= 2.0 * shift;
+        let s_minus = self.forward(features);
+        let p_minus: f64 = compute_ultrametric_branch_distribution(&s_minus, &self.cfg)[target_y]
+            .iter()
+            .sum();
+
+        self.trunk_params[param_idx] += shift;
+        0.5 * (p_plus - p_minus)
+    }
 }
 
 #[cfg(test)]
@@ -734,23 +762,25 @@ mod tests {
         let features = vec![0.3, -0.4];
         let grad = sorter.parameter_shift_branch_grad(&features, 0, false, 0, 0);
         assert_eq!(grad.len(), 2);
-        // Numerical finite difference comparison
         let eps = 1e-6;
         sorter.branch_params[0][0] += eps;
         let s_plus = sorter.forward(&features);
         let p_plus = compute_ultrametric_branch_distribution(&s_plus, &cfg)[0][0];
-
         sorter.branch_params[0][0] -= 2.0 * eps;
         let s_minus = sorter.forward(&features);
         let p_minus = compute_ultrametric_branch_distribution(&s_minus, &cfg)[0][0];
         sorter.branch_params[0][0] += eps;
-
         let num_grad = (p_plus - p_minus) / (2.0 * eps);
-        assert!(
-            (grad[0] - num_grad).abs() < 1e-4,
-            "Analytical parameter shift ({}) must match finite difference ({})",
-            grad[0],
-            num_grad
-        );
+        assert!((grad[0] - num_grad).abs() < 1e-4);
+
+        // Trunk gradient verification
+        let t_grad = sorter.parameter_shift_trunk_grad(&features, 0, 0);
+        sorter.trunk_params[0] += eps;
+        let p0_plus: f64 = compute_ultrametric_branch_distribution(&sorter.forward(&features), &cfg)[0].iter().sum();
+        sorter.trunk_params[0] -= 2.0 * eps;
+        let p0_minus: f64 = compute_ultrametric_branch_distribution(&sorter.forward(&features), &cfg)[0].iter().sum();
+        sorter.trunk_params[0] += eps;
+        let num_t_grad = (p0_plus - p0_minus) / (2.0 * eps);
+        assert!((t_grad - num_t_grad).abs() < 1e-4);
     }
 }

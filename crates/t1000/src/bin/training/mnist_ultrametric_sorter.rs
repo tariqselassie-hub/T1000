@@ -59,28 +59,14 @@ pub struct MnistUltrametricReport {
 }
 
 fn locate_mnist_file(filename_candidates: &[&str]) -> Option<PathBuf> {
-    let candidate_dirs = [
-        "data/mnist",
-        "../data/mnist",
-        "data/mnist_demo",
-        "../data/mnist_demo",
-        "data",
-        "../data",
-    ];
-
-    for dir in &candidate_dirs {
-        for candidate in filename_candidates {
-            let p1 = Path::new(dir).join(candidate);
-            if p1.is_file() {
-                return Some(p1);
-            }
-            let stem = candidate
-                .trim_end_matches(".idx3-ubyte")
-                .trim_end_matches(".idx1-ubyte");
-            let p2 = Path::new(dir).join(stem).join(candidate);
-            if p2.is_file() {
-                return Some(p2);
-            }
+    let dirs = ["data/mnist", "../data/mnist", "data/mnist_demo", "../data/mnist_demo", "data", "../data"];
+    for dir in &dirs {
+        for cand in filename_candidates {
+            let p1 = Path::new(dir).join(cand);
+            if p1.is_file() { return Some(p1); }
+            let stem = cand.trim_end_matches(".idx3-ubyte").trim_end_matches(".idx1-ubyte");
+            let p2 = Path::new(dir).join(stem).join(cand);
+            if p2.is_file() { return Some(p2); }
         }
     }
     None
@@ -89,46 +75,84 @@ fn locate_mnist_file(filename_candidates: &[&str]) -> Option<PathBuf> {
 fn parse_mnist_images(path: &Path, max_samples: Option<usize>) -> Vec<Vec<f64>> {
     let data = fs::read(path).expect("Read MNIST image file");
     assert!(data.len() >= 16, "IDX image header too small");
-    let total_images = u32::from_be_bytes([data[4], data[5], data[6], data[7]]) as usize;
-    let count = max_samples
-        .map(|m| m.min(total_images))
-        .unwrap_or(total_images);
-    let mut images = Vec::with_capacity(count);
-
-    let offset = 16;
-    for i in 0..count {
-        let start = offset + i * N_PIXELS;
-        let img: Vec<f64> = data[start..start + N_PIXELS]
-            .iter()
-            .map(|&p| p as f64 / 255.0)
-            .collect();
-        images.push(img);
-    }
-    images
+    let total = u32::from_be_bytes([data[4], data[5], data[6], data[7]]) as usize;
+    let count = max_samples.map(|m| m.min(total)).unwrap_or(total);
+    (0..count).map(|i| {
+        let start = 16 + i * N_PIXELS;
+        data[start..start + N_PIXELS].iter().map(|&p| p as f64 / 255.0).collect()
+    }).collect()
 }
 
 fn parse_mnist_labels(path: &Path, max_samples: Option<usize>) -> Vec<u8> {
     let data = fs::read(path).expect("Read MNIST label file");
     assert!(data.len() >= 8, "IDX label header too small");
-    let total_labels = u32::from_be_bytes([data[4], data[5], data[6], data[7]]) as usize;
-    let count = max_samples
-        .map(|m| m.min(total_labels))
-        .unwrap_or(total_labels);
+    let total = u32::from_be_bytes([data[4], data[5], data[6], data[7]]) as usize;
+    let count = max_samples.map(|m| m.min(total)).unwrap_or(total);
     data[8..8 + count].to_vec()
 }
 
-/// Projects a 784-pixel MNIST image into 10-qubit Hilbert space statevector amplitudes.
+#[inline(always)]
+fn box_mean(pixels: &[f64], r_min: usize, r_max: usize, c_min: usize, c_max: usize) -> f64 {
+    let mut sum = 0.0;
+    let mut count = 0;
+    for r in r_min..r_max {
+        let row_offset = r * 28;
+        for c in c_min..c_max {
+            sum += pixels[row_offset + c];
+            count += 1;
+        }
+    }
+    if count > 0 {
+        sum / (count as f64)
+    } else {
+        0.0
+    }
+}
+
+/// Projects a 784-pixel MNIST image into 10-qubit Hilbert space statevector amplitudes
+/// using spatial morphology pooling aligned with the Ultrametric register topology.
 fn encode_mnist_features(pixels: &[f64]) -> [f64; N_QUBITS] {
     let mut features = [0.0; N_QUBITS];
-    // Coarse 10-region pixel density pooling
-    let chunk_size = N_PIXELS / N_QUBITS;
-    for q in 0..N_QUBITS {
-        let start = q * chunk_size;
-        let end = (start + chunk_size).min(pixels.len());
-        let sum: f64 = pixels[start..end].iter().sum();
-        let mean = sum / (end - start) as f64;
-        features[q] = (mean * std::f64::consts::PI) - std::f64::consts::FRAC_PI_2;
-    }
+    use std::f64::consts::{FRAC_PI_2, PI};
+
+    // Wire 0 (Coarse Register H_C): Parity Router (Even vs Odd)
+    // Contrast between center vertical stroke (odds: 1, 7, 9) and bottom base / left rail (evens: 2, 4, 6, 8, 0)
+    let center_stroke = box_mean(pixels, 4, 24, 11, 17);
+    let bottom_base = box_mean(pixels, 19, 26, 5, 23);
+    let left_rail = box_mean(pixels, 7, 21, 5, 12);
+    let parity_contrast = ((center_stroke - (bottom_base * 0.7 + left_rail * 0.5)) * 2.5).clamp(-1.0, 1.0);
+    features[0] = parity_contrast * FRAC_PI_2;
+
+    // Fine Register H_F (3 Qubits: wires 1, 2, 3 -> sub-digits 0..4)
+    // Wire 1: Top arch / horizontal bar (7, 5, 2, 3 vs 0, 1, 6, 8)
+    let top_bar = box_mean(pixels, 4, 12, 6, 22);
+    features[1] = (top_bar * PI) - FRAC_PI_2;
+
+    // Wire 2: Center core loop / cross waist (0, 8, 6, 9 vs 1, 7, 2)
+    let center_loop = box_mean(pixels, 11, 18, 9, 19);
+    features[2] = (center_loop * PI) - FRAC_PI_2;
+
+    // Wire 3: Bottom horizontal loop / base (0, 2, 6, 8 vs 1, 4, 7, 9)
+    let bottom_loop = box_mean(pixels, 18, 25, 6, 22);
+    features[3] = (bottom_loop * PI) - FRAC_PI_2;
+
+    // Environment Register H_E (6 Qubits: wires 4..9 -> spatial quadrant cooling)
+    let q_tl = box_mean(pixels, 4, 14, 4, 14);
+    let q_tr = box_mean(pixels, 4, 14, 14, 24);
+    let q_bl = box_mean(pixels, 14, 24, 4, 14);
+    let q_br = box_mean(pixels, 14, 24, 14, 24);
+
+    features[4] = (q_tl * PI) - FRAC_PI_2;
+    features[5] = (q_tr * PI) - FRAC_PI_2;
+    features[6] = (q_bl * PI) - FRAC_PI_2;
+    features[7] = (q_br * PI) - FRAC_PI_2;
+
+    // Total stroke mass & aspect ratio
+    let total_mass = (q_tl + q_tr + q_bl + q_br) * 0.25;
+    features[8] = (total_mass * PI) - FRAC_PI_2;
+    let vertical_bias = ((q_tl + q_bl) - (q_tr + q_br)).clamp(-1.0, 1.0);
+    features[9] = vertical_bias * FRAC_PI_2;
+
     features
 }
 
@@ -140,24 +164,25 @@ fn digit_to_leaf(digit: usize) -> (usize, usize) {
     (y, s)
 }
 
-/// Evaluates predicted digit from leaf probabilities P(y, s).
+/// Evaluates predicted digit from hierarchical leaf probabilities P(y, s).
 fn predict_digit_from_probs(probs: &[Vec<f64>]) -> (usize, usize, usize, f64) {
-    let mut best_digit = 0;
-    let mut best_prob = -1.0;
-    let mut pred_y = 0;
-    let mut pred_s = 0;
+    // 1. Coarse routing decision: Even (y=0) vs Odd (y=1)
+    let p_even: f64 = probs[0].iter().sum();
+    let p_odd: f64 = probs[1].iter().sum();
+    let pred_y = if p_even >= p_odd { 0 } else { 1 };
 
-    for d in 0..N_CLASSES {
-        let (y, s) = digit_to_leaf(d);
-        let p = probs[y][s];
-        if p > best_prob {
-            best_prob = p;
-            best_digit = d;
-            pred_y = y;
-            pred_s = s;
+    // 2. Fine sub-digit routing within chosen coarse branch
+    let mut best_s = 0;
+    let mut best_sub_prob = -1.0;
+    for (s, &p) in probs[pred_y].iter().enumerate() {
+        if p > best_sub_prob {
+            best_sub_prob = p;
+            best_s = s;
         }
     }
-    (best_digit, pred_y, pred_s, best_prob)
+
+    let pred_d = 2 * best_s + pred_y;
+    (pred_d, pred_y, best_s, best_sub_prob)
 }
 
 fn main() {
@@ -165,15 +190,10 @@ fn main() {
     println!("T-1000 MNIST ULTRAMETRIC TREE SORTER: HIERARCHICAL QMUX MULTI-REGISTER ENGINE");
     println!("================================================================================");
 
-    let train_img_candidates = ["train-images.idx3-ubyte", "train-images-idx3-ubyte"];
-    let train_lbl_candidates = ["train-labels.idx1-ubyte", "train-labels-idx1-ubyte"];
-    let test_img_candidates = ["t10k-images.idx3-ubyte", "t10k-images-idx3-ubyte"];
-    let test_lbl_candidates = ["t10k-labels.idx1-ubyte", "t10k-labels-idx1-ubyte"];
-
-    let train_img_path = locate_mnist_file(&train_img_candidates).expect("MNIST train images");
-    let train_lbl_path = locate_mnist_file(&train_lbl_candidates).expect("MNIST train labels");
-    let test_img_path = locate_mnist_file(&test_img_candidates).expect("MNIST test images");
-    let test_lbl_path = locate_mnist_file(&test_lbl_candidates).expect("MNIST test labels");
+    let train_img_path = locate_mnist_file(&["train-images.idx3-ubyte", "train-images-idx3-ubyte"]).expect("MNIST train images");
+    let train_lbl_path = locate_mnist_file(&["train-labels.idx1-ubyte", "train-labels-idx1-ubyte"]).expect("MNIST train labels");
+    let test_img_path = locate_mnist_file(&["t10k-images.idx3-ubyte", "t10k-images-idx3-ubyte"]).expect("MNIST test images");
+    let test_lbl_path = locate_mnist_file(&["t10k-labels.idx1-ubyte", "t10k-labels-idx1-ubyte"]).expect("MNIST test labels");
 
     let n_train = 10000;
     let n_test = 2000;
@@ -287,28 +307,45 @@ fn main() {
     );
 
     // 2. Training Stage
-    println!("\n[2/3] Training MNIST Ultrametric Tree Sorter (4 Epochs)...");
+    println!("\n[2/3] Training MNIST Ultrametric Tree Sorter (6 Epochs)...");
     let t_train_start = Instant::now();
-    let epochs = 4;
-    let lr = 0.05;
+    let epochs = 6;
+    let lr_trunk = 0.15;
+    let lr_branch = 0.08;
     let mut rng = rand::thread_rng();
+
+    let total_q = cfg.total_qubits();
+    let active_trunk_params: Vec<usize> = (0..sorter.n_trunk_layers)
+        .flat_map(|l| {
+            let base = l * total_q * 2;
+            vec![base, base + 1, base + 2, base + 3, base + 18, base + 19]
+        })
+        .collect();
 
     for ep in 1..=epochs {
         use rand::seq::SliceRandom;
         let mut sample_indices: Vec<usize> = (0..train_feats.len()).collect();
         sample_indices.shuffle(&mut rng);
-        let batch_size = 256;
+        let batch_size = 128;
         let n_batches = sample_indices.len() / batch_size;
 
         for b in 0..n_batches {
             let b_indices = &sample_indices[b * batch_size..(b + 1) * batch_size];
             let mut grad_branch = vec![vec![0.0; sorter.branch_params[0].len()]; cfg.d_coarse()];
+            let mut grad_trunk = vec![0.0; sorter.trunk_params.len()];
 
             for &idx in b_indices {
                 let feat = &train_feats[idx];
                 let true_digit = train_labels[idx] as usize;
                 let (target_y, target_s) = digit_to_leaf(true_digit);
 
+                // 1. Train coarse router via parameter shift on wire 0 and connected entanglers
+                for &p_idx in &active_trunk_params {
+                    let g_trunk = sorter.parameter_shift_trunk_grad(feat, p_idx, target_y);
+                    grad_trunk[p_idx] += g_trunk;
+                }
+
+                // 2. Train fine branch manifolds via parameter shift
                 for f_off in 0..cfg.n_fine {
                     let g_ry =
                         sorter.parameter_shift_branch_grad(feat, f_off, false, target_y, target_s);
@@ -322,13 +359,20 @@ fn main() {
                 }
             }
 
-            let b_scale = lr / (batch_size as f64);
+            // Update coarse router trunk parameters
+            let b_scale_trunk = lr_trunk / (batch_size as f64);
+            for &p_idx in &active_trunk_params {
+                sorter.trunk_params[p_idx] += b_scale_trunk * grad_trunk[p_idx];
+            }
+
+            // Update fine subpopulation branch parameters
+            let b_scale_branch = lr_branch / (batch_size as f64);
             for y in 0..cfg.d_coarse() {
                 for (p, g) in sorter.branch_params[y]
                     .iter_mut()
                     .zip(grad_branch[y].iter())
                 {
-                    *p -= b_scale * g;
+                    *p -= b_scale_branch * g;
                 }
             }
         }
