@@ -252,6 +252,17 @@ def run_all_charts() -> None:
             generated.append(("Pitt Q-KRR Depth Showdown", png.name, f"{size_kb:.1f} KB"))
             print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
 
+    # 26. 3-Tier Cascaded Ultrametric Tree Sorter on Harmonized System
+    harmonized_json = ws_root / "results" / "experiments" / "harmonized_cascaded_tree_report.json"
+    if harmonized_json.exists() or (ws_root / "results" / "hosts" / "unknown-cpu" / "experiments" / "harmonized_cascaded_tree_report.json").exists():
+        import chart_harmonized_cascaded_tree
+        chart_harmonized_cascaded_tree.main()
+        png = ws_root / "results" / "charts" / "harmonized_cascaded_tree.png"
+        if png.exists():
+            size_kb = png.stat().st_size / 1024.0
+            generated.append(("Harmonized Cascaded Tree Sorter", png.name, f"{size_kb:.1f} KB"))
+            print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
+
     print("\n╔═══════════════════════════════════════════════════════════════════════════════╗")
     print("║                        RENDERED ARTIFACT MANIFEST                             ║")
     print("╠═════════════════════════════════════╦══════════════════════════════════╦══════════╣")

@@ -1,0 +1,18 @@
+{
+  "timestamp_rfc3339": "2026-10-26T12:00:00Z",
+  "dataset": "Harmonized System Customs 2nd Set (54k declarations)",
+  "architecture": "T-1000 3-Tier Cascaded Ultrametric Tree Sorter",
+  "registers": "H_S(2Q) (x) H_C(1Q) (x) H_F(1Q) (x) H_E(6Q)",
+  "n_qubits": 10,
+  "state_dim": 1024,
+  "total_parameters": 46,
+  "train_samples": 10000,
+  "test_samples": 2500,
+  "training_time_sec": 17.9957272,
+  "inference_per_sample_us": 4.2732,
+  "test_sector_accuracy_pct": 40.04,
+  "test_chapter_accuracy_pct": 47.48,
+  "test_fraud_accuracy_pct": 55.24,
+  "test_joint_leaf_accuracy_pct": 7.48,
+  "strong_triangle_inequality_holds": true
+}

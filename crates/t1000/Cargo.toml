@@ -439,3 +439,7 @@ path = "src/bin/screening/build_and_test_molecules.rs"
 [[bin]]
 name = "backend_auto_bench"
 path = "src/bin/measurements/backend_auto_bench.rs"
+
+[[bin]]
+name = "harmonized_cascaded_tree"
+path = "src/bin/training/harmonized_cascaded_tree.rs"

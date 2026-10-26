@@ -36,6 +36,7 @@ pub mod feature_map;
 pub mod glued_tree_valve;
 pub mod glued_trees;
 pub mod gpu;
+pub mod harmonized_data;
 pub mod heptal_qnn;
 pub mod heptal_wave;
 pub mod holdout_score;
