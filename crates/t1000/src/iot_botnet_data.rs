@@ -290,6 +290,230 @@ pub fn parse_iot_traffic_flows(path: &Path, max_samples: Option<usize>) -> Vec<I
     flows
 }
 
+pub const N_IOT_QUBITS: usize = 10;
+pub const IOT_STATE_DIM: usize = 1 << N_IOT_QUBITS; // 1,024
+
+#[inline(always)]
+fn apply_cz_gate(state: &mut [num_complex::Complex64], q1: usize, q2: usize) {
+    let m1 = 1 << q1;
+    let m2 = 1 << q2;
+    for (idx, amp) in state.iter_mut().enumerate() {
+        if (idx & m1 != 0) && (idx & m2 != 0) {
+            *amp = -*amp;
+        }
+    }
+}
+
+/// Parameterized 3-Tier Cascaded QMUX Sorter Engine.
+#[derive(Debug, Clone)]
+pub struct IoTCascadedTreeSorter {
+    pub cfg: IoTCascadedTreeConfig,
+    pub trunk_params: Vec<f64>,
+    pub family_qmux_params: Vec<[f64; 2]>,
+    pub subtype_qmux_params: Vec<[f64; 2]>,
+    pub cooling_phases: Vec<f64>,
+}
+
+impl IoTCascadedTreeSorter {
+    pub fn new(cfg: IoTCascadedTreeConfig) -> Self {
+        let trunk_params = vec![0.0; cfg.n_device * 2]; // 4 params for 2 device wires
+        let family_qmux_params = vec![[0.0, 0.0]; 1 << cfg.n_device]; // 4 branches x 2
+        let subtype_qmux_params = vec![[0.0, 0.0]; 1 << (cfg.n_device + cfg.n_family)]; // 8 branches x 2
+        let cooling_phases = vec![0.0; cfg.n_env]; // 6 cooling phases
+        Self {
+            cfg,
+            trunk_params,
+            family_qmux_params,
+            subtype_qmux_params,
+            cooling_phases,
+        }
+    }
+
+    pub fn init_seeded(&mut self, seed: u64) {
+        use rand::Rng;
+        use rand::SeedableRng;
+        use rand_chacha::ChaCha8Rng;
+        let mut rng = ChaCha8Rng::seed_from_u64(seed);
+        for p in self.trunk_params.iter_mut() {
+            *p = rng.gen_range(-0.35..0.35);
+        }
+        for b in self.family_qmux_params.iter_mut() {
+            b[0] = rng.gen_range(-0.35..0.35);
+            b[1] = rng.gen_range(-0.35..0.35);
+        }
+        for b in self.subtype_qmux_params.iter_mut() {
+            b[0] = rng.gen_range(-0.35..0.35);
+            b[1] = rng.gen_range(-0.35..0.35);
+        }
+        for p in self.cooling_phases.iter_mut() {
+            *p = rng.gen_range(0.05..0.20);
+        }
+    }
+
+    pub fn total_parameters(&self) -> usize {
+        self.trunk_params.len()
+            + self.family_qmux_params.len() * 2
+            + self.subtype_qmux_params.len() * 2
+            + self.cooling_phases.len()
+    }
+
+    /// Evaluates forward circuit on input IoT traffic features.
+    pub fn forward(&self, features: &[f64; N_IOT_FEATURES]) -> Vec<num_complex::Complex64> {
+        use crate::ultrametric_tree::{apply_single_qubit_gate, gate_ry, gate_rz};
+        use num_complex::Complex64;
+        let mut state = vec![Complex64::default(); IOT_STATE_DIM];
+        state[0] = Complex64::new(1.0, 0.0);
+
+        // Stage 0: Feature Injection Ry(x_i)
+        for q in 0..N_IOT_QUBITS {
+            apply_single_qubit_gate(&mut state, q, &gate_ry(features[q]));
+        }
+
+        // Stage 1: Coarse Device Routing Trunk (Wires 0, 1)
+        for q in 0..self.cfg.n_device {
+            let ry = self.trunk_params[q * 2];
+            let rz = self.trunk_params[q * 2 + 1];
+            apply_single_qubit_gate(&mut state, q, &gate_ry(ry));
+            apply_single_qubit_gate(&mut state, q, &gate_rz(rz));
+        }
+        apply_cz_gate(&mut state, 0, 1);
+
+        // Stage 2: QMUX Attack Family Branching on Wire 2, conditioned on Wires 0, 1
+        let wire_family = 2;
+        let half_dim = IOT_STATE_DIM >> 1;
+        let low_mask_f = (1 << wire_family) - 1;
+        for i in 0..half_dim {
+            let idx0 = ((i & !low_mask_f) << 1) | (i & low_mask_f);
+            let idx1 = idx0 | (1 << wire_family);
+            let dev_cat = idx0 & 0x03; // Wires 0, 1
+            let [ry_p, rz_p] = self.family_qmux_params[dev_cat];
+            let u_ry = gate_ry(ry_p);
+            let u_rz = gate_rz(rz_p);
+            let u = [
+                [
+                    u_rz[0][0] * u_ry[0][0] + u_rz[0][1] * u_ry[1][0],
+                    u_rz[0][0] * u_ry[0][1] + u_rz[0][1] * u_ry[1][1],
+                ],
+                [
+                    u_rz[1][0] * u_ry[0][0] + u_rz[1][1] * u_ry[1][0],
+                    u_rz[1][0] * u_ry[0][1] + u_rz[1][1] * u_ry[1][1],
+                ],
+            ];
+            let a0 = state[idx0];
+            let a1 = state[idx1];
+            state[idx0] = u[0][0] * a0 + u[0][1] * a1;
+            state[idx1] = u[1][0] * a0 + u[1][1] * a1;
+        }
+
+        // Stage 3: QMUX Attack SubType Branching on Wire 3, conditioned on Wires 0, 1, 2
+        let wire_subtype = 3;
+        let low_mask_s = (1 << wire_subtype) - 1;
+        for i in 0..half_dim {
+            let idx0 = ((i & !low_mask_s) << 1) | (i & low_mask_s);
+            let idx1 = idx0 | (1 << wire_subtype);
+            let branch_ctx = idx0 & 0x07; // Wires 0, 1, 2
+            let [ry_p, rz_p] = self.subtype_qmux_params[branch_ctx];
+            let u_ry = gate_ry(ry_p);
+            let u_rz = gate_rz(rz_p);
+            let u = [
+                [
+                    u_rz[0][0] * u_ry[0][0] + u_rz[0][1] * u_ry[1][0],
+                    u_rz[0][0] * u_ry[0][1] + u_rz[0][1] * u_ry[1][1],
+                ],
+                [
+                    u_rz[1][0] * u_ry[0][0] + u_rz[1][1] * u_ry[1][0],
+                    u_rz[1][0] * u_ry[0][1] + u_rz[1][1] * u_ry[1][1],
+                ],
+            ];
+            let a0 = state[idx0];
+            let a1 = state[idx1];
+            state[idx0] = u[0][0] * a0 + u[0][1] * a1;
+            state[idx1] = u[1][0] * a0 + u[1][1] * a1;
+        }
+
+        // Stage 4: Entropy Cooling Bridges into Wires 4..9
+        for (e_idx, &phi) in self.cooling_phases.iter().enumerate() {
+            let env_wire = 4 + e_idx;
+            apply_cz_gate(&mut state, 3, env_wire);
+            apply_single_qubit_gate(&mut state, env_wire, &gate_rz(phi));
+        }
+
+        state
+    }
+
+    /// Evaluates marginal distribution across all 16 hierarchical leaves.
+    #[inline]
+    pub fn compute_leaf_distribution(&self, state: &[num_complex::Complex64]) -> [f64; N_IOT_LEAVES] {
+        let mut dist = [0.0; N_IOT_LEAVES];
+        for (idx, amp) in state.iter().enumerate() {
+            let leaf = idx & 0x0F;
+            dist[leaf] += amp.norm_sqr();
+        }
+        dist
+    }
+
+    #[inline]
+    pub fn marginal_device(&self, leaf_dist: &[f64; N_IOT_LEAVES]) -> [f64; N_DEVICE_CATEGORIES] {
+        let mut dev = [0.0; N_DEVICE_CATEGORIES];
+        for leaf in 0..N_IOT_LEAVES {
+            let d = leaf >> 2;
+            dev[d] += leaf_dist[leaf];
+        }
+        dev
+    }
+
+    #[inline]
+    pub fn marginal_family(&self, leaf_dist: &[f64; N_IOT_LEAVES]) -> [f64; N_ATTACK_FAMILIES] {
+        let mut fam = [0.0; N_ATTACK_FAMILIES];
+        for leaf in 0..N_IOT_LEAVES {
+            let f = (leaf >> 1) & 0x01;
+            fam[f] += leaf_dist[leaf];
+        }
+        fam
+    }
+
+    #[inline]
+    pub fn marginal_subtype(&self, leaf_dist: &[f64; N_IOT_LEAVES]) -> [f64; N_ATTACK_SUBTYPES] {
+        let mut sub = [0.0; N_ATTACK_SUBTYPES];
+        for leaf in 0..N_IOT_LEAVES {
+            let s = leaf & 0x01;
+            sub[s] += leaf_dist[leaf];
+        }
+        sub
+    }
+
+    /// Fast predictive evaluation: returns (device_cat, attack_family, attack_subtype, leaf_idx, confidence).
+    pub fn predict(&self, features: &[f64; N_IOT_FEATURES]) -> (usize, usize, usize, usize, f64) {
+        let state = self.forward(features);
+        let dist = self.compute_leaf_distribution(&state);
+        let p_dev = self.marginal_device(&dist);
+        let p_fam = self.marginal_family(&dist);
+        let p_sub = self.marginal_subtype(&dist);
+
+        let pred_dev = p_dev
+            .iter()
+            .enumerate()
+            .max_by(|a, b| a.1.partial_cmp(b.1).unwrap())
+            .map(|(i, _)| i)
+            .unwrap_or(0);
+        let pred_fam = p_fam
+            .iter()
+            .enumerate()
+            .max_by(|a, b| a.1.partial_cmp(b.1).unwrap())
+            .map(|(i, _)| i)
+            .unwrap_or(0);
+        let pred_sub = p_sub
+            .iter()
+            .enumerate()
+            .max_by(|a, b| a.1.partial_cmp(b.1).unwrap())
+            .map(|(i, _)| i)
+            .unwrap_or(0);
+        let pred_leaf = compute_iot_leaf_index(pred_dev, pred_fam, pred_sub);
+        let confidence = dist[pred_leaf];
+        (pred_dev, pred_fam, pred_sub, pred_leaf, confidence)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
