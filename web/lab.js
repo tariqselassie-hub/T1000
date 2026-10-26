@@ -37,65 +37,142 @@
     }).catch(() => { $('pill-board').textContent = 'board: unknown'; });
 
     // ---- chart helpers ------------------------------------------------------------------------------------------
+    // Canvases keep their HTML width/height as the logical drawing size and are backed at the device pixel
+    // ratio, so lines and text stay sharp on high-density screens.
+    const MONO = "'JetBrains Mono', 'Cascadia Mono', Consolas, monospace";
+    const AXIS = '#475569';
+    const dims = (canvas) => [+canvas.dataset.w || canvas.width, +canvas.dataset.h || canvas.height];
     function prep(canvas) {
+        if (!canvas.dataset.w) { canvas.dataset.w = canvas.width; canvas.dataset.h = canvas.height; }
+        const [w, h] = dims(canvas), dpr = window.devicePixelRatio || 1;
+        if (canvas.width !== Math.round(w * dpr)) {
+            canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+            canvas.style.width = w + 'px';
+        }
         const c = canvas.getContext('2d');
-        c.clearRect(0, 0, canvas.width, canvas.height);
-        c.fillStyle = '#080c14'; c.fillRect(0, 0, canvas.width, canvas.height);
-        c.font = '11px Consolas, monospace';
+        c.setTransform(dpr, 0, 0, dpr, 0, 0);
+        c.clearRect(0, 0, w, h);
+        c.fillStyle = '#080c14'; c.fillRect(0, 0, w, h);
+        c.font = '10.5px ' + MONO; c.lineWidth = 1; c.setLineDash([]); c.textAlign = 'left';
         return c;
     }
 
+    // Dashed graticule, solid axes with outward ticks, and y labels right-aligned to the axis.
+    function frame(c, W, H, L, R, T, B, yTicks) {
+        c.save();
+        c.strokeStyle = FAINT; c.setLineDash([2, 3]);
+        yTicks.forEach(([y]) => { c.beginPath(); c.moveTo(L, y + 0.5); c.lineTo(W - R, y + 0.5); c.stroke(); });
+        c.setLineDash([]); c.strokeStyle = AXIS;
+        c.beginPath(); c.moveTo(L + 0.5, T); c.lineTo(L + 0.5, H - B + 0.5); c.lineTo(W - R, H - B + 0.5); c.stroke();
+        c.fillStyle = MUTED; c.textAlign = 'right';
+        yTicks.forEach(([y, label]) => {
+            c.beginPath(); c.moveTo(L - 4, y + 0.5); c.lineTo(L, y + 0.5); c.stroke();
+            c.fillText(label, L - 6, y + 3.5);
+        });
+        c.restore();
+    }
+
+    // Hover probe: a chart registers how to redraw itself and what to read out at a point.
+    function readoutBox(c, W, H, mx, my, lines) {
+        const w = 12 + 6.4 * Math.max(...lines.map((s) => s.length)), h = 8 + 14 * lines.length;
+        const x = mx + 14 + w > W ? mx - 14 - w : mx + 14, y = Math.min(Math.max(4, my - h / 2), H - h - 4);
+        c.fillStyle = 'rgba(5, 8, 13, 0.92)'; c.fillRect(x, y, w, h);
+        c.strokeStyle = GREEN; c.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+        c.fillStyle = TEXT; c.textAlign = 'left';
+        lines.forEach((s, i) => c.fillText(s, x + 6, y + 15 + 14 * i));
+    }
+    function setProbe(canvas, redraw, pick) {
+        canvas._probe = { redraw, pick };
+        if (canvas._probeBound) return;
+        canvas._probeBound = true;
+        canvas.classList.add('probe');
+        canvas.addEventListener('mousemove', (e) => {
+            const p = canvas._probe, r = canvas.getBoundingClientRect(), [W, H] = dims(canvas);
+            const mx = (e.clientX - r.left) * W / r.width, my = (e.clientY - r.top) * H / r.height;
+            const hit = p.pick(mx, my);
+            p.redraw();
+            if (!hit) return;
+            const c = canvas.getContext('2d');
+            c.save(); c.font = '10.5px ' + MONO; c.strokeStyle = 'rgba(0, 230, 118, 0.55)'; c.setLineDash([3, 3]);
+            c.beginPath(); c.moveTo(hit.x + 0.5, hit.top); c.lineTo(hit.x + 0.5, hit.bottom); c.stroke();
+            if (hit.y !== undefined) { c.beginPath(); c.moveTo(hit.left, hit.y + 0.5); c.lineTo(hit.right, hit.y + 0.5); c.stroke(); }
+            c.setLineDash([]);
+            readoutBox(c, W, H, hit.x, hit.y !== undefined ? hit.y : my, hit.lines);
+            c.restore();
+        });
+        canvas.addEventListener('mouseleave', () => canvas._probe.redraw());
+    }
+
     function barChart(canvas, values, o = {}) {
-        const c = prep(canvas), W = canvas.width, H = canvas.height;
-        const L = 46, R = 10, T = 14, B = o.labels ? 34 : 22;
+        const c = prep(canvas), [W, H] = dims(canvas);
+        const L = 50, R = 10, T = 16, B = o.labels ? 34 : 22;
         const n = values.length;
         const top = Math.max(1e-12, o.ymax || Math.max(...values, ...(o.expected || [0])) * 1.08);
-        c.strokeStyle = FAINT; c.fillStyle = MUTED;
-        for (let i = 0; i <= 4; i++) {
-            const y = T + (H - T - B) * (1 - i / 4);
-            c.beginPath(); c.moveTo(L, y); c.lineTo(W - R, y); c.stroke();
-            c.fillText(num(top * i / 4, 3), 2, y + 4);
-        }
+        frame(c, W, H, L, R, T, B, [0, 1, 2, 3, 4].map((i) => [T + (H - T - B) * (1 - i / 4), String(num(top * i / 4, 3))]));
         const bw = (W - L - R) / n;
         values.forEach((v, i) => {
             const h = (H - T - B) * (v / top);
             c.fillStyle = (o.highlight && o.highlight.has(i)) ? GOLD : GREEN;
-            c.fillRect(L + i * bw + Math.min(1, bw * 0.1), H - B - h, Math.max(1, bw * 0.8), h);
-            if (o.labels && bw > 14) { c.fillStyle = MUTED; c.fillText(o.labels[i], L + i * bw + 1, H - B + 12); }
+            c.fillRect(L + 1 + i * bw + Math.min(1, bw * 0.1), H - B - h, Math.max(1, bw * 0.8), h);
+            if (o.labels && bw > 14) {
+                c.fillStyle = MUTED; c.textAlign = 'center';
+                c.fillText(o.labels[i], L + (i + 0.5) * bw, H - B + 13); c.textAlign = 'left';
+            }
         });
         if (o.expected) {
-            c.strokeStyle = RED; c.fillStyle = RED;
-            o.expected.forEach((e, i) => { const y = H - B - (H - T - B) * (e / top); c.beginPath(); c.moveTo(L + i * bw, y); c.lineTo(L + (i + 1) * bw, y); c.lineWidth = 2; c.stroke(); c.lineWidth = 1; });
+            c.strokeStyle = RED; c.lineWidth = 2;
+            o.expected.forEach((e, i) => {
+                const y = H - B - (H - T - B) * (e / top);
+                c.beginPath(); c.moveTo(L + i * bw, y); c.lineTo(L + (i + 1) * bw, y); c.stroke();
+            });
+            c.lineWidth = 1;
         }
-        if (o.title) { c.fillStyle = TEXT; c.fillText(o.title, L + 4, T + 8); }
-        if (o.xlabel) { c.fillStyle = MUTED; c.fillText(o.xlabel, W - R - 6 * o.xlabel.length, H - 4); }
+        if (o.title) { c.fillStyle = TEXT; c.fillText(o.title.toUpperCase(), L + 6, T - 4); }
+        if (o.xlabel) { c.fillStyle = MUTED; c.textAlign = 'right'; c.fillText(o.xlabel, W - R, H - 4); c.textAlign = 'left'; }
+        setProbe(canvas, () => barChart(canvas, values, o), (mx) => {
+            const i = Math.floor((mx - L) / bw);
+            if (i < 0 || i >= n) return null;
+            const lines = ['[' + (o.labels ? o.labels[i] : i) + ']', 'value  ' + num(values[i], 6)];
+            if (o.expected) lines.push('expect ' + num(o.expected[i], 6));
+            return { x: L + (i + 0.5) * bw, top: T, bottom: H - B, lines };
+        });
     }
 
     function lineChart(canvas, xs, series, o = {}) {
-        const c = prep(canvas), W = canvas.width, H = canvas.height;
-        const L = 46, R = 10, T = 14, B = 26;
+        const c = prep(canvas), [W, H] = dims(canvas);
+        const L = 50, R = 10, T = 16, B = 26;
         const ys = series.flatMap((s) => s.y);
         const ymax = o.ymax || Math.max(1e-12, ...ys) * 1.05, ymin = o.ymin !== undefined ? o.ymin : 0;
         const xmin = xs[0], xmax = xs[xs.length - 1];
         const X = (x) => L + (W - L - R) * (x - xmin) / ((xmax - xmin) || 1);
         const Y = (y) => H - B - (H - T - B) * (y - ymin) / ((ymax - ymin) || 1);
-        c.strokeStyle = FAINT; c.fillStyle = MUTED;
+        frame(c, W, H, L, R, T, B, [0, 1, 2, 3, 4].map((i) => { const v = ymin + (ymax - ymin) * i / 4; return [Y(v), String(num(v, 3))]; }));
+        c.fillStyle = MUTED; c.strokeStyle = AXIS; c.textAlign = 'center';
         for (let i = 0; i <= 4; i++) {
-            const v = ymin + (ymax - ymin) * i / 4, y = Y(v);
-            c.beginPath(); c.moveTo(L, y); c.lineTo(W - R, y); c.stroke(); c.fillText(num(v, 3), 2, y + 4);
+            const v = xmin + (xmax - xmin) * i / 4, x = X(v);
+            c.beginPath(); c.moveTo(x + 0.5, H - B); c.lineTo(x + 0.5, H - B + 4); c.stroke();
+            c.fillText(String(num(v, 3)), x, H - B + 15);
         }
-        for (let i = 0; i <= 4; i++) { const v = xmin + (xmax - xmin) * i / 4; c.fillText(num(v, 3), X(v) - 8, H - 10); }
+        c.textAlign = 'left';
         series.forEach((s, k) => {
-            c.strokeStyle = s.color; c.fillStyle = s.color; c.lineWidth = 2;
-            if (s.dots) { s.y.forEach((y, i) => { c.beginPath(); c.arc(X(xs[i]), Y(y), 3, 0, 6.3); c.fill(); }); }
+            c.strokeStyle = s.color; c.fillStyle = s.color; c.lineWidth = 1.75;
+            if (s.dots) { s.y.forEach((y, i) => { c.beginPath(); c.arc(X(xs[i]), Y(y), 2.5, 0, 6.3); c.fill(); }); }
             else { c.beginPath(); s.y.forEach((y, i) => (i ? c.lineTo(X(xs[i]), Y(y)) : c.moveTo(X(xs[i]), Y(y)))); c.stroke(); }
-            c.lineWidth = 1; c.fillText(s.label || '', L + 8 + k * 150, T + 8);
+            c.lineWidth = 1;
+            c.fillRect(L + 8 + k * 160, T - 9, 10, 2); c.fillText(s.label || '', L + 22 + k * 160, T - 5);
         });
-        if (o.xlabel) { c.fillStyle = MUTED; c.fillText(o.xlabel, W - R - 7 * o.xlabel.length, H - 2); }
+        if (o.xlabel) { c.fillStyle = MUTED; c.textAlign = 'right'; c.fillText(o.xlabel, W - R, H - 2); c.textAlign = 'left'; }
+        setProbe(canvas, () => lineChart(canvas, xs, series, o), (mx) => {
+            if (mx < L || mx > W - R) return null;
+            let i = 0;
+            xs.forEach((x, k) => { if (Math.abs(X(x) - mx) < Math.abs(X(xs[i]) - mx)) i = k; });
+            const lines = ['x = ' + num(xs[i], 6)].concat(series.map((s) => (s.label || 'y').slice(0, 22) + '  ' + num(s.y[i], 6)));
+            return { x: X(xs[i]), y: Y(series[0].y[i]), top: T, bottom: H - B, left: L, right: W - R, lines };
+        });
     }
 
     function heatmap(canvas, m, title) {
-        const c = prep(canvas), W = canvas.width, H = canvas.height;
+        const c = prep(canvas), [W, H] = dims(canvas);
         const rows = m.length, cols = m[0].length, T = 16;
         let mx = 1e-12; m.forEach((r) => r.forEach((v) => { if (v > mx) mx = v; }));
         const cw = (W - 4) / cols, rh = (H - T - 4) / rows;
@@ -331,7 +408,7 @@
         } catch (e) { fail('nt-out', e); }
     }));
 
-    const ROOT_COLORS = ['#38bdf8', '#22d3ee', '#ffb300', '#a3e635', '#4ade80', '#ffb300', '#f472b6', '#c084fc', '#ffb300'];
+    const ROOT_COLORS = ['#00e676', '#00ff88', '#ffb300', '#10b981', '#e2e8f0', '#ffb300', '#94a3b8', '#64748b', '#ffb300'];
     $('dr-run').addEventListener('click', () => {
         try {
             const base = +val('dr-base'), count = +val('dr-n'), name = val('dr-seq'), c = +val('dr-c');
@@ -363,9 +440,9 @@
         const m = +val('ob-m'), k = +val('ob-k'), off = +val('ob-c');
         const fn = (x) => Number(NT.mod(BigInt(k) * BigInt(x) + BigInt(off), BigInt(m)));
         const orb = NT.orbits(m, fn);
-        const cv = $('ob-c1'), c = prep(cv), W = cv.width, R = W / 2 - 34, cx = W / 2, cy = W / 2;
+        const cv = $('ob-c1'), c = prep(cv), W = dims(cv)[0], R = W / 2 - 34, cx = W / 2, cy = W / 2;
         const pos = (i) => [cx + R * Math.sin((2 * Math.PI * i) / m), cy - R * Math.cos((2 * Math.PI * i) / m)];
-        const palette = ['#00e676', '#ffb300', '#38bdf8', '#f472b6', '#c084fc', '#fb923c', '#a3e635', '#22d3ee'];
+        const palette = ['#00e676', '#ffb300', '#e2e8f0', '#ef4444', '#10b981', '#ffd700', '#94a3b8', '#00ff88'];
         const small = m <= 60;
         for (let x = 0; x < m; x++) {
             const y = fn(x);
@@ -507,7 +584,7 @@
 
     function drawBloch() {
         if (!geoActive && $('tab-geo') && !$('tab-geo').classList.contains('active')) return;
-        const cv = $('hp-bloch'), c = prep(cv), W = cv.width, R = W / 2 - 30, cx = W / 2, cy = W / 2;
+        const cv = $('hp-bloch'), c = prep(cv), W = dims(cv)[0], R = W / 2 - 30, cx = W / 2, cy = W / 2;
         const P = (p) => { const q = rot3([p[0], p[2], p[1]], 0.5, -0.35); return [cx + R * q[0], cy - R * q[1], q[2]]; };
         c.strokeStyle = FAINT; c.beginPath(); c.arc(cx, cy, R, 0, 6.3); c.stroke();
         [[[1, 0, 0], 'x'], [[0, 1, 0], 'y'], [[0, 0, 1], 'z']].forEach(([a, l]) => {
@@ -530,7 +607,7 @@
 
     function drawHopf() {
         if (!$('tab-geo').classList.contains('active')) return;
-        const cv = $('hp-fib'), c = prep(cv), W = cv.width, H = cv.height, S = 36;
+        const cv = $('hp-fib'), c = prep(cv), [W, H] = dims(cv), S = 36;
         const lat = +val('hp-lat'), per = +val('hp-per');
         const proj = (p) => { const q = rot3(p, view.yaw, view.pitch), k = 4.5 / (4.5 - q[2] * 0.6); return [W / 2 + S * q[0] * k, H / 2 - S * q[1] * k, q[2]]; };
         const drawFiber = (th, ph, color, w) => {
@@ -542,8 +619,9 @@
         };
         for (let i = 0; i < lat; i++) {
             const th = 0.3 * Math.PI + (0.4 * Math.PI * (lat === 1 ? 0.5 : i / (lat - 1)));
-            const hue = Math.round(150 + 140 * (i / Math.max(1, lat - 1)));
-            for (let j = 0; j < per; j++) drawFiber(th, (2 * Math.PI * j) / per, `hsla(${hue},80%,55%,0.55)`, 1.3);
+            // Latitudes are told apart by emerald lightness (palette: no cyan or violet hues).
+            const light = Math.round(28 + 40 * (i / Math.max(1, lat - 1)));
+            for (let j = 0; j < per; j++) drawFiber(th, (2 * Math.PI * j) / per, `hsla(152,90%,${light}%,0.6)`, 1.3);
         }
         const b = bloch();
         drawFiber(Math.min(Math.acos(Math.max(-1, Math.min(1, b[2]))), 2.9), Math.atan2(b[1], b[0]), GOLD, 3);
@@ -579,7 +657,7 @@
     $('pt-sel').addEventListener('change', () => { poly = G.polytope(val('pt-sel')); describePoly(); drawPoly(); });
     function drawPoly() {
         if (!$('tab-geo').classList.contains('active')) return;
-        const cv = $('pt-c'), c = prep(cv), W = cv.width, H = cv.height;
+        const cv = $('pt-c'), c = prep(cv), [W, H] = dims(cv);
         const r = G.rotation4(angles), S = 105;
         const pts = poly.vertices.map((v) => { const p3 = G.project4(G.matVec(r, v), 4); const q = rot3(p3, 0.4, -0.3), k = 6 / (6 - q[2]); return [W / 2 + S * q[0] * k, H / 2 - S * q[1] * k, q[2]]; });
         poly.edges.forEach(([i, j]) => { const d = (pts[i][2] + pts[j][2]) / 2; c.strokeStyle = `rgba(0,230,118,${0.25 + 0.5 * (d + 2) / 4})`; c.beginPath(); c.moveTo(pts[i][0], pts[i][1]); c.lineTo(pts[j][0], pts[j][1]); c.stroke(); });
@@ -598,4 +676,5 @@
     requestAnimationFrame(tick);
 
     // initial draws for the geometry tab happen when it is opened
+    window.LabChart = { prep, dims };
 })();

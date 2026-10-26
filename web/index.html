@@ -6,26 +6,36 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>T-1000 Lab Bench</title>
-    <link rel="stylesheet" href="lab.css">
+    <link rel="stylesheet" href="lab.css?v=20261026b">
 </head>
 <body>
 <header class="bar">
-    <h1>T-1000 LAB BENCH</h1>
-    <span class="sub">Exact small-scale simulation, probability, number theory and geometry. Each panel says where its numbers come from.</span>
+    <div class="brand">
+        <h1>T-1000</h1><span class="slash">//</span><span class="unit">LAB BENCH</span>
+    </div>
     <span class="spacer"></span>
-    <span class="pill on" id="pill-host">host: exact simulation</span>
-    <span class="pill off" id="pill-board">board: checking</span>
-    <a class="pill" href="mnist_neural_probe.html" style="color:var(--quantum-green,#00e676); border-color:#00e676;">neural probe (96%)</a>
-    <a class="pill" href="neuron_heatmap_app.html" style="color:var(--hardware-gold,#ffd700); border-color:#ffd700;">synaptic heatmap</a>
-    <a class="pill" href="nmr2d_spectroscopy_app.html" style="color:var(--quantum-green-bright,#00ff88); border-color:#00ff88;">2d nmr cosy (82% cv)</a>
-    <a class="pill" href="archive.html">recorded results (archive)</a>
+    <div class="telemetry">
+        <span class="pill on" id="pill-host">host: exact simulation</span>
+        <span class="pill off" id="pill-board">board: checking</span>
+        <span class="readout"><span class="tag">API</span><b id="ro-api">--</b></span>
+        <span class="readout"><span class="tag">UTC</span><b id="ro-clock">--:--:--</b></span>
+    </div>
+    <span class="sub">Exact small-scale simulation, probability, number theory and geometry. Each panel states where its numbers come from.</span>
 </header>
 
+<nav class="instruments" aria-label="Instruments">
+    <span class="tag">INSTRUMENTS</span>
+    <a href="mnist_neural_probe.html">MNIST neural probe <span class="v">96%</span></a>
+    <a href="neuron_heatmap_app.html">synaptic heatmap</a>
+    <a href="nmr2d_spectroscopy_app.html">2D NMR COSY <span class="v">82% CV</span></a>
+    <a href="archive.html">recorded results (archive)</a>
+</nav>
+
 <nav class="tabs" id="tabs">
-    <button data-tab="algo" class="active">Circuits &amp; algorithms</button>
-    <button data-tab="prob">Probability</button>
-    <button data-tab="nt">Number theory &amp; digit roots</button>
-    <button data-tab="geo">Geometry</button>
+    <button data-tab="algo" class="active"><span class="n">01</span>Circuits &amp; algorithms</button>
+    <button data-tab="prob"><span class="n">02</span>Probability</button>
+    <button data-tab="nt"><span class="n">03</span>Number theory &amp; digit roots</button>
+    <button data-tab="geo"><span class="n">04</span>Geometry</button>
 </nav>
 
 <main>
@@ -287,13 +297,13 @@ CX 1 2</textarea>
 </main>
 
 <footer>
-    The recorded results of earlier benchmark runs are in the <a href="archive.html">archive</a>; what was re-run and corrected is in
-    <code>docs/CLAIMS.md</code>. Tests: <code>node web/test_lab_nt.js</code>, <code>node web/test_lab_geom.js</code>,
-    <code>python web/test_lab_api.py</code>.
+    <span><span class="tag">RECORDS</span> earlier benchmark runs: <a href="archive.html">archive</a>; re-runs and corrections: <code>docs/CLAIMS.md</code></span>
+    <span><span class="tag">TESTS</span> <code>node web/test_lab_nt.js</code> <code>node web/test_lab_geom.js</code> <code>python web/test_lab_api.py</code></span>
 </footer>
 
-<script src="lab_nt.js"></script>
-<script src="lab_geom.js"></script>
-<script src="lab.js"></script>
+<script src="lab_nt.js?v=20261026b"></script>
+<script src="lab_geom.js?v=20261026b"></script>
+<script src="lab_ui.js?v=20261026b"></script>
+<script src="lab.js?v=20261026b"></script>
 </body>
 </html>

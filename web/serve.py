@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 import socketserver
 import sys
+import threading
 import time
 import webbrowser
 from typing import Dict, Any, List
@@ -38,6 +39,9 @@ WEB_DIR = Path(__file__).resolve().parent
 SOVEREIGN_FPGA_PORT = os.getenv("T1000_QPU_PORT", os.getenv("ZENITH_FPGA_PORT", "COM6"))
 SOVEREIGN_FPGA_BAUD = int(os.getenv("T1000_QPU_BAUD", "3000000"))
 
+# The server is threaded; one request at a time may talk to the board.
+SERIAL_LOCK = threading.Lock()
+
 # Hardware protocol opcodes
 CMD_PING = bytes([0xAA])
 RESP_PING_READY = 0x10
@@ -45,6 +49,11 @@ RESP_PING_READY = 0x10
 
 def probe_com6_hardware() -> Dict[str, Any]:
     """Probes the physical COM6 port to detect Basys 3 FPGA hardware."""
+    with SERIAL_LOCK:
+        return _probe_com6_hardware()
+
+
+def _probe_com6_hardware() -> Dict[str, Any]:
     if not HAS_SERIAL:
         return {"detected": False, "port": SOVEREIGN_FPGA_PORT, "reason": "pyserial not available"}
 
@@ -1163,7 +1172,8 @@ class SovereignHandler(http.server.SimpleHTTPRequestHandler):
             sim_res["com_port"] = SOVEREIGN_FPGA_PORT
             sim_res["baud_rate"] = SOVEREIGN_FPGA_BAUD
             try:
-                board = qpu_board.run_on_board(SOVEREIGN_FPGA_PORT, SOVEREIGN_FPGA_BAUD, n_qubits, layers)
+                with SERIAL_LOCK:
+                    board = qpu_board.run_on_board(SOVEREIGN_FPGA_PORT, SOVEREIGN_FPGA_BAUD, n_qubits, layers)
             except Exception as e:  # board absent, busy, or running another bitstream
                 sim_res["target_executed"] = "Host simulation (the board did not run the circuit)"
                 sim_res["hardware_mode"] = "NOT_EXECUTED_ON_HARDWARE"
@@ -1205,8 +1215,12 @@ class SovereignHandler(http.server.SimpleHTTPRequestHandler):
 
 
 def main():
-    socketserver.TCPServer.allow_reuse_address = True
-    with socketserver.TCPServer(("", PORT), SovereignHandler) as httpd:
+    # Threaded: browsers open speculative connections that never send a request, and a single-threaded
+    # server blocks on them until they close. On Windows SO_REUSEADDR lets a second server bind the same
+    # port, so it is only enabled elsewhere.
+    socketserver.ThreadingTCPServer.allow_reuse_address = os.name != "nt"
+    socketserver.ThreadingTCPServer.daemon_threads = True
+    with socketserver.ThreadingTCPServer(("", PORT), SovereignHandler) as httpd:
         url = f"http://localhost:{PORT}"
         print("╔═══════════════════════════════════════════════════════════════════════════════╗")
         print("║      T-1000 SOVEREIGN QUANTUM DASHBOARD & CIRCUIT TELEMETRY ENGINE            ║")
