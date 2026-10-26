@@ -1,5 +1,5 @@
 {
-  "timestamp_utc": "2026-10-26T12:39:13Z",
+  "timestamp_utc": "2026-10-26T21:40:14Z",
   "target_property": "dipole",
   "target_unit": "Debye",
   "train_samples": 10000,
@@ -14,7 +14,8 @@
       "test_mse": 7.079099061010257,
       "test_mae": 1.630887669759661,
       "test_r2": 0.2217626626646485,
-      "throughput_mols_per_sec": 4612546.125461255
+      "throughput_mols_per_sec": 5281922.619833619,
+      "uses_target_as_input": false
     },
     {
       "name": "Standard-VQC-8Q",
@@ -23,7 +24,8 @@
       "test_mse": 7.095516804974235,
       "test_mae": 1.6095821563835415,
       "test_r2": 0.219957785908798,
-      "throughput_mols_per_sec": 164300.51111150664
+      "throughput_mols_per_sec": 192373.9750074144,
+      "uses_target_as_input": false
     },
     {
       "name": "Stark-Coupled-VQC-8Q",
@@ -32,8 +34,9 @@
       "test_mse": 1.8156661023272993,
       "test_mae": 0.6027494448250095,
       "test_r2": 0.8003956236821467,
-      "throughput_mols_per_sec": 178952.5015322808
+      "throughput_mols_per_sec": 168500.2773233731,
+      "uses_target_as_input": true
     }
   ],
-  "stark_advantage_pct": 74.41108023231732
+  "stark_advantage_pct": null
 }

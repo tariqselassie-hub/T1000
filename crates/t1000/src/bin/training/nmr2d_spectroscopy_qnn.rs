@@ -8,13 +8,14 @@
 //! and AVX2 adjoint gradients with full hidden neuron diagnostics.
 
 use rayon::prelude::*;
-use std::fs;
 use std::time::Instant;
 
 use t1000::adjoint::AdjointWorkspace;
 use t1000::chemistry::nmr2d::{
     extract_nmr_features, generate_cosy_spectrum, NMR_STATE_DIM, N_NMR_SPATIAL,
 };
+use t1000::results::{Better, Score};
+use t1000::zinc_training_common::utc_timestamp_rfc3339;
 use t1000::{
     adjoint_gradient_buffered, AdamOptimizer, CircuitAnsatz, PauliObservable, QuantumState,
 };
@@ -24,6 +25,8 @@ const N_CLASSES: usize = 10;
 const N_OBSERVABLES: usize = 80; // 10 Z + 10 X + 45 ZZ + 5 XX mirror + 5 YY mirror + 4 XX adj + 1 AllZ
 const N_FUSED: usize = N_OBSERVABLES + N_NMR_SPATIAL; // 145
 const N_HIDDEN: usize = 128;
+const RESULTS_PROBE_PATH: &str = "results/data/nmr2d_spectroscopy_probe.json";
+const WEB_PROBE_PATH: &str = "web/data/nmr2d_spectroscopy_probe.json";
 
 #[derive(Debug, Clone)]
 pub struct MolecularSample {
@@ -308,6 +311,235 @@ fn softmax_cross_entropy(
     (loss, d_logits, pred)
 }
 
+/// Number of molecule-disjoint cross-validation folds. Fold `k` holds out the catalog entries at
+/// positions `2k` and `2k + 1` of every family, so each fold tests 20 molecules it never saw.
+const N_FOLDS: usize = 5;
+/// Each training molecule appears this many times per epoch, keeping the 800-sample epoch (and
+/// the number of optimizer steps) of the original single-split run.
+const TRAIN_REPLICAS: usize = 10;
+const EPOCHS: u32 = 16;
+const BATCH_SIZE: usize = 32;
+const DEPTH: usize = 5;
+
+/// Builds the (deterministic) COSY sample of one catalog molecule.
+fn build_sample(name: &str, smiles: &str, label: usize) -> MolecularSample {
+    let matrix = generate_cosy_spectrum(smiles).expect("Valid SMILES");
+    let spatial = extract_nmr_features(&matrix);
+    let mut state = QuantumState::zero(NMR_STATE_DIM);
+    state.real.copy_from_slice(&matrix);
+    MolecularSample {
+        name: name.to_string(),
+        smiles: smiles.to_string(),
+        family: FAMILIES[label],
+        label,
+        state,
+        matrix,
+        spatial,
+    }
+}
+
+/// Whether catalog entry `idx` is held out in `fold` (10 entries per family, in order).
+fn is_held_out(idx: usize, fold: usize) -> bool {
+    (idx % 10) / 2 == fold
+}
+
+/// Trained parameters and held-out results of one fold.
+#[derive(Debug)]
+struct FoldOutcome {
+    ansatz_weights: Vec<f64>,
+    head: SimpleMlpHead,
+    train_acc_pct: f64,
+    test_loss: f64,
+    test_correct: usize,
+    firing: [usize; N_HIDDEN],
+    predictions: Vec<Prediction>,
+}
+
+/// (molecule name, true label, predicted label) of one held-out molecule.
+type Prediction = (String, usize, usize);
+
+/// Held-out loss, correct count, hidden-neuron firing counts and predictions on `test`.
+fn evaluate(
+    ansatz: &CircuitAnsatz,
+    weights: &[f64],
+    observables: &[PauliObservable],
+    head: &SimpleMlpHead,
+    test: &[&MolecularSample],
+) -> (f64, usize, [usize; N_HIDDEN], Vec<Prediction>) {
+    let mut loss_sum = 0.0;
+    let mut correct = 0;
+    let mut firing = [0usize; N_HIDDEN];
+    let mut predictions = Vec::with_capacity(test.len());
+    for sample in test {
+        let mut phi = sample.state.clone();
+        ansatz.forward_in_place(&mut phi, weights);
+        let mut fused = [0.0; N_FUSED];
+        for (f, o) in fused.iter_mut().zip(observables) {
+            *f = o.expectation_value(&phi);
+        }
+        fused[N_OBSERVABLES..].copy_from_slice(&sample.spatial);
+        let (logits, _, a1) = head.forward(&fused);
+        let (loss, _, pred) = softmax_cross_entropy(&logits, sample.label);
+        loss_sum += loss;
+        correct += usize::from(pred == sample.label);
+        for (count, &a) in firing.iter_mut().zip(&a1) {
+            *count += usize::from(a > 0.0);
+        }
+        predictions.push((sample.name.clone(), sample.label, pred));
+    }
+    (loss_sum / test.len() as f64, correct, firing, predictions)
+}
+
+/// Head and ansatz gradients summed over one batch, plus its loss and correct count.
+#[derive(Debug)]
+struct BatchGrads {
+    ansatz: Vec<f64>,
+    w1: Vec<f64>,
+    b1: Vec<f64>,
+    w2: Vec<f64>,
+    b2: Vec<f64>,
+    loss: f64,
+    correct: usize,
+}
+
+fn batch_gradients(
+    ansatz: &CircuitAnsatz,
+    weights: &[f64],
+    observables: &[PauliObservable],
+    head: &SimpleMlpHead,
+    batch: &[&MolecularSample],
+    ws: &mut AdjointWorkspace,
+) -> BatchGrads {
+    let mut g = BatchGrads {
+        ansatz: vec![0.0; weights.len()],
+        w1: vec![0.0; head.w1.len()],
+        b1: vec![0.0; head.b1.len()],
+        w2: vec![0.0; head.w2.len()],
+        b2: vec![0.0; head.b2.len()],
+        loss: 0.0,
+        correct: 0,
+    };
+    for sample in batch {
+        let adj = adjoint_gradient_buffered(
+            ansatz,
+            &sample.state,
+            weights,
+            observables,
+            |exps| {
+                let mut fused = [0.0; N_FUSED];
+                fused[..N_OBSERVABLES].copy_from_slice(exps);
+                fused[N_OBSERVABLES..].copy_from_slice(&sample.spatial);
+                let (logits, z1, a1) = head.forward(&fused);
+                let (loss, d_logits, pred) = softmax_cross_entropy(&logits, sample.label);
+                g.loss += loss;
+                g.correct += usize::from(pred == sample.label);
+                let d_fused = head.backward(
+                    &fused, &z1, &a1, &d_logits, &mut g.w1, &mut g.b1, &mut g.w2, &mut g.b2,
+                );
+                d_fused[..N_OBSERVABLES].to_vec()
+            },
+            ws,
+        );
+        for (acc, d) in g.ansatz.iter_mut().zip(&adj.gradient) {
+            *acc += d;
+        }
+    }
+    g
+}
+
+/// Trains a fresh model on `train` and evaluates it on the held-out molecules of `test`.
+fn train_fold(
+    ansatz: &CircuitAnsatz,
+    observables: &[PauliObservable],
+    train: &[&MolecularSample],
+    test: &[&MolecularSample],
+) -> FoldOutcome {
+    let mut weights = ansatz.weights.clone();
+    let mut head = SimpleMlpHead::new(42);
+    let mut opt_ansatz = AdamOptimizer::new(weights.len(), 0.025);
+    let mut opt_w1 = AdamOptimizer::new_unwrapped(head.w1.len(), 0.005);
+    let mut opt_b1 = AdamOptimizer::new_unwrapped(head.b1.len(), 0.005);
+    let mut opt_w2 = AdamOptimizer::new_unwrapped(head.w2.len(), 0.005);
+    let mut opt_b2 = AdamOptimizer::new_unwrapped(head.b2.len(), 0.005);
+    let mut ws = AdjointWorkspace::new(ansatz.dim, ansatz.n_qubits);
+    let decay = 1e-4;
+    let mut train_acc_pct = 0.0;
+
+    print_table_rule('┌', '┬', '┐');
+    println!(
+        "│ Ep   │ Trn Loss   │ Trn Acc %  │ Tst Loss  │ Tst Acc % │ Active Nodes │ Time (ms)  │"
+    );
+    print_table_rule('├', '┼', '┤');
+    for epoch in 1..=EPOCHS {
+        let t_ep = Instant::now();
+        // Cosine annealing learning-rate schedule
+        let progress = f64::from(epoch - 1) / f64::from(EPOCHS);
+        let lr_mult = 0.5 * (1.0 + (std::f64::consts::PI * progress).cos());
+        opt_ansatz.lr = (0.025 * lr_mult).max(0.005);
+        let head_lr = (0.005 * lr_mult).max(0.001);
+        for opt in [&mut opt_w1, &mut opt_b1, &mut opt_w2, &mut opt_b2] {
+            opt.lr = head_lr;
+        }
+
+        let (mut loss_sum, mut correct) = (0.0, 0usize);
+        for batch in train.chunks(BATCH_SIZE) {
+            let b_len = batch.len() as f64;
+            let mut g = batch_gradients(ansatz, &weights, observables, &head, batch, &mut ws);
+            loss_sum += g.loss;
+            correct += g.correct;
+            // Mean gradient with L2 regularization on the head weights
+            g.ansatz.iter_mut().for_each(|v| *v /= b_len);
+            g.b1.iter_mut().for_each(|v| *v /= b_len);
+            g.b2.iter_mut().for_each(|v| *v /= b_len);
+            for (v, w) in g.w1.iter_mut().zip(&head.w1) {
+                *v = *v / b_len + decay * w;
+            }
+            for (v, w) in g.w2.iter_mut().zip(&head.w2) {
+                *v = *v / b_len + decay * w;
+            }
+            opt_ansatz.step(&mut weights, &g.ansatz);
+            opt_w1.step(&mut head.w1, &g.w1);
+            opt_b1.step(&mut head.b1, &g.b1);
+            opt_w2.step(&mut head.w2, &g.w2);
+            opt_b2.step(&mut head.b2, &g.b2);
+        }
+        train_acc_pct = 100.0 * correct as f64 / train.len() as f64;
+
+        // Monitoring only: nothing (epoch count, stopping, model choice) depends on these numbers.
+        let (test_loss, test_correct, firing, _) =
+            evaluate(ansatz, &weights, observables, &head, test);
+        println!(
+            "│ {:<4} │ {:>10.4} │ {:>9.2}% │ {:>9.4} │ {:>8.2}% │ {:>9}/128 │ {:>10.2} │",
+            epoch,
+            loss_sum / train.len() as f64,
+            train_acc_pct,
+            test_loss,
+            100.0 * test_correct as f64 / test.len() as f64,
+            firing.iter().filter(|&&c| c > 0).count(),
+            t_ep.elapsed().as_secs_f64() * 1000.0
+        );
+    }
+    print_table_rule('└', '┴', '┘');
+
+    let (test_loss, test_correct, firing, predictions) =
+        evaluate(ansatz, &weights, observables, &head, test);
+    FoldOutcome {
+        ansatz_weights: weights,
+        head,
+        train_acc_pct,
+        test_loss,
+        test_correct,
+        firing,
+        predictions,
+    }
+}
+
+fn print_table_rule(left: char, mid: char, right: char) {
+    let widths = [6, 12, 12, 11, 11, 14, 12];
+    let cells: Vec<String> = widths.iter().map(|&w| "─".repeat(w)).collect();
+    println!("{left}{}{right}", cells.join(&mid.to_string()));
+}
+
 fn main() {
     println!("╔═══════════════════════════════════════════════════════════════════════════════╗");
     println!("║       T-1000 2D MOLECULAR CORRELATION SPECTROSCOPY (2D COSY) QNN BENCHMARK    ║");
@@ -315,302 +547,93 @@ fn main() {
 
     let t0 = Instant::now();
     let catalog = generate_molecular_catalog();
-    println!(
-        " [DISCOVERY] Ingesting {} Molecular Spectroscopy Templates",
-        catalog.len()
-    );
-
-    // Generate 1,000 synthetic spectra samples (replicate templates with diverse noise/shifts)
-    let n_samples = 1000;
-    let samples: Vec<MolecularSample> = (0..n_samples)
-        .into_par_iter()
-        .map(|idx| {
-            let (name, smiles, label) = catalog[idx % catalog.len()];
-            let matrix = generate_cosy_spectrum(smiles).expect("Valid SMILES");
-            let spatial = extract_nmr_features(&matrix);
-
-            // Populate 10-qubit QuantumState
-            let mut state = QuantumState::zero(NMR_STATE_DIM);
-            state.real.copy_from_slice(&matrix);
-
-            MolecularSample {
-                name: format!("{} #{}", name, idx / catalog.len() + 1),
-                smiles: smiles.to_string(),
-                family: FAMILIES[label],
-                label,
-                state,
-                matrix,
-                spatial,
-            }
-        })
+    // The COSY renderer is deterministic, so a molecule has exactly one spectrum. Splitting
+    // replicated spectra would put copies of every test molecule in the training set; the
+    // folds below split by molecule instead.
+    let molecules: Vec<MolecularSample> = catalog
+        .par_iter()
+        .map(|&(name, smiles, label)| build_sample(name, smiles, label))
         .collect();
-
-    let split = 800;
-    let train_data = &samples[..split];
-    let test_data = &samples[split..];
-
     println!(
-        " [INGEST] {} train / {} test 2D COSY matrices prepared in {:.2} ms",
-        train_data.len(),
-        test_data.len(),
-        t0.elapsed().as_secs_f64() * 1000.0
+        " [INGEST] {} molecules ({} families) rendered in {:.2} ms; {}-fold molecule-disjoint CV",
+        molecules.len(),
+        N_CLASSES,
+        t0.elapsed().as_secs_f64() * 1000.0,
+        N_FOLDS
     );
 
-    let depth = 5;
-    let ansatz = CircuitAnsatz::new(N_QUBITS, depth).with_pi_layer(true);
-
-    // 80 Targeted Bipartite Observables:
-    //   10 Z + 10 X + 45 ZZ + 5 Dyadic Mirror XX + 5 Dyadic Mirror YY + 4 Adjacent-Scale Cross XX + 1 AllZ
+    let ansatz = CircuitAnsatz::new(N_QUBITS, DEPTH).with_pi_layer(true);
+    // 80 targeted bipartite observables:
+    //   10 Z + 10 X + 45 ZZ + 5 dyadic mirror XX + 5 dyadic mirror YY + 4 adjacent XX + 1 AllZ
     let observables = t1000::chemistry::nmr2d::build_nmr2d_80_observables();
     assert_eq!(observables.len(), N_OBSERVABLES);
-
-    let n_ansatz_params = ansatz.param_count();
-    let mut ansatz_weights = ansatz.weights.clone();
-    let mut head = SimpleMlpHead::new(42);
-
-    let mut opt_ansatz = AdamOptimizer::new(n_ansatz_params, 0.025);
-    let mut opt_head_w1 = AdamOptimizer::new_unwrapped(head.w1.len(), 0.005);
-    let mut opt_head_b1 = AdamOptimizer::new_unwrapped(head.b1.len(), 0.005);
-    let mut opt_head_w2 = AdamOptimizer::new_unwrapped(head.w2.len(), 0.005);
-    let mut opt_head_b2 = AdamOptimizer::new_unwrapped(head.b2.len(), 0.005);
-
-    println!("\n [ARCHITECTURE] 2D Molecular Spectroscopy QNN Configuration:");
     println!(
-        "   Hilbert Register       : {} Qubits (1,024 2D Frequency Bins)",
-        N_QUBITS
-    );
-    println!("   Bipartite Partition    : H_w1 (32) (x) H_w2 (32) [5Q (x) 5Q]");
-    println!(
-        "   Circuit Depth          : {} layers (Ring CZ + Bipartite Cross-Rungs + Ry/Rz)",
-        depth
-    );
-    println!(
-        "   Quantum Observables    : {} Bipartite Cross-Peak Symmetry Operators",
-        N_OBSERVABLES
-    );
-    println!(
-        "   Spectral Stroke Filters: {} Multi-Scale Features",
-        N_NMR_SPATIAL
-    );
-    println!(
-        "   Fused Readout Inputs   : {} Features (80 Quantum + 65 Classical)",
-        N_FUSED
-    );
-    println!("   Hidden Neural Layer    : {} LeakyReLU Neurons", N_HIDDEN);
-    println!(
-        "   Chemical Target Classes: {} Molecular Families",
-        N_CLASSES
+        " [ARCHITECTURE] {N_QUBITS} qubits, depth {DEPTH}, {N_OBSERVABLES} observables + \
+         {N_NMR_SPATIAL} classical features -> {N_HIDDEN} LeakyReLU -> {N_CLASSES} classes"
     );
 
-    let epochs = 16;
-    let batch_size = 32;
-    let num_batches = train_data.len().div_ceil(batch_size);
-
-    println!(
-        "\n┌──────┬────────────┬────────────┬───────────┬───────────┬──────────────┬────────────┐"
-    );
-    println!(
-        "│ Ep   │ Trn Loss   │ Trn Acc %  │ Tst Loss  │ Tst Acc % │ Active Nodes │ Time (ms)  │"
-    );
-    println!(
-        "├──────┼────────────┼────────────┼───────────┼───────────┼──────────────┼────────────┤"
-    );
-
-    let mut last_firing = [0usize; N_HIDDEN];
-
-    for epoch in 1..=epochs {
-        let t_ep = Instant::now();
-
-        // Cosine Annealing learning rate schedule
-        let progress = f64::from(epoch - 1) / f64::from(epochs);
-        let lr_mult = 0.5 * (1.0 + (std::f64::consts::PI * progress).cos());
-        opt_ansatz.lr = (0.025 * lr_mult).max(0.005);
-        let head_lr = (0.005 * lr_mult).max(0.001);
-        opt_head_w1.lr = head_lr;
-        opt_head_b1.lr = head_lr;
-        opt_head_w2.lr = head_lr;
-        opt_head_b2.lr = head_lr;
-
-        let mut total_train_loss = 0.0;
-        let mut train_correct = 0;
-
-        for b in 0..num_batches {
-            let start = b * batch_size;
-            let end = (start + batch_size).min(train_data.len());
-            let batch = &train_data[start..end];
-            let b_len = batch.len() as f64;
-
-            let mut batch_gw1 = vec![0.0; head.w1.len()];
-            let mut batch_gb1 = vec![0.0; head.b1.len()];
-            let mut batch_gw2 = vec![0.0; head.w2.len()];
-            let mut batch_gb2 = vec![0.0; head.b2.len()];
-            let mut batch_gansatz = vec![0.0; n_ansatz_params];
-
-            for sample in batch {
-                let mut ws = AdjointWorkspace::new(ansatz.dim, ansatz.n_qubits);
-                let mut sample_loss = 0.0;
-                let mut sample_correct = 0;
-                let mut local_gw1 = vec![0.0; head.w1.len()];
-                let mut local_gb1 = vec![0.0; head.b1.len()];
-                let mut local_gw2 = vec![0.0; head.w2.len()];
-                let mut local_gb2 = vec![0.0; head.b2.len()];
-
-                let adj = adjoint_gradient_buffered(
-                    &ansatz,
-                    &sample.state,
-                    &ansatz_weights,
-                    &observables,
-                    |exps| {
-                        let mut fused = [0.0; N_FUSED];
-                        fused[..N_OBSERVABLES].copy_from_slice(exps);
-                        fused[N_OBSERVABLES..].copy_from_slice(&sample.spatial);
-
-                        let (logits, z1, a1) = head.forward(&fused);
-                        let (loss, d_logits, pred) = softmax_cross_entropy(&logits, sample.label);
-                        sample_loss = loss;
-                        sample_correct = if pred == sample.label { 1 } else { 0 };
-
-                        let d_fused = head.backward(
-                            &fused,
-                            &z1,
-                            &a1,
-                            &d_logits,
-                            &mut local_gw1,
-                            &mut local_gb1,
-                            &mut local_gw2,
-                            &mut local_gb2,
-                        );
-                        d_fused[..N_OBSERVABLES].to_vec()
-                    },
-                    &mut ws,
-                );
-
-                total_train_loss += sample_loss;
-                train_correct += sample_correct;
-
-                for (g, adj_g) in batch_gansatz.iter_mut().zip(&adj.gradient) {
-                    *g += adj_g;
-                }
-                for (g, local_g) in batch_gw1.iter_mut().zip(&local_gw1) {
-                    *g += local_g;
-                }
-                for (g, local_g) in batch_gb1.iter_mut().zip(&local_gb1) {
-                    *g += local_g;
-                }
-                for (g, local_g) in batch_gw2.iter_mut().zip(&local_gw2) {
-                    *g += local_g;
-                }
-                for (g, local_g) in batch_gb2.iter_mut().zip(&local_gb2) {
-                    *g += local_g;
-                }
-            }
-
-            // Apply step with L2 regularization on head
-            let decay = 1e-4;
-            for g in &mut batch_gansatz {
-                *g /= b_len;
-            }
-            for (w, g) in head.w1.iter().zip(&mut batch_gw1) {
-                *g = *g / b_len + decay * w;
-            }
-            for g in &mut batch_gb1 {
-                *g /= b_len;
-            }
-            for (w, g) in head.w2.iter().zip(&mut batch_gw2) {
-                *g = *g / b_len + decay * w;
-            }
-            for g in &mut batch_gb2 {
-                *g /= b_len;
-            }
-
-            opt_ansatz.step(&mut ansatz_weights, &batch_gansatz);
-            opt_head_w1.step(&mut head.w1, &batch_gw1);
-            opt_head_b1.step(&mut head.b1, &batch_gb1);
-            opt_head_w2.step(&mut head.w2, &batch_gw2);
-            opt_head_b2.step(&mut head.b2, &batch_gb2);
-        }
-
-        let train_loss = total_train_loss / train_data.len() as f64;
-        let train_acc = 100.0 * f64::from(train_correct) / train_data.len() as f64;
-
-        // Evaluate test set & hidden neuron health
-        let mut test_loss = 0.0;
-        let mut test_correct = 0;
-        let mut firing_counts = [0usize; N_HIDDEN];
-
-        for sample in test_data {
-            let mut phi = sample.state.clone();
-            ansatz.forward_in_place(&mut phi, &ansatz_weights);
-
-            let mut fused = [0.0; N_FUSED];
-            for (i, o) in observables.iter().enumerate() {
-                fused[i] = o.expectation_value(&phi);
-            }
-            fused[N_OBSERVABLES..].copy_from_slice(&sample.spatial);
-
-            let (logits, _, a1) = head.forward(&fused);
-            let (loss, _, pred) = softmax_cross_entropy(&logits, sample.label);
-            test_loss += loss;
-            if pred == sample.label {
-                test_correct += 1;
-            }
-
-            for h in 0..N_HIDDEN {
-                if a1[h] > 0.0 {
-                    firing_counts[h] += 1;
-                }
-            }
-        }
-
-        let test_loss_avg = test_loss / test_data.len() as f64;
-        let test_acc_pct = 100.0 * f64::from(test_correct) / test_data.len() as f64;
-        let active_nodes = firing_counts.iter().filter(|&&c| c > 0).count();
-        last_firing = firing_counts;
-
-        let ep_dur = t_ep.elapsed().as_secs_f64() * 1000.0;
-
+    let mut folds = Vec::with_capacity(N_FOLDS);
+    for fold in 0..N_FOLDS {
+        let (held_out, seen): (Vec<_>, Vec<_>) = molecules
+            .iter()
+            .enumerate()
+            .partition(|(i, _)| is_held_out(*i, fold));
+        let test: Vec<&MolecularSample> = held_out.into_iter().map(|(_, m)| m).collect();
+        let seen: Vec<&MolecularSample> = seen.into_iter().map(|(_, m)| m).collect();
+        let train: Vec<&MolecularSample> = (0..seen.len() * TRAIN_REPLICAS)
+            .map(|i| seen[i % seen.len()])
+            .collect();
         println!(
-            "│ {:<4} │ {:>10.4} │ {:>9.2}% │ {:>9.4} │ {:>8.2}% │ {:>9}/128 │ {:>10.2} │",
-            epoch, train_loss, train_acc, test_loss_avg, test_acc_pct, active_nodes, ep_dur
+            "\n [FOLD {}/{}] {} train molecules ({} samples/epoch) | {} held-out molecules",
+            fold + 1,
+            N_FOLDS,
+            seen.len(),
+            train.len(),
+            test.len()
         );
+        let outcome = train_fold(&ansatz, &observables, &train, &test);
+        println!(
+            " [FOLD {}/{}] held-out accuracy {}/{} ({:.2}%), train accuracy {:.2}%",
+            fold + 1,
+            N_FOLDS,
+            outcome.test_correct,
+            test.len(),
+            100.0 * outcome.test_correct as f64 / test.len() as f64,
+            outcome.train_acc_pct
+        );
+        folds.push((outcome, test));
     }
+
+    let total_correct: usize = folds.iter().map(|(o, _)| o.test_correct).sum();
+    let cv_acc_pct = 100.0 * total_correct as f64 / molecules.len() as f64;
     println!(
-        "└──────┴────────────┴────────────┴───────────┴───────────┴──────────────┴────────────┘"
+        "\n [CROSS-VALIDATION] held-out accuracy {total_correct}/{} molecules = {cv_acc_pct:.2}%",
+        molecules.len()
+    );
+    let (last, last_test) = folds.last().expect("at least one fold");
+    let dead = last.firing.iter().filter(|&&c| c == 0).count();
+    println!(
+        " [NEURON HEALTH, fold {N_FOLDS}] Active {}/128 | Dead {dead}/128",
+        128 - dead
     );
 
-    let dead_nodes = last_firing.iter().filter(|&&c| c == 0).count();
-    println!(
-        "\n [NEURON HEALTH] Active Nodes: {}/128 | Dead: {}/128",
-        128 - dead_nodes,
-        dead_nodes
-    );
-
-    // Export web telemetry
-    export_telemetry(
-        &ansatz,
-        &ansatz_weights,
-        &head,
-        &observables,
-        test_data,
-        &last_firing,
-    );
+    export_telemetry(&ansatz, &observables, &folds, last_test, cv_acc_pct);
 }
 
+/// Writes the neural-probe telemetry of the last fold's model on its held-out molecules, plus
+/// the cross-validation summary of all folds.
 fn export_telemetry(
     ansatz: &CircuitAnsatz,
-    weights: &[f64],
-    head: &SimpleMlpHead,
     observables: &[PauliObservable],
-    test_data: &[MolecularSample],
-    firing: &[usize; N_HIDDEN],
+    folds: &[(FoldOutcome, Vec<&MolecularSample>)],
+    test_data: &[&MolecularSample],
+    cv_acc_pct: f64,
 ) {
-    let mut selected_samples = Vec::new();
-    let mut family_counts = [0usize; 10];
-
-    for sample in test_data {
-        if family_counts[sample.label] < 5 {
-            family_counts[sample.label] += 1;
-
+    let (last, _) = folds.last().expect("at least one fold");
+    let (weights, head, firing) = (&last.ansatz_weights, &last.head, &last.firing);
+    let selected_samples: Vec<serde_json::Value> = test_data
+        .iter()
+        .map(|sample| {
             let mut phi = sample.state.clone();
             ansatz.forward_in_place(&mut phi, weights);
 
@@ -633,7 +656,7 @@ fn export_telemetry(
                 .map(|&l| (l - max_l).exp() / exp_sum)
                 .collect();
 
-            selected_samples.push(serde_json::json!({
+            serde_json::json!({
                 "name": sample.name,
                 "smiles": sample.smiles,
                 "family": sample.family,
@@ -646,9 +669,9 @@ fn export_telemetry(
                 "quantum_observables": q_obs,
                 "neuron_preactivations": z1.to_vec(),
                 "neuron_activations": a1.to_vec(),
-            }));
-        }
-    }
+            })
+        })
+        .collect();
 
     let mut w2_matrix = vec![vec![0.0; N_HIDDEN]; N_CLASSES];
     for (c, row) in w2_matrix.iter_mut().enumerate() {
@@ -664,8 +687,38 @@ fn export_telemetry(
         }
     }
 
+    let fold_reports: Vec<serde_json::Value> = folds
+        .iter()
+        .enumerate()
+        .map(|(k, (o, test))| {
+            serde_json::json!({
+                "fold": k + 1,
+                "held_out_molecules": test.len(),
+                "held_out_correct": o.test_correct,
+                "held_out_accuracy_pct": 100.0 * o.test_correct as f64 / test.len() as f64,
+                "held_out_loss": o.test_loss,
+                "train_accuracy_pct": o.train_acc_pct,
+                "predictions": o.predictions.iter().map(|(name, label, pred)| {
+                    serde_json::json!({ "name": name, "label": label, "prediction": pred })
+                }).collect::<Vec<_>>(),
+            })
+        })
+        .collect();
+
     let report = serde_json::json!({
-        "timestamp_rfc3339": "2026-10-25T19:30:00Z",
+        "timestamp_rfc3339": utc_timestamp_rfc3339(),
+        "evaluation": {
+            "protocol": "molecule-disjoint cross-validation: each fold holds out 2 of the 10 \
+                         catalog molecules per family; the COSY renderer is deterministic, so \
+                         no held-out spectrum or copy of it is seen in training",
+            "folds": N_FOLDS,
+            "molecules": folds.iter().map(|(_, t)| t.len()).sum::<usize>(),
+            "epochs": EPOCHS,
+            "train_replicas_per_epoch": TRAIN_REPLICAS,
+            "cv_held_out_accuracy_pct": cv_acc_pct,
+            "per_fold": fold_reports,
+        },
+        "probe_fold": N_FOLDS,
         "total_neurons": N_HIDDEN,
         "active_neurons": firing.iter().filter(|&&c| c > 0).count(),
         "dead_neurons": firing.iter().enumerate().filter(|(_, &c)| c == 0).map(|(i, _)| i).collect::<Vec<_>>(),
@@ -675,13 +728,25 @@ fn export_telemetry(
         "samples": selected_samples,
     });
 
-    let json_str = serde_json::to_string_pretty(&report).unwrap();
-    let _ = fs::create_dir_all("web/data");
-    let _ = fs::create_dir_all("results/data");
-    let _ = fs::write("web/data/nmr2d_spectroscopy_probe.json", &json_str);
-    let _ = fs::write("results/data/nmr2d_spectroscopy_probe.json", &json_str);
-
+    let json_str = serde_json::to_string_pretty(&report).expect("Serialize telemetry");
+    let settings = format!(
+        "folds={N_FOLDS} epochs={EPOCHS} replicas={TRAIN_REPLICAS} batch={BATCH_SIZE} \
+         depth={DEPTH} split=molecule-disjoint"
+    );
+    let score = Score {
+        metric: "cv_held_out_accuracy_pct",
+        value: cv_acc_pct,
+        better: Better::Higher,
+        guard: None,
+        settings: &settings,
+    };
     println!("\n [TELEMETRY EXPORT]");
-    println!("   Saved to web/data/nmr2d_spectroscopy_probe.json");
-    println!("   Saved to results/data/nmr2d_spectroscopy_probe.json");
+    match t1000::results::write_scored(RESULTS_PROBE_PATH, &json_str, &score) {
+        Ok(outcome) => println!("   {RESULTS_PROBE_PATH}: {outcome:?}"),
+        Err(e) => eprintln!("   [ERROR] {RESULTS_PROBE_PATH}: {e}"),
+    }
+    match t1000::results::write(WEB_PROBE_PATH, &json_str) {
+        Ok(()) => println!("   {WEB_PROBE_PATH}: written"),
+        Err(e) => eprintln!("   [ERROR] {WEB_PROBE_PATH}: {e}"),
+    }
 }

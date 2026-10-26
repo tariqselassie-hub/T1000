@@ -115,7 +115,10 @@ To evaluate the predictive utility of the non-Abelian Stark coupling within Hilb
 ╚══════════════════════════╩══════════════╩══════════════╩══════════════╩════════════╩═══════════════╝
 ```
 
+> **Audit note (2026-10-26).** The Stark-Coupled-VQC row above is not a prediction. Its Rz phases are built from the DFT dipole vector $(\mu_x, \mu_y, \mu_z)$, from $\|\vec{\mu}\|$ and from $\|\vec{\mu}\|^2$, and $\|\vec{\mu}\|$ is the target, so the model reads its label from its input. The "74.41 % error reduction" is withdrawn. The re-run reproduces the table exactly; the report now marks the row `uses_target_as_input: true` and leaves `stark_advantage_pct` empty. The circuit weights are random and never trained (`PittVqcModel::new(seed)`); only the ridge readout on the 16 observables is fitted.
+
 ### Key Analytical Takeaways
-- **74.41% Error Reduction:** Incorporating molecular Stark dipole components into quantum phase angles reduces holdout MSE from $7.0955$ down to $1.8157$, expanding the explained variance from $R^2 = 0.2200$ to $R^2 = 0.8004$.
-- **AVX2 SIMD Throughput:** The 8-qubit fused butterfly and observable extractor sustains **178,953 molecules / second**, evaluating all 12,000 candidate molecules through 256-amplitude Hilbert space in 67 milliseconds.
-- **Structured Report:** [`results/data/pitt_vqc_training_report.json`](file:///c:/Users/zoddj/GuddaLM_workspace/T1000/results/data/pitt_vqc_training_report.json).
+- **No Stark advantage where the target is not encoded:** On polarizability (same 10,000 / 2,000 split), the Stark phases make the VQC worse, not better: test MSE $257.63 \to 277.02\ \text{\AA}^6$ ($-7.53\%$), $R^2$ $0.3687 \to 0.3212$. Both VQCs are below the 19-descriptor ridge baseline ($R^2 = 0.5910$).
+- **On dipole, the honest comparison is ridge against the standard VQC:** $R^2$ $0.2218$ against $0.2200$, i.e. no gain from the quantum feature map.
+- **AVX2 SIMD Throughput:** The 8-qubit fused butterfly and observable extractor sustains roughly **170,000 to 230,000 molecules / second** on this host (dipole Stark run 168,500; polarizability standard run 232,767).
+- **Structured Reports:** `results/hosts/unknown-cpu/data/pitt_vqc_training_report.json` (dipole) and `pitt_vqc_training_report.a86fe06d.json` (polarizability), re-run 2026-10-26.

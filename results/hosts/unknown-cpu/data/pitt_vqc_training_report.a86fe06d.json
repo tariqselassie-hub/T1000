@@ -1,0 +1,42 @@
+{
+  "timestamp_utc": "2026-10-26T21:40:15Z",
+  "target_property": "polarizability",
+  "target_unit": "A^3",
+  "train_samples": 10000,
+  "test_samples": 2000,
+  "qubits": 8,
+  "layers": 3,
+  "trials": [
+    {
+      "name": "Classical-Ridge-19D",
+      "description": "19 universal topological descriptors with closed-form ridge readout",
+      "train_mse": 46.008302895685,
+      "test_mse": 166.91415556652876,
+      "test_mae": 1.6620013770935886,
+      "test_r2": 0.5909776443161575,
+      "throughput_mols_per_sec": 5378753.922008068,
+      "uses_target_as_input": false
+    },
+    {
+      "name": "Standard-VQC-8Q",
+      "description": "8-qubit hardware-efficient ansatz (16 observables: 8 Z_q + 8 Z_q Z_{q+1})",
+      "train_mse": 123.32968714235712,
+      "test_mse": 257.6282040498105,
+      "test_mae": 6.704893050269228,
+      "test_r2": 0.3686832937961908,
+      "throughput_mols_per_sec": 232766.5467918951,
+      "uses_target_as_input": false
+    },
+    {
+      "name": "Stark-Coupled-VQC-8Q",
+      "description": "8-qubit dual-angle ansatz coupling 3D dipole moments (μ_x, μ_y, μ_z) as non-Abelian Rz tilts",
+      "train_mse": 135.40398672759173,
+      "test_mse": 277.0162961708655,
+      "test_mae": 7.176564380871674,
+      "test_r2": 0.3211728649493789,
+      "throughput_mols_per_sec": 210494.18772924133,
+      "uses_target_as_input": false
+    }
+  ],
+  "stark_advantage_pct": -7.525609314617751
+}

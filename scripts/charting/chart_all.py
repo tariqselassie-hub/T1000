@@ -242,9 +242,8 @@ def run_all_charts() -> None:
             print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
 
     # 25. Quantum Kernel Ridge Regression & Depth Showdown
-    pitt_qkrr_json = ws_root / "results" / "data" / "pitt_qkrr_training_report.json"
-    if pitt_qkrr_json.exists():
-        import chart_pitt_qkrr_depth_showdown
+    import chart_pitt_qkrr_depth_showdown
+    if chart_pitt_qkrr_depth_showdown.has_reports():
         chart_pitt_qkrr_depth_showdown.main()
         png = ws_root / "results" / "charts" / "pitt_qkrr_depth_showdown.png"
         if png.exists():

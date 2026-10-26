@@ -2,11 +2,21 @@
 # Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
 
 """
-T-1000 Sovereign Charting: Quantum Kernel Ridge Regression (Q-KRR) & Depth Showdown.
-Visualizes the baseline vs pre-update vs post-update metrics across:
-  - Classical Linear Ridge & RBF baselines
-  - 8-Qubit Standard VQC vs Stark-Coupled VQC
-  - Quantum Depth Showdown: Depth L=1 vs Depth L=2 (Gram eigenspectrum & Haar collapse)
+T-1000 Sovereign Charting: Pitt Quantum Kernel Ridge Regression (Q-KRR) & Stark-VQC benchmarks.
+
+Every number is read from the recorded reports of `pitt_qkrr_train` and `pitt_vqc_train`:
+  - results/data/pitt_{qkrr,vqc}_training_report*.json            (reference host)
+  - results/hosts/<host>/data/pitt_{qkrr,vqc}_training_report*.json (other hosts)
+When several reports share a configuration, the most recent one is used. Models flagged
+`uses_target_as_input` (the Stark encodings on the dipole target) are drawn hatched in red and
+labelled as a target leak, not as a prediction.
+
+Panels:
+  1. Dipole test R^2, all models
+  2. Polarizability test R^2, all models
+  3. ZZ kernel feature-map depth L=1 vs L=2 (test R^2, both targets)
+  4. Train -> test generalization gap (test MSE / train MSE) on polarizability
+
 Strictly adheres to Deen OS Sovereign Visual Specification:
   - Deep Obsidian (#05080d), Void Charcoal (#0f172a), Slate Grid (#1e293b)
   - Quantum Emerald (#00e676, #00ff88), Hardware Gold (#ffb300), Alert Crimson (#ef4444)
@@ -25,336 +35,212 @@ from deen_theme import (
     BG_OBSIDIAN,
     CARD_CHARCOAL,
     GREEN_QUANTUM,
-    GREEN_EMERALD,
     GOLD_HARDWARE,
     GOLD_BRIGHT,
     RED_ALERT,
-    RED_CRIMSON,
     TEXT_POLAR,
     TEXT_SLATE,
     TEXT_MUTED,
     GRID_SLATE,
 )
 
+WS_ROOT = Path(__file__).resolve().parents[2]
+
+# Short display names for the model names written by the two binaries.
+DISPLAY = {
+    "Classical-Linear-Ridge": "Linear Ridge\n(19-D)",
+    "Classical-RBF-Kernel": "RBF Kernel",
+    "Quantum-Kernel-ZZ-8Q": "ZZ Q-KRR\n8Q",
+    "Quantum-Stark-Kernel-8Q": "Stark Q-KRR\n8Q",
+    "Classical-Ridge-19D": "Ridge 19-D\n(VQC run)",
+    "Standard-VQC-8Q": "Standard VQC\n8Q",
+    "Stark-Coupled-VQC-8Q": "Stark VQC\n8Q",
+}
+CLASSICAL = {"Classical-Linear-Ridge", "Classical-RBF-Kernel", "Classical-Ridge-19D"}
+
+
+def _load(kind: str) -> list[dict]:
+    """All recorded reports of one binary (`qkrr` or `vqc`), each tagged with its file path."""
+    pattern = f"pitt_{kind}_training_report*.json"
+    paths = list((WS_ROOT / "results" / "data").glob(pattern))
+    paths += list((WS_ROOT / "results" / "hosts").glob(f"*/data/{pattern}"))
+    reports = []
+    for p in sorted(paths):
+        with open(p, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        data["_path"] = p.relative_to(WS_ROOT).as_posix()
+        reports.append(data)
+    return reports
+
+
+def _latest(reports: list[dict], **match) -> dict | None:
+    """Most recent report whose fields equal `match`."""
+    hits = [r for r in reports if all(r.get(k) == v for k, v in match.items())]
+    return max(hits, key=lambda r: r.get("timestamp_utc", "")) if hits else None
+
+
+def has_reports() -> bool:
+    return bool(_load("qkrr") or _load("vqc"))
+
+
+def _target_trials(qkrr: list[dict], vqc: list[dict], target: str) -> tuple[list[dict], list[str]]:
+    """Trials for one target: Q-KRR at depth 1 followed by the VQC run, plus their sources."""
+    trials, sources = [], []
+    q = _latest(qkrr, target_property=target, depth=1)
+    if q:
+        trials += q["trials"]
+        sources.append(f"{q['_path']} ({q['train_samples']}/{q['test_samples']})")
+    v = _latest(vqc, target_property=target)
+    if v:
+        trials += v["trials"]
+        sources.append(f"{v['_path']} ({v['train_samples']}/{v['test_samples']})")
+    return trials, sources
+
+
+def _bar_color(trial: dict) -> str:
+    if trial.get("uses_target_as_input"):
+        return RED_ALERT
+    return GOLD_HARDWARE if trial["name"] in CLASSICAL else GREEN_QUANTUM
+
+
+def _r2_panel(ax, trials: list[dict], sources: list[str], title: str, unit: str) -> None:
+    style_card(ax, title=title, subtitle="Test R^2 (higher is better); red hatched = target leak")
+    if not trials:
+        ax.text(0.5, 0.5, "no recorded report", ha="center", color=TEXT_MUTED, transform=ax.transAxes)
+        return
+    x = np.arange(len(trials))
+    r2 = [t["test_r2"] for t in trials]
+    bars = ax.bar(
+        x,
+        r2,
+        0.6,
+        color=[_bar_color(t) for t in trials],
+        edgecolor=TEXT_POLAR,
+        linewidth=0.8,
+        hatch=["//" if t.get("uses_target_as_input") else "" for t in trials],
+    )
+    ax.set_xticks(x)
+    ax.set_xticklabels([DISPLAY.get(t["name"], t["name"]) for t in trials], fontsize=8, color=TEXT_SLATE)
+    ax.set_ylabel("Test R^2", color=TEXT_POLAR, fontsize=9.5)
+    ax.set_ylim(min(0.0, min(r2) - 0.1), 1.08)
+    ax.axhline(0, color=TEXT_MUTED, linewidth=0.8)
+    for b, t in zip(bars, trials):
+        label = f"{t['test_r2']:.3f}\nMSE {t['test_mse']:.2f} {unit}"
+        if t.get("uses_target_as_input"):
+            label = f"{t['test_r2']:.3f}\nTARGET LEAK"
+        ax.text(
+            b.get_x() + b.get_width() / 2,
+            max(b.get_height(), 0) + 0.02,
+            label,
+            ha="center",
+            va="bottom",
+            fontsize=7,
+            color=RED_ALERT if t.get("uses_target_as_input") else TEXT_POLAR,
+            fontweight="bold",
+        )
+    ax.text(
+        0.01,
+        -0.2,
+        "source: " + "; ".join(sources),
+        transform=ax.transAxes,
+        fontsize=6.5,
+        color=TEXT_MUTED,
+    )
+
+
+def _depth_panel(ax, qkrr: list[dict]) -> None:
+    style_card(
+        ax,
+        title="PANEL 3: ZZ KERNEL FEATURE-MAP DEPTH L=1 VS L=2",
+        subtitle="Test R^2 of the ZZ Q-KRR model; the Stark kernel does not depend on depth",
+    )
+    targets = ["dipole", "polarizability"]
+    width = 0.35
+    for i, depth in enumerate([1, 2]):
+        vals = []
+        for target in targets:
+            rep = _latest(qkrr, target_property=target, depth=depth)
+            zz = next((t for t in rep["trials"] if t["name"] == "Quantum-Kernel-ZZ-8Q"), None) if rep else None
+            vals.append(zz["test_r2"] if zz else np.nan)
+        pos = np.arange(len(targets)) + (i - 0.5) * width
+        bars = ax.bar(
+            pos,
+            vals,
+            width,
+            label=f"Depth L={depth}",
+            color=GREEN_QUANTUM if depth == 1 else GOLD_BRIGHT,
+            edgecolor=TEXT_POLAR,
+            linewidth=0.8,
+        )
+        for b, v in zip(bars, vals):
+            if not np.isnan(v):
+                ax.text(b.get_x() + b.get_width() / 2, v + 0.02, f"{v:.3f}", ha="center",
+                        va="bottom", fontsize=8.5, color=TEXT_POLAR, fontweight="bold")
+    ax.set_xticks(np.arange(len(targets)))
+    ax.set_xticklabels(["Dipole (Debye)", "Polarizability (A^3)"], fontsize=9.5, color=TEXT_SLATE)
+    ax.set_ylabel("Test R^2", color=TEXT_POLAR, fontsize=9.5)
+    ax.set_ylim(0, 1.05)
+    ax.legend(loc="upper left", framealpha=0.85)
+
+
+def _gap_panel(ax, trials: list[dict]) -> None:
+    style_card(
+        ax,
+        title="PANEL 4: TRAIN -> TEST GENERALIZATION GAP (POLARIZABILITY)",
+        subtitle="Test MSE / Train MSE (1.0 = no overfitting)",
+    )
+    if not trials:
+        ax.text(0.5, 0.5, "no recorded report", ha="center", color=TEXT_MUTED, transform=ax.transAxes)
+        return
+    ratios = [t["test_mse"] / max(t["train_mse"], 1e-12) for t in trials]
+    y = np.arange(len(trials))
+    bars = ax.barh(y, ratios, height=0.5, color=[_bar_color(t) for t in trials],
+                   edgecolor=TEXT_POLAR, linewidth=0.8)
+    ax.set_yticks(y)
+    ax.set_yticklabels([DISPLAY.get(t["name"], t["name"]).replace("\n", " ") for t in trials],
+                       fontsize=8.5, color=TEXT_SLATE)
+    ax.set_xscale("log")
+    ax.axvline(1.0, color=TEXT_MUTED, linestyle="--", linewidth=0.8)
+    ax.set_xlabel("Test MSE / Train MSE (log scale)", color=TEXT_POLAR, fontsize=9.5)
+    for b, r, t in zip(bars, ratios, trials):
+        ax.text(r * 1.08, b.get_y() + b.get_height() / 2,
+                f"{r:.1f}x  ({t['train_mse']:.2f} -> {t['test_mse']:.2f})",
+                va="center", ha="left", fontsize=8, color=TEXT_POLAR)
+    ax.set_xlim(0.5, max(ratios) * 8)
+
 
 def main() -> None:
     apply_deen_theme()
-
-    # Load persistent reports if available
-    qkrr_json = Path("results/data/pitt_qkrr_training_report.json")
-    vqc_json = Path("results/data/pitt_vqc_training_report.json")
-
-    qkrr_data = {}
-    if qkrr_json.exists():
-        with open(qkrr_json, "r", encoding="utf-8") as f:
-            qkrr_data = json.load(f)
-
-    vqc_data = {}
-    if vqc_json.exists():
-        with open(vqc_json, "r", encoding="utf-8") as f:
-            vqc_data = json.load(f)
+    qkrr, vqc = _load("qkrr"), _load("vqc")
+    if not (qkrr or vqc):
+        raise FileNotFoundError("no pitt_qkrr / pitt_vqc training reports recorded")
 
     fig = plt.figure(figsize=(19, 13), facecolor=BG_OBSIDIAN)
-    gs = fig.add_gridspec(2, 2, hspace=0.32, wspace=0.26)
+    gs = fig.add_gridspec(2, 2, hspace=0.42, wspace=0.22)
 
-    # ──────────────────────────────────────────────────────────────────────────
-    # PANEL 1: Model Accuracy & Generalization Showdown (Test MSE & R^2)
-    # ──────────────────────────────────────────────────────────────────────────
-    ax1 = fig.add_subplot(gs[0, 0])
-    style_card(
-        ax1,
-        title="PANEL 1: TEST ACCURACY & PREDICTIVE ADVANTAGE (PITT 106K)",
-        subtitle="Permanent Dipole Moment ||mu|| (Debye) - Lower MSE & Higher R^2 is Superior",
-    )
+    dip, dip_src = _target_trials(qkrr, vqc, "dipole")
+    pol, pol_src = _target_trials(qkrr, vqc, "polarizability")
+    _r2_panel(fig.add_subplot(gs[0, 0]), dip, dip_src,
+              "PANEL 1: DIPOLE MOMENT ||mu|| (DEBYE)", "D^2")
+    _r2_panel(fig.add_subplot(gs[0, 1]), pol, pol_src,
+              "PANEL 2: POLARIZABILITY alpha (A^3)", "A^6")
+    _depth_panel(fig.add_subplot(gs[1, 0]), qkrr)
+    _gap_panel(fig.add_subplot(gs[1, 1]), pol)
 
-    models = [
-        "Classical\nLinear Ridge",
-        "Classical\nRBF Kernel",
-        "Standard\nQ-KRR (L=1)",
-        "Stark-VQC\n8Q (Depth 3)",
-        "Stark Q-KRR\n(Depth L=2)",
-        "Stark Q-KRR\n(Depth L=1)",
-    ]
-
-    test_mses = [3.7490, 4.4296, 6.7801, 1.8157, 2.1831, 1.6139]
-    test_r2s = [0.2718, 0.1395, -0.3170, 0.8004, 0.7725, 0.8141]
-
-    x = np.arange(len(models))
-    width = 0.38
-
-    bars1 = ax1.bar(
-        x - width / 2,
-        test_mses,
-        width,
-        label="Test MSE (Debye^2)",
-        color=[GOLD_HARDWARE, GOLD_HARDWARE, RED_ALERT, GREEN_QUANTUM, GOLD_BRIGHT, GREEN_EMERALD],
-        edgecolor=TEXT_POLAR,
-        linewidth=0.8,
-    )
-
-    ax1_r2 = ax1.twinx()
-    ax1_r2.set_facecolor("none")
-    bars2 = ax1_r2.bar(
-        x + width / 2,
-        test_r2s,
-        width,
-        label="Test R^2 Score",
-        color=[CARD_CHARCOAL] * len(models),
-        edgecolor=[GOLD_HARDWARE, GOLD_HARDWARE, RED_ALERT, GREEN_QUANTUM, GOLD_BRIGHT, GREEN_EMERALD],
-        linewidth=1.4,
-        hatch="//",
-    )
-
-    ax1.set_xticks(x)
-    ax1.set_xticklabels(models, fontsize=8.5, color=TEXT_SLATE)
-    ax1.set_ylabel("Test MSE (Debye^2)", color=TEXT_POLAR, fontsize=9.5)
-    ax1_r2.set_ylabel("Test R^2 Coefficient", color=TEXT_POLAR, fontsize=9.5)
-    ax1_r2.set_ylim(-0.4, 1.0)
-    ax1_r2.grid(False)
-
-    for b in bars1:
-        h = b.get_height()
-        ax1.text(
-            b.get_x() + b.get_width() / 2,
-            h + 0.15,
-            f"{h:.2f}",
-            ha="center",
-            va="bottom",
-            fontsize=8,
-            color=TEXT_POLAR,
-            fontweight="bold",
-        )
-
-    for b in bars2:
-        h = b.get_height()
-        pos_y = h + 0.03 if h >= 0 else h - 0.08
-        ax1_r2.text(
-            b.get_x() + b.get_width() / 2,
-            pos_y,
-            f"{h:.2f}",
-            ha="center",
-            va="bottom",
-            fontsize=8,
-            color=GREEN_QUANTUM if h > 0.5 else TEXT_MUTED,
-            fontweight="bold",
-        )
-
-    # Combined legend
-    lines1, labels1 = ax1.get_legend_handles_labels()
-    lines2, labels2 = ax1_r2.get_legend_handles_labels()
-    ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper left", framealpha=0.85)
-
-    # ──────────────────────────────────────────────────────────────────────────
-    # PANEL 2: Hilbert Space Metric & Mean Off-Diagonal Fidelity Decay
-    # ──────────────────────────────────────────────────────────────────────────
-    ax2 = fig.add_subplot(gs[0, 1])
-    style_card(
-        ax2,
-        title="PANEL 2: HILBERT SPACE METRIC & EXPONENTIAL KERNEL CONCENTRATION",
-        subtitle="Mean Off-Diagonal Fidelity E[|<psi_i|psi_j>|^2] vs Haar Random State 2-Design Floor",
-    )
-
-    categories = [
-        "Depth L=1\n(Continuous)",
-        "Depth L=2\n(Haar Collapse)",
-        "Haar 2-Design\nFloor (1/256)",
-    ]
-    fidelities = [0.2841, 0.0618, 1.0 / 256.0]
-    colors_f = [GREEN_EMERALD, RED_ALERT, GRID_SLATE]
-
-    y_pos = np.arange(len(categories))
-    bars_f = ax2.barh(y_pos, fidelities, height=0.45, color=colors_f, edgecolor=TEXT_POLAR, linewidth=1.0)
-
-    ax2.set_yticks(y_pos)
-    ax2.set_yticklabels(categories, fontsize=9.5, color=TEXT_SLATE)
-    ax2.set_xlabel("Mean State Fidelity |<psi_i | psi_j>|^2", color=TEXT_POLAR, fontsize=9.5)
-    ax2.set_xlim(0, 0.35)
-
-    for b, val in zip(bars_f, fidelities):
-        w = b.get_width()
-        ax2.text(
-            w + 0.008,
-            b.get_y() + b.get_height() / 2,
-            f"{val:.4f}" if val >= 0.01 else f"{val:.4f} (~0.0039)",
-            va="center",
-            ha="left",
-            fontsize=9,
-            color=TEXT_POLAR,
-            fontweight="bold",
-        )
-
-    # Theoretical annotations
-    ax2.axvline(0.2841, color=GREEN_QUANTUM, linestyle=":", alpha=0.7)
-    ax2.axvline(0.0618, color=RED_ALERT, linestyle=":", alpha=0.7)
-    ax2.text(
-        0.14,
-        0.88,
-        "L=1 preserves smooth chemical continuity (0.30 - 0.65 overlaps)\n"
-        "L=2 triggers Haar collapse toward orthogonal identity K -> I",
-        transform=ax2.transAxes,
-        fontsize=8.5,
-        color=TEXT_SLATE,
-        bbox=dict(boxstyle="square,pad=0.5", facecolor=CARD_CHARCOAL, edgecolor=GRID_SLATE),
-    )
-
-    # ──────────────────────────────────────────────────────────────────────────
-    # PANEL 3: Gram Matrix Condition Number & Effective Hilbert Rank
-    # ──────────────────────────────────────────────────────────────────────────
-    ax3 = fig.add_subplot(gs[1, 0])
-    style_card(
-        ax3,
-        title="PANEL 3: GRAM MATRIX CONDITION NUMBER & EFFECTIVE RANK",
-        subtitle="Depth L=1 Spans 42-D Manifold; Depth L=2 Disperses Uniformly Across All 256 Amplitudes",
-    )
-
-    depth_labels = ["Depth L=1", "Depth L=2"]
-    eff_ranks = [42, 218]
-    cond_numbers = [4.12e4, 1.85e2]
-
-    x_d = np.arange(len(depth_labels))
-    w_d = 0.35
-
-    bar_rank = ax3.bar(
-        x_d - w_d / 2,
-        eff_ranks,
-        w_d,
-        label="Effective Hilbert Rank (>99% Trace)",
-        color=[GREEN_QUANTUM, RED_ALERT],
-        edgecolor=TEXT_POLAR,
-        linewidth=1.0,
-    )
-
-    ax3_cond = ax3.twinx()
-    ax3_cond.set_facecolor("none")
-    bar_cond = ax3_cond.bar(
-        x_d + w_d / 2,
-        cond_numbers,
-        w_d,
-        label="Gram Condition Number (kappa)",
-        color=[GOLD_HARDWARE, CARD_CHARCOAL],
-        edgecolor=GOLD_BRIGHT,
-        linewidth=1.2,
-        hatch="xx",
-    )
-    ax3_cond.set_yscale("log")
-    ax3_cond.set_ylim(1e1, 1e6)
-    ax3_cond.set_ylabel("Condition Number kappa (log scale)", color=GOLD_BRIGHT, fontsize=9.5)
-    ax3_cond.grid(False)
-
-    ax3.set_xticks(x_d)
-    ax3.set_xticklabels(depth_labels, fontsize=9.5, color=TEXT_SLATE)
-    ax3.set_ylabel("Effective Hilbert Rank (out of 256)", color=TEXT_POLAR, fontsize=9.5)
-    ax3.set_ylim(0, 270)
-    ax3.axhline(256, color=TEXT_MUTED, linestyle="--", linewidth=0.8, alpha=0.5)
-    ax3.text(0.05, 258, "Full 8-Qubit Dimension Ceiling (dim=256)", color=TEXT_MUTED, fontsize=7.5)
-
-    for b in bar_rank:
-        h = b.get_height()
-        ax3.text(
-            b.get_x() + b.get_width() / 2,
-            h + 5,
-            f"{int(h)} dims",
-            ha="center",
-            va="bottom",
-            fontsize=8.5,
-            color=TEXT_POLAR,
-            fontweight="bold",
-        )
-
-    for b, c_val in zip(bar_cond, cond_numbers):
-        ax3_cond.text(
-            b.get_x() + b.get_width() / 2,
-            c_val * 1.5,
-            f"{c_val:.2e}",
-            ha="center",
-            va="bottom",
-            fontsize=8.5,
-            color=GOLD_BRIGHT,
-            fontweight="bold",
-        )
-
-    lines3_a, lab3_a = ax3.get_legend_handles_labels()
-    lines3_b, lab3_b = ax3_cond.get_legend_handles_labels()
-    ax3.legend(lines3_a + lines3_b, lab3_a + lab3_b, loc="upper center", framealpha=0.85)
-
-    # ──────────────────────────────────────────────────────────────────────────
-    # PANEL 4: Generalization Gap (Train -> Test Overfitting Penalty)
-    # ──────────────────────────────────────────────────────────────────────────
-    ax4 = fig.add_subplot(gs[1, 1])
-    style_card(
-        ax4,
-        title="PANEL 4: TRAIN -> TEST GENERALIZATION GAP (OVERFITTING PENALTY)",
-        subtitle="Delta MSE = Test MSE - Train MSE across Depth Configurations",
-    )
-
-    models_gap = [
-        "Stark Q-KRR (L=1)",
-        "Stark Q-KRR (L=2)",
-        "Classical Linear Ridge",
-        "Classical RBF Kernel",
-        "Standard Q-KRR (L=1)",
-    ]
-
-    train_mses_g = [0.9216, 1.0600, 5.3820, 5.1899, 1.9651]
-    test_mses_g = [1.6139, 2.1831, 3.7490, 4.4296, 6.7801]
-    deltas = [t - tr for t, tr in zip(test_mses_g, train_mses_g)]
-
-    y_pos_g = np.arange(len(models_gap))
-    bar_gap = ax4.barh(
-        y_pos_g,
-        deltas,
-        height=0.45,
-        color=[GREEN_EMERALD, RED_ALERT, GOLD_HARDWARE, GOLD_HARDWARE, RED_CRIMSON],
-        edgecolor=TEXT_POLAR,
-        linewidth=1.0,
-    )
-
-    ax4.set_yticks(y_pos_g)
-    ax4.set_yticklabels(models_gap, fontsize=8.5, color=TEXT_SLATE)
-    ax4.set_xlabel("Generalization Gap Delta MSE = Test - Train (Debye^2)", color=TEXT_POLAR, fontsize=9.5)
-    ax4.axvline(0, color=TEXT_MUTED, linestyle="-", linewidth=0.8)
-
-    ax4.set_xlim(-2.5, 5.5)
-
-    for b, d_val in zip(bar_gap, deltas):
-        w = b.get_width()
-        pos_x = w + 0.12 if w >= 0 else w - 0.12
-        ax4.text(
-            pos_x,
-            b.get_y() + b.get_height() / 2,
-            f"{d_val:+.4f}",
-            va="center",
-            ha="left" if w >= 0 else "right",
-            fontsize=8.5,
-            color=TEXT_POLAR,
-            fontweight="bold",
-        )
-
-    ax4.text(
-        0.52,
-        0.18,
-        "Under L=2, the gap expands by +62.2%\n"
-        "(Delta MSE: +0.6923 -> +1.1231)\n"
-        "proving orthogonal coordinate memorization.",
-        transform=ax4.transAxes,
-        fontsize=8.5,
-        color=TEXT_SLATE,
-        bbox=dict(boxstyle="square,pad=0.5", facecolor=CARD_CHARCOAL, edgecolor=GRID_SLATE),
-    )
-
-    # ──────────────────────────────────────────────────────────────────────────
-    # Sovereign Header & Metadata Watermark
-    # ──────────────────────────────────────────────────────────────────────────
     fig.suptitle(
-        "T-1000 SOVEREIGN TELEMETRY: QUANTUM KERNEL RIDGE REGRESSION & DEPTH SHOWDOWN\n"
-        "University of Pittsburgh Quantum Repository (106k Molecules) - 8-Qubit Hilbert State Overlaps",
+        "T-1000 SOVEREIGN TELEMETRY: PITT QUANTUM REPOSITORY KERNEL & VQC REGRESSION\n"
+        "Recorded reports only - classical (gold), quantum (green), target leak (red, hatched)",
         color=TEXT_POLAR,
         fontsize=12,
         fontweight="bold",
         y=0.985,
     )
+    fig.patch.set_facecolor(BG_OBSIDIAN)
+    for ax in fig.axes:
+        ax.set_facecolor(CARD_CHARCOAL)
+        ax.grid(color=GRID_SLATE, linewidth=0.5, alpha=0.6)
 
-    out_path = Path("results/charts/pitt_qkrr_depth_showdown.png")
+    out_path = WS_ROOT / "results" / "charts" / "pitt_qkrr_depth_showdown.png"
     saved_path = save_deen_figure(fig, out_path, dpi=300)
     print(f"[CHART] Successfully generated sovereign figure: {saved_path}")
 

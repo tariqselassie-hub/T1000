@@ -13,20 +13,22 @@
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::env;
-use std::fs;
 use std::path::Path;
 use std::time::Instant;
 use t1000::pitt_data::{self, FeatureSet, PittMolecule};
 use t1000::q_krr::{
-    evaluate_regression_metrics, min_max_scale_features, solve_cholesky, Complex64, QKRRConfig,
+    evaluate_regression_metrics, solve_cholesky, Complex64, MinMaxScaler, QKRRConfig,
     QuantumKernelRegressor,
 };
+use t1000::results::{Better, Score};
 use t1000::zinc_readout_fit::ridge_regression_multi;
 use t1000::zinc_training_common::utc_timestamp_rfc3339;
 
 const DEFAULT_PITT_CSV: &str = "data/pitt/pitt_quantum.csv";
 const REPORT_PATH: &str = "results/data/pitt_qkrr_training_report.json";
 const N_QUBITS: usize = 8;
+/// Index of the dipole magnitude in `PittMolecule::properties`.
+const DIPOLE_IDX: usize = 3;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QKRRModelTrial {
@@ -37,6 +39,8 @@ pub struct QKRRModelTrial {
     pub test_mae: f64,
     pub test_r2: f64,
     pub throughput_mols_per_sec: f64,
+    /// The model's input encodes the target itself, so its test error is not a prediction.
+    pub uses_target_as_input: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -47,9 +51,12 @@ pub struct PittQkrrTrainingReport {
     pub train_samples: usize,
     pub test_samples: usize,
     pub qubits: usize,
+    /// Feature-map layers of the ZZ kernel (`--depth`); the Stark kernel is always one layer.
+    pub depth: usize,
     pub lambda_reg: f64,
     pub trials: Vec<QKRRModelTrial>,
-    pub qkrr_advantage_pct: f64,
+    /// Q-SKRR test-MSE reduction over the RBF baseline; `None` when Q-SKRR reads the target.
+    pub qkrr_advantage_pct: Option<f64>,
 }
 
 /// Evaluates a Classical RBF Gaussian Kernel Gram Matrix: K_ij = exp(-gamma * ||x_i - x_j||^2).
@@ -187,13 +194,11 @@ fn main() {
     let lambda: f64 = get_arg("--lambda")
         .and_then(|s| s.parse().ok())
         .unwrap_or(1e-2);
-    let depth: usize = get_arg("--depth")
-        .and_then(|s| s.parse().ok())
-        .unwrap_or(1);
+    let depth: usize = get_arg("--depth").and_then(|s| s.parse().ok()).unwrap_or(1);
 
     let (target_idx, target_unit) = match target_name {
         "polarizability" | "alpha" => (4, "A^3"),
-        "dipole" | "mu" => (3, "Debye"),
+        "dipole" | "mu" => (DIPOLE_IDX, "Debye"),
         "gap" | "egap" => (2, "eV"),
         "homo" => (0, "eV"),
         "lumo" => (1, "eV"),
@@ -252,11 +257,12 @@ fn main() {
         .collect();
     let y_test: Vec<f64> = test_mols.iter().map(|m| m.properties[target_idx]).collect();
 
-    // Min-Max scale the leading 8 descriptors into [0, PI]
+    // Min-Max scale the leading 8 descriptors into [0, PI] using the training range only
     let raw_train_feat: Vec<Vec<f64>> = train_mols.iter().map(|m| m.features.clone()).collect();
     let raw_test_feat: Vec<Vec<f64>> = test_mols.iter().map(|m| m.features.clone()).collect();
-    let scaled_train_feat = min_max_scale_features(&raw_train_feat, N_QUBITS);
-    let scaled_test_feat = min_max_scale_features(&raw_test_feat, N_QUBITS);
+    let scaler = MinMaxScaler::fit(&raw_train_feat, N_QUBITS);
+    let scaled_train_feat = scaler.transform(&raw_train_feat);
+    let scaled_test_feat = scaler.transform(&raw_test_feat);
 
     let mut trials = Vec::new();
 
@@ -265,14 +271,11 @@ fn main() {
     let t0 = Instant::now();
     let y_train_mat: Vec<Vec<f64>> = y_train.iter().map(|&y| vec![y]).collect();
     let (w_lin, b_lin) = ridge_regression_multi(&raw_train_feat, &y_train_mat, 19, 1, lambda);
-    let pred_tr_lin: Vec<f64> = raw_train_feat
-        .iter()
-        .map(|r| b_lin[0] + r.iter().zip(&w_lin).map(|(&f, w)| f * w[0]).sum::<f64>())
-        .collect();
-    let pred_te_lin: Vec<f64> = raw_test_feat
-        .iter()
-        .map(|r| b_lin[0] + r.iter().zip(&w_lin).map(|(&f, w)| f * w[0]).sum::<f64>())
-        .collect();
+    let predict_lin = |rows: &[Vec<f64>]| -> Vec<f64> {
+        let dot = |r: &Vec<f64>| r.iter().zip(&w_lin).map(|(&f, w)| f * w[0]).sum::<f64>();
+        rows.iter().map(|r| b_lin[0] + dot(r)).collect()
+    };
+    let (pred_tr_lin, pred_te_lin) = (predict_lin(&raw_train_feat), predict_lin(&raw_test_feat));
     let (tr_mse_l, _, _) = evaluate_regression_metrics(&y_train, &pred_tr_lin);
     let (te_mse_l, te_mae_l, te_r2_l) = evaluate_regression_metrics(&y_test, &pred_te_lin);
     let el_l = t0.elapsed().as_secs_f64();
@@ -290,6 +293,7 @@ fn main() {
         test_mae: te_mae_l,
         test_r2: te_r2_l,
         throughput_mols_per_sec: tput_l,
+        uses_target_as_input: false,
     });
 
     // ── TRIAL 2: Classical RBF Gaussian Kernel Ridge Baseline ─────────────────
@@ -337,6 +341,7 @@ fn main() {
         test_mae: te_mae_r,
         test_r2: te_r2_r,
         throughput_mols_per_sec: tput_r,
+        uses_target_as_input: false,
     });
 
     // ── TRIAL 3: 8-Qubit Second-Order ZZ Quantum Kernel (Q-KRR) ──────────────
@@ -369,6 +374,7 @@ fn main() {
         test_mae: te_mae_q,
         test_r2: te_r2_q,
         throughput_mols_per_sec: tput_q,
+        uses_target_as_input: false,
     });
 
     // ── TRIAL 4: 8-Qubit Molecular Stark-Entangled Kernel (Q-SKRR) ───────────
@@ -391,41 +397,41 @@ fn main() {
     }
     let alpha_stark = solve_cholesky(&k_stark, &y_norm, n_train);
 
-    let pred_tr_skrr: Vec<f64> = tr_stark_states
-        .par_iter()
-        .map(|s| {
-            let mut sum_k = 0.0f64;
-            for (i, tr_s) in tr_stark_states.iter().enumerate() {
-                sum_k += alpha_stark[i] * QuantumKernelRegressor::state_fidelity(tr_s, s);
-            }
-            sum_k * y_std + y_mean
-        })
-        .collect();
-    let pred_te_skrr: Vec<f64> = te_stark_states
-        .par_iter()
-        .map(|s| {
-            let mut sum_k = 0.0f64;
-            for (i, tr_s) in tr_stark_states.iter().enumerate() {
-                sum_k += alpha_stark[i] * QuantumKernelRegressor::state_fidelity(tr_s, s);
-            }
-            sum_k * y_std + y_mean
-        })
-        .collect();
+    let predict_stark = |states: &[Vec<Complex64>]| -> Vec<f64> {
+        states
+            .par_iter()
+            .map(|s| {
+                let sum_k: f64 = tr_stark_states
+                    .iter()
+                    .zip(&alpha_stark)
+                    .map(|(tr_s, a)| a * QuantumKernelRegressor::state_fidelity(tr_s, s))
+                    .sum();
+                sum_k * y_std + y_mean
+            })
+            .collect()
+    };
+    let pred_tr_skrr = predict_stark(&tr_stark_states);
+    let pred_te_skrr = predict_stark(&te_stark_states);
 
     let (tr_mse_sk, _, _) = evaluate_regression_metrics(&y_train, &pred_tr_skrr);
     let (te_mse_sk, te_mae_sk, te_r2_sk) = evaluate_regression_metrics(&y_test, &pred_te_skrr);
     let el_sk = t3.elapsed().as_secs_f64();
     let tput_sk = (n_train + n_test) as f64 / el_sk;
-    let adv_pct = (te_mse_r - te_mse_sk) / te_mse_r * 100.0;
+    // The Stark encoding injects the DFT dipole vector, so for a dipole target it sees the label.
+    let stark_reads_target = target_idx == DIPOLE_IDX;
+    let adv_pct = (!stark_reads_target).then(|| (te_mse_r - te_mse_sk) / te_mse_r * 100.0);
 
     println!(
         "  -> Q-SKRR Stark: Test MSE: {:.4} | MAE: {:.4} {} | R^2: {:.4} ({:.0} mols/s)",
         te_mse_sk, te_mae_sk, target_unit, te_r2_sk, tput_sk
     );
-    println!(
-        "  -> Q-SKRR Accuracy Improvement vs Classical RBF: {:.2}%",
-        adv_pct
-    );
+    match adv_pct {
+        Some(adv) => println!("  -> Q-SKRR Accuracy Improvement vs Classical RBF: {adv:.2}%"),
+        None => println!(
+            "  -> [LEAK] Q-SKRR encodes the dipole vector, which is the target; its test error \
+             is not a prediction and no advantage is reported"
+        ),
+    }
 
     trials.push(QKRRModelTrial {
         name: "Quantum-Stark-Kernel-8Q".to_string(),
@@ -437,6 +443,7 @@ fn main() {
         test_mae: te_mae_sk,
         test_r2: te_r2_sk,
         throughput_mols_per_sec: tput_sk,
+        uses_target_as_input: stark_reads_target,
     });
 
     // ── Final Sovereign Telemetry Summary Table ──────────────────────────────
@@ -466,16 +473,26 @@ fn main() {
         train_samples: n_train,
         test_samples: n_test,
         qubits: N_QUBITS,
+        depth,
         lambda_reg: lambda,
         trials,
         qkrr_advantage_pct: adv_pct,
     };
 
-    if let Some(parent) = Path::new(REPORT_PATH).parent() {
-        let _ = fs::create_dir_all(parent);
-    }
-    if let Ok(json_str) = serde_json::to_string_pretty(&report) {
-        let _ = fs::write(REPORT_PATH, json_str);
-        println!("[RECORD] Telemetry successfully recorded to: {REPORT_PATH}");
+    let settings = format!(
+        "target={target_name} train={n_train} test={n_test} lambda={lambda} depth={depth} \
+         scaling=train-fit"
+    );
+    let score = Score {
+        metric: "qskrr_test_mse",
+        value: te_mse_sk,
+        better: Better::Lower,
+        guard: None,
+        settings: &settings,
+    };
+    let json_str = serde_json::to_string_pretty(&report).expect("Serialize report");
+    match t1000::results::write_scored(REPORT_PATH, json_str, &score) {
+        Ok(outcome) => println!("[RECORD] {REPORT_PATH}: {outcome:?}"),
+        Err(e) => eprintln!("[ERROR] Could not write {REPORT_PATH}: {e}"),
     }
 }

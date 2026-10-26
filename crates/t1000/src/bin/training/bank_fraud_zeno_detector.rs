@@ -15,8 +15,9 @@ use std::path::Path;
 use std::time::Instant;
 
 use t1000::bank_fraud_data::{
-    locate_bank_fraud_file, parse_bank_transactions, N_FRAUD_FEATURES,
+    locate_bank_fraud_file, parse_bank_transactions, BankTransaction, N_FRAUD_FEATURES,
 };
+use t1000::results::{Better, Score};
 use t1000::ultrametric_tree::{apply_single_qubit_gate, gate_ry, gate_rz};
 
 const N_QUBITS: usize = 10;
@@ -96,9 +97,12 @@ impl QuantumZenoSentry {
         state[0] = Complex64::new(1.0, 0.0);
 
         // Stage 1: Feature Injection into 10-Qubit Hilbert Space (H_1024)
-        for q in 0..N_QUBITS {
-            let scale = self.trunk_params[q];
-            let angle = (features[q] * scale).clamp(0.0, std::f64::consts::PI);
+        for (q, (&x, &scale)) in features
+            .iter()
+            .zip(&self.trunk_params[..N_QUBITS])
+            .enumerate()
+        {
+            let angle = (x * scale).clamp(0.0, std::f64::consts::PI);
             apply_single_qubit_gate(&mut state, q, &gate_ry(angle));
         }
 
@@ -165,12 +169,18 @@ pub struct BankFraudReport {
     pub sentry_routing_contrast_ratio: f64,
     pub mean_alert_clean: f64,
     pub mean_alert_fraud: f64,
+    /// How `optimal_threshold` was chosen; the holdout metrics below are all at that threshold.
+    pub threshold_source: String,
     pub optimal_threshold: f64,
+    pub train_f1_score_pct: f64,
     pub precision_pct: f64,
     pub recall_pct: f64,
     pub f1_score_pct: f64,
     pub balanced_accuracy_pct: f64,
     pub auroc_score: f64,
+    /// Threshold maximizing F1 on the holdout labels, and that F1. Optimistic; reference only.
+    pub oracle_test_threshold: f64,
+    pub oracle_test_f1_score_pct: f64,
 }
 
 fn main() {
@@ -178,8 +188,8 @@ fn main() {
     println!("T-1000 QUANTUM ZENO SENTRY: BANK FRAUD INTERACTION-FREE ANOMALY DETECTOR");
     println!("================================================================================");
 
-    let fraud_path = locate_bank_fraud_file(&["bank_fraud.csv"])
-        .expect("Bank fraud dataset not found");
+    let fraud_path =
+        locate_bank_fraud_file(&["bank_fraud.csv"]).expect("Bank fraud dataset not found");
     println!("Loaded Dataset       : {}", fraud_path.display());
 
     let total_samples = 25000;
@@ -206,19 +216,31 @@ fn main() {
 
     let cfg = ZenoSentryConfig::default();
     println!("\nHilbert Register Topology:");
-    println!("  Sentry Register H_Sentry    : {} Qubit  (Wire 0: Clean vs Alert Subspace)", cfg.n_sentry);
-    println!("  Typology Register H_Typology: {} Qubits (Wires 1..3: Fraud Archetype)", cfg.n_typology);
-    println!("  Entropy Sink H_Env          : {} Qubits (Wires 4..9: Benign Noise Cooler)", cfg.n_env);
+    println!(
+        "  Sentry Register H_Sentry    : {} Qubit  (Wire 0: Clean vs Alert Subspace)",
+        cfg.n_sentry
+    );
+    println!(
+        "  Typology Register H_Typology: {} Qubits (Wires 1..3: Fraud Archetype)",
+        cfg.n_typology
+    );
+    println!(
+        "  Entropy Sink H_Env          : {} Qubits (Wires 4..9: Benign Noise Cooler)",
+        cfg.n_env
+    );
     println!("  Total State Dimension       : 10 Qubits (dim = 1,024 amplitudes)");
 
     let mut sentry = QuantumZenoSentry::new(cfg);
     sentry.init_seeded(0x5EED_7777);
-    println!("Trainable Parameters        : {} (Zero Classical Readout Weights)", sentry.total_parameters());
+    println!(
+        "Trainable Parameters        : {} (Zero Classical Readout Weights)",
+        sentry.total_parameters()
+    );
 
     // 1. Training Stage via Sentry Parameter Shift
-    println!("\n[1/2] Training Quantum Zeno Sentry Engine (4 Epochs)...");
-    let t_train = Instant::now();
     let epochs = 3;
+    println!("\n[1/2] Training Quantum Zeno Sentry Engine ({epochs} Epochs)...");
+    let t_train = Instant::now();
     let lr = 0.05;
     let batch_size = 128;
     let n_batches = train_set.len() / batch_size;
@@ -246,7 +268,8 @@ fn main() {
 
             let b_scale = (lr / (batch_size as f64)).min(0.005);
             for &p_idx in &active_params {
-                sentry.trunk_params[p_idx] = (sentry.trunk_params[p_idx] - b_scale * grad[p_idx]).clamp(0.2, 3.0);
+                sentry.trunk_params[p_idx] =
+                    (sentry.trunk_params[p_idx] - b_scale * grad[p_idx]).clamp(0.2, 3.0);
             }
         }
         println!("  Epoch {:02}/{} Completed", ep, epochs);
@@ -255,25 +278,21 @@ fn main() {
     println!("Training Finished in {:.2}s", train_duration);
 
     // 2. Evaluation on Holdout Test Set
-    println!("\n[2/2] Evaluating on Holdout Test Set ({} transactions)...", test_set.len());
+    println!(
+        "\n[2/2] Evaluating on Holdout Test Set ({} transactions)...",
+        test_set.len()
+    );
     let t_eval = Instant::now();
 
-    let scores: Vec<(f64, usize)> = test_set
-        .par_iter()
-        .map(|t| {
-            let state = sentry.forward(&t.features);
-            let p_alert = sentry.compute_alert_probability(&state);
-            (p_alert, t.is_fraud)
-        })
-        .collect();
+    let scores = score_transactions(&sentry, test_set);
 
     let eval_duration = t_eval.elapsed();
     let per_sample_us = (eval_duration.as_micros() as f64) / (test_set.len() as f64);
 
     let mut alert_clean_sum = 0.0;
     let mut alert_fraud_sum = 0.0;
-    let mut n_clean = 0;
-    let mut n_fraud = 0;
+    let mut n_clean = 0u32;
+    let mut n_fraud = 0u32;
 
     for &(p, y) in &scores {
         if y == 1 {
@@ -285,58 +304,28 @@ fn main() {
         }
     }
 
-    let mean_clean = alert_clean_sum / (n_clean as f64).max(1.0);
-    let mean_fraud = alert_fraud_sum / (n_fraud as f64).max(1.0);
+    let mean_clean = alert_clean_sum / f64::from(n_clean).max(1.0);
+    let mean_fraud = alert_fraud_sum / f64::from(n_fraud).max(1.0);
     let contrast_ratio = mean_fraud / mean_clean.max(1e-6);
 
-    // Sweep optimal threshold maximizing F1
-    let mut best_th = 0.5;
-    let mut best_f1 = 0.0;
-    let mut best_prec = 0.0;
-    let mut best_rec = 0.0;
-    let mut best_bal_acc = 0.0;
-
-    for step in 1..99 {
-        let th = (step as f64) * 0.01;
-        let mut tp = 0;
-        let mut fp = 0;
-        let mut tn = 0;
-        let mut fn_count = 0;
-
-        for &(p, y) in &scores {
-            let pred = if p >= th { 1 } else { 0 };
-            match (pred, y) {
-                (1, 1) => tp += 1,
-                (1, 0) => fp += 1,
-                (0, 0) => tn += 1,
-                (0, 1) => fn_count += 1,
-                _ => {}
-            }
-        }
-
-        let prec = if tp + fp > 0 { (tp as f64) / ((tp + fp) as f64) } else { 0.0 };
-        let rec = if tp + fn_count > 0 { (tp as f64) / ((tp + fn_count) as f64) } else { 0.0 };
-        let f1 = if prec + rec > 0.0 { 2.0 * prec * rec / (prec + rec) } else { 0.0 };
-        let tnr = if tn + fp > 0 { (tn as f64) / ((tn + fp) as f64) } else { 0.0 };
-        let bal_acc = 0.5 * (rec + tnr);
-
-        if f1 > best_f1 {
-            best_f1 = f1;
-            best_th = th;
-            best_prec = prec;
-            best_rec = rec;
-            best_bal_acc = bal_acc;
-        }
-    }
+    // The operating threshold is chosen on the training transactions only, then applied
+    // unchanged to the holdout set.
+    let train_scores = score_transactions(&sentry, train_set);
+    let best_th = best_f1_threshold(&train_scores);
+    let train_at_th = threshold_metrics(&train_scores, best_th);
+    let test_at_th = threshold_metrics(&scores, best_th);
+    // Reference only: the threshold that would be picked by looking at the test labels.
+    let oracle_th = best_f1_threshold(&scores);
+    let oracle_at_th = threshold_metrics(&scores, oracle_th);
 
     // Trapezoidal AUROC approximation
-    let mut sorted_scores = scores.clone();
+    let mut sorted_scores = scores;
     sorted_scores.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
     let mut auroc = 0.0;
     let mut cum_tp = 0.0;
     let mut prev_fp = 0.0;
-    let total_pos = n_fraud as f64;
-    let total_neg = n_clean as f64;
+    let total_pos = f64::from(n_fraud);
+    let total_neg = f64::from(n_clean);
 
     for &(_, y) in &sorted_scores {
         if y == 1 {
@@ -350,24 +339,60 @@ fn main() {
 
     println!("--------------------------------------------------------------------------------");
     println!("QUANTUM ZENO SENTRY TELEMETRY & ROUTING CONTRAST:");
-    println!("  Mean Alert P_alert (Clean Transactions) : {:.4}", mean_clean);
-    println!("  Mean Alert P_alert (Fraud Transactions) : {:.4}", mean_fraud);
-    println!("  Sentry Routing Contrast Ratio          : {:.2}:1", contrast_ratio);
+    println!(
+        "  Mean Alert P_alert (Clean Transactions) : {:.4}",
+        mean_clean
+    );
+    println!(
+        "  Mean Alert P_alert (Fraud Transactions) : {:.4}",
+        mean_fraud
+    );
+    println!(
+        "  Sentry Routing Contrast Ratio          : {:.2}:1",
+        contrast_ratio
+    );
     println!("--------------------------------------------------------------------------------");
-    println!("ANOMALY DETECTION METRICS (Optimal Threshold = {:.2}):", best_th);
-    println!("  Fraud Precision                         : {:>6.2}%", best_prec * 100.0);
-    println!("  Fraud Recall                            : {:>6.2}%", best_rec * 100.0);
-    println!("  Fraud F1-Score                          : {:>6.2}%", best_f1 * 100.0);
-    println!("  Balanced Accuracy                       : {:>6.2}%", best_bal_acc * 100.0);
+    println!(
+        "HOLDOUT METRICS (threshold {:.2} chosen on training set, train F1 {:.2}%):",
+        best_th,
+        train_at_th.f1 * 100.0
+    );
+    println!(
+        "  Fraud Precision                         : {:>6.2}%",
+        test_at_th.precision * 100.0
+    );
+    println!(
+        "  Fraud Recall                            : {:>6.2}%",
+        test_at_th.recall * 100.0
+    );
+    println!(
+        "  Fraud F1-Score                          : {:>6.2}%",
+        test_at_th.f1 * 100.0
+    );
+    println!(
+        "  Balanced Accuracy                       : {:>6.2}%",
+        test_at_th.balanced_accuracy * 100.0
+    );
     println!("  AUROC Score                             : {:.4}", auroc);
-    println!("  Inference Latency                       : {:.2} us/sample", per_sample_us);
+    println!(
+        "  Inference Latency                       : {:.2} us/sample",
+        per_sample_us
+    );
+    println!(
+        "  [reference] test-tuned threshold {:.2} would give F1 {:.2}% (not a valid estimate)",
+        oracle_th,
+        oracle_at_th.f1 * 100.0
+    );
     println!("--------------------------------------------------------------------------------");
 
     let report = BankFraudReport {
-        timestamp_rfc3339: "2026-10-26T14:00:00Z".to_string(),
+        timestamp_rfc3339: t1000::zinc_training_common::utc_timestamp_rfc3339(),
         dataset: "Bank Fraud Anomaly Dataset (1M transactions)".to_string(),
         architecture: "T-1000 Quantum Zeno Sentry Anomaly Detector".to_string(),
-        registers: format!("H_Sentry({}Q) (x) H_Typology({}Q) (x) H_Env({}Q)", cfg.n_sentry, cfg.n_typology, cfg.n_env),
+        registers: format!(
+            "H_Sentry({}Q) (x) H_Typology({}Q) (x) H_Env({}Q)",
+            cfg.n_sentry, cfg.n_typology, cfg.n_env
+        ),
         n_qubits: N_QUBITS,
         state_dim: STATE_DIM,
         total_parameters: sentry.total_parameters(),
@@ -379,19 +404,91 @@ fn main() {
         sentry_routing_contrast_ratio: contrast_ratio,
         mean_alert_clean: mean_clean,
         mean_alert_fraud: mean_fraud,
+        threshold_source: "train_set_max_f1".to_string(),
         optimal_threshold: best_th,
-        precision_pct: best_prec * 100.0,
-        recall_pct: best_rec * 100.0,
-        f1_score_pct: best_f1 * 100.0,
-        balanced_accuracy_pct: best_bal_acc * 100.0,
+        train_f1_score_pct: train_at_th.f1 * 100.0,
+        precision_pct: test_at_th.precision * 100.0,
+        recall_pct: test_at_th.recall * 100.0,
+        f1_score_pct: test_at_th.f1 * 100.0,
+        balanced_accuracy_pct: test_at_th.balanced_accuracy * 100.0,
         auroc_score: auroc,
+        oracle_test_threshold: oracle_th,
+        oracle_test_f1_score_pct: oracle_at_th.f1 * 100.0,
     };
 
     let report_path = Path::new("results/experiments/bank_fraud_zeno_report.json");
-    if let Some(parent) = report_path.parent() {
-        std::fs::create_dir_all(parent).expect("Create results dir");
+    let settings = format!(
+        "train={} test={} epochs={epochs} lr={lr} batch={batch_size} threshold=train-f1",
+        train_set.len(),
+        test_set.len()
+    );
+    let score = Score {
+        metric: "test_auroc",
+        value: auroc,
+        better: Better::Higher,
+        guard: None,
+        settings: &settings,
+    };
+    let json_str = serde_json::to_string_pretty(&report).expect("Serialize report");
+    let outcome =
+        t1000::results::write_scored(report_path, json_str, &score).expect("Write report");
+    println!("Report {}: {outcome:?}", report_path.display());
+}
+
+/// Alert probability and fraud label for each transaction.
+fn score_transactions(sentry: &QuantumZenoSentry, txns: &[BankTransaction]) -> Vec<(f64, usize)> {
+    txns.par_iter()
+        .map(|t| {
+            let state = sentry.forward(&t.features);
+            (sentry.compute_alert_probability(&state), t.is_fraud)
+        })
+        .collect()
+}
+
+/// Detection metrics of the rule `p_alert >= threshold`.
+#[derive(Debug, Clone, Copy, Default)]
+struct ThresholdMetrics {
+    precision: f64,
+    recall: f64,
+    f1: f64,
+    balanced_accuracy: f64,
+}
+
+fn threshold_metrics(scores: &[(f64, usize)], threshold: f64) -> ThresholdMetrics {
+    let (mut tp, mut fp, mut tn, mut fn_count) = (0usize, 0usize, 0usize, 0usize);
+    for &(p, y) in scores {
+        match (p >= threshold, y == 1) {
+            (true, true) => tp += 1,
+            (true, false) => fp += 1,
+            (false, false) => tn += 1,
+            (false, true) => fn_count += 1,
+        }
     }
-    t1000::results::write(report_path, serde_json::to_string_pretty(&report).unwrap())
-        .expect("Write report");
-    println!("Report written to: {}", report_path.display());
+    let ratio = |a: usize, b: usize| if b > 0 { a as f64 / b as f64 } else { 0.0 };
+    let precision = ratio(tp, tp + fp);
+    let recall = ratio(tp, tp + fn_count);
+    let f1 = if precision + recall > 0.0 {
+        2.0 * precision * recall / (precision + recall)
+    } else {
+        0.0
+    };
+    ThresholdMetrics {
+        precision,
+        recall,
+        f1,
+        balanced_accuracy: 0.5 * (recall + ratio(tn, tn + fp)),
+    }
+}
+
+/// Threshold on the 0.01 grid that maximizes F1 on `scores`.
+fn best_f1_threshold(scores: &[(f64, usize)]) -> f64 {
+    let mut best = (0.5, 0.0);
+    for step in 1..99 {
+        let th = f64::from(step) * 0.01;
+        let f1 = threshold_metrics(scores, th).f1;
+        if f1 > best.1 {
+            best = (th, f1);
+        }
+    }
+    best.0
 }

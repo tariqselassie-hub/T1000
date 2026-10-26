@@ -1,0 +1,2 @@
+settings target=dipole train=1000 test=500 lambda=0.1 depth=1 scaling=train-fit
+metric qskrr_test_mse 9.416746459287005e-1

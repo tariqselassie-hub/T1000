@@ -150,6 +150,27 @@ the README now says.
 
 Unit tests: 394 library tests pass (`cargo test --release --workspace`).
 
+## Evaluation-leak audit (2026-10-26)
+
+Three findings added after the 2026-10-23 audit reported held-out numbers that had seen the test
+set. Each binary was fixed and re-run on `unknown-cpu` with `--record`; the reports are under
+`results/hosts/unknown-cpu/`.
+
+| Finding | Leak | Fix | Was | Now |
+| :--- | :--- | :--- | :--- | :--- |
+| M163 2D COSY NMR QNN | The 1,000 spectra were 10 identical copies of 100 molecules (the renderer is deterministic), so all 200 test spectra were in the training set | 5-fold molecule-disjoint cross-validation | 98.00 % (196/200) | 82.00 % (82/100 molecules; folds 70 to 95 %) |
+| M166 Zeno fraud sentry | F1-maximising threshold swept on the test labels | Threshold swept on the training set, applied once to the test set | F1 17.91 %, balanced accuracy 60.37 % | F1 17.31 %, balanced accuracy 59.37 % (AUROC 0.6777 unchanged) |
+| M164 Pitt Q-KRR | Test descriptors min-max scaled with the test set's own range | `MinMaxScaler` fitted on the training rows | Q-SKRR "63.57 %" (dipole) and "48.91 %" (polarizability) better than RBF | No quantum-kernel advantage on either target; linear ridge best on both |
+| M164 Pitt Q-SKRR (found during the fix) | The Stark encoding injects the dipole vector, which is the dipole target | Flagged `uses_target_as_input`; no advantage reported | Dipole R² 0.6865 | Not a valid result (R² 0.8171 with the label as input) |
+| M160 Pitt Stark-VQC | Same dipole encoding as Q-SKRR | Flagged `uses_target_as_input`; no advantage reported | "74.41 %" better than the standard VQC on dipole (R² 0.8004) | Not a valid result; on polarizability Stark-VQC is 7.53 % worse than the standard VQC, and both are below ridge (R² 0.32, 0.37 vs 0.59) |
+
+The canonical copies of the three reports (`results/experiments/bank_fraud_zeno_report.json`,
+`results/data/pitt_qkrr_training_report.json`, `results/data/nmr2d_spectroscopy_probe.json`) held
+the leaking runs and were removed, as was `results/data/pitt_vqc_training_report.json`.
+`chart_pitt_qkrr_depth_showdown.py` now reads the recorded Q-KRR and VQC reports instead of
+hard-coded values and dropped its Gram-geometry panels, which no binary produces. The NMR and Zeno
+charts have not been regenerated.
+
 ## Lab bench (2026-10-23)
 
 The dashboard was rebuilt as a bench (`web/index.html`); the old decks moved to `web/archive.html`. Two old

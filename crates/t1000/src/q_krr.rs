@@ -138,8 +138,14 @@ impl QuantumKernelRegressor {
                         if (i & bit_step) == 0 {
                             let a = state[i];
                             let b = state[i + bit_step];
-                            state[i] = Complex64::new((a.re + b.re) * inv_sqrt2, (a.im + b.im) * inv_sqrt2);
-                            state[i + bit_step] = Complex64::new((a.re - b.re) * inv_sqrt2, (a.im - b.im) * inv_sqrt2);
+                            state[i] = Complex64::new(
+                                (a.re + b.re) * inv_sqrt2,
+                                (a.im + b.im) * inv_sqrt2,
+                            );
+                            state[i + bit_step] = Complex64::new(
+                                (a.re - b.re) * inv_sqrt2,
+                                (a.im - b.im) * inv_sqrt2,
+                            );
                         }
                     }
                 }
@@ -360,43 +366,58 @@ pub fn solve_cholesky(a: &[f64], b: &[f64], n: usize) -> Vec<f64> {
     x
 }
 
-/// Min-max scales raw molecular descriptors into $[0, \pi]$ along each feature dimension.
-pub fn min_max_scale_features(x: &[Vec<f64>], target_dim: usize) -> Vec<Vec<f64>> {
-    let n = x.len();
-    if n == 0 {
-        return Vec::new();
-    }
-    let d = x[0].len().min(target_dim);
+/// Per-feature min-max ranges fitted on one set of rows and applied unchanged to others.
+///
+/// Fit on the training rows only, then transform both training and test rows, so test
+/// statistics never reach the model. Test values outside the training range map outside
+/// $[0, \pi]$.
+#[derive(Debug, Clone, PartialEq)]
+pub struct MinMaxScaler {
+    pub mins: Vec<f64>,
+    pub maxs: Vec<f64>,
+}
 
-    let mut mins = vec![f64::INFINITY; d];
-    let mut maxs = vec![f64::NEG_INFINITY; d];
-
-    for row in x {
-        for (f, &val) in row.iter().take(d).enumerate() {
-            if val < mins[f] {
-                mins[f] = val;
-            }
-            if val > maxs[f] {
-                maxs[f] = val;
+impl MinMaxScaler {
+    /// Records the range of the leading `target_dim` features of `x`.
+    pub fn fit(x: &[Vec<f64>], target_dim: usize) -> Self {
+        let d = x.first().map_or(0, |row| row.len().min(target_dim));
+        let mut mins = vec![f64::INFINITY; d];
+        let mut maxs = vec![f64::NEG_INFINITY; d];
+        for row in x {
+            for (f, &val) in row.iter().take(d).enumerate() {
+                mins[f] = mins[f].min(val);
+                maxs[f] = maxs[f].max(val);
             }
         }
+        Self { mins, maxs }
     }
 
-    x.iter()
-        .map(|row| {
-            let mut scaled = vec![0.0f64; d];
-            for f in 0..d {
-                let span = maxs[f] - mins[f];
-                let val = row.get(f).copied().unwrap_or(0.0);
-                scaled[f] = if span > 1e-8 {
-                    ((val - mins[f]) / span) * PI
-                } else {
-                    0.5 * PI
-                };
-            }
-            scaled
-        })
-        .collect()
+    /// Maps each fitted feature to $[0, \pi]$ using the fitted range.
+    pub fn transform(&self, x: &[Vec<f64>]) -> Vec<Vec<f64>> {
+        x.iter()
+            .map(|row| {
+                (0..self.mins.len())
+                    .map(|f| {
+                        let span = self.maxs[f] - self.mins[f];
+                        let val = row.get(f).copied().unwrap_or(0.0);
+                        if span > 1e-8 {
+                            ((val - self.mins[f]) / span) * PI
+                        } else {
+                            0.5 * PI
+                        }
+                    })
+                    .collect()
+            })
+            .collect()
+    }
+}
+
+/// Min-max scales raw molecular descriptors into $[0, \pi]$ using their own range.
+///
+/// Only for a single set of rows. For a train/test split use [`MinMaxScaler`] fitted on the
+/// training rows, or the test set is scaled by its own statistics.
+pub fn min_max_scale_features(x: &[Vec<f64>], target_dim: usize) -> Vec<Vec<f64>> {
+    MinMaxScaler::fit(x, target_dim).transform(x)
 }
 
 /// Computes (MSE, MAE, R^2) metrics between target labels and predictions.
@@ -438,6 +459,18 @@ mod tests {
 
         assert!((QuantumKernelRegressor::state_fidelity(&s1, &s1) - 1.0).abs() < 1e-12);
         assert!(QuantumKernelRegressor::state_fidelity(&s1, &s2) < 1e-12);
+    }
+
+    #[test]
+    fn test_scaler_applies_training_range_to_test_rows() {
+        let train = [vec![0.0, 10.0], vec![2.0, 20.0]];
+        let test = [vec![1.0, 30.0]];
+        let scaler = MinMaxScaler::fit(&train, 2);
+        let scaled = scaler.transform(&test);
+        // Fitting on the test row alone would give a zero span and map both features to PI/2.
+        assert!((scaled[0][0] - 0.5 * PI).abs() < 1e-12);
+        assert!((scaled[0][1] - 2.0 * PI).abs() < 1e-12);
+        assert_eq!(min_max_scale_features(&train, 2), scaler.transform(&train));
     }
 
     #[test]
@@ -535,7 +568,13 @@ mod tests {
         let fid_l2 = QuantumKernelRegressor::state_fidelity(&state_a_l2, &state_b_l2);
 
         // L=1 retains continuous overlap (> 0.20), whereas L=2 drops significantly closer to 1/256
-        assert!(fid_l1 > fid_l2, "L=1 fidelity ({fid_l1}) must exceed L=2 fidelity ({fid_l2})");
-        assert!(fid_l1 > 0.20, "L=1 must preserve chemical continuity, got {fid_l1}");
+        assert!(
+            fid_l1 > fid_l2,
+            "L=1 fidelity ({fid_l1}) must exceed L=2 fidelity ({fid_l2})"
+        );
+        assert!(
+            fid_l1 > 0.20,
+            "L=1 must preserve chemical continuity, got {fid_l1}"
+        );
     }
 }
