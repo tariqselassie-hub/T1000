@@ -121,4 +121,6 @@ Dipole moment relies on smooth inductive and spatial transitions across molecula
 - **Core Module:** [`crates/t1000/src/q_krr.rs`](file:///c:/Users/zoddj/GuddaLM_workspace/T1000/crates/t1000/src/q_krr.rs)
 - **Benchmark Executable:** [`crates/t1000/src/bin/training/pitt_qkrr_train.rs`](file:///c:/Users/zoddj/GuddaLM_workspace/T1000/crates/t1000/src/bin/training/pitt_qkrr_train.rs)
 - **Structured Experiment Telemetry:** [`results/data/pitt_qkrr_training_report.json`](file:///c:/Users/zoddj/GuddaLM_workspace/T1000/results/data/pitt_qkrr_training_report.json)
+- **Sovereign Telemetry Chart:** [`results/charts/pitt_qkrr_depth_showdown.png`](file:///c:/Users/zoddj/GuddaLM_workspace/T1000/results/charts/pitt_qkrr_depth_showdown.png)
+- **Charting Engine:** [`scripts/charting/chart_pitt_qkrr_depth_showdown.py`](file:///c:/Users/zoddj/GuddaLM_workspace/T1000/scripts/charting/chart_pitt_qkrr_depth_showdown.py)
 - **Unit Tests:** `test q_krr::tests::test_cholesky_solver_accuracy ... ok`, `test q_krr::tests::test_state_fidelity_identity_and_orthogonality ... ok`, `test q_krr::tests::test_depth_two_fidelity_concentration ... ok`, `test q_krr::tests::test_gram_matrix_symmetry_and_unit_diagonal ... ok`, `test q_krr::tests::test_qkrr_fit_and_predict_toy_convergence ... ok`.

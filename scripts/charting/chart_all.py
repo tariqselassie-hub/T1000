@@ -241,6 +241,17 @@ def run_all_charts() -> None:
             generated.append(("Geometric QGNN Showdown", png.name, f"{size_kb:.1f} KB"))
             print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
 
+    # 25. Quantum Kernel Ridge Regression & Depth Showdown
+    pitt_qkrr_json = ws_root / "results" / "data" / "pitt_qkrr_training_report.json"
+    if pitt_qkrr_json.exists():
+        import chart_pitt_qkrr_depth_showdown
+        chart_pitt_qkrr_depth_showdown.main()
+        png = ws_root / "results" / "charts" / "pitt_qkrr_depth_showdown.png"
+        if png.exists():
+            size_kb = png.stat().st_size / 1024.0
+            generated.append(("Pitt Q-KRR Depth Showdown", png.name, f"{size_kb:.1f} KB"))
+            print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
+
     print("\n╔═══════════════════════════════════════════════════════════════════════════════╗")
     print("║                        RENDERED ARTIFACT MANIFEST                             ║")
     print("╠═════════════════════════════════════╦══════════════════════════════════╦══════════╣")
