@@ -13,6 +13,12 @@ pub enum PauliObservable {
     X(usize),
     /// Bipartite correlation sigma_z(i) * sigma_z(j)
     ZZ(usize, usize),
+    /// Transverse bipartite correlation sigma_x(i) * sigma_x(j)
+    XX(usize, usize),
+    /// Transverse bipartite correlation sigma_y(i) * sigma_y(j)
+    YY(usize, usize),
+    /// Full state parity operator: Z^{\otimes N} = \bigotimes_{i=0}^{N-1} Z_i
+    AllZ,
     /// Multi-qubit parity or linear combination: sum_k w_k Z_k
     LinearZ(Vec<(usize, f64)>),
     /// Global multi-qubit observable: <H> = (1/N) * sum_{i=0}^{N-1} <Z_i>
@@ -50,6 +56,33 @@ impl PauliObservable {
                     out.real[idx] = state.real[idx ^ mask];
                     out.imag[idx] = state.imag[idx ^ mask];
                 }
+            }
+            PauliObservable::XX(a, b) => {
+                crate::simd::assert_qubit(*a, n_qubits);
+                crate::simd::assert_qubit(*b, n_qubits);
+                let mask = (1usize << *a) | (1usize << *b);
+                for idx in 0..state.dim {
+                    out.real[idx] = state.real[idx ^ mask];
+                    out.imag[idx] = state.imag[idx ^ mask];
+                }
+            }
+            PauliObservable::YY(a, b) => {
+                crate::simd::assert_qubit(*a, n_qubits);
+                crate::simd::assert_qubit(*b, n_qubits);
+                let mask = (1usize << *a) | (1usize << *b);
+                for idx in 0..state.dim {
+                    let bit_a = (idx >> *a) & 1;
+                    let bit_b = (idx >> *b) & 1;
+                    let sign = if bit_a == bit_b { -1.0 } else { 1.0 };
+                    let partner = idx ^ mask;
+                    out.real[idx] = sign * state.real[partner];
+                    out.imag[idx] = sign * state.imag[partner];
+                }
+            }
+            PauliObservable::AllZ => {
+                scale_by(&mut out, |idx| {
+                    if idx.count_ones() % 2 == 0 { 1.0 } else { -1.0 }
+                });
             }
             PauliObservable::LinearZ(weights) => {
                 for &(q, _) in weights {
@@ -112,6 +145,38 @@ impl PauliObservable {
                     let partner = idx ^ mask;
                     out_real[idx] += coeff * state.real[partner];
                     out_imag[idx] += coeff * state.imag[partner];
+                }
+            }
+            PauliObservable::XX(a, b) => {
+                crate::simd::assert_qubit(*a, n_qubits);
+                crate::simd::assert_qubit(*b, n_qubits);
+                let mask = (1usize << *a) | (1usize << *b);
+                for idx in 0..state.dim {
+                    let partner = idx ^ mask;
+                    out_real[idx] += coeff * state.real[partner];
+                    out_imag[idx] += coeff * state.imag[partner];
+                }
+            }
+            PauliObservable::YY(a, b) => {
+                crate::simd::assert_qubit(*a, n_qubits);
+                crate::simd::assert_qubit(*b, n_qubits);
+                let mask = (1usize << *a) | (1usize << *b);
+                for idx in 0..state.dim {
+                    let bit_a = (idx >> *a) & 1;
+                    let bit_b = (idx >> *b) & 1;
+                    let sign = if bit_a == bit_b { -1.0 } else { 1.0 };
+                    let partner = idx ^ mask;
+                    let s = coeff * sign;
+                    out_real[idx] += s * state.real[partner];
+                    out_imag[idx] += s * state.imag[partner];
+                }
+            }
+            PauliObservable::AllZ => {
+                for idx in 0..state.dim {
+                    let sign = if idx.count_ones() % 2 == 0 { 1.0 } else { -1.0 };
+                    let s = coeff * sign;
+                    out_real[idx] += s * state.real[idx];
+                    out_imag[idx] += s * state.imag[idx];
                 }
             }
             PauliObservable::LinearZ(weights) => {
@@ -196,6 +261,57 @@ impl PauliObservable {
                         let real_cross = r1 * r2 + i1 * i2;
                         exp += 2.0 * real_cross;
                     }
+                }
+                exp
+            }
+            PauliObservable::XX(q1, q2) => {
+                assert!(
+                    *q1 < n_qubits && *q2 < n_qubits,
+                    "Qubit index out of bounds"
+                );
+                let mask = (1usize << *q1) | (1usize << *q2);
+                let mut exp = 0.0;
+                for idx in 0..state.dim {
+                    let partner = idx ^ mask;
+                    if idx < partner {
+                        let r1 = state.real[idx];
+                        let i1 = state.imag[idx];
+                        let r2 = state.real[partner];
+                        let i2 = state.imag[partner];
+                        exp += 2.0 * (r1 * r2 + i1 * i2);
+                    }
+                }
+                exp
+            }
+            PauliObservable::YY(q1, q2) => {
+                assert!(
+                    *q1 < n_qubits && *q2 < n_qubits,
+                    "Qubit index out of bounds"
+                );
+                let mask = (1usize << *q1) | (1usize << *q2);
+                let mut exp = 0.0;
+                for idx in 0..state.dim {
+                    let partner = idx ^ mask;
+                    if idx < partner {
+                        let bit_a = (idx >> *q1) & 1;
+                        let bit_b = (idx >> *q2) & 1;
+                        let sign = if bit_a == bit_b { -1.0 } else { 1.0 };
+                        let r1 = state.real[idx];
+                        let i1 = state.imag[idx];
+                        let r2 = state.real[partner];
+                        let i2 = state.imag[partner];
+                        exp += 2.0 * sign * (r1 * r2 + i1 * i2);
+                    }
+                }
+                exp
+            }
+            PauliObservable::AllZ => {
+                let mut exp = 0.0;
+                for idx in 0..state.dim {
+                    let prob =
+                        state.real[idx] * state.real[idx] + state.imag[idx] * state.imag[idx];
+                    let sign = if idx.count_ones() % 2 == 0 { 1.0 } else { -1.0 };
+                    exp += sign * prob;
                 }
                 exp
             }

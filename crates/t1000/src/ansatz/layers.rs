@@ -27,7 +27,11 @@ pub fn apply_single_qubit_ry(state: &mut QuantumState, qubit: usize, theta: f64)
 /// every pair twice (e.g. `(0, 8)` and `(8, 0)` for 16 qubits) and the two CZs cancel, so only
 /// the first `stride` qubits emit a pair. A stride that wraps to 0 (n divides it) emits nothing.
 pub fn entangling_pairs(n_qubits: usize, layer_idx: usize) -> impl Iterator<Item = (usize, usize)> {
-    let stride = (1usize << (layer_idx % 4)) % n_qubits.max(1);
+    let stride = if n_qubits >= 6 && n_qubits % 2 == 0 && layer_idx % 5 == 4 {
+        n_qubits / 2
+    } else {
+        (1usize << (layer_idx % 4)) % n_qubits.max(1)
+    };
     let count = match stride {
         0 => 0,
         s if 2 * s == n_qubits => s,

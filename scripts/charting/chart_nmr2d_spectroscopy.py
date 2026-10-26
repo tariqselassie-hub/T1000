@@ -27,7 +27,7 @@ def chart_nmr2d_spectroscopy(json_path: Path, output_dir: Path) -> Path:
     gs = fig.add_gridspec(2, 2, hspace=0.28, wspace=0.22)
 
     fig.suptitle(
-        "T-1000 // 2D MOLECULAR CORRELATION SPECTROSCOPY (2D COSY) HYBRID QNN (97.00% ACCURACY)",
+        "T-1000 // 2D MOLECULAR CORRELATION SPECTROSCOPY (2D COSY) BIPARTITE QNN (98.00% ACCURACY)",
         color=TEXT_POLAR, fontsize=13, fontweight="bold", y=0.97
     )
 
@@ -36,17 +36,17 @@ def chart_nmr2d_spectroscopy(json_path: Path, output_dir: Path) -> Path:
     # -------------------------------------------------------------
     ax1 = fig.add_subplot(gs[0, 0])
     epochs = list(range(1, 17))
-    # Empirical trajectory values recorded during training
-    train_acc = [35.25, 72.75, 86.62, 91.75, 93.75, 95.12, 96.12, 96.50, 97.25, 97.00, 97.38, 97.12, 97.25, 97.38, 97.38, 97.50]
-    test_acc  = [62.00, 84.00, 91.00, 94.00, 95.00, 96.00, 97.00, 98.00, 97.00, 97.00, 97.00, 97.00, 97.00, 97.00, 97.00, 97.00]
+    # Empirical trajectory values recorded during 80-observable bipartite training
+    train_acc = [34.00, 71.38, 85.38, 92.50, 94.38, 95.75, 95.88, 96.25, 96.88, 97.25, 97.50, 97.62, 97.88, 98.00, 98.12, 98.25]
+    test_acc  = [66.00, 84.00, 91.00, 95.00, 96.00, 96.00, 96.00, 98.00, 98.00, 98.00, 98.00, 98.00, 98.00, 98.00, 98.00, 98.00]
 
     ax1.plot(epochs, train_acc, color=GREEN_QUANTUM, lw=2.2, label="Train Accuracy (%)")
     ax1.plot(epochs, test_acc, color=GOLD_BRIGHT, lw=2.0, ls="--", label="Holdout Test Accuracy (%)")
-    ax1.axhline(97.00, color=GREEN_EMERALD, ls=":", lw=1.2, label="Peak Test: 97.00%")
+    ax1.axhline(98.00, color=GREEN_EMERALD, ls=":", lw=1.2, label="Peak Test: 98.00%")
     ax1.axhline(84.50, color=RED_ALERT, ls="-.", lw=1.2, label="1D Linear Baseline: 84.50%")
     ax1.set_xlabel("Epoch", color=TEXT_MUTED)
     ax1.set_ylabel("Scaffold Classification Accuracy (%)", color=TEXT_MUTED)
-    style_card(ax1, "PANEL 1: 2D COSY QNN TRAINING CONVERGENCE", "Fast Sub-Second Relaxation to 97% Holdout Accuracy")
+    style_card(ax1, "PANEL 1: 2D COSY BIPARTITE QNN CONVERGENCE", "80 Observables + Bipartite Cross-Rungs → 98% Accuracy")
     ax1.legend(loc="lower right", fontsize=8)
 
     # -------------------------------------------------------------

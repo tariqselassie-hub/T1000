@@ -296,9 +296,136 @@ pub fn extract_nmr_features(matrix: &[f64; NMR_STATE_DIM]) -> [f64; N_NMR_SPATIA
     feats
 }
 
+/// Number of targeted bipartite Pauli observables for 2D COSY NMR.
+pub const N_NMR_OBSERVABLES: usize = 80;
+
+/// Computes the 80-observable Pauli expectation vector for a normalized 10-qubit statevector.
+/// Treats H_1024 as bipartite tensor product H_w1 (x) H_w2 (32x32 = 1,024).
+///
+/// Layout:
+///   [0..10]  : 10 Single-qubit Z_i (marginal chemical shift projections along w1 and w2)
+///   [10..20] : 10 Single-qubit X_i (local transverse phase across adjacent dyadic bins)
+///   [20..65] : 45 All-pairs Z_i Z_j (0 <= i < j < 10) (intensity correlations)
+///   [65..70] :  5 Dyadic Mirror X_{s+5} X_s (s = 0..5) (real symmetric cross-peak bit-flip exchange)
+///   [70..75] :  5 Dyadic Mirror Y_{s+5} Y_s (s = 0..5) (phase-inverted cross-peak interference)
+///   [75..79] :  4 Adjacent-Scale Cross X_{s+6} X_s (s = 0..4) (cross-scale J-couplings)
+///   [79]     :  1 Global 10-qubit parity Z^{\otimes 10} (global parity anchor)
+#[inline]
+pub fn measure_nmr2d_pauli_80(
+    re: &[f64; NMR_STATE_DIM],
+    im: &[f64; NMR_STATE_DIM],
+) -> [f64; N_NMR_OBSERVABLES] {
+    let mut obs = [0.0f64; N_NMR_OBSERVABLES];
+
+    // Precompute bitmasks for the 5 dyadic mirror pairs (q_{s+5}, q_s)
+    const MIRROR_MASKS: [usize; 5] = [
+        (1 << 5) | (1 << 0), // s=0: 0x021 (fine J-coupling scale, 0.3125 ppm)
+        (1 << 6) | (1 << 1), // s=1: 0x042 (0.625 ppm)
+        (1 << 7) | (1 << 2), // s=2: 0x084 (1.250 ppm)
+        (1 << 8) | (1 << 3), // s=3: 0x108 (2.500 ppm)
+        (1 << 9) | (1 << 4), // s=4: 0x210 (coarse quadrant, 5.000 ppm)
+    ];
+
+    // Precompute bitmasks for the 4 adjacent-scale cross pairs (q_{s+6}, q_s)
+    const ADJ_MASKS: [usize; 4] = [
+        (1 << 6) | (1 << 0), // 0x041
+        (1 << 7) | (1 << 1), // 0x082
+        (1 << 8) | (1 << 2), // 0x104
+        (1 << 9) | (1 << 3), // 0x208
+    ];
+
+    for k in 0..NMR_STATE_DIM {
+        let rk = re[k];
+        let ik = im[k];
+        let prob = rk * rk + ik * ik;
+
+        // 1. Single-qubit Z_i [0..10] and X_i [10..20]
+        for i in 0..10usize {
+            let mask_i = 1usize << i;
+            let sign_i = if (k & mask_i) == 0 { 1.0 } else { -1.0 };
+            obs[i] += sign_i * prob;
+
+            // Accumulate X_i only when bit i is 0 to count unordered pair {k, k ^ mask_i} cleanly
+            if (k & mask_i) == 0 {
+                let kp = k ^ mask_i;
+                obs[10 + i] += 2.0 * (rk * re[kp] + ik * im[kp]);
+            }
+        }
+
+        // 2. All-pairs Z_i Z_j [20..65]
+        let mut zz_idx = 20usize;
+        for i in 0..10usize {
+            let bit_i = (k >> i) & 1;
+            for j in (i + 1)..10usize {
+                let bit_j = (k >> j) & 1;
+                let sign_ij = if (bit_i ^ bit_j) == 0 { 1.0 } else { -1.0 };
+                obs[zz_idx] += sign_ij * prob;
+                zz_idx += 1;
+            }
+        }
+
+        // 3. Dyadic Mirror XX [65..70] and YY [70..75]
+        for (s, &mask_ab) in MIRROR_MASKS.iter().enumerate() {
+            let kp = k ^ mask_ab;
+            if k < kp {
+                let real_corr = 2.0 * (rk * re[kp] + ik * im[kp]);
+                obs[65 + s] += real_corr; // <X_{s+5} X_s>
+
+                let bit_r = (k >> (s + 5)) & 1;
+                let bit_c = (k >> s) & 1;
+                let yy_sign = if (bit_r ^ bit_c) == 0 { -1.0 } else { 1.0 };
+                obs[70 + s] += yy_sign * real_corr; // <Y_{s+5} Y_s>
+            }
+        }
+
+        // 4. Adjacent-Scale Cross XX [75..79]
+        for (s, &mask_adj) in ADJ_MASKS.iter().enumerate() {
+            let kp = k ^ mask_adj;
+            if k < kp {
+                obs[75 + s] += 2.0 * (rk * re[kp] + ik * im[kp]);
+            }
+        }
+
+        // 5. Global 10-qubit parity Z^{\otimes 10} [79]
+        let parity_sign = if (k.count_ones() & 1) == 0 { 1.0 } else { -1.0 };
+        obs[79] += parity_sign * prob;
+    }
+
+    obs
+}
+
+/// Constructs the list of 80 PauliObservable descriptors matching measure_nmr2d_pauli_80.
+pub fn build_nmr2d_80_observables() -> Vec<crate::measurements::PauliObservable> {
+    use crate::measurements::PauliObservable;
+
+    let mut observables: Vec<PauliObservable> = (0..10).map(PauliObservable::Z).collect();
+    for q in 0..10 {
+        observables.push(PauliObservable::X(q));
+    }
+    for i in 0..10 {
+        for j in (i + 1)..10 {
+            observables.push(PauliObservable::ZZ(i, j));
+        }
+    }
+    for s in 0..5 {
+        observables.push(PauliObservable::XX(s + 5, s));
+    }
+    for s in 0..5 {
+        observables.push(PauliObservable::YY(s + 5, s));
+    }
+    for s in 0..4 {
+        observables.push(PauliObservable::XX(s + 6, s));
+    }
+    observables.push(PauliObservable::AllZ);
+
+    assert_eq!(observables.len(), N_NMR_OBSERVABLES);
+    observables
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::state::QuantumState;
 
     #[test]
     fn test_ethanol_cosy_generation() {
@@ -318,5 +445,42 @@ mod tests {
         let bin_7_4 = ((7.4 - PPM_MIN) / ((PPM_MAX - PPM_MIN) / 32.0)) as usize;
         let peak_val = matrix[bin_7_4 * NMR_GRID_DIM + bin_7_4];
         assert!(peak_val > 0.05, "Aromatic peak should be prominent on diagonal");
+    }
+
+    #[test]
+    fn test_measure_nmr2d_pauli_80_exact_match() {
+        let matrix = generate_cosy_spectrum("CCO").expect("Valid SMILES");
+        let mut state = QuantumState::new(NMR_STATE_DIM);
+        state.real.copy_from_slice(&matrix);
+        // Inject small imaginary components to test complex interference
+        for (i, im) in state.imag.iter_mut().enumerate() {
+            *im = 0.05 * (i as f64).sin();
+        }
+        let norm_sq: f64 = state.real.iter().zip(&state.imag).map(|(&r, &im)| r * r + im * im).sum();
+        let inv_n = 1.0 / norm_sq.sqrt();
+        for (r, im) in state.real.iter_mut().zip(&mut state.imag) {
+            *r *= inv_n;
+            *im *= inv_n;
+        }
+
+        let mut re_arr = [0.0; NMR_STATE_DIM];
+        let mut im_arr = [0.0; NMR_STATE_DIM];
+        re_arr.copy_from_slice(&state.real);
+        im_arr.copy_from_slice(&state.imag);
+
+        let fast_obs = measure_nmr2d_pauli_80(&re_arr, &im_arr);
+        let individual_obs = build_nmr2d_80_observables();
+
+        for (idx, obs_op) in individual_obs.iter().enumerate() {
+            let exp_val = obs_op.expectation_value(&state);
+            let fast_val = fast_obs[idx];
+            assert!(
+                (exp_val - fast_val).abs() < 1e-10,
+                "Observable [{}] mismatch: fast={:.8}, exact={:.8}",
+                idx,
+                fast_val,
+                exp_val
+            );
+        }
     }
 }

@@ -19,8 +19,8 @@ use t1000::{adjoint_gradient_buffered, AdamOptimizer, CircuitAnsatz, PauliObserv
 
 const N_QUBITS: usize = 10;
 const N_CLASSES: usize = 10;
-const N_OBSERVABLES: usize = 65; // 10 Z + 10 X + 45 ZZ
-const N_FUSED: usize = N_OBSERVABLES + N_NMR_SPATIAL; // 130
+const N_OBSERVABLES: usize = 80; // 10 Z + 10 X + 45 ZZ + 5 XX mirror + 5 YY mirror + 4 XX adj + 1 AllZ
+const N_FUSED: usize = N_OBSERVABLES + N_NMR_SPATIAL; // 145
 const N_HIDDEN: usize = 128;
 
 #[derive(Debug, Clone)]
@@ -336,19 +336,12 @@ fn main() {
         t0.elapsed().as_secs_f64() * 1000.0
     );
 
-    let depth = 4;
+    let depth = 5;
     let ansatz = CircuitAnsatz::new(N_QUBITS, depth).with_pi_layer(true);
 
-    // 65 Observables: 10 Z + 10 X + 45 ZZ
-    let mut observables: Vec<PauliObservable> = (0..N_QUBITS).map(PauliObservable::Z).collect();
-    for q in 0..N_QUBITS {
-        observables.push(PauliObservable::X(q));
-    }
-    for i in 0..N_QUBITS {
-        for j in (i + 1)..N_QUBITS {
-            observables.push(PauliObservable::ZZ(i, j));
-        }
-    }
+    // 80 Targeted Bipartite Observables:
+    //   10 Z + 10 X + 45 ZZ + 5 Dyadic Mirror XX + 5 Dyadic Mirror YY + 4 Adjacent-Scale Cross XX + 1 AllZ
+    let observables = t1000::chemistry::nmr2d::build_nmr2d_80_observables();
     assert_eq!(observables.len(), N_OBSERVABLES);
 
     let n_ansatz_params = ansatz.param_count();
@@ -363,10 +356,11 @@ fn main() {
 
     println!("\n [ARCHITECTURE] 2D Molecular Spectroscopy QNN Configuration:");
     println!("   Hilbert Register       : {} Qubits (1,024 2D Frequency Bins)", N_QUBITS);
-    println!("   Circuit Depth          : {} layers (Ring CZ + Ry/Rz)", depth);
-    println!("   Quantum Observables    : {} (10 Z + 10 X + 45 ZZ Correlators)", N_OBSERVABLES);
+    println!("   Bipartite Partition    : H_w1 (32) (x) H_w2 (32) [5Q (x) 5Q]");
+    println!("   Circuit Depth          : {} layers (Ring CZ + Bipartite Cross-Rungs + Ry/Rz)", depth);
+    println!("   Quantum Observables    : {} Bipartite Cross-Peak Symmetry Operators", N_OBSERVABLES);
     println!("   Spectral Stroke Filters: {} Multi-Scale Features", N_NMR_SPATIAL);
-    println!("   Fused Readout Inputs   : {} Features", N_FUSED);
+    println!("   Fused Readout Inputs   : {} Features (80 Quantum + 65 Classical)", N_FUSED);
     println!("   Hidden Neural Layer    : {} LeakyReLU Neurons", N_HIDDEN);
     println!("   Chemical Target Classes: {} Molecular Families", N_CLASSES);
 
