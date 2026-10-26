@@ -263,6 +263,17 @@ def run_all_charts() -> None:
             generated.append(("Harmonized Cascaded Tree Sorter", png.name, f"{size_kb:.1f} KB"))
             print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
 
+    # 27. Bank Fraud Quantum Zeno Sentry & Ghost Anomaly Detector
+    bank_fraud_json = ws_root / "results" / "experiments" / "bank_fraud_zeno_report.json"
+    if bank_fraud_json.exists() or (ws_root / "results" / "hosts" / "unknown-cpu" / "experiments" / "bank_fraud_zeno_report.json").exists():
+        import chart_bank_fraud_zeno
+        chart_bank_fraud_zeno.main()
+        png = ws_root / "results" / "charts" / "bank_fraud_zeno_telemetry.png"
+        if png.exists():
+            size_kb = png.stat().st_size / 1024.0
+            generated.append(("Bank Fraud Quantum Zeno Sentry", png.name, f"{size_kb:.1f} KB"))
+            print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
+
     print("\n╔═══════════════════════════════════════════════════════════════════════════════╗")
     print("║                        RENDERED ARTIFACT MANIFEST                             ║")
     print("╠═════════════════════════════════════╦══════════════════════════════════╦══════════╣")

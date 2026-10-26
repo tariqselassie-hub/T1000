@@ -1,0 +1,23 @@
+{
+  "timestamp_rfc3339": "2026-10-26T14:00:00Z",
+  "dataset": "Bank Fraud Anomaly Dataset (1M transactions)",
+  "architecture": "T-1000 Quantum Zeno Sentry Anomaly Detector",
+  "registers": "H_Sentry(1Q) (x) H_Typology(3Q) (x) H_Env(6Q)",
+  "n_qubits": 10,
+  "state_dim": 1024,
+  "total_parameters": 36,
+  "train_samples": 15000,
+  "test_samples": 10000,
+  "fraud_prevalence_pct": 5.34,
+  "training_time_sec": 5.7742608,
+  "inference_per_sample_us": 0.7958,
+  "sentry_routing_contrast_ratio": 1.370609034905993,
+  "mean_alert_clean": 0.3384561637219946,
+  "mean_alert_fraud": 0.4638910759169878,
+  "optimal_threshold": 0.52,
+  "precision_pct": 11.984781230183895,
+  "recall_pct": 35.39325842696629,
+  "f1_score_pct": 17.906205589767882,
+  "balanced_accuracy_pct": 60.36512699501706,
+  "auroc_score": 0.6776937131986523
+}
