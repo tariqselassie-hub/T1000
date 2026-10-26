@@ -60,6 +60,7 @@ pub mod qpu;
 pub mod qm9_data;
 pub mod pitt_data;
 pub mod qgnn;
+pub mod q_krr;
 pub mod qssm;
 pub mod quaternion;
 pub mod rcs;

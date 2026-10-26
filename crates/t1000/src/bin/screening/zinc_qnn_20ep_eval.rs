@@ -252,17 +252,13 @@ fn main() {
                     i += 1;
                 }
             }
-            "--eval-samples" => {
-                if i + 1 < args.len() {
-                    max_eval = args[i + 1].parse().unwrap_or(2000);
-                    i += 1;
-                }
+            "--eval-samples" if i + 1 < args.len() => {
+                max_eval = args[i + 1].parse().unwrap_or(2000);
+                i += 1;
             }
-            "--threads" => {
-                if i + 1 < args.len() {
-                    num_threads = args[i + 1].parse().unwrap_or(8);
-                    i += 1;
-                }
+            "--threads" if i + 1 < args.len() => {
+                num_threads = args[i + 1].parse().unwrap_or(8);
+                i += 1;
             }
             _ => {}
         }
@@ -384,7 +380,7 @@ fn main() {
             let mut batch_loss = 0.0;
 
             let chunk_len = chunk.len();
-            let thread_chunk_size = (chunk_len + num_threads - 1) / num_threads;
+            let thread_chunk_size = chunk_len.div_ceil(num_threads);
             let sub_chunks: Vec<&[MoleculeSample]> = chunk.chunks(thread_chunk_size).collect();
 
             let thread_results: Vec<(Vec<f64>, f64)> = std::thread::scope(|s| {
@@ -602,8 +598,8 @@ fn main() {
             }
         }
 
-        let top1_pct = (top1_correct as f64 / probe_count as f64) * 100.0;
-        let top5_pct = (top5_correct as f64 / probe_count as f64) * 100.0;
+        let top1_pct = (f64::from(top1_correct) / probe_count as f64) * 100.0;
+        let top5_pct = (f64::from(top5_correct) / probe_count as f64) * 100.0;
         let mean_fid = total_fidelity / (probe_count as f64);
 
         println!(

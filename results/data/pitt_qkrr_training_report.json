@@ -1,0 +1,48 @@
+{
+  "timestamp_utc": "2026-10-26T12:59:41Z",
+  "target_property": "dipole",
+  "target_unit": "Debye",
+  "train_samples": 1000,
+  "test_samples": 500,
+  "qubits": 8,
+  "lambda_reg": 0.1,
+  "trials": [
+    {
+      "name": "Classical-Linear-Ridge",
+      "description": "19-D topological SMILES descriptors with closed-form L2 regularization",
+      "train_mse": 5.381992237602661,
+      "test_mse": 3.7490208407510637,
+      "test_mae": 1.4543482072139788,
+      "test_r2": 0.27175772271986653,
+      "throughput_mols_per_sec": 9715025.90673575
+    },
+    {
+      "name": "Classical-RBF-Kernel",
+      "description": "Gaussian RBF kernel in Euclidean space with Cholesky solve",
+      "train_mse": 5.18994798920581,
+      "test_mse": 4.429645732163833,
+      "test_mae": 1.5938188264174642,
+      "test_r2": 0.13954724911879668,
+      "throughput_mols_per_sec": 17281.145809091726
+    },
+    {
+      "name": "Quantum-Kernel-ZZ-8Q",
+      "description": "8-qubit second-order ZZ entangling feature map in C^256 Hilbert space",
+      "train_mse": 1.9651214581226673,
+      "test_mse": 6.780137971041359,
+      "test_mae": 1.9126400905621852,
+      "test_r2": -0.317032720286369,
+      "throughput_mols_per_sec": 14082.47070376678
+    },
+    {
+      "name": "Quantum-Stark-Kernel-8Q",
+      "description": "8-qubit Stark-coupled dual-angle ZZ kernel with 3D permanent dipole vector injection",
+      "train_mse": 0.054734608357993556,
+      "test_mse": 1.613917521692221,
+      "test_mae": 0.6048574296289883,
+      "test_r2": 0.6864986829190332,
+      "throughput_mols_per_sec": 15168.98246465627
+    }
+  ],
+  "qkrr_advantage_pct": 63.56553956508301
+}

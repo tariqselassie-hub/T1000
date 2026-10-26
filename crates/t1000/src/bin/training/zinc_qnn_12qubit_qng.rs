@@ -19,8 +19,9 @@
 //!   Rigorous head-to-head comparison on identical starting weights:
 //!   - Path A: Standard Euclidean Adam Optimizer
 //!   - Path B: Quantum Natural Gradient (QNG) Riemannian Optimizer
-//!   Evaluated on 10,000 ZINC train / 2,000 holdout test molecules across:
-//!   logP, QED, SAS, Molecule #10640 solvation recovery, and Fubini-Study spectrum.
+//!
+//! Evaluated on 10,000 ZINC train / 2,000 holdout test molecules across:
+//! logP, QED, SAS, Molecule #10640 solvation recovery, and Fubini-Study spectrum.
 
 use serde::Serialize;
 use std::fs;

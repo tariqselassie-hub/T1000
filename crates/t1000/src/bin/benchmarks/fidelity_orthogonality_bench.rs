@@ -298,15 +298,13 @@ fn compute_fidelity_metrics(
         let mut total_fid = 0.0;
         let mut total_dist = 0.0;
         let mut pairs = 0;
-        for i in 0..count_a {
-            let idx_a = list_a[i];
-            for j in 0..count_b {
-                let idx_b = list_b[j];
+        for &idx_a in list_a.iter().take(count_a) {
+            for &idx_b in list_b.iter().take(count_b) {
                 if idx_a != idx_b {
                     total_fid += states[idx_a].fidelity(&states[idx_b]);
                     let mut d_sq = 0.0;
-                    for k in 0..NUM_CORRELATORS {
-                        let diff = exps_all[idx_a][k] - exps_all[idx_b][k];
+                    for (&ea, &eb) in exps_all[idx_a].iter().take(NUM_CORRELATORS).zip(exps_all[idx_b].iter()) {
+                        let diff = ea - eb;
                         d_sq += diff * diff;
                     }
                     total_dist += d_sq.sqrt();
@@ -315,7 +313,8 @@ fn compute_fidelity_metrics(
             }
         }
         if pairs > 0 {
-            (total_fid / pairs as f64, total_dist / pairs as f64)
+            let p = f64::from(pairs);
+            (total_fid / p, total_dist / p)
         } else {
             (0.0, 0.0)
         }

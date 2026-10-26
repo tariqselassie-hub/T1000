@@ -216,7 +216,7 @@ fn main() {
         // Optimizer update step
         optimizer.step(&mut weights, &batch_grads);
 
-        let acc_pct = (correct as f64) / n_samples * 100.0;
+        let acc_pct = f64::from(correct) / n_samples * 100.0;
 
         println!(
             "│ {:<5} │ {:<8.5} │ {:<12.5} │ {:<12.1} │ {:<12.4} │ Converging...    │",

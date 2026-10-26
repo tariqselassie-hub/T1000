@@ -242,6 +242,14 @@ name = "qm9_vqc_train"
 path = "src/bin/training/qm9_vqc_train.rs"
 
 [[bin]]
+name = "pitt_vqc_train"
+path = "src/bin/training/pitt_vqc_train.rs"
+
+[[bin]]
+name = "pitt_qkrr_train"
+path = "src/bin/training/pitt_qkrr_train.rs"
+
+[[bin]]
 name = "qm9_fault_tolerant_train"
 path = "src/bin/training/qm9_fault_tolerant_train.rs"
 

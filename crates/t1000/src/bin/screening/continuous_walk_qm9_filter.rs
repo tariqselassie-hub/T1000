@@ -150,7 +150,7 @@ fn evaluate_molecule(
     let gap_ev = rec.gap * 27.211386;
 
     // 1. Continuous Topological Walk: Evaluate hitting curve
-    let times: Vec<f64> = (1..=50).map(|i| i as f64 * 0.05).collect();
+    let times: Vec<f64> = (1..=50).map(|i| f64::from(i) * 0.05).collect();
     let hitting_curve = walk.compute_ballistic_hitting_curve(core, frontier, &times);
 
     let mut peak_prob = 0.0;

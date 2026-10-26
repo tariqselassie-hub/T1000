@@ -188,7 +188,7 @@ fn compute_group_metrics(preds: &[(usize, usize, usize)]) -> (f64, f64, [Subgrou
         .iter()
         .map(|g| g.accuracy_pct)
         .fold(f64::INFINITY, f64::min);
-    let overall = (total_correct as f64 / n) * 100.0;
+    let overall = (f64::from(total_correct) / n) * 100.0;
     (overall, wga, grps)
 }
 
@@ -324,8 +324,8 @@ fn evolve_reuploading_state(
 ) -> QuantumState {
     let mut state = QuantumState::ground(1 << N_QUBITS);
     // 1. Initial Angle Encoding: Ry(raw_angles)
-    for q in 0..N_QUBITS {
-        apply_ry_kernel(&mut state.real, &mut state.imag, q, raw_angles[q]);
+    for (q, &ang) in raw_angles.iter().enumerate().take(N_QUBITS) {
+        apply_ry_kernel(&mut state.real, &mut state.imag, q, ang);
     }
     // Initial pi phase layer
     for q in 0..N_QUBITS {

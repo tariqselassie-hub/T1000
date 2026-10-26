@@ -153,8 +153,8 @@ fn run_in_register_ancilla_qec(
     // Find dominant observed syndrome
     let mut best_syn = 0usize;
     let mut max_p = syn_probs[0];
-    for syn in 1..8 {
-        if syn_probs[syn] > max_p { max_p = syn_probs[syn]; best_syn = syn; }
+    for (syn, &prob) in syn_probs.iter().enumerate().skip(1) {
+        if prob > max_p { max_p = prob; best_syn = syn; }
     }
 
     // Project onto measured syndrome and reset ancillas to |0>
@@ -300,7 +300,7 @@ impl TransversalW7FtVqc {
         let obs = self.forward(re, im, th, ph, p_phys, qec, seed, stats);
         let norm_o = layer_norm_6(&obs);
         let mut pred = self.head_bias;
-        for k in 0..6 { pred += self.head_weights[k] * norm_o[k]; }
+        for (hw, no) in self.head_weights.iter().zip(&norm_o) { pred += hw * no; }
         (pred, norm_o)
     }
 }

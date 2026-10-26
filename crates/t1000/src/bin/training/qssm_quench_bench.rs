@@ -72,7 +72,7 @@ fn generate_quench_dataset(
         *state = state
             .wrapping_mul(6364136223846793005)
             .wrapping_add(1442695040888963407);
-        ((*state >> 33) as f64) / (u32::MAX as f64)
+        ((*state >> 33) as f64) / f64::from(u32::MAX)
     };
 
     for i in 0..num_samples {
@@ -158,7 +158,7 @@ fn main() {
     let base_lr = 0.05;
     for epoch in 1..=num_epochs {
         // Polynomial learning rate annealing to eliminate gradient spikes:
-        let annealed_lr = base_lr / (1.0 + 0.15 * (epoch as f64));
+        let annealed_lr = base_lr / (1.0 + 0.15 * f64::from(epoch));
         model.config.learning_rate = annealed_lr;
 
         let mut total_c_loss = 0.0;
@@ -191,7 +191,7 @@ fn main() {
             .clamp(0.0, 1.0);
             test_latent_coherence += l_norm;
         }
-        let test_acc = (correct as f64 / test_set.len() as f64) * 100.0;
+        let test_acc = (f64::from(correct) / test_set.len() as f64) * 100.0;
         let mean_latent_coh = test_latent_coherence / (test_set.len() as f64);
 
         if epoch == 1 || epoch % 2 == 0 || epoch == num_epochs {
@@ -250,7 +250,7 @@ fn main() {
         let _ = model.forward(&sample_quench);
     }
     let total_elapsed = t0.elapsed();
-    let total_us = (total_elapsed.as_secs_f64() * 1e6) / (iters as f64);
+    let total_us = (total_elapsed.as_secs_f64() * 1e6) / f64::from(iters);
     let ns_per_step = (total_us * 1000.0) / (seq_len as f64);
     let throughput = (seq_len as f64) / (total_us / 1e6);
 

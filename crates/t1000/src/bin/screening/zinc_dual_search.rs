@@ -360,7 +360,7 @@ fn main() {
         .map(|n| n.get())
         .unwrap_or(20);
 
-    let chunk_size = (n_mols + num_threads - 1) / num_threads;
+    let chunk_size = n_mols.div_ceil(num_threads);
     let chunks: Vec<&[RawMolecule]> = raw_mols.chunks(chunk_size).collect();
 
     let ansatz_ref = &ansatz;
@@ -391,12 +391,12 @@ fn main() {
                         &mut z_fused_11,
                     );
 
-                    let mut p_logp = p_ref[b_off + 0];
+                    let mut p_logp = p_ref[b_off];
                     let mut p_qed = p_ref[b_off + 1];
                     let mut p_sas = p_ref[b_off + 2];
                     for q in 0..11 {
                         p_logp += p_ref[w_off + q] * z_fused_11[q];
-                        p_qed += p_ref[w_off + 1 * 12 + q] * z_fused_11[q];
+                        p_qed += p_ref[w_off + 12 + q] * z_fused_11[q];
                         p_sas += p_ref[w_off + 2 * 12 + q] * z_fused_11[q];
                     }
 

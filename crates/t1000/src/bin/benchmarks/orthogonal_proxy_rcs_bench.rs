@@ -440,7 +440,7 @@ fn main() {
     // Compute exact ideal for each band
     let t1 = Instant::now();
     let mut band_probs = Vec::with_capacity(bands.len());
-    for (_, ops) in per_band.iter().enumerate() {
+    for ops in &per_band {
         let n = ops
             .iter()
             .map(|op| match op {

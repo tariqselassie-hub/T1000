@@ -83,11 +83,12 @@ fn main() {
     let initial_pi_state = szegedy.state;
     szegedy.step();
 
-    let mut pi_err_sq = 0.0f64;
-    for k in 0..49 {
-        let d = szegedy.state[k] - initial_pi_state[k];
-        pi_err_sq += d * d;
-    }
+    let pi_err_sq: f64 = szegedy
+        .state
+        .iter()
+        .zip(&initial_pi_state)
+        .map(|(s, init)| (s - init).powi(2))
+        .sum();
     let pi_state_err = pi_err_sq.sqrt();
 
     let gap_classical = router.spectral_gap();

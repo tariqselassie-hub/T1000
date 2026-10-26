@@ -115,10 +115,7 @@ fn ref_zz(psi: &[C], i: usize, j: usize) -> f64 {
 /// Intended entangling pattern of `CircuitAnsatz` layer `layer`: CZ on each distinct
 /// unordered pair {q, (q + 2^(layer mod 4)) mod n}, applied exactly once.
 fn ref_cz_pairs(n: usize, layer: usize) -> BTreeSet<(usize, usize)> {
-    let stride = 1usize << (layer % 4);
-    (0..n)
-        .map(|q| (q, (q + stride) % n))
-        .filter(|(q, t)| q != t)
+    t1000::ansatz::layers::entangling_pairs(n, layer)
         .map(|(q, t)| (q.min(t), q.max(t)))
         .collect()
 }
