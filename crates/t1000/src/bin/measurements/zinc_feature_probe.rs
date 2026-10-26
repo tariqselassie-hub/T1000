@@ -44,10 +44,16 @@ struct Row {
 fn moments(rows: &[ZincMolecule]) -> (Vec<f64>, Vec<f64>) {
     let n = rows.len() as f64;
     let k = rows[0].features.len();
-    let mean: Vec<f64> = (0..k).map(|j| rows.iter().map(|m| m.features[j]).sum::<f64>() / n).collect();
+    let mean: Vec<f64> = (0..k)
+        .map(|j| rows.iter().map(|m| m.features[j]).sum::<f64>() / n)
+        .collect();
     let std = (0..k)
         .map(|j| {
-            let v = rows.iter().map(|m| (m.features[j] - mean[j]).powi(2)).sum::<f64>() / n;
+            let v = rows
+                .iter()
+                .map(|m| (m.features[j] - mean[j]).powi(2))
+                .sum::<f64>()
+                / n;
             v.sqrt().max(1e-12)
         })
         .collect();
@@ -72,9 +78,17 @@ fn dominance(inputs: &[Vec<f64>]) -> f64 {
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let value = |flag: &str| args.iter().position(|a| a == flag).and_then(|i| args.get(i + 1));
-    let n_train: usize = value("--samples").and_then(|v| v.parse().ok()).unwrap_or(10_000);
-    let n_test: usize = value("--eval-samples").and_then(|v| v.parse().ok()).unwrap_or(2_000);
+    let value = |flag: &str| {
+        args.iter()
+            .position(|a| a == flag)
+            .and_then(|i| args.get(i + 1))
+    };
+    let n_train: usize = value("--samples")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(10_000);
+    let n_test: usize = value("--eval-samples")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(2_000);
     let train = zinc_data::load(TRAIN_CSV, n_train).expect("load training set");
     let test = zinc_data::load(TEST_CSV, n_test).expect("load held-out set");
     let train_y: Vec<Vec<f64>> = train.iter().map(|m| m.targets().to_vec()).collect();
@@ -82,7 +96,11 @@ fn main() {
 
     let (mean, std) = moments(&train);
     let standardize = |m: &ZincMolecule| -> Vec<f64> {
-        m.features.iter().enumerate().map(|(j, v)| (v - mean[j]) / std[j]).collect()
+        m.features
+            .iter()
+            .enumerate()
+            .map(|(j, v)| (v - mean[j]) / std[j])
+            .collect()
     };
     let raw = |m: &ZincMolecule| m.features.clone();
     let std_inputs = |m: &ZincMolecule| standardize(m);
@@ -90,23 +108,37 @@ fn main() {
     let encoding = DataEncodingLayer::new(N_QUBITS, EncodingKind::Amplitude);
     let ansatz = CircuitAnsatz::new(N_QUBITS, DEPTH).with_pi_layer(true);
     let trained: Option<Vec<f64>> = value("--weights").map(|path| {
-        let report: serde_json::Value = serde_json::from_str(&fs::read_to_string(path).expect("read weights report"))
-            .expect("parse weights report");
-        let w: Vec<f64> = serde_json::from_value(report["final_weights"].clone()).expect("final_weights");
-        assert_eq!(w.len(), ansatz.param_count(), "weights do not match the {DEPTH}-layer ansatz");
+        let report: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(path).expect("read weights report"))
+                .expect("parse weights report");
+        let w: Vec<f64> =
+            serde_json::from_value(report["final_weights"].clone()).expect("final_weights");
+        assert_eq!(
+            w.len(),
+            ansatz.param_count(),
+            "weights do not match the {DEPTH}-layer ansatz"
+        );
         w
     });
 
-    println!("Preparing feature sets for {} training and {} held-out molecules...", train.len(), test.len());
-    let amplitudes = |input: &dyn Fn(&ZincMolecule) -> Vec<f64>, rows: &[ZincMolecule]| -> Vec<Vec<f64>> {
-        rows.iter()
-            .map(|m| {
-                let state = encoding.encode(&input(m));
-                state.real[..m.features.len()].to_vec()
-            })
-            .collect()
-    };
-    let circuit = |input: &dyn Fn(&ZincMolecule) -> Vec<f64>, weights: Option<&[f64]>, rows: &[ZincMolecule]| -> Vec<Vec<f64>> {
+    println!(
+        "Preparing feature sets for {} training and {} held-out molecules...",
+        train.len(),
+        test.len()
+    );
+    let amplitudes =
+        |input: &dyn Fn(&ZincMolecule) -> Vec<f64>, rows: &[ZincMolecule]| -> Vec<Vec<f64>> {
+            rows.iter()
+                .map(|m| {
+                    let state = encoding.encode(&input(m));
+                    state.real[..m.features.len()].to_vec()
+                })
+                .collect()
+        };
+    let circuit = |input: &dyn Fn(&ZincMolecule) -> Vec<f64>,
+                   weights: Option<&[f64]>,
+                   rows: &[ZincMolecule]|
+     -> Vec<Vec<f64>> {
         let mut out = QuantumState::new(encoding.dim);
         rows.iter()
             .map(|m| {
@@ -125,39 +157,98 @@ fn main() {
 
     // (name, train features, test features, also fit the quadratic expansion?)
     let mut sets: Vec<FeatureSet> = vec![
-        ("raw features".into(), train.iter().map(raw).collect(), test.iter().map(raw).collect(), true),
-        ("encoded amplitudes, raw inputs".into(), amplitudes(&raw, &train), amplitudes(&raw, &test), true),
-        ("encoded amplitudes, standardized inputs".into(), amplitudes(&std_inputs, &train), amplitudes(&std_inputs, &test), true),
-        ("Z/ZZ of encoded state, raw inputs".into(), circuit(&raw, None, &train), circuit(&raw, None, &test), false),
-        ("Z/ZZ after untrained circuit, raw inputs".into(), circuit(&raw, Some(&untrained), &train), circuit(&raw, Some(&untrained), &test), false),
+        (
+            "raw features".into(),
+            train.iter().map(raw).collect(),
+            test.iter().map(raw).collect(),
+            true,
+        ),
+        (
+            "encoded amplitudes, raw inputs".into(),
+            amplitudes(&raw, &train),
+            amplitudes(&raw, &test),
+            true,
+        ),
+        (
+            "encoded amplitudes, standardized inputs".into(),
+            amplitudes(&std_inputs, &train),
+            amplitudes(&std_inputs, &test),
+            true,
+        ),
+        (
+            "Z/ZZ of encoded state, raw inputs".into(),
+            circuit(&raw, None, &train),
+            circuit(&raw, None, &test),
+            false,
+        ),
+        (
+            "Z/ZZ after untrained circuit, raw inputs".into(),
+            circuit(&raw, Some(&untrained), &train),
+            circuit(&raw, Some(&untrained), &test),
+            false,
+        ),
     ];
     if let Some(w) = &trained {
-        sets.push(("Z/ZZ after trained circuit, raw inputs".into(), circuit(&raw, Some(w), &train), circuit(&raw, Some(w), &test), false));
+        sets.push((
+            "Z/ZZ after trained circuit, raw inputs".into(),
+            circuit(&raw, Some(w), &train),
+            circuit(&raw, Some(w), &test),
+            false,
+        ));
     }
     // The model's readout sees only Z0..Z2; these rows show what a linear head on fewer
     // observables of the same circuits can reach.
     let leading = |x: &[Vec<f64>], k: usize| x.iter().map(|r| r[..k].to_vec()).collect::<Vec<_>>();
-    let untrained_cols = [(circuit(&raw, Some(&untrained), &train), circuit(&raw, Some(&untrained), &test), "untrained")];
+    let untrained_cols = [(
+        circuit(&raw, Some(&untrained), &train),
+        circuit(&raw, Some(&untrained), &test),
+        "untrained",
+    )];
     let trained_cols: Vec<_> = trained
         .iter()
-        .map(|w| (circuit(&raw, Some(w), &train), circuit(&raw, Some(w), &test), "trained"))
+        .map(|w| {
+            (
+                circuit(&raw, Some(w), &train),
+                circuit(&raw, Some(w), &test),
+                "trained",
+            )
+        })
         .collect();
     for (xt, xe, which) in untrained_cols.iter().chain(trained_cols.iter()) {
         for (k, what) in [(3, "Z0..Z2 only"), (10, "all 10 single-qubit Z")] {
-            sets.push((format!("{what}, {which} circuit, raw inputs"), leading(xt, k), leading(xe, k), false));
+            sets.push((
+                format!("{what}, {which} circuit, raw inputs"),
+                leading(xt, k),
+                leading(xe, k),
+                false,
+            ));
         }
     }
-    sets.push(("Z/ZZ of encoded state, standardized inputs".into(), circuit(&std_inputs, None, &train), circuit(&std_inputs, None, &test), false));
-    sets.push(("Z/ZZ after untrained circuit, standardized inputs".into(), circuit(&std_inputs, Some(&untrained), &train), circuit(&std_inputs, Some(&untrained), &test), false));
+    sets.push((
+        "Z/ZZ of encoded state, standardized inputs".into(),
+        circuit(&std_inputs, None, &train),
+        circuit(&std_inputs, None, &test),
+        false,
+    ));
+    sets.push((
+        "Z/ZZ after untrained circuit, standardized inputs".into(),
+        circuit(&std_inputs, Some(&untrained), &train),
+        circuit(&std_inputs, Some(&untrained), &test),
+        false,
+    ));
 
     let raw_dom = dominance(&train.iter().map(raw).collect::<Vec<_>>());
     let std_dom = dominance(&train.iter().map(std_inputs).collect::<Vec<_>>());
     println!("Largest-feature share of the squared norm (what amplitude encoding keeps):");
-    println!("  raw inputs {:.4}   standardized inputs {:.4}\n", raw_dom, std_dom);
+    println!(
+        "  raw inputs {:.4}   standardized inputs {:.4}\n",
+        raw_dom, std_dom
+    );
 
     let mut rows = Vec::new();
     for (name, xt, xe, quadratic) in &sets {
-        let mut variants: Vec<(&str, Matrix, Matrix)> = vec![("linear ridge", xt.clone(), xe.clone())];
+        let mut variants: Vec<(&str, Matrix, Matrix)> =
+            vec![("linear ridge", xt.clone(), xe.clone())];
         if *quadratic {
             let q = |x: &Vec<Vec<f64>>| x.iter().map(|r| quadratic_features(r)).collect::<Vec<_>>();
             variants.push(("quadratic ridge", q(xt), q(xe)));

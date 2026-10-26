@@ -176,7 +176,11 @@ impl Session {
             }
             SET_N => {
                 need(2)?;
-                out.push(if self.model.set_qubits(usize::from(b[1])) { ACK } else { ERR });
+                out.push(if self.model.set_qubits(usize::from(b[1])) {
+                    ACK
+                } else {
+                    ERR
+                });
                 Some(2)
             }
             RESET => {
@@ -192,7 +196,11 @@ impl Session {
                 let data: Vec<(i64, i64)> = (0..count)
                     .map(|k| (le32(&b[5 + 8 * k..]), le32(&b[9 + 8 * k..])))
                     .collect();
-                out.push(if self.model.load(addr, &data) { ACK } else { ERR });
+                out.push(if self.model.load(addr, &data) {
+                    ACK
+                } else {
+                    ERR
+                });
                 Some(total)
             }
             READ => {
@@ -216,7 +224,11 @@ impl Session {
                 for (k, c) in m.iter_mut().enumerate() {
                     *c = le32(&b[4 + 4 * k..]);
                 }
-                let g = Gate { target: b[1], ctrl: le16(&b[2..4]), m };
+                let g = Gate {
+                    target: b[1],
+                    ctrl: le16(&b[2..4]),
+                    m,
+                };
                 out.push(if self.model.apply_gate(&g) { ACK } else { ERR });
                 Some(36)
             }
@@ -248,7 +260,11 @@ impl Session {
                         m,
                     });
                 }
-                out.push(if self.model.load_circuit(gates) { ACK } else { ERR });
+                out.push(if self.model.load_circuit(gates) {
+                    ACK
+                } else {
+                    ERR
+                });
                 Some(total)
             }
             RUN_BURST => {

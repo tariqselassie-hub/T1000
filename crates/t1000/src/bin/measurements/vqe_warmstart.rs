@@ -53,17 +53,16 @@ fn project(excitations: &[Excitation], reference: &[f64], c: &[f64]) -> Vec<f64>
         .map(|e| {
             let mut psi = reference.to_vec();
             e.rotate(&mut psi, eps);
-            psi.iter().zip(reference).zip(c).map(|((p, r), ci)| (p - r) / eps * ci).sum()
+            psi.iter()
+                .zip(reference)
+                .zip(c)
+                .map(|((p, r), ci)| (p - r) / eps * ci)
+                .sum()
         })
         .collect()
 }
 
-fn run(
-    cfg: &VqeConfig,
-    s: &t1000::vqe::driver::SolvedProblem,
-    fci: f64,
-    x0: Vec<f64>,
-) -> Start {
+fn run(cfg: &VqeConfig, s: &t1000::vqe::driver::SolvedProblem, fci: f64, x0: Vec<f64>) -> Start {
     let f = |t: &[f64]| energy_and_gradient(&s.hamiltonian, &s.excitations, &s.reference, t);
     let start_error = f(&x0).0 - fci;
     let r = bfgs(f, x0, cfg.max_iterations, cfg.gradient_tolerance);
@@ -82,7 +81,12 @@ fn main() {
     println!("=========================================================================");
     println!(
         " {:<5} {:>6} {:>10} | {:>22} | {:>22} | {:>22}",
-        "mol", "params", "HF err mHa", "cold: start/it/evals", "PT1: start/it/evals", "oracle: start/it/evals"
+        "mol",
+        "params",
+        "HF err mHa",
+        "cold: start/it/evals",
+        "PT1: start/it/evals",
+        "oracle: start/it/evals"
     );
     let cfg = VqeConfig::default();
     let mut rows = Vec::new();
@@ -108,7 +112,15 @@ fn main() {
         }
         // oracle coefficients
         let sign = psi0[hf].signum();
-        let c_fci: Vec<f64> = (0..n).map(|i| if i == hf { 0.0 } else { sign * psi0[i] / psi0[hf].abs() }).collect();
+        let c_fci: Vec<f64> = (0..n)
+            .map(|i| {
+                if i == hf {
+                    0.0
+                } else {
+                    sign * psi0[i] / psi0[hf].abs()
+                }
+            })
+            .collect();
 
         let theta_pt = project(&s.excitations, &s.reference, &c_pt);
         let theta_or = project(&s.excitations, &s.reference, &c_fci);
@@ -117,10 +129,20 @@ fn main() {
         let cold = run(&cfg, &s, fci, vec![0.0; s.excitations.len()]);
         let pt1 = run(&cfg, &s, fci, theta_pt);
         let oracle = run(&cfg, &s, fci, theta_or);
-        let cell = |x: &Start| format!("{:>8.2}/{:>3}/{:>5}", x.start_error_mha, x.iterations, x.evaluations);
+        let cell = |x: &Start| {
+            format!(
+                "{:>8.2}/{:>3}/{:>5}",
+                x.start_error_mha, x.iterations, x.evaluations
+            )
+        };
         println!(
             " {:<5} {:>6} {:>10.2} | {:>22} | {:>22} | {:>22}",
-            s.report.formula, s.excitations.len(), hf_error, cell(&cold), cell(&pt1), cell(&oracle)
+            s.report.formula,
+            s.excitations.len(),
+            hf_error,
+            cell(&cold),
+            cell(&pt1),
+            cell(&oracle)
         );
         rows.push(Row {
             formula: s.report.formula.clone(),
@@ -132,7 +154,9 @@ fn main() {
         });
     }
     println!("\n start = energy error of the starting point in mHa; it = BFGS iterations; evals = energy+gradient evaluations.");
-    println!(" Every run is checked for the same converged energy: see final_error_mha in the report.");
+    println!(
+        " Every run is checked for the same converged energy: see final_error_mha in the report."
+    );
     let worst = rows
         .iter()
         .flat_map(|r| [&r.cold, &r.pt1, &r.oracle])
@@ -142,6 +166,10 @@ fn main() {
     let dir = Path::new("results/data");
     let _ = fs::create_dir_all(dir);
     let path = dir.join("vqe_warmstart_report.json");
-    t1000::results::write(&path, serde_json::to_string_pretty(&rows).expect("serialise")).expect("write report");
+    t1000::results::write(
+        &path,
+        serde_json::to_string_pretty(&rows).expect("serialise"),
+    )
+    .expect("write report");
     println!(" [OK] report: {}", path.display());
 }

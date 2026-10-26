@@ -35,9 +35,7 @@ pub fn apply_unitary_4cells(
     {
         if is_x86_feature_detected!("avx2") && is_x86_feature_detected!("fma") {
             unsafe {
-                apply_unitary_4cells_avx2(
-                    re0, im0, re1, im1, re2, im2, indices, unitaries,
-                );
+                apply_unitary_4cells_avx2(re0, im0, re1, im1, re2, im2, indices, unitaries);
                 return;
             }
         }
@@ -137,16 +135,34 @@ unsafe fn apply_unitary_4cells_avx2(
 
     _mm256_storeu_pd(buf_re.as_mut_ptr(), out_re[0]);
     _mm256_storeu_pd(buf_im.as_mut_ptr(), out_im[0]);
-    re0[i0] = buf_re[0]; re0[i1] = buf_re[1]; re0[i2] = buf_re[2]; re0[i3] = buf_re[3];
-    im0[i0] = buf_im[0]; im0[i1] = buf_im[1]; im0[i2] = buf_im[2]; im0[i3] = buf_im[3];
+    re0[i0] = buf_re[0];
+    re0[i1] = buf_re[1];
+    re0[i2] = buf_re[2];
+    re0[i3] = buf_re[3];
+    im0[i0] = buf_im[0];
+    im0[i1] = buf_im[1];
+    im0[i2] = buf_im[2];
+    im0[i3] = buf_im[3];
 
     _mm256_storeu_pd(buf_re.as_mut_ptr(), out_re[1]);
     _mm256_storeu_pd(buf_im.as_mut_ptr(), out_im[1]);
-    re1[i0] = buf_re[0]; re1[i1] = buf_re[1]; re1[i2] = buf_re[2]; re1[i3] = buf_re[3];
-    im1[i0] = buf_im[0]; im1[i1] = buf_im[1]; im1[i2] = buf_im[2]; im1[i3] = buf_im[3];
+    re1[i0] = buf_re[0];
+    re1[i1] = buf_re[1];
+    re1[i2] = buf_re[2];
+    re1[i3] = buf_re[3];
+    im1[i0] = buf_im[0];
+    im1[i1] = buf_im[1];
+    im1[i2] = buf_im[2];
+    im1[i3] = buf_im[3];
 
     _mm256_storeu_pd(buf_re.as_mut_ptr(), out_re[2]);
     _mm256_storeu_pd(buf_im.as_mut_ptr(), out_im[2]);
-    re2[i0] = buf_re[0]; re2[i1] = buf_re[1]; re2[i2] = buf_re[2]; re2[i3] = buf_re[3];
-    im2[i0] = buf_im[0]; im2[i1] = buf_im[1]; im2[i2] = buf_im[2]; im2[i3] = buf_im[3];
+    re2[i0] = buf_re[0];
+    re2[i1] = buf_re[1];
+    re2[i2] = buf_re[2];
+    re2[i3] = buf_re[3];
+    im2[i0] = buf_im[0];
+    im2[i1] = buf_im[1];
+    im2[i2] = buf_im[2];
+    im2[i3] = buf_im[3];
 }

@@ -26,8 +26,8 @@ fn main() {
 
     // Sweep across 14 noise rates spanning sub-threshold to super-threshold
     let p_values = [
-        0.001, 0.002, 0.005, 0.008, 0.010, 0.015, 0.020, 0.030, 0.040, 0.050, 0.075, 0.100,
-        0.125, 0.150,
+        0.001, 0.002, 0.005, 0.008, 0.010, 0.015, 0.020, 0.030, 0.040, 0.050, 0.075, 0.100, 0.125,
+        0.150,
     ];
     let shots_per_point = 250_000;
     let seed = 0xDEED_2026_0ECFu64;
@@ -72,14 +72,30 @@ fn main() {
     println!(" EMPIRICAL THRESHOLD & HARDWARE TELEMETRY SUMMARY");
     println!("══════════════════════════════════════════════════════════════════════════");
     if let Some(pth) = report.empirical_threshold {
-        println!("  Empirical Fault-Tolerant Threshold (p_th) : {:.4} ({:.2}%)", pth, pth * 100.0);
+        println!(
+            "  Empirical Fault-Tolerant Threshold (p_th) : {:.4} ({:.2}%)",
+            pth,
+            pth * 100.0
+        );
     } else {
         println!("  Empirical Fault-Tolerant Threshold (p_th) : > 0.150 (Unbounded)");
     }
-    println!("  Quadratic Scaling Pre-factor (A in A*p^2) : {:.2}", report.fit_scaling_coefficient);
-    println!("  Total Monte Carlo Shots Evaluated         : {}", report.total_shots);
-    println!("  Total Wall-Clock Duration                 : {:.3} s", report.total_duration_seconds);
-    println!("  Decoding Pipeline Throughput              : {:.2} Million shots / sec", report.throughput_mshots_sec);
+    println!(
+        "  Quadratic Scaling Pre-factor (A in A*p^2) : {:.2}",
+        report.fit_scaling_coefficient
+    );
+    println!(
+        "  Total Monte Carlo Shots Evaluated         : {}",
+        report.total_shots
+    );
+    println!(
+        "  Total Wall-Clock Duration                 : {:.3} s",
+        report.total_duration_seconds
+    );
+    println!(
+        "  Decoding Pipeline Throughput              : {:.2} Million shots / sec",
+        report.throughput_mshots_sec
+    );
     println!("══════════════════════════════════════════════════════════════════════════");
     println!();
 

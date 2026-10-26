@@ -218,9 +218,15 @@ fn print_terminal_banner(total_mols: usize) {
 }
 
 fn print_summary_table(models: &[ArchitectureSummary]) {
-    println!("┌────────────────────────────────┬────────────┬────────────┬─────────────┬─────────────┐");
-    println!("│ Architecture Subsystem         │ Mean Hit P │ Contrast   │ Stabl Acc % │ Latency(us) │");
-    println!("├────────────────────────────────┼────────────┼────────────┼─────────────┼─────────────┤");
+    println!(
+        "┌────────────────────────────────┬────────────┬────────────┬─────────────┬─────────────┐"
+    );
+    println!(
+        "│ Architecture Subsystem         │ Mean Hit P │ Contrast   │ Stabl Acc % │ Latency(us) │"
+    );
+    println!(
+        "├────────────────────────────────┼────────────┼────────────┼─────────────┼─────────────┤"
+    );
     for m in models {
         println!(
             "│ {:<30} │ {:>10.4} │ {:>10.2} │ {:>10.1}% │ {:>11.2} │",
@@ -256,17 +262,46 @@ fn main() {
     let throughput = total_evals as f64 / elapsed.as_secs_f64();
 
     // Compute metrics across models
-    let mean_q_prob: f64 = reports.iter().map(|r| r.quantum_peak_hitting_prob).sum::<f64>() / total_evals as f64;
-    let mean_contrast: f64 = reports.iter().map(|r| r.quantum_routing_contrast).sum::<f64>() / total_evals as f64;
-    let mean_zeno_p: f64 = reports.iter().map(|r| r.zeno_hitting_prob).sum::<f64>() / total_evals as f64;
-    let mean_vqc_p: f64 = reports.iter().map(|r| r.discrete_vqc_hitting_prob).sum::<f64>() / total_evals as f64;
-    let mean_class_p: f64 = reports.iter().map(|r| r.classical_diffusion_prob).sum::<f64>() / total_evals as f64;
+    let mean_q_prob: f64 = reports
+        .iter()
+        .map(|r| r.quantum_peak_hitting_prob)
+        .sum::<f64>()
+        / total_evals as f64;
+    let mean_contrast: f64 = reports
+        .iter()
+        .map(|r| r.quantum_routing_contrast)
+        .sum::<f64>()
+        / total_evals as f64;
+    let mean_zeno_p: f64 =
+        reports.iter().map(|r| r.zeno_hitting_prob).sum::<f64>() / total_evals as f64;
+    let mean_vqc_p: f64 = reports
+        .iter()
+        .map(|r| r.discrete_vqc_hitting_prob)
+        .sum::<f64>()
+        / total_evals as f64;
+    let mean_class_p: f64 = reports
+        .iter()
+        .map(|r| r.classical_diffusion_prob)
+        .sum::<f64>()
+        / total_evals as f64;
 
     // Stability classification accuracy: High gap (>= 6.5 eV) predicted by Peak P >= 0.35
-    let q_correct = reports.iter().filter(|r| (r.homo_lumo_gap_ev >= 6.5) == (r.quantum_peak_hitting_prob >= 0.35)).count();
-    let zeno_correct = reports.iter().filter(|r| (r.homo_lumo_gap_ev >= 6.5) == (r.zeno_hitting_prob >= 0.25)).count();
-    let vqc_correct = reports.iter().filter(|r| (r.homo_lumo_gap_ev >= 6.5) == (r.discrete_vqc_hitting_prob >= 0.30)).count();
-    let class_correct = reports.iter().filter(|r| (r.homo_lumo_gap_ev >= 6.5) == (r.classical_diffusion_prob >= 0.15)).count();
+    let q_correct = reports
+        .iter()
+        .filter(|r| (r.homo_lumo_gap_ev >= 6.5) == (r.quantum_peak_hitting_prob >= 0.35))
+        .count();
+    let zeno_correct = reports
+        .iter()
+        .filter(|r| (r.homo_lumo_gap_ev >= 6.5) == (r.zeno_hitting_prob >= 0.25))
+        .count();
+    let vqc_correct = reports
+        .iter()
+        .filter(|r| (r.homo_lumo_gap_ev >= 6.5) == (r.discrete_vqc_hitting_prob >= 0.30))
+        .count();
+    let class_correct = reports
+        .iter()
+        .filter(|r| (r.homo_lumo_gap_ev >= 6.5) == (r.classical_diffusion_prob >= 0.15))
+        .count();
 
     let models = vec![
         ArchitectureSummary {
@@ -281,7 +316,8 @@ fn main() {
             architecture: "CTQW + AVX-VNNI Zeno Sentry".to_string(),
             mean_hitting_prob: mean_zeno_p,
             mean_routing_contrast: mean_contrast * 1.35,
-            stability_classification_accuracy_pct: (zeno_correct as f64 / total_evals as f64) * 100.0,
+            stability_classification_accuracy_pct: (zeno_correct as f64 / total_evals as f64)
+                * 100.0,
             mean_latency_us: mean_lat_us * 1.05,
             throughput_mols_per_sec: throughput * 0.95,
         },
@@ -289,7 +325,8 @@ fn main() {
             architecture: "Discrete VQC (p=0.02 Noise)".to_string(),
             mean_hitting_prob: mean_vqc_p,
             mean_routing_contrast: 3.25,
-            stability_classification_accuracy_pct: (vqc_correct as f64 / total_evals as f64) * 100.0,
+            stability_classification_accuracy_pct: (vqc_correct as f64 / total_evals as f64)
+                * 100.0,
             mean_latency_us: 142.50,
             throughput_mols_per_sec: 7017.5,
         },
@@ -297,7 +334,8 @@ fn main() {
             architecture: "Classical Markov Random Walk".to_string(),
             mean_hitting_prob: mean_class_p,
             mean_routing_contrast: 1.15,
-            stability_classification_accuracy_pct: (class_correct as f64 / total_evals as f64) * 100.0,
+            stability_classification_accuracy_pct: (class_correct as f64 / total_evals as f64)
+                * 100.0,
             mean_latency_us: 45.20,
             throughput_mols_per_sec: 22123.9,
         },
@@ -312,12 +350,20 @@ fn main() {
     println!("│ ID   │ SMILES Motif                 │ Gap (eV) │ Peak P   │ Contrast │ Speed │");
     println!("├──────┼──────────────────────────────┼──────────┼──────────┼──────────┼───────┤");
     let mut sorted_reports = reports.clone();
-    sorted_reports.sort_by(|a, b| b.quantum_peak_hitting_prob.partial_cmp(&a.quantum_peak_hitting_prob).unwrap());
+    sorted_reports.sort_by(|a, b| {
+        b.quantum_peak_hitting_prob
+            .partial_cmp(&a.quantum_peak_hitting_prob)
+            .unwrap()
+    });
     for r in sorted_reports.iter().take(5) {
         println!(
             "│ {:<4} │ {:<28} │ {:>8.2} │ {:>8.4} │ {:>8.1} │ {:>5.1}x│",
             r.id,
-            if r.smiles.len() > 28 { &r.smiles[..28] } else { &r.smiles },
+            if r.smiles.len() > 28 {
+                &r.smiles[..28]
+            } else {
+                &r.smiles
+            },
             r.homo_lumo_gap_ev,
             r.quantum_peak_hitting_prob,
             r.quantum_routing_contrast,
@@ -343,8 +389,11 @@ fn main() {
         ],
     };
 
-    let json_data = serde_json::to_string_pretty(&telemetry).expect("Failed to serialize telemetry");
+    let json_data =
+        serde_json::to_string_pretty(&telemetry).expect("Failed to serialize telemetry");
     let mut out_file = File::create(REPORT_PATH).expect("Failed to create telemetry JSON");
-    out_file.write_all(json_data.as_bytes()).expect("Failed to write telemetry JSON");
+    out_file
+        .write_all(json_data.as_bytes())
+        .expect("Failed to write telemetry JSON");
     println!("[+] Telemetry recorded to: {}", REPORT_PATH);
 }

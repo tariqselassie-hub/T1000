@@ -23,24 +23,108 @@ pub struct LanguageMeta {
     pub code: &'static str,
     pub name: &'static str,
     pub family: &'static str,
-    pub y: usize, // Coarse register index in 0..4
-    pub s: usize, // Fine register index in 0..4
+    pub y: usize,       // Coarse register index in 0..4
+    pub s: usize,       // Fine register index in 0..4
     pub leaf_id: usize, // Global leaf ID in 0..12
 }
 
 pub const LANGUAGES: [LanguageMeta; N_LANGUAGES] = [
-    LanguageMeta { code: "en", name: "English",    family: "Germanic", y: 0, s: 0, leaf_id: 0 },
-    LanguageMeta { code: "de", name: "German",     family: "Germanic", y: 0, s: 1, leaf_id: 1 },
-    LanguageMeta { code: "es", name: "Spanish",    family: "Romance",  y: 1, s: 0, leaf_id: 2 },
-    LanguageMeta { code: "fr", name: "French",     family: "Romance",  y: 1, s: 1, leaf_id: 3 },
-    LanguageMeta { code: "it", name: "Italian",    family: "Romance",  y: 1, s: 2, leaf_id: 4 },
-    LanguageMeta { code: "pt", name: "Portuguese", family: "Romance",  y: 1, s: 3, leaf_id: 5 },
-    LanguageMeta { code: "zh", name: "Chinese",    family: "EastAsian",y: 2, s: 0, leaf_id: 6 },
-    LanguageMeta { code: "ja", name: "Japanese",   family: "EastAsian",y: 2, s: 1, leaf_id: 7 },
-    LanguageMeta { code: "ko", name: "Korean",     family: "EastAsian",y: 2, s: 2, leaf_id: 8 },
-    LanguageMeta { code: "he", name: "Hebrew",     family: "AfroIndic",y: 3, s: 0, leaf_id: 9 },
-    LanguageMeta { code: "hi", name: "Hindi",      family: "AfroIndic",y: 3, s: 1, leaf_id: 10 },
-    LanguageMeta { code: "id", name: "Indonesian", family: "AfroIndic",y: 3, s: 2, leaf_id: 11 },
+    LanguageMeta {
+        code: "en",
+        name: "English",
+        family: "Germanic",
+        y: 0,
+        s: 0,
+        leaf_id: 0,
+    },
+    LanguageMeta {
+        code: "de",
+        name: "German",
+        family: "Germanic",
+        y: 0,
+        s: 1,
+        leaf_id: 1,
+    },
+    LanguageMeta {
+        code: "es",
+        name: "Spanish",
+        family: "Romance",
+        y: 1,
+        s: 0,
+        leaf_id: 2,
+    },
+    LanguageMeta {
+        code: "fr",
+        name: "French",
+        family: "Romance",
+        y: 1,
+        s: 1,
+        leaf_id: 3,
+    },
+    LanguageMeta {
+        code: "it",
+        name: "Italian",
+        family: "Romance",
+        y: 1,
+        s: 2,
+        leaf_id: 4,
+    },
+    LanguageMeta {
+        code: "pt",
+        name: "Portuguese",
+        family: "Romance",
+        y: 1,
+        s: 3,
+        leaf_id: 5,
+    },
+    LanguageMeta {
+        code: "zh",
+        name: "Chinese",
+        family: "EastAsian",
+        y: 2,
+        s: 0,
+        leaf_id: 6,
+    },
+    LanguageMeta {
+        code: "ja",
+        name: "Japanese",
+        family: "EastAsian",
+        y: 2,
+        s: 1,
+        leaf_id: 7,
+    },
+    LanguageMeta {
+        code: "ko",
+        name: "Korean",
+        family: "EastAsian",
+        y: 2,
+        s: 2,
+        leaf_id: 8,
+    },
+    LanguageMeta {
+        code: "he",
+        name: "Hebrew",
+        family: "AfroIndic",
+        y: 3,
+        s: 0,
+        leaf_id: 9,
+    },
+    LanguageMeta {
+        code: "hi",
+        name: "Hindi",
+        family: "AfroIndic",
+        y: 3,
+        s: 1,
+        leaf_id: 10,
+    },
+    LanguageMeta {
+        code: "id",
+        name: "Indonesian",
+        family: "AfroIndic",
+        y: 3,
+        s: 2,
+        leaf_id: 11,
+    },
 ];
 
 #[allow(dead_code)]
@@ -75,7 +159,8 @@ pub fn locate_eclektik_file() -> PathBuf {
 }
 
 pub fn load_eclektik_samples(path: &Path, max_rows: Option<usize>) -> Vec<EclektikSample> {
-    let file = File::open(path).unwrap_or_else(|e| panic!("Failed to open {}: {}", path.display(), e));
+    let file =
+        File::open(path).unwrap_or_else(|e| panic!("Failed to open {}: {}", path.display(), e));
     let reader = BufReader::new(file);
     let mut samples = Vec::new();
 

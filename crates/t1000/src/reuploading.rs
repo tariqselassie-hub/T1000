@@ -43,13 +43,22 @@ impl ReuploadingMap<'_> {
 
     /// Runs the circuit for input `x`, leaving the final state in `state`.
     pub fn run(&self, x: &[f64], state: &mut QuantumState) {
-        assert!(self.uploads <= self.ansatz.depth, "{} uploads need an ansatz of at least that depth", self.uploads);
+        assert!(
+            self.uploads <= self.ansatz.depth,
+            "{} uploads need an ansatz of at least that depth",
+            self.uploads
+        );
         state.real.fill(0.0);
         state.imag.fill(0.0);
         state.real[0] = 1.0;
         for l in 0..self.uploads {
             for (position, j) in self.chunk(l, x.len()).enumerate() {
-                crate::simd::apply_ry_kernel(&mut state.real, &mut state.imag, position, self.angle_scale * x[j]);
+                crate::simd::apply_ry_kernel(
+                    &mut state.real,
+                    &mut state.imag,
+                    position,
+                    self.angle_scale * x[j],
+                );
             }
             self.ansatz.forward_layer_into(l, self.weights, state);
         }
@@ -74,8 +83,18 @@ impl ReuploadingMap<'_> {
 mod tests {
     use super::*;
 
-    fn map_for<'a>(ansatz: &'a CircuitAnsatz, weights: &'a [f64], uploads: usize) -> ReuploadingMap<'a> {
-        ReuploadingMap { ansatz, weights, uploads, angle_scale: 1.0, observables: Observables::ZAndZz }
+    fn map_for<'a>(
+        ansatz: &'a CircuitAnsatz,
+        weights: &'a [f64],
+        uploads: usize,
+    ) -> ReuploadingMap<'a> {
+        ReuploadingMap {
+            ansatz,
+            weights,
+            uploads,
+            angle_scale: 1.0,
+            observables: Observables::ZAndZz,
+        }
     }
 
     fn features(map: &ReuploadingMap, x: &[f64]) -> Vec<f64> {
@@ -101,7 +120,10 @@ mod tests {
         let zero = vec![0.0; ansatz.param_count()];
         let map = map_for(&ansatz, &zero, 1);
         let f = features(&map, &[0.7, 1.9]);
-        assert!((f[0] - 0.7f64.cos()).abs() < 1e-12 && (f[1] - 1.9f64.cos()).abs() < 1e-12, "{f:?}");
+        assert!(
+            (f[0] - 0.7f64.cos()).abs() < 1e-12 && (f[1] - 1.9f64.cos()).abs() < 1e-12,
+            "{f:?}"
+        );
     }
 
     /// Sum over `period` equally spaced shifts of input `j` by `2 pi / period`, as a feature vector.
@@ -110,13 +132,19 @@ mod tests {
         for k in 0..period {
             let mut y = x.to_vec();
             y[j] += std::f64::consts::TAU * k as f64 / period as f64;
-            total.iter_mut().zip(features(map, &y)).for_each(|(t, f)| *t += f);
+            total
+                .iter_mut()
+                .zip(features(map, &y))
+                .for_each(|(t, f)| *t += f);
         }
         total
     }
 
     fn max_difference(a: &[f64], b: &[f64]) -> f64 {
-        a.iter().zip(b).map(|(x, y)| (x - y).abs()).fold(0.0, f64::max)
+        a.iter()
+            .zip(b)
+            .map(|(x, y)| (x - y).abs())
+            .fold(0.0, f64::max)
     }
 
     #[test]
@@ -130,7 +158,10 @@ mod tests {
             let mut other = x;
             other[j] += 0.7;
             let (a, b) = (shifted_sum(&map, &x, j, 2), shifted_sum(&map, &other, j, 2));
-            assert!(max_difference(&a, &b) < 1e-10, "input {j} enters with a frequency above 1");
+            assert!(
+                max_difference(&a, &b) < 1e-10,
+                "input {j} enters with a frequency above 1"
+            );
         }
     }
 
@@ -145,10 +176,22 @@ mod tests {
         for j in 0..6 {
             let mut other = x;
             other[j] += 0.7;
-            worst_two_shift = worst_two_shift.max(max_difference(&shifted_sum(&map, &x, j, 2), &shifted_sum(&map, &other, j, 2)));
-            assert!(max_difference(&shifted_sum(&map, &x, j, 4), &shifted_sum(&map, &other, j, 4)) < 1e-10, "input {j} has a frequency above 3");
+            worst_two_shift = worst_two_shift.max(max_difference(
+                &shifted_sum(&map, &x, j, 2),
+                &shifted_sum(&map, &other, j, 2),
+            ));
+            assert!(
+                max_difference(
+                    &shifted_sum(&map, &x, j, 4),
+                    &shifted_sum(&map, &other, j, 4)
+                ) < 1e-10,
+                "input {j} has a frequency above 3"
+            );
         }
-        assert!(worst_two_shift > 1e-3, "re-uploading should add a frequency-2 term, got {worst_two_shift:e}");
+        assert!(
+            worst_two_shift > 1e-3,
+            "re-uploading should add a frequency-2 term, got {worst_two_shift:e}"
+        );
     }
 
     #[test]

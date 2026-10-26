@@ -70,7 +70,11 @@ pub(super) fn execute_layered(ops: &[&CircuitOp], num_qubits: usize, state: &mut
     let mut start = 0;
     while start < order.len() {
         let layer = layers[order[start]];
-        let end = start + order[start..].iter().take_while(|&&i| layers[i] == layer).count();
+        let end = start
+            + order[start..]
+                .iter()
+                .take_while(|&&i| layers[i] == layer)
+                .count();
         let mut has_rz = false;
         for &i in &order[start..end] {
             match ops[i] {

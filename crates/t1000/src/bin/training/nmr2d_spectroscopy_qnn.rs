@@ -15,7 +15,9 @@ use t1000::adjoint::AdjointWorkspace;
 use t1000::chemistry::nmr2d::{
     extract_nmr_features, generate_cosy_spectrum, NMR_STATE_DIM, N_NMR_SPATIAL,
 };
-use t1000::{adjoint_gradient_buffered, AdamOptimizer, CircuitAnsatz, PauliObservable, QuantumState};
+use t1000::{
+    adjoint_gradient_buffered, AdamOptimizer, CircuitAnsatz, PauliObservable, QuantumState,
+};
 
 const N_QUBITS: usize = 10;
 const N_CLASSES: usize = 10;
@@ -61,7 +63,6 @@ pub fn generate_molecular_catalog() -> Vec<(&'static str, &'static str, usize)> 
         ("Cyclohexane", "C1CCCCC1", 0),
         ("Methylcyclohexane", "CC1CCCCC1", 0),
         ("2,3-Dimethylbutane", "CC(C)C(C)C", 0),
-
         // 1: Alcohols (strong 3.4-4.0 ppm cross-peak to alkyls)
         ("Ethanol", "CCO", 1),
         ("1-Propanol", "CCCO", 1),
@@ -73,7 +74,6 @@ pub fn generate_molecular_catalog() -> Vec<(&'static str, &'static str, usize)> 
         ("Cyclohexanol", "OC1CCCCC1", 1),
         ("1-Pentanol", "CCCCCO", 1),
         ("2-Methyl-1-propanol", "CC(C)CO", 1),
-
         // 2: Aldehydes & Ketones (alpha protons 2.1-2.5 ppm, aldehyde 9.7 ppm)
         ("Acetaldehyde", "CC=O", 2),
         ("Propanal", "CCC=O", 2),
@@ -85,7 +85,6 @@ pub fn generate_molecular_catalog() -> Vec<(&'static str, &'static str, usize)> 
         ("Butanal", "CCCC=O", 2),
         ("2-Hexanone", "CCCCC(=O)C", 2),
         ("4-Methyl-2-pentanone", "CC(C)CC(=O)C", 2),
-
         // 3: Carboxylic Acids & Esters (acid ~11.5 ppm, ester O-CH2 3.8-4.2 ppm)
         ("Acetic Acid", "CC(=O)O", 3),
         ("Propionic Acid", "CCC(=O)O", 3),
@@ -97,7 +96,6 @@ pub fn generate_molecular_catalog() -> Vec<(&'static str, &'static str, usize)> 
         ("Isobutyl Acetate", "CC(C)COC(=O)C", 3),
         ("Valeric Acid", "CCCCC(=O)O", 3),
         ("Methyl Butyrate", "CCCC(=O)OC", 3),
-
         // 4: Amines & Amides (N-CH2 2.6-3.0 ppm, amide 6.8 ppm)
         ("Ethylamine", "CCN", 4),
         ("Propylamine", "CCCN", 4),
@@ -109,7 +107,6 @@ pub fn generate_molecular_catalog() -> Vec<(&'static str, &'static str, usize)> 
         ("Piperidine", "C1CCNCC1", 4),
         ("Butylamine", "CCCCN", 4),
         ("N,N-Dimethylformamide", "CN(C)C=O", 4),
-
         // 5: Aromatic Benzenes (dense 7.0-7.8 ppm ortho/meta cluster)
         ("Toluene", "Cc1ccccc1", 5),
         ("Ethylbenzene", "CCc1ccccc1", 5),
@@ -121,7 +118,6 @@ pub fn generate_molecular_catalog() -> Vec<(&'static str, &'static str, usize)> 
         ("m-Xylene", "Cc1cccc(C)c1", 5),
         ("p-Xylene", "Cc1ccc(C)cc1", 5),
         ("Chlorobenzene", "Clc1ccccc1", 5),
-
         // 6: Heteroaromatics (downfield 7.2-8.6 ppm heterocyclic split)
         ("Pyridine", "c1ccncc1", 6),
         ("Furan", "c1ccoc1", 6),
@@ -133,7 +129,6 @@ pub fn generate_molecular_catalog() -> Vec<(&'static str, &'static str, usize)> 
         ("Oxazole", "c1cocn1", 6),
         ("Pyrimidine", "c1cncnc1", 6),
         ("Imidazole", "c1c[nH]cn1", 6),
-
         // 7: Alkenes & Dienes (vinylic 4.8-6.0 ppm cross-coupled to allylics)
         ("1-Pentene", "CCCC=C", 7),
         ("2-Pentene", "CCC=CC", 7),
@@ -145,7 +140,6 @@ pub fn generate_molecular_catalog() -> Vec<(&'static str, &'static str, usize)> 
         ("2-Methyl-2-butene", "CC=C(C)C", 7),
         ("Cycloheptene", "C1CCCC=CC1", 7),
         ("1,4-Pentadiene", "C=CCC=C", 7),
-
         // 8: Terpenoids & Bicyclic (dense multi-ring bridged cross-peaks)
         ("Camphor", "CC1(C)C2CCC1(C)C(=O)C2", 8),
         ("alpha-Pinene", "CC1=CCC2CC1C2(C)C", 8),
@@ -157,7 +151,6 @@ pub fn generate_molecular_catalog() -> Vec<(&'static str, &'static str, usize)> 
         ("Menthol", "CC1CCC(C(O)C1)C(C)C", 8),
         ("Carvone", "CC(=C)C1CC=C(C)C(=O)C1", 8),
         ("Fenchone", "CC1(C)C2CCC(C)(C2)C1=O", 8),
-
         // 9: Amino Acids & Peptides (alpha-CH 4.0-4.5 ppm coupled to beta-R)
         ("Glycine", "NCC(=O)O", 9),
         ("Alanine", "CC(N)C(=O)O", 9),
@@ -185,22 +178,34 @@ impl SimpleMlpHead {
         use rand::{Rng, SeedableRng};
         let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(seed);
         let s1 = (2.0 / N_FUSED as f64).sqrt();
-        let w1 = (0..N_HIDDEN * N_FUSED).map(|_| rng.gen_range(-s1..s1)).collect();
+        let w1 = (0..N_HIDDEN * N_FUSED)
+            .map(|_| rng.gen_range(-s1..s1))
+            .collect();
         let b1 = vec![0.01; N_HIDDEN];
 
         let s2 = (2.0 / N_HIDDEN as f64).sqrt();
-        let w2 = (0..N_CLASSES * N_HIDDEN).map(|_| rng.gen_range(-s2..s2)).collect();
+        let w2 = (0..N_CLASSES * N_HIDDEN)
+            .map(|_| rng.gen_range(-s2..s2))
+            .collect();
         let b2 = vec![0.0; N_CLASSES];
 
         Self { w1, b1, w2, b2 }
     }
 
-    pub fn forward(&self, x: &[f64; N_FUSED]) -> ([f64; N_CLASSES], [f64; N_HIDDEN], [f64; N_HIDDEN]) {
+    pub fn forward(
+        &self,
+        x: &[f64; N_FUSED],
+    ) -> ([f64; N_CLASSES], [f64; N_HIDDEN], [f64; N_HIDDEN]) {
         let mut z1 = [0.0; N_HIDDEN];
         let mut a1 = [0.0; N_HIDDEN];
         for (h, (z_out, a_out)) in z1.iter_mut().zip(a1.iter_mut()).enumerate() {
             let row = h * N_FUSED;
-            let sum = self.b1[h] + self.w1[row..row + N_FUSED].iter().zip(x).map(|(w, &xi)| w * xi).sum::<f64>();
+            let sum = self.b1[h]
+                + self.w1[row..row + N_FUSED]
+                    .iter()
+                    .zip(x)
+                    .map(|(w, &xi)| w * xi)
+                    .sum::<f64>();
             *z_out = sum;
             *a_out = if sum > 0.0 { sum } else { 0.05 * sum };
         }
@@ -208,7 +213,12 @@ impl SimpleMlpHead {
         let mut logits = [0.0; N_CLASSES];
         for (c, logit) in logits.iter_mut().enumerate() {
             let row = c * N_HIDDEN;
-            *logit = self.b2[c] + self.w2[row..row + N_HIDDEN].iter().zip(&a1).map(|(w, &ai)| w * ai).sum::<f64>();
+            *logit = self.b2[c]
+                + self.w2[row..row + N_HIDDEN]
+                    .iter()
+                    .zip(&a1)
+                    .map(|(w, &ai)| w * ai)
+                    .sum::<f64>();
         }
         (logits, z1, a1)
     }
@@ -234,7 +244,11 @@ impl SimpleMlpHead {
 
         let mut d_a1 = [0.0; N_HIDDEN];
         for (h, d_a) in d_a1.iter_mut().enumerate() {
-            let sum: f64 = d_logits.iter().enumerate().map(|(c, &d_c)| d_c * self.w2[c * N_HIDDEN + h]).sum();
+            let sum: f64 = d_logits
+                .iter()
+                .enumerate()
+                .map(|(c, &d_c)| d_c * self.w2[c * N_HIDDEN + h])
+                .sum();
             *d_a = sum;
         }
 
@@ -262,7 +276,10 @@ impl SimpleMlpHead {
     }
 }
 
-fn softmax_cross_entropy(logits: &[f64; N_CLASSES], label: usize) -> (f64, [f64; N_CLASSES], usize) {
+fn softmax_cross_entropy(
+    logits: &[f64; N_CLASSES],
+    label: usize,
+) -> (f64, [f64; N_CLASSES], usize) {
     let max_logit = logits.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
     let mut exp_sum = 0.0;
     let mut probs = [0.0; N_CLASSES];
@@ -298,7 +315,10 @@ fn main() {
 
     let t0 = Instant::now();
     let catalog = generate_molecular_catalog();
-    println!(" [DISCOVERY] Ingesting {} Molecular Spectroscopy Templates", catalog.len());
+    println!(
+        " [DISCOVERY] Ingesting {} Molecular Spectroscopy Templates",
+        catalog.len()
+    );
 
     // Generate 1,000 synthetic spectra samples (replicate templates with diverse noise/shifts)
     let n_samples = 1000;
@@ -355,22 +375,46 @@ fn main() {
     let mut opt_head_b2 = AdamOptimizer::new_unwrapped(head.b2.len(), 0.005);
 
     println!("\n [ARCHITECTURE] 2D Molecular Spectroscopy QNN Configuration:");
-    println!("   Hilbert Register       : {} Qubits (1,024 2D Frequency Bins)", N_QUBITS);
+    println!(
+        "   Hilbert Register       : {} Qubits (1,024 2D Frequency Bins)",
+        N_QUBITS
+    );
     println!("   Bipartite Partition    : H_w1 (32) (x) H_w2 (32) [5Q (x) 5Q]");
-    println!("   Circuit Depth          : {} layers (Ring CZ + Bipartite Cross-Rungs + Ry/Rz)", depth);
-    println!("   Quantum Observables    : {} Bipartite Cross-Peak Symmetry Operators", N_OBSERVABLES);
-    println!("   Spectral Stroke Filters: {} Multi-Scale Features", N_NMR_SPATIAL);
-    println!("   Fused Readout Inputs   : {} Features (80 Quantum + 65 Classical)", N_FUSED);
+    println!(
+        "   Circuit Depth          : {} layers (Ring CZ + Bipartite Cross-Rungs + Ry/Rz)",
+        depth
+    );
+    println!(
+        "   Quantum Observables    : {} Bipartite Cross-Peak Symmetry Operators",
+        N_OBSERVABLES
+    );
+    println!(
+        "   Spectral Stroke Filters: {} Multi-Scale Features",
+        N_NMR_SPATIAL
+    );
+    println!(
+        "   Fused Readout Inputs   : {} Features (80 Quantum + 65 Classical)",
+        N_FUSED
+    );
     println!("   Hidden Neural Layer    : {} LeakyReLU Neurons", N_HIDDEN);
-    println!("   Chemical Target Classes: {} Molecular Families", N_CLASSES);
+    println!(
+        "   Chemical Target Classes: {} Molecular Families",
+        N_CLASSES
+    );
 
     let epochs = 16;
     let batch_size = 32;
     let num_batches = train_data.len().div_ceil(batch_size);
 
-    println!("\n┌──────┬────────────┬────────────┬───────────┬───────────┬──────────────┬────────────┐");
-    println!("│ Ep   │ Trn Loss   │ Trn Acc %  │ Tst Loss  │ Tst Acc % │ Active Nodes │ Time (ms)  │");
-    println!("├──────┼────────────┼────────────┼───────────┼───────────┼──────────────┼────────────┤");
+    println!(
+        "\n┌──────┬────────────┬────────────┬───────────┬───────────┬──────────────┬────────────┐"
+    );
+    println!(
+        "│ Ep   │ Trn Loss   │ Trn Acc %  │ Tst Loss  │ Tst Acc % │ Active Nodes │ Time (ms)  │"
+    );
+    println!(
+        "├──────┼────────────┼────────────┼───────────┼───────────┼──────────────┼────────────┤"
+    );
 
     let mut last_firing = [0usize; N_HIDDEN];
 
@@ -427,8 +471,14 @@ fn main() {
                         sample_correct = if pred == sample.label { 1 } else { 0 };
 
                         let d_fused = head.backward(
-                            &fused, &z1, &a1, &d_logits,
-                            &mut local_gw1, &mut local_gb1, &mut local_gw2, &mut local_gb2,
+                            &fused,
+                            &z1,
+                            &a1,
+                            &d_logits,
+                            &mut local_gw1,
+                            &mut local_gb1,
+                            &mut local_gw2,
+                            &mut local_gb2,
                         );
                         d_fused[..N_OBSERVABLES].to_vec()
                     },
@@ -438,20 +488,40 @@ fn main() {
                 total_train_loss += sample_loss;
                 train_correct += sample_correct;
 
-                for (g, adj_g) in batch_gansatz.iter_mut().zip(&adj.gradient) { *g += adj_g; }
-                for (g, local_g) in batch_gw1.iter_mut().zip(&local_gw1) { *g += local_g; }
-                for (g, local_g) in batch_gb1.iter_mut().zip(&local_gb1) { *g += local_g; }
-                for (g, local_g) in batch_gw2.iter_mut().zip(&local_gw2) { *g += local_g; }
-                for (g, local_g) in batch_gb2.iter_mut().zip(&local_gb2) { *g += local_g; }
+                for (g, adj_g) in batch_gansatz.iter_mut().zip(&adj.gradient) {
+                    *g += adj_g;
+                }
+                for (g, local_g) in batch_gw1.iter_mut().zip(&local_gw1) {
+                    *g += local_g;
+                }
+                for (g, local_g) in batch_gb1.iter_mut().zip(&local_gb1) {
+                    *g += local_g;
+                }
+                for (g, local_g) in batch_gw2.iter_mut().zip(&local_gw2) {
+                    *g += local_g;
+                }
+                for (g, local_g) in batch_gb2.iter_mut().zip(&local_gb2) {
+                    *g += local_g;
+                }
             }
 
             // Apply step with L2 regularization on head
             let decay = 1e-4;
-            for g in &mut batch_gansatz { *g /= b_len; }
-            for (w, g) in head.w1.iter().zip(&mut batch_gw1) { *g = *g / b_len + decay * w; }
-            for g in &mut batch_gb1 { *g /= b_len; }
-            for (w, g) in head.w2.iter().zip(&mut batch_gw2) { *g = *g / b_len + decay * w; }
-            for g in &mut batch_gb2 { *g /= b_len; }
+            for g in &mut batch_gansatz {
+                *g /= b_len;
+            }
+            for (w, g) in head.w1.iter().zip(&mut batch_gw1) {
+                *g = *g / b_len + decay * w;
+            }
+            for g in &mut batch_gb1 {
+                *g /= b_len;
+            }
+            for (w, g) in head.w2.iter().zip(&mut batch_gw2) {
+                *g = *g / b_len + decay * w;
+            }
+            for g in &mut batch_gb2 {
+                *g /= b_len;
+            }
 
             opt_ansatz.step(&mut ansatz_weights, &batch_gansatz);
             opt_head_w1.step(&mut head.w1, &batch_gw1);
@@ -504,13 +574,26 @@ fn main() {
             epoch, train_loss, train_acc, test_loss_avg, test_acc_pct, active_nodes, ep_dur
         );
     }
-    println!("└──────┴────────────┴────────────┴───────────┴───────────┴──────────────┴────────────┘");
+    println!(
+        "└──────┴────────────┴────────────┴───────────┴───────────┴──────────────┴────────────┘"
+    );
 
     let dead_nodes = last_firing.iter().filter(|&&c| c == 0).count();
-    println!("\n [NEURON HEALTH] Active Nodes: {}/128 | Dead: {}/128", 128 - dead_nodes, dead_nodes);
+    println!(
+        "\n [NEURON HEALTH] Active Nodes: {}/128 | Dead: {}/128",
+        128 - dead_nodes,
+        dead_nodes
+    );
 
     // Export web telemetry
-    export_telemetry(&ansatz, &ansatz_weights, &head, &observables, test_data, &last_firing);
+    export_telemetry(
+        &ansatz,
+        &ansatz_weights,
+        &head,
+        &observables,
+        test_data,
+        &last_firing,
+    );
 }
 
 fn export_telemetry(
@@ -545,7 +628,10 @@ fn export_telemetry(
 
             let max_l = logits.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
             let exp_sum: f64 = logits.iter().map(|&l| (l - max_l).exp()).sum();
-            let probs: Vec<f64> = logits.iter().map(|&l| (l - max_l).exp() / exp_sum).collect();
+            let probs: Vec<f64> = logits
+                .iter()
+                .map(|&l| (l - max_l).exp() / exp_sum)
+                .collect();
 
             selected_samples.push(serde_json::json!({
                 "name": sample.name,

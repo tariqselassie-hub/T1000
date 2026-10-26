@@ -59,7 +59,9 @@ fn main() {
     println!("┌────────────────────────────────────────────────────────────────────────────────────────┐");
     println!("│             T-1000 GEOMETRIC QUANTUM GRAPH NEURAL NETWORK (QGNN) BENCHMARK             │");
     println!("│   Mission: Lie-Equivariant Graph Convolution & Barren Plateau Resilience               │");
-    println!("│   Target: ZINC Molecular Graph Topological Screening & Gradient Scaling               │");
+    println!(
+        "│   Target: ZINC Molecular Graph Topological Screening & Gradient Scaling               │"
+    );
     println!("└────────────────────────────────────────────────────────────────────────────────────────┘\n");
 
     // 1. Barren Plateau Gradient Variance Scaling Sweep (4Q to 14Q)
@@ -76,7 +78,11 @@ fn main() {
         let qgnn_var = compute_qgnn_gradient_variance(&dummy_graph, depth, num_samples, 42);
         let elapsed = t0.elapsed();
 
-        let ratio = if hea_var > 0.0 { qgnn_var / hea_var } else { 1.0 };
+        let ratio = if hea_var > 0.0 {
+            qgnn_var / hea_var
+        } else {
+            1.0
+        };
         let hea_dim = 4.0f64.powi(n as i32) - 1.0;
         let qgnn_dim = n + dummy_graph.edges.len() * 4;
 
@@ -91,7 +97,11 @@ fn main() {
 
         println!(
             "  [{:2}Q] HEA Var = {:10.4e} | QGNN Var = {:10.4e} | Boost = {:8.2}x | {:8.2} ms",
-            n, hea_var, qgnn_var, ratio, elapsed.as_secs_f64() * 1000.0
+            n,
+            hea_var,
+            qgnn_var,
+            ratio,
+            elapsed.as_secs_f64() * 1000.0
         );
     }
 
@@ -110,19 +120,26 @@ fn main() {
     println!("  Permuted Prediction (p=π(G)):   {:.8}", pred_perm);
     println!("  Max Absolute Delta (|Δy|):      {:10.4e}", max_delta);
     let is_equivariant = max_delta < 1e-10;
-    println!("  Equivariance Test Result:       {}", if is_equivariant { "PASSED (Zero Drift)" } else { "FAILED" });
+    println!(
+        "  Equivariance Test Result:       {}",
+        if is_equivariant {
+            "PASSED (Zero Drift)"
+        } else {
+            "FAILED"
+        }
+    );
 
     // 3. Real ZINC Molecular Drug Candidates Training Run
     println!("\n--- Step 3: Molecular Property Training on ZINC Compounds ---");
     let molecules = [
-        ("C1CCCCC1", 2.50),               // Cyclohexane
-        ("c1ccccc1", 2.13),               // Benzene
-        ("c1ccc(O)cc1", 1.48),            // Phenol
-        ("CC(=O)Oc1ccccc1C(=O)O", 1.19),  // Aspirin
-        ("CCO", -0.24),                   // Ethanol
-        ("CCN(CC)CC", 1.45),              // Triethylamine
-        ("c1ccncc1", 0.65),               // Pyridine
-        ("CC(=O)N", -0.77),               // Acetamide
+        ("C1CCCCC1", 2.50),              // Cyclohexane
+        ("c1ccccc1", 2.13),              // Benzene
+        ("c1ccc(O)cc1", 1.48),           // Phenol
+        ("CC(=O)Oc1ccccc1C(=O)O", 1.19), // Aspirin
+        ("CCO", -0.24),                  // Ethanol
+        ("CCN(CC)CC", 1.45),             // Triethylamine
+        ("c1ccncc1", 0.65),              // Pyridine
+        ("CC(=O)N", -0.77),              // Acetamide
     ];
 
     let mut parsed_dataset = Vec::new();
@@ -141,10 +158,17 @@ fn main() {
             parsed_dataset.iter().map(|(g, y)| (g, *y)).collect();
         let mse = model.train_step(&refs, 0.04);
         let rmse = mse.sqrt();
-        training_history.push(TrainingStep { epoch, mse_loss: mse, rmse });
+        training_history.push(TrainingStep {
+            epoch,
+            mse_loss: mse,
+            rmse,
+        });
 
         if epoch % 5 == 0 || epoch == 1 {
-            println!("  Epoch {:2}/{:2} | MSE Loss = {:.6} | RMSE = {:.4}", epoch, epochs, mse, rmse);
+            println!(
+                "  Epoch {:2}/{:2} | MSE Loss = {:.6} | RMSE = {:.4}",
+                epoch, epochs, mse, rmse
+            );
         }
     }
 
@@ -158,10 +182,18 @@ fn main() {
     let total_inf_time = t_inf.elapsed();
     let latency_us = (total_inf_time.as_secs_f64() * 1_000_000.0) / (test_iters as f64);
     println!("\n--- Step 4: AVX2+FMA Execution Telemetry ---");
-    println!("  Inference Latency: {:8.2} us / molecule ({:8.1} mols/sec)", latency_us, 1_000_000.0 / latency_us);
+    println!(
+        "  Inference Latency: {:8.2} us / molecule ({:8.1} mols/sec)",
+        latency_us,
+        1_000_000.0 / latency_us
+    );
 
     // Persist Telemetry to JSON
-    let summary_ratio = scaling_points.iter().find(|p| p.qubits == 12).map(|p| p.variance_ratio).unwrap_or(1.0);
+    let summary_ratio = scaling_points
+        .iter()
+        .find(|p| p.qubits == 12)
+        .map(|p| p.variance_ratio)
+        .unwrap_or(1.0);
     let telemetry = QgnnBenchmarkTelemetry {
         timestamp: "2026-10-19T08:58:00Z".to_string(),
         scaling_points,
@@ -191,7 +223,8 @@ fn create_ring_scaffold(n: usize) -> MolecularGraph {
     let mut g = MolecularGraph::new(n);
     for i in 0..n {
         let next_i = (i + 1) % n;
-        g.edges.push(t1000::qgnn::GraphEdge::new(i, next_i, BondKind::Single));
+        g.edges
+            .push(t1000::qgnn::GraphEdge::new(i, next_i, BondKind::Single));
         g.node_features[i] = [6.0 / 53.0, 0.0, 0.0, 0.5]; // Carbon features
     }
     g

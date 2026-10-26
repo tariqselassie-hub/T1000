@@ -301,7 +301,8 @@ fn main() {
 
     // 1. Classical Monte Carlo Baseline
     let classical_walker = ClassicalGluedWalker::new(cfg);
-    let (mean_classical_steps, classical_success) = classical_walker.benchmark_classical(1000, 10_000);
+    let (mean_classical_steps, classical_success) =
+        classical_walker.benchmark_classical(1000, 10_000);
 
     // 2. Ideal Unitary CTQW
     let gamma = 0.50;
@@ -337,15 +338,20 @@ fn main() {
     println!("│ Inter-Die Seam Weld Couplers      │ 8 Couplers across Dies 0,1,4,5      │");
     println!(
         "│ Classical Random Walk Hitting     │ {:.1} Steps (Success: {:.1}%)       │",
-        mean_classical_steps, classical_success * 100.0
+        mean_classical_steps,
+        classical_success * 100.0
     );
     println!(
         "│ T-1000 Ideal Quantum Peak Exit    │ {:.4} ({:.2}%) at t = {:.2}         │",
-        ideal_peak_p, ideal_peak_p * 100.0, ideal_peak_t
+        ideal_peak_p,
+        ideal_peak_p * 100.0,
+        ideal_peak_t
     );
     println!(
         "│ Cepheus Seam-Noisy Peak Exit      │ {:.4} ({:.2}%) at t = {:.2}         │",
-        noisy_peak_p, noisy_peak_p * 100.0, noisy_peak_t
+        noisy_peak_p,
+        noisy_peak_p * 100.0,
+        noisy_peak_t
     );
     println!(
         "│ Seam Transmission Retention       │ {:.2}% of Pure Theoretical Peak    │",

@@ -11,15 +11,51 @@ use t1000::chemistry::{
 fn create_sample_qm9_record() -> Qm9Record {
     // Model ethanol-like motif (C-C-O backbone + Hydrogens)
     let atoms = vec![
-        Qm9Atom { symbol: "C".to_string(), coords: [0.0, 0.0, 0.0], mulliken_charge: -0.15 },
-        Qm9Atom { symbol: "C".to_string(), coords: [1.52, 0.0, 0.0], mulliken_charge: 0.12 },
-        Qm9Atom { symbol: "O".to_string(), coords: [2.15, 1.25, 0.0], mulliken_charge: -0.55 },
-        Qm9Atom { symbol: "H".to_string(), coords: [-0.35, 1.02, 0.0], mulliken_charge: 0.08 },
-        Qm9Atom { symbol: "H".to_string(), coords: [-0.35, -0.51, 0.88], mulliken_charge: 0.08 },
-        Qm9Atom { symbol: "H".to_string(), coords: [-0.35, -0.51, -0.88], mulliken_charge: 0.08 },
-        Qm9Atom { symbol: "H".to_string(), coords: [1.85, -0.51, 0.88], mulliken_charge: 0.08 },
-        Qm9Atom { symbol: "H".to_string(), coords: [1.85, -0.51, -0.88], mulliken_charge: 0.08 },
-        Qm9Atom { symbol: "H".to_string(), coords: [3.10, 1.15, 0.0], mulliken_charge: 0.18 },
+        Qm9Atom {
+            symbol: "C".to_string(),
+            coords: [0.0, 0.0, 0.0],
+            mulliken_charge: -0.15,
+        },
+        Qm9Atom {
+            symbol: "C".to_string(),
+            coords: [1.52, 0.0, 0.0],
+            mulliken_charge: 0.12,
+        },
+        Qm9Atom {
+            symbol: "O".to_string(),
+            coords: [2.15, 1.25, 0.0],
+            mulliken_charge: -0.55,
+        },
+        Qm9Atom {
+            symbol: "H".to_string(),
+            coords: [-0.35, 1.02, 0.0],
+            mulliken_charge: 0.08,
+        },
+        Qm9Atom {
+            symbol: "H".to_string(),
+            coords: [-0.35, -0.51, 0.88],
+            mulliken_charge: 0.08,
+        },
+        Qm9Atom {
+            symbol: "H".to_string(),
+            coords: [-0.35, -0.51, -0.88],
+            mulliken_charge: 0.08,
+        },
+        Qm9Atom {
+            symbol: "H".to_string(),
+            coords: [1.85, -0.51, 0.88],
+            mulliken_charge: 0.08,
+        },
+        Qm9Atom {
+            symbol: "H".to_string(),
+            coords: [1.85, -0.51, -0.88],
+            mulliken_charge: 0.08,
+        },
+        Qm9Atom {
+            symbol: "H".to_string(),
+            coords: [3.10, 1.15, 0.0],
+            mulliken_charge: 0.18,
+        },
     ];
 
     Qm9Record {
@@ -87,7 +123,10 @@ fn test_molecular_laplacian_construction_and_eigensystem() {
 
     // Core atom should be carbon (idx 0 or 1) and frontier site oxygen (idx 2)
     assert!(lap.core_atom_idx == 0 || lap.core_atom_idx == 1);
-    assert_eq!(lap.frontier_site_idx, 2, "Oxygen should be identified as reactive frontier site");
+    assert_eq!(
+        lap.frontier_site_idx, 2,
+        "Oxygen should be identified as reactive frontier site"
+    );
 }
 
 #[test]
@@ -128,8 +167,15 @@ fn test_zeno_stepped_confinement_survival() {
     let (state, survival) = walk.evolve_zeno_stepped(&psi0, 1.0, 50, &bound_mask);
     let state_norm: f64 = state.iter().map(|c| c.norm_sqr()).sum();
 
-    assert!(survival > 0.999, "Zeno survival {} drops below 0.999", survival);
-    assert!((state_norm - 1.0).abs() < 1e-10, "State normalization violated");
+    assert!(
+        survival > 0.999,
+        "Zeno survival {} drops below 0.999",
+        survival
+    );
+    assert!(
+        (state_norm - 1.0).abs() < 1e-10,
+        "State normalization violated"
+    );
 }
 
 #[test]

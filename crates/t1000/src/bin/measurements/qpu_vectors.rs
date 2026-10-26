@@ -74,7 +74,9 @@ impl Suite {
 }
 
 fn random_state(rng: &mut Rng, count: usize, bits: u32) -> Vec<(i64, i64)> {
-    (0..count).map(|_| (rng.signed(bits), rng.signed(bits))).collect()
+    (0..count)
+        .map(|_| (rng.signed(bits), rng.signed(bits)))
+        .collect()
 }
 
 fn random_gate(rng: &mut Rng, n: usize) -> Gate {
@@ -101,7 +103,12 @@ fn main() {
     let out_dir = PathBuf::from(args.next().expect("usage: qpu_vectors <out_dir> [--full]"));
     let full = args.any(|a| a == "--full");
     let mut rng = Rng(0x1000_9D0C_A11E_5EED);
-    let mut su = Suite { session: Session::new(), stim: Vec::new(), expect: Vec::new(), frames: Vec::new() };
+    let mut su = Suite {
+        session: Session::new(),
+        stim: Vec::new(),
+        expect: Vec::new(),
+        frames: Vec::new(),
+    };
     let one = quantize_state(1.0, 28);
 
     // 1. identity and unknown opcodes
@@ -117,7 +124,10 @@ fn main() {
     let data = random_state(&mut rng, 8, 31);
     su.send(frame_load(0, &data));
     su.dump(3);
-    su.send(frame_load(5, &[(i64::from(i32::MAX), i64::from(i32::MIN)), (-1, 1)]));
+    su.send(frame_load(
+        5,
+        &[(i64::from(i32::MAX), i64::from(i32::MIN)), (-1, 1)],
+    ));
     su.send(frame_read(4, 4));
     su.send(frame_load(2, &[]));
     su.send(frame_read(8, 0));
@@ -130,7 +140,11 @@ fn main() {
     su.send(frame_read(0, 9));
     su.send(frame_expect_z(8));
     for (target, ctrl) in [(3u8, 0u16), (0, 0b001), (1, 0b1000), (200, 0)] {
-        su.gate(&Gate { target, ctrl, ..h(0) });
+        su.gate(&Gate {
+            target,
+            ctrl,
+            ..h(0)
+        });
     }
     su.dump(3);
 
@@ -186,14 +200,7 @@ fn main() {
     // 7. hardware burst circuit execution
     su.send(frame_set_n(3));
     su.send(frame_reset(one));
-    let burst_circuit = vec![
-        h(0),
-        cnot(0, 1),
-        rz(1, 0.4),
-        h(2),
-        cnot(1, 2),
-        s(0),
-    ];
+    let burst_circuit = vec![h(0), cnot(0, 1), rz(1, 0.4), h(2), cnot(1, 2), s(0)];
     su.send(frame_load_circuit(&burst_circuit));
     su.send(frame_run_burst());
     su.dump(3);
@@ -211,22 +218,40 @@ fn main() {
     }
 
     fs::create_dir_all(&out_dir).expect("create output directory");
-    let mem = |bytes: &[u8]| bytes.iter().map(|b| format!("{b:02x}\n")).collect::<String>();
+    let mem = |bytes: &[u8]| {
+        bytes
+            .iter()
+            .map(|b| format!("{b:02x}\n"))
+            .collect::<String>()
+    };
     fs::write(out_dir.join("stim.bin"), &su.stim).expect("write");
     fs::write(out_dir.join("expect.bin"), &su.expect).expect("write");
     fs::write(out_dir.join("stim.mem"), mem(&su.stim)).expect("write");
     fs::write(out_dir.join("expect.mem"), mem(&su.expect)).expect("write");
     fs::write(
         out_dir.join("sizes.mem"),
-        format!("{:08x}
+        format!(
+            "{:08x}
 {:08x}
 {:08x}
-", su.stim.len(), su.expect.len(), su.frames.len()),
+",
+            su.stim.len(),
+            su.expect.len(),
+            su.frames.len()
+        ),
     )
     .expect("write");
-    let table: String = su.frames.iter().map(|(f, r)| format!("{f:08x}
+    let table: String = su
+        .frames
+        .iter()
+        .map(|(f, r)| {
+            format!(
+                "{f:08x}
 {r:08x}
-")).collect();
+"
+            )
+        })
+        .collect();
     fs::write(out_dir.join("frames.mem"), table).expect("write");
     println!(
         "wrote {} stimulus bytes and {} expected reply bytes to {}",

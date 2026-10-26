@@ -251,7 +251,12 @@ impl QuantumStateSpaceAutoencoder {
 
     /// Enables the 2026 piecewise Planckian dissipation clamp on state-space memory retention:
     /// $-\Delta_t A_n \le \min(2 T_{\text{eff}}, \Delta_n) \cdot \delta t_{\text{phys}}$.
-    pub fn enable_planckian_clamp(&mut self, dt_phys: f64, temp_scale: f64, spectral_gaps: Vec<f64>) {
+    pub fn enable_planckian_clamp(
+        &mut self,
+        dt_phys: f64,
+        temp_scale: f64,
+        spectral_gaps: Vec<f64>,
+    ) {
         self.use_planckian_clamp = true;
         self.planckian_dt = dt_phys;
         self.planckian_temp_scale = temp_scale;

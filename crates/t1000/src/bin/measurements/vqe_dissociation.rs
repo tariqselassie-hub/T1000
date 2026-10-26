@@ -20,16 +20,31 @@ struct Curve {
 
 fn curves() -> Vec<Curve> {
     let range = |lo: f64, hi: f64, n: usize| -> Vec<f64> {
-        (0..n).map(|k| lo + (hi - lo) * k as f64 / (n - 1) as f64).collect()
+        (0..n)
+            .map(|k| lo + (hi - lo) * k as f64 / (n - 1) as f64)
+            .collect()
     };
     vec![
-        Curve { label: "H2", formula: "H2", z: [1, 1], bond_lengths: range(0.4, 3.0, 14) },
-        Curve { label: "LiH", formula: "LiH", z: [3, 1], bond_lengths: range(1.0, 4.0, 13) },
+        Curve {
+            label: "H2",
+            formula: "H2",
+            z: [1, 1],
+            bond_lengths: range(0.4, 3.0, 14),
+        },
+        Curve {
+            label: "LiH",
+            formula: "LiH",
+            z: [3, 1],
+            bond_lengths: range(1.0, 4.0, 13),
+        },
     ]
 }
 
 fn scan(curve: &Curve) -> Vec<(f64, VqeReport)> {
-    let cfg = VqeConfig { max_iterations: 600, ..VqeConfig::default() };
+    let cfg = VqeConfig {
+        max_iterations: 600,
+        ..VqeConfig::default()
+    };
     curve
         .bond_lengths
         .iter()
@@ -74,7 +89,10 @@ fn main() {
     for curve in curves() {
         let points = scan(&curve);
         print_curve(curve.label, &points);
-        let worst = points.iter().map(|(_, p)| p.vqe_error_vs_fci.abs()).fold(0.0, f64::max);
+        let worst = points
+            .iter()
+            .map(|(_, p)| p.vqe_error_vs_fci.abs())
+            .fold(0.0, f64::max);
         println!(" worst VQE error along the curve: {:.4} mHa", worst * 1e3);
         let rows: Vec<_> = points
             .iter()

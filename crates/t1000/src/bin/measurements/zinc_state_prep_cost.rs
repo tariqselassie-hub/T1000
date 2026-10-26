@@ -14,10 +14,10 @@
 //! Usage: `zinc_state_prep_cost [--scale maxabs|minmax|raw] [--samples N]`
 
 use std::env;
+use t1000::datasets::DataOptions;
 use t1000::device_noise::ansatz_fidelity;
 use t1000::state::QuantumState;
 use t1000::state_prep::{amplitude_prep, amplitude_prep_raw, counts, to_circuit, PrepGate};
-use t1000::datasets::DataOptions;
 use t1000::zinc_data::{InputScaling, Scaler};
 
 const PREP_QUBITS: usize = 5;
@@ -45,12 +45,21 @@ fn linear_chain_cnots(gates: &[PrepGate]) -> usize {
 
 fn summary(label: &str, v: &[usize]) {
     let mean = v.iter().sum::<usize>() as f64 / v.len() as f64;
-    println!("  {label:<22} mean {mean:>6.2}   min {:>3}   max {:>3}", v.iter().min().unwrap(), v.iter().max().unwrap());
+    println!(
+        "  {label:<22} mean {mean:>6.2}   min {:>3}   max {:>3}",
+        v.iter().min().unwrap(),
+        v.iter().max().unwrap()
+    );
 }
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let value = |flag: &str| args.iter().position(|a| a == flag).and_then(|i| args.get(i + 1)).cloned();
+    let value = |flag: &str| {
+        args.iter()
+            .position(|a| a == flag)
+            .and_then(|i| args.get(i + 1))
+            .cloned()
+    };
     let scaling = match value("--scale").as_deref() {
         Some("raw") => InputScaling::Raw,
         Some("minmax") => InputScaling::MinMax,
@@ -61,7 +70,8 @@ fn main() {
     let fit_rows: Vec<&[f64]> = train.iter().map(|m| m.features.as_slice()).collect();
     let scaler = Scaler::fit_rows(scaling, &fit_rows);
 
-    let (mut raw_c, mut opt_c, mut opt_r, mut chain) = (Vec::new(), Vec::new(), Vec::new(), Vec::new());
+    let (mut raw_c, mut opt_c, mut opt_r, mut chain) =
+        (Vec::new(), Vec::new(), Vec::new(), Vec::new());
     let mut worst_deviation = 0.0f64;
     for m in train.iter().chain(&test) {
         let amps = amplitudes(&scaler.apply(&m.features));
@@ -75,8 +85,15 @@ fn main() {
         let mut state = QuantumState::ground(1 << PREP_QUBITS);
         to_circuit(&opt, PREP_QUBITS).compile().execute(&mut state);
         let norm = amps.iter().map(|a| a * a).sum::<f64>().sqrt();
-        let dev = state.real.iter().zip(&amps).map(|(g, a)| (g - a / norm).abs()).fold(0.0, f64::max);
-        worst_deviation = worst_deviation.max(dev).max(state.imag.iter().fold(0.0f64, |x, v| x.max(v.abs())));
+        let dev = state
+            .real
+            .iter()
+            .zip(&amps)
+            .map(|(g, a)| (g - a / norm).abs())
+            .fold(0.0, f64::max);
+        worst_deviation = worst_deviation
+            .max(dev)
+            .max(state.imag.iter().fold(0.0f64, |x, v| x.max(v.abs())));
     }
     println!("State preparation of the {} input ({scaling:?} inputs), {} molecules, 19 amplitudes on {PREP_QUBITS} qubits\n", data.label, raw_c.len());
     println!("Plain construction: every molecule needs 31 rotations and 30 CNOTs.");
@@ -90,7 +107,9 @@ fn main() {
     let (rot, cnot) = (mean(&opt_r), mean(&opt_c));
     let stats = |v: &[usize]| serde_json::json!({ "mean": v.iter().sum::<usize>() as f64 / v.len() as f64, "min": v.iter().min(), "max": v.iter().max() });
     let mut fidelity_rows = Vec::new();
-    println!("\nCircuit fidelity (global depolarizing model; single-qubit error = two-qubit error / 10)");
+    println!(
+        "\nCircuit fidelity (global depolarizing model; single-qubit error = two-qubit error / 10)"
+    );
     println!("┌────────────┬──────────────┬──────────────┬──────────────┬──────────────┐");
     println!("│ 2q error   │ ansatz F     │ preparation F│ plain prep F │ total F      │");
     println!("├────────────┼──────────────┼──────────────┼──────────────┼──────────────┤");
@@ -99,7 +118,10 @@ fn main() {
         let ansatz = ansatz_fidelity(10, 4, p1, p2);
         let prep = (1.0 - p1).powf(rot) * (1.0 - p2).powf(cnot);
         let plain = (1.0 - p1).powi(31) * (1.0 - p2).powi(30);
-        println!("│ {p2:<10} │ {ansatz:>12.3} │ {prep:>12.3} │ {plain:>12.3} │ {:>12.3} │", ansatz * prep);
+        println!(
+            "│ {p2:<10} │ {ansatz:>12.3} │ {prep:>12.3} │ {plain:>12.3} │ {:>12.3} │",
+            ansatz * prep
+        );
         fidelity_rows.push(serde_json::json!({ "two_qubit_error": p2, "ansatz": ansatz, "preparation": prep, "plain_preparation": plain, "total": ansatz * prep }));
     }
     println!("└────────────┴──────────────┴──────────────┴──────────────┴──────────────┘");
@@ -114,7 +136,14 @@ fn main() {
         "max_state_deviation": worst_deviation,
         "fidelity": fidelity_rows,
     });
-    let name = if data.label.starts_with("QM9") { "qm9_state_prep_cost" } else { "zinc_state_prep_cost" };
-    let _ = t1000::results::write(format!("results/experiments/{name}.json"), serde_json::to_string_pretty(&report).unwrap_or_default());
+    let name = if data.label.starts_with("QM9") {
+        "qm9_state_prep_cost"
+    } else {
+        "zinc_state_prep_cost"
+    };
+    let _ = t1000::results::write(
+        format!("results/experiments/{name}.json"),
+        serde_json::to_string_pretty(&report).unwrap_or_default(),
+    );
     println!("\nMean counts to use with zinc_shot_noise: --prep-rotations {rot:.1} --prep-cnots {cnot:.1}");
 }

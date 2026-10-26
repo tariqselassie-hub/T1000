@@ -25,7 +25,6 @@ pub use lattice_surgery::*;
 pub use magic_distillation::*;
 pub use magic_w7_injection::*;
 
-
 /// Supported quantum error correction code families.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum QecCodeKind {
@@ -185,7 +184,7 @@ pub fn encode_logical_state(
     state
 }
 
-/// 16 basis words spanning the [[9,1,3]] planar surface code |0_L> stabilizer subspace.
+/// 16 basis words spanning the `[[9, 1, 3]]` planar surface code |0_L> stabilizer subspace.
 pub const SURFACE_9Q_WORDS: [usize; 16] = {
     let mut words = [0usize; 16];
     let gens = [27, 432, 6, 192];
@@ -308,7 +307,7 @@ pub fn extract_syndrome(state: &QuantumState, code: QecCodeKind, offset: usize) 
                 )
             } else {
                 // Combined Y error (both syndromes fire on same qubit)
-                let q = if z_idx == x_idx { z_idx - 1 } else { z_idx - 1 };
+                let q = z_idx - 1;
                 (true, Some(offset + q), Some(PauliErrorKind::BitPhaseFlip))
             };
 
@@ -593,6 +592,41 @@ pub fn apply_hadamard(state: &mut QuantumState, target: usize) {
     }
 }
 
+/// Formats a 2D planar ASCII representation of the 3x3 surface code lattice with plaquette status.
+pub fn render_surface_code_ascii(report: &SyndromeReport) -> String {
+    let s = &report.syndrome_bits;
+    // Expected 8 bits: [sz1, sz2, sz3, sz4, sx1, sx2, sx3, sx4]
+    let (sz1, sz2, sz3, sz4, sx1, sx2, sx3, sx4) = if s.len() == 8 {
+        (s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7])
+    } else {
+        (1, 1, 1, 1, 1, 1, 1, 1)
+    };
+
+    let f = |val: i8| if val == -1 { "ERR" } else { " OK" };
+
+    format!(
+        "┌── d0 ──── [Sx3:{}] ──── d1 ──── [Sx3:{}] ──── d2 ──┐\n\
+         │   │                     │                     │   │\n\
+         │ [Sz3:{}]    [Sx1:{}]    │         [Sz1:{}]    │   │\n\
+         │   │                     │                     │   │\n\
+         ├── d3 ────────────────── d4 ────────────────── d5 ──┤\n\
+         │   │                     │                     │   │\n\
+         │   │         [Sz2:{}]    │         [Sx2:{}]  [Sz4:{}]│\n\
+         │   │                     │                     │   │\n\
+         └── d6 ──── [Sx4:{}] ──── d7 ──── [Sx4:{}] ──── d8 ──┘",
+        f(sx3),
+        f(sx3),
+        f(sz3),
+        f(sx1),
+        f(sz1),
+        f(sz2),
+        f(sx2),
+        f(sz4),
+        f(sx4),
+        f(sx4)
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -749,39 +783,4 @@ mod tests {
         assert!(ascii.contains("d8"));
         assert!(ascii.contains("OK"));
     }
-}
-
-/// Formats a 2D planar ASCII representation of the 3x3 surface code lattice with plaquette status.
-pub fn render_surface_code_ascii(report: &SyndromeReport) -> String {
-    let s = &report.syndrome_bits;
-    // Expected 8 bits: [sz1, sz2, sz3, sz4, sx1, sx2, sx3, sx4]
-    let (sz1, sz2, sz3, sz4, sx1, sx2, sx3, sx4) = if s.len() == 8 {
-        (s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7])
-    } else {
-        (1, 1, 1, 1, 1, 1, 1, 1)
-    };
-
-    let f = |val: i8| if val == -1 { "ERR" } else { " OK" };
-
-    format!(
-        "┌── d0 ──── [Sx3:{}] ──── d1 ──── [Sx3:{}] ──── d2 ──┐\n\
-         │   │                     │                     │   │\n\
-         │ [Sz3:{}]    [Sx1:{}]    │         [Sz1:{}]    │   │\n\
-         │   │                     │                     │   │\n\
-         ├── d3 ────────────────── d4 ────────────────── d5 ──┤\n\
-         │   │                     │                     │   │\n\
-         │   │         [Sz2:{}]    │         [Sx2:{}]  [Sz4:{}]│\n\
-         │   │                     │                     │   │\n\
-         └── d6 ──── [Sx4:{}] ──── d7 ──── [Sx4:{}] ──── d8 ──┘",
-        f(sx3),
-        f(sx3),
-        f(sz3),
-        f(sx1),
-        f(sz1),
-        f(sz2),
-        f(sx2),
-        f(sz4),
-        f(sx4),
-        f(sx4)
-    )
 }

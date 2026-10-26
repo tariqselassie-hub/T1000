@@ -37,10 +37,14 @@ use serde::Serialize;
 use std::env;
 use t1000::baselines::regression_metrics;
 use t1000::baselines::RIDGE_LAMBDAS;
-use t1000::device_noise::{ansatz_fidelity, apply_readout, depolarize, invert_readout, ReadoutError};
+use t1000::datasets::{DataOptions, Dataset, Sample};
+use t1000::device_noise::{
+    ansatz_fidelity, apply_readout, depolarize, invert_readout, ReadoutError,
+};
+use t1000::linear_head::{
+    probability_features_into, project, select_features, LinearHead, Observables, NOISE_LAMBDAS,
+};
 use t1000::reuploading::ReuploadingMap;
-use t1000::linear_head::{probability_features_into, project, select_features, LinearHead, Observables, NOISE_LAMBDAS};
-use t1000::datasets::{Dataset, DataOptions, Sample};
 use t1000::zinc_data::{InputScaling, Scaler};
 use t1000::{CircuitAnsatz, DataEncodingLayer, EncodingKind, QuantumState};
 
@@ -62,7 +66,12 @@ impl Rng {
 
 /// Output probabilities of the circuit for one input.
 fn probabilities(state: &QuantumState) -> Vec<f64> {
-    state.real.iter().zip(&state.imag).map(|(r, i)| r * r + i * i).collect()
+    state
+        .real
+        .iter()
+        .zip(&state.imag)
+        .map(|(r, i)| r * r + i * i)
+        .collect()
 }
 
 /// How measured frequencies become features.
@@ -73,13 +82,22 @@ struct Plan {
 }
 
 /// Features estimated from `shots` samples of the distribution `cdf`.
-fn sampled_features(cdf: &[f64], shots: usize, rng: &mut Rng, counts: &mut [u32], plan: &Plan) -> Vec<f64> {
+fn sampled_features(
+    cdf: &[f64],
+    shots: usize,
+    rng: &mut Rng,
+    counts: &mut [u32],
+    plan: &Plan,
+) -> Vec<f64> {
     counts.fill(0);
     for _ in 0..shots {
         let u = rng.next_f64() * cdf[cdf.len() - 1];
         counts[cdf.partition_point(|&c| c <= u).min(cdf.len() - 1)] += 1;
     }
-    let mut freq: Vec<f64> = counts.iter().map(|&c| f64::from(c) / shots as f64).collect();
+    let mut freq: Vec<f64> = counts
+        .iter()
+        .map(|&c| f64::from(c) / shots as f64)
+        .collect();
     if let Some(e) = plan.mitigate {
         invert_readout(&mut freq, N_QUBITS, e);
     }
@@ -99,12 +117,20 @@ fn device_distribution(p: &[f64], fidelity: f64, readout: Option<ReadoutError>) 
 }
 
 fn cumulative(p: &[f64]) -> Vec<f64> {
-    p.iter().scan(0.0, |acc, v| { *acc += v; Some(*acc) }).collect()
+    p.iter()
+        .scan(0.0, |acc, v| {
+            *acc += v;
+            Some(*acc)
+        })
+        .collect()
 }
 
 fn score(head: &LinearHead, features: &[Vec<f64>], targets: &[Vec<f64>]) -> (f64, f64) {
     let m = regression_metrics(&head.predict(features), targets, &["t0", "t1", "t2"]);
-    (1.0 - m.iter().map(|t| t.r2).sum::<f64>() / 3.0, m.iter().map(|t| t.pearson_r).sum::<f64>() / 3.0)
+    (
+        1.0 - m.iter().map(|t| t.r2).sum::<f64>() / 3.0,
+        m.iter().map(|t| t.pearson_r).sum::<f64>() / 3.0,
+    )
 }
 
 /// Held-out R2 of each of the three targets.
@@ -115,7 +141,10 @@ fn target_r2(head: &LinearHead, features: &[Vec<f64>], targets: &[Vec<f64>]) -> 
 
 fn mean_sd(v: &[f64]) -> (f64, f64) {
     let m = v.iter().sum::<f64>() / v.len() as f64;
-    (m, (v.iter().map(|x| (x - m).powi(2)).sum::<f64>() / v.len() as f64).sqrt())
+    (
+        m,
+        (v.iter().map(|x| (x - m).powi(2)).sum::<f64>() / v.len() as f64).sqrt(),
+    )
 }
 
 /// Which of the 55 features a head is allowed to use.
@@ -136,38 +165,91 @@ struct Config {
 }
 
 const CONFIGS: [Config; 6] = [
-    Config { name: "all 55, penalty grid to 10", subset: Subset::All, wide: false },
-    Config { name: "all 55, penalty grid to 1e4", subset: Subset::All, wide: true },
-    Config { name: "top 30, wide grid", subset: Subset::Top(30), wide: true },
-    Config { name: "top 20, wide grid", subset: Subset::Top(20), wide: true },
-    Config { name: "top 10, wide grid", subset: Subset::Top(10), wide: true },
-    Config { name: "10 single-qubit Z, wide grid", subset: Subset::SingleZ, wide: true },
+    Config {
+        name: "all 55, penalty grid to 10",
+        subset: Subset::All,
+        wide: false,
+    },
+    Config {
+        name: "all 55, penalty grid to 1e4",
+        subset: Subset::All,
+        wide: true,
+    },
+    Config {
+        name: "top 30, wide grid",
+        subset: Subset::Top(30),
+        wide: true,
+    },
+    Config {
+        name: "top 20, wide grid",
+        subset: Subset::Top(20),
+        wide: true,
+    },
+    Config {
+        name: "top 10, wide grid",
+        subset: Subset::Top(10),
+        wide: true,
+    },
+    Config {
+        name: "10 single-qubit Z, wide grid",
+        subset: Subset::SingleZ,
+        wide: true,
+    },
 ];
 const SWEEP_SHOTS: [usize; 5] = [300, 1_000, 3_000, 10_000, 100_000];
 
 /// Fits one configuration on `train_x` and scores it on `test_x`; returns (relative MSE, penalty).
-fn run_config(cfg: &Config, train_x: &[Vec<f64>], train_y: &[Vec<f64>], test_x: &[Vec<f64>], test_y: &[Vec<f64>]) -> (f64, f64) {
+fn run_config(
+    cfg: &Config,
+    train_x: &[Vec<f64>],
+    train_y: &[Vec<f64>],
+    test_x: &[Vec<f64>],
+    test_y: &[Vec<f64>],
+) -> (f64, f64) {
     let columns: Vec<usize> = match cfg.subset {
         Subset::All => (0..train_x[0].len()).collect(),
         Subset::Top(k) => select_features(train_x, train_y, k),
         Subset::SingleZ => (0..N_QUBITS).collect(),
     };
-    let grid: &[f64] = if cfg.wide { &NOISE_LAMBDAS } else { &RIDGE_LAMBDAS };
+    let grid: &[f64] = if cfg.wide {
+        &NOISE_LAMBDAS
+    } else {
+        &RIDGE_LAMBDAS
+    };
     let head = LinearHead::fit_with(&project(train_x, &columns), train_y, grid);
-    (score(&head, &project(test_x, &columns), test_y).0, head.lambda())
+    (
+        score(&head, &project(test_x, &columns), test_y).0,
+        head.lambda(),
+    )
 }
 
-fn run_sweep(exact: (&[Vec<f64>], &[Vec<f64>]), y: (&[Vec<f64>], &[Vec<f64>]), cdfs: (&[Vec<f64>], &[Vec<f64>]), seeds: usize, dim: usize, plan: &Plan) {
+fn run_sweep(
+    exact: (&[Vec<f64>], &[Vec<f64>]),
+    y: (&[Vec<f64>], &[Vec<f64>]),
+    cdfs: (&[Vec<f64>], &[Vec<f64>]),
+    seeds: usize,
+    dim: usize,
+    plan: &Plan,
+) {
     let ((train_exact, test_exact), (train_y, test_y), (train_cdf, test_cdf)) = (exact, y, cdfs);
     let mut counts = vec![0u32; dim];
-    let free: Vec<f64> = CONFIGS.iter().map(|c| run_config(c, train_exact, train_y, test_exact, test_y).0).collect();
+    let free: Vec<f64> = CONFIGS
+        .iter()
+        .map(|c| run_config(c, train_exact, train_y, test_exact, test_y).0)
+        .collect();
     let mut mse = vec![vec![Vec::new(); SWEEP_SHOTS.len()]; CONFIGS.len()];
     let mut lam = vec![vec![Vec::new(); SWEEP_SHOTS.len()]; CONFIGS.len()];
     for (si, &shots) in SWEEP_SHOTS.iter().enumerate() {
         for seed in 0..seeds {
             let mut rng = Rng(0xDEC0_DE00 ^ (shots as u64) << 8 ^ seed as u64);
-            let train_x: Vec<Vec<f64>> = train_cdf.iter().map(|c| sampled_features(c, shots, &mut rng, &mut counts, plan)).collect();
-            let test_x: Vec<Vec<f64>> = test_cdf.iter().map(|c| sampled_features(c, shots, &mut rng, &mut counts, plan)).collect();
+            let train_x: Vec<Vec<f64>> = train_cdf
+                .iter()
+                .map(|c| sampled_features(c, shots, &mut rng, &mut counts, plan))
+                .collect();
+            let test_x: Vec<Vec<f64>> = test_cdf
+                .iter()
+                .map(|c| sampled_features(c, shots, &mut rng, &mut counts, plan))
+                .collect();
             for (ci, cfg) in CONFIGS.iter().enumerate() {
                 let (m, l) = run_config(cfg, &train_x, &train_y[..train_x.len()], &test_x, test_y);
                 mse[ci][si].push(m);
@@ -180,13 +262,19 @@ fn run_sweep(exact: (&[Vec<f64>], &[Vec<f64>]), y: (&[Vec<f64>], &[Vec<f64>]), c
     println!("\nRelative MSE (mean of {seeds} seeds; mean predictor = 1.0)");
     println!("{:<32} {:>10}{header}", "configuration", "noise-free");
     for (ci, cfg) in CONFIGS.iter().enumerate() {
-        let cells: String = mse[ci].iter().map(|v| format!("{:>8.4}", mean_sd(v).0)).collect();
+        let cells: String = mse[ci]
+            .iter()
+            .map(|v| format!("{:>8.4}", mean_sd(v).0))
+            .collect();
         println!("{:<32} {:>10.4}{cells}", cfg.name, free[ci]);
     }
     println!("\nRidge penalty chosen on the validation split (largest of the seeds)");
     println!("{:<32} {:>10}{header}", "configuration", "");
     for (ci, cfg) in CONFIGS.iter().enumerate() {
-        let cells: String = lam[ci].iter().map(|v| format!("{:>8.0e}", v.iter().cloned().fold(0.0, f64::max))).collect();
+        let cells: String = lam[ci]
+            .iter()
+            .map(|v| format!("{:>8.0e}", v.iter().cloned().fold(0.0, f64::max)))
+            .collect();
         println!("{:<32} {:>10}{cells}", cfg.name, "");
     }
 }
@@ -204,7 +292,12 @@ struct Row {
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let value = |flag: &str| args.iter().position(|a| a == flag).and_then(|i| args.get(i + 1)).cloned();
+    let value = |flag: &str| {
+        args.iter()
+            .position(|a| a == flag)
+            .and_then(|i| args.get(i + 1))
+            .cloned()
+    };
     let scaling = match value("--scale").as_deref() {
         Some("raw") => InputScaling::Raw,
         Some("minmax") => InputScaling::MinMax,
@@ -216,21 +309,41 @@ fn main() {
         Some(w) if w.starts_with('w') => Observables::ParityUpTo(w[1..].parse().unwrap_or(2)),
         _ => Observables::ZAndZz,
     };
-    let readout = value("--readout-error").and_then(|v| v.parse::<f64>().ok()).map(ReadoutError::typical);
-    let p2: f64 = value("--gate-error").and_then(|v| v.parse().ok()).unwrap_or(0.0);
-    let prep_rotations: f64 = value("--prep-rotations").and_then(|v| v.parse().ok()).unwrap_or(0.0);
-    let prep_cnots: f64 = value("--prep-cnots").and_then(|v| v.parse().ok()).unwrap_or(0.0);
+    let readout = value("--readout-error")
+        .and_then(|v| v.parse::<f64>().ok())
+        .map(ReadoutError::typical);
+    let p2: f64 = value("--gate-error")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(0.0);
+    let prep_rotations: f64 = value("--prep-rotations")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(0.0);
+    let prep_cnots: f64 = value("--prep-cnots")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(0.0);
     let prep_fidelity = (1.0 - p2 / 10.0).powf(prep_rotations) * (1.0 - p2).powf(prep_cnots);
-    let ansatz_f = ansatz_fidelity(N_QUBITS, value("--depth").and_then(|v| v.parse().ok()).unwrap_or(4), p2 / 10.0, p2);
+    let ansatz_f = ansatz_fidelity(
+        N_QUBITS,
+        value("--depth").and_then(|v| v.parse().ok()).unwrap_or(4),
+        p2 / 10.0,
+        p2,
+    );
     // Routed circuits supply total gate counts directly (single-qubit gates, CNOT-equivalents).
-    let direct = value("--circuit-1q").zip(value("--circuit-2q")).and_then(|(r, c)| Some((r.parse::<f64>().ok()?, c.parse::<f64>().ok()?)));
+    let direct = value("--circuit-1q")
+        .zip(value("--circuit-2q"))
+        .and_then(|(r, c)| Some((r.parse::<f64>().ok()?, c.parse::<f64>().ok()?)));
     let fidelity = match direct {
         Some((r, c)) => (1.0 - p2 / 10.0).powf(r) * (1.0 - p2).powf(c),
         None => ansatz_f * prep_fidelity,
     };
     let mitigate = args.iter().any(|a| a == "--mitigate-readout");
-    let plan = Plan { kind, mitigate: if mitigate { readout } else { None } };
-    let noisy_train: usize = value("--noisy-train").and_then(|v| v.parse().ok()).unwrap_or(2_000);
+    let plan = Plan {
+        kind,
+        mitigate: if mitigate { readout } else { None },
+    };
+    let noisy_train: usize = value("--noisy-train")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(2_000);
 
     let data_options = DataOptions::from_args(&args);
     let data = data_options.load();
@@ -239,13 +352,17 @@ fn main() {
     let scaler = Scaler::fit_rows(scaling, &rows);
     let encoding = DataEncodingLayer::new(N_QUBITS, EncodingKind::Amplitude);
     // --feature-map reupload --uploads K --angle-scale S: angle-encoded data re-uploading.
-    let reupload: Option<(usize, f64)> = (value("--feature-map").as_deref() == Some("reupload")).then(|| {
-        (
-            value("--uploads").and_then(|v| v.parse().ok()).unwrap_or(6),
-            value("--angle-scale").and_then(|v| v.parse().ok()).unwrap_or(0.5),
-        )
-    });
-    let ansatz = CircuitAnsatz::new(N_QUBITS, reupload.map_or(depth, |(k, _)| depth.max(k))).with_pi_layer(true);
+    let reupload: Option<(usize, f64)> = (value("--feature-map").as_deref() == Some("reupload"))
+        .then(|| {
+            (
+                value("--uploads").and_then(|v| v.parse().ok()).unwrap_or(6),
+                value("--angle-scale")
+                    .and_then(|v| v.parse().ok())
+                    .unwrap_or(0.5),
+            )
+        });
+    let ansatz = CircuitAnsatz::new(N_QUBITS, reupload.map_or(depth, |(k, _)| depth.max(k)))
+        .with_pi_layer(true);
 
     if p2 > 0.0 || readout.is_some() {
         println!("Device errors: circuit fidelity {fidelity:.3} = ansatz {ansatz_f:.3} x state preparation {prep_fidelity:.3} (two-qubit error {p2}), readout {readout:?}, mitigation {mitigate}");
@@ -257,10 +374,20 @@ fn main() {
             .map(|m| {
                 match reupload {
                     Some((uploads, angle_scale)) => {
-                        let map = ReuploadingMap { ansatz: &ansatz, weights: &ansatz.weights, uploads, angle_scale, observables: kind };
+                        let map = ReuploadingMap {
+                            ansatz: &ansatz,
+                            weights: &ansatz.weights,
+                            uploads,
+                            angle_scale,
+                            observables: kind,
+                        };
                         map.run(&scaler.apply(&m.features), &mut state);
                     }
-                    None => ansatz.forward_into(&encoding.encode(&scaler.apply(&m.features)), &ansatz.weights, &mut state),
+                    None => ansatz.forward_into(
+                        &encoding.encode(&scaler.apply(&m.features)),
+                        &ansatz.weights,
+                        &mut state,
+                    ),
                 }
                 probabilities(&state)
             })
@@ -288,23 +415,55 @@ fn main() {
         if !append_raw {
             return rows;
         }
-        rows.into_iter().zip(raw).map(|(mut r, x)| { r.extend_from_slice(x); r }).collect()
+        rows.into_iter()
+            .zip(raw)
+            .map(|(mut r, x)| {
+                r.extend_from_slice(x);
+                r
+            })
+            .collect()
     };
-    let (train_exact, test_exact) = (with_raw(exact(&train_p), &raw_train), with_raw(exact(&test_p), &raw_test));
+    let (train_exact, test_exact) = (
+        with_raw(exact(&train_p), &raw_train),
+        with_raw(exact(&test_p), &raw_test),
+    );
     let exact_head = LinearHead::fit(&train_exact, &train_y);
     let (ref_mse, ref_r) = score(&exact_head, &test_exact, &test_y);
     println!("Noise-free reference: relative MSE {ref_mse:.4}, mean r {ref_r:.4}\n");
 
-    let test_cdf: Vec<Vec<f64>> = test_p.iter().map(|p| cumulative(&device_distribution(p, fidelity, readout))).collect();
+    let test_cdf: Vec<Vec<f64>> = test_p
+        .iter()
+        .map(|p| cumulative(&device_distribution(p, fidelity, readout)))
+        .collect();
     // --validation N: held-out molecules, disjoint from training and test, for choosing settings.
-    let val_cdf: Vec<Vec<f64>> = val_p.iter().map(|p| cumulative(&device_distribution(p, fidelity, readout))).collect();
-    let raw_val: Vec<Vec<f64>> = validation.iter().map(|m| scaler.apply(&m.features)).collect();
+    let val_cdf: Vec<Vec<f64>> = val_p
+        .iter()
+        .map(|p| cumulative(&device_distribution(p, fidelity, readout)))
+        .collect();
+    let raw_val: Vec<Vec<f64>> = validation
+        .iter()
+        .map(|m| scaler.apply(&m.features))
+        .collect();
     let val_y: Vec<Vec<f64>> = validation.iter().map(|m| m.targets.to_vec()).collect();
     let mut validation_scores: Vec<(usize, f64)> = Vec::new();
-    let train_cdf: Vec<Vec<f64>> = train_p.iter().take(noisy_train).map(|p| cumulative(&device_distribution(p, fidelity, readout))).collect();
+    let train_cdf: Vec<Vec<f64>> = train_p
+        .iter()
+        .take(noisy_train)
+        .map(|p| cumulative(&device_distribution(p, fidelity, readout)))
+        .collect();
     if args.iter().any(|a| a == "--sweep") {
-        println!("Sweeping noise-aware head settings ({seeds} seeds, {} noisy training molecules)...", train_cdf.len());
-        run_sweep((&train_exact, &test_exact), (&train_y, &test_y), (&train_cdf, &test_cdf), seeds, encoding.dim, &plan);
+        println!(
+            "Sweeping noise-aware head settings ({seeds} seeds, {} noisy training molecules)...",
+            train_cdf.len()
+        );
+        run_sweep(
+            (&train_exact, &test_exact),
+            (&train_y, &test_y),
+            (&train_cdf, &test_cdf),
+            seeds,
+            encoding.dim,
+            &plan,
+        );
         return;
     }
     let mut counts = vec![0u32; encoding.dim];
@@ -323,18 +482,39 @@ fn main() {
         let mut val_mse = Vec::new();
         for seed in 0..seeds {
             let mut rng = Rng(0xC0FF_EE00 ^ (shots as u64) << 8 ^ seed as u64);
-            let noisy_test = with_raw(test_cdf.iter().map(|c| sampled_features(c, shots, &mut rng, &mut counts, &plan)).collect(), &raw_test);
+            let noisy_test = with_raw(
+                test_cdf
+                    .iter()
+                    .map(|c| sampled_features(c, shots, &mut rng, &mut counts, &plan))
+                    .collect(),
+                &raw_test,
+            );
             let (m, r) = score(&exact_head, &noisy_test, &test_y);
             a_mse.push(m);
             a_r.push(r);
-            let noisy_train_x = with_raw(train_cdf.iter().map(|c| sampled_features(c, shots, &mut rng, &mut counts, &plan)).collect(), &raw_train);
+            let noisy_train_x = with_raw(
+                train_cdf
+                    .iter()
+                    .map(|c| sampled_features(c, shots, &mut rng, &mut counts, &plan))
+                    .collect(),
+                &raw_train,
+            );
             let head = LinearHead::fit(&noisy_train_x, &train_y[..noisy_train_x.len()]);
             let (m, r) = score(&head, &noisy_test, &test_y);
             b_mse.push(m);
             b_r.push(r);
-            target_r2(&head, &noisy_test, &test_y).iter().enumerate().for_each(|(k, v)| b_r2[k] += v / seeds as f64);
+            target_r2(&head, &noisy_test, &test_y)
+                .iter()
+                .enumerate()
+                .for_each(|(k, v)| b_r2[k] += v / seeds as f64);
             if !validation.is_empty() {
-                let noisy_val = with_raw(val_cdf.iter().map(|c| sampled_features(c, shots, &mut rng, &mut counts, &plan)).collect(), &raw_val);
+                let noisy_val = with_raw(
+                    val_cdf
+                        .iter()
+                        .map(|c| sampled_features(c, shots, &mut rng, &mut counts, &plan))
+                        .collect(),
+                    &raw_val,
+                );
                 val_mse.push(score(&head, &noisy_val, &val_y).0);
             }
         }
@@ -345,17 +525,31 @@ fn main() {
         if !val_mse.is_empty() {
             validation_scores.push((shots, mean_sd(&val_mse).0));
         }
-        rows.push(Row { shots, exact_head_relative_mse: am, exact_head_sd: asd, exact_head_mean_r: ar, noisy_head_relative_mse: bm, noisy_head_sd: bsd, noisy_head_mean_r: br });
+        rows.push(Row {
+            shots,
+            exact_head_relative_mse: am,
+            exact_head_sd: asd,
+            exact_head_mean_r: ar,
+            noisy_head_relative_mse: bm,
+            noisy_head_sd: bsd,
+            noisy_head_mean_r: br,
+        });
     }
     println!("└─────────┴───────────────────────────────┴───────────────────────────────┘");
     if !validation_scores.is_empty() {
-        let line: Vec<String> = validation_scores.iter().map(|(s, v)| format!("{s}: {v:.4}")).collect();
+        let line: Vec<String> = validation_scores
+            .iter()
+            .map(|(s, v)| format!("{s}: {v:.4}"))
+            .collect();
         println!("Validation relative MSE of the noisy-trained head ({} molecules; choose settings on this): {}", validation.len(), line.join("  "));
     }
     let free_r2 = target_r2(&exact_head, &test_exact, &test_y);
     println!("Held-out R2 per target {:?} (noisy-trained head, mean over seeds); noise-free {:.3} {:.3} {:.3}", data.target_names, free_r2[0], free_r2[1], free_r2[2]);
     for (shots, r2) in &per_target {
-        println!("  {shots:>7} shots: {:>7.3} {:>7.3} {:>7.3}", r2[0], r2[1], r2[2]);
+        println!(
+            "  {shots:>7} shots: {:>7.3} {:>7.3} {:>7.3}",
+            r2[0], r2[1], r2[2]
+        );
     }
     println!("Noise-free: relative MSE {ref_mse:.4}. Mean predictor = 1.0. {seeds} seeds per row; noisy-trained head uses {} training molecules.", train_cdf.len());
 
@@ -366,14 +560,38 @@ fn main() {
         Observables::SingleZ => "w1".to_string(),
     };
     let device_tag = if p2 > 0.0 || readout.is_some() {
-        format!("_g{p2}_r{}{}{}", readout.map_or(0.0, |e| e.p10), if mitigate { "_m" } else { "" }, if let Some((_, c)) = direct { format!("_routed{c:.0}{}", reupload.map_or(String::new(), |(k, s)| format!("_ru{k}s{s:.2}"))) } else if prep_cnots > 0.0 { format!("_prep{prep_cnots:.0}") } else { String::new() })
+        format!(
+            "_g{p2}_r{}{}{}",
+            readout.map_or(0.0, |e| e.p10),
+            if mitigate { "_m" } else { "" },
+            if let Some((_, c)) = direct {
+                format!(
+                    "_routed{c:.0}{}",
+                    reupload.map_or(String::new(), |(k, s)| format!("_ru{k}s{s:.2}"))
+                )
+            } else if prep_cnots > 0.0 {
+                format!("_prep{prep_cnots:.0}")
+            } else {
+                String::new()
+            }
+        )
     } else {
         String::new()
     };
     let raw_tag = if append_raw { "_raw" } else { "" };
-    let prefix = if data_options.dataset == Dataset::Qm9 { format!("qm9_shot_noise_{}{raw_tag}", data.target_names.join("-")) } else { format!("zinc_shot_noise{raw_tag}") };
-    let path = format!("results/experiments/{prefix}_{}_{obs_tag}{device_tag}.json", format!("{scaling:?}").to_lowercase());
-    let _ = t1000::results::write(path, serde_json::to_string_pretty(&report).unwrap_or_default());
+    let prefix = if data_options.dataset == Dataset::Qm9 {
+        format!("qm9_shot_noise_{}{raw_tag}", data.target_names.join("-"))
+    } else {
+        format!("zinc_shot_noise{raw_tag}")
+    };
+    let path = format!(
+        "results/experiments/{prefix}_{}_{obs_tag}{device_tag}.json",
+        format!("{scaling:?}").to_lowercase()
+    );
+    let _ = t1000::results::write(
+        path,
+        serde_json::to_string_pretty(&report).unwrap_or_default(),
+    );
 }
 
 #[cfg(test)]
@@ -399,7 +617,10 @@ mod tests {
         p[1] = 0.3;
         let cdf = cumulative(&p);
         let mut counts = vec![0u32; 1 << N_QUBITS];
-        let plan = Plan { kind: Observables::ZAndZz, mitigate: None };
+        let plan = Plan {
+            kind: Observables::ZAndZz,
+            mitigate: None,
+        };
         let row = sampled_features(&cdf, 400_000, &mut Rng(1), &mut counts, &plan);
         // Z0 = +1 on index 0 and -1 on index 1: 0.7 - 0.3 = 0.4; all other Z are +1.
         let sigma = (1.0f64 - 0.16).sqrt() / 400_000f64.sqrt();

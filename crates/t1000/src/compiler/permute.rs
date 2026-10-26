@@ -21,7 +21,13 @@ fn for_each_base(dim: usize, lo: usize, hi: usize, mut f: impl FnMut(usize)) {
 }
 
 /// Swaps run `base + a` with run `base + b` in both planes for every base.
-fn swap_runs(real: &mut [f64], imag: &mut [f64], q1: usize, q2: usize, pick: impl Fn(usize, usize) -> (usize, usize)) {
+fn swap_runs(
+    real: &mut [f64],
+    imag: &mut [f64],
+    q1: usize,
+    q2: usize,
+    pick: impl Fn(usize, usize) -> (usize, usize),
+) {
     let (lo, hi) = (q1.min(q2), q1.max(q2));
     let run = 1usize << lo;
     let (a_off, b_off) = pick(1 << lo, 1 << hi);
@@ -63,7 +69,10 @@ pub fn controlled_phase(real: &mut [f64], imag: &mut [f64], q1: usize, q2: usize
     let dim = real.len();
     for_each_base(dim, lo, hi, |base| {
         let start = base + both;
-        for (r, i) in real[start..start + run].iter_mut().zip(&mut imag[start..start + run]) {
+        for (r, i) in real[start..start + run]
+            .iter_mut()
+            .zip(&mut imag[start..start + run])
+        {
             let (x, y) = (*r, *i);
             *r = x * c - y * s;
             *i = x * s + y * c;
@@ -77,13 +86,19 @@ mod tests {
 
     fn state(n: usize) -> (Vec<f64>, Vec<f64>) {
         let dim = 1usize << n;
-        ((0..dim).map(|i| (i as f64 * 0.37).sin()).collect(), (0..dim).map(|i| (i as f64 * 0.91).cos()).collect())
+        (
+            (0..dim).map(|i| (i as f64 * 0.37).sin()).collect(),
+            (0..dim).map(|i| (i as f64 * 0.91).cos()).collect(),
+        )
     }
 
     /// Index-by-index reference: `map` gives the source index for each destination index.
     fn permuted(n: usize, map: impl Fn(usize) -> usize) -> (Vec<f64>, Vec<f64>) {
         let (re, im) = state(n);
-        ((0..re.len()).map(|i| re[map(i)]).collect(), (0..re.len()).map(|i| im[map(i)]).collect())
+        (
+            (0..re.len()).map(|i| re[map(i)]).collect(),
+            (0..re.len()).map(|i| im[map(i)]).collect(),
+        )
     }
 
     #[test]
@@ -92,13 +107,32 @@ mod tests {
         for a in 0..n {
             for b in (0..n).filter(|&b| b != a) {
                 let (ma, mb) = (1usize << a, 1usize << b);
-                let cases: [(&str, Box<dyn Fn(&mut [f64], &mut [f64])>, Box<dyn Fn(usize) -> usize>); 3] = [
-                    ("cnot", Box::new(move |r, i| cnot(r, i, a, b)),
-                     Box::new(move |i| if i & ma != 0 { i ^ mb } else { i })),
-                    ("anticnot", Box::new(move |r, i| anticnot(r, i, a, b)),
-                     Box::new(move |i| if i & ma == 0 { i ^ mb } else { i })),
-                    ("swap", Box::new(move |r, i| swap(r, i, a, b)),
-                     Box::new(move |i| if (i & ma != 0) != (i & mb != 0) { i ^ ma ^ mb } else { i })),
+                let cases: [(
+                    &str,
+                    Box<dyn Fn(&mut [f64], &mut [f64])>,
+                    Box<dyn Fn(usize) -> usize>,
+                ); 3] = [
+                    (
+                        "cnot",
+                        Box::new(move |r, i| cnot(r, i, a, b)),
+                        Box::new(move |i| if i & ma != 0 { i ^ mb } else { i }),
+                    ),
+                    (
+                        "anticnot",
+                        Box::new(move |r, i| anticnot(r, i, a, b)),
+                        Box::new(move |i| if i & ma == 0 { i ^ mb } else { i }),
+                    ),
+                    (
+                        "swap",
+                        Box::new(move |r, i| swap(r, i, a, b)),
+                        Box::new(move |i| {
+                            if (i & ma != 0) != (i & mb != 0) {
+                                i ^ ma ^ mb
+                            } else {
+                                i
+                            }
+                        }),
+                    ),
                 ];
                 for (name, apply, map) in cases {
                     let (mut re, mut im) = state(n);
@@ -111,8 +145,15 @@ mod tests {
                 let (s, c) = 0.7f64.sin_cos();
                 for k in 0..re.len() {
                     let on = k & ma != 0 && k & mb != 0;
-                    let (wr, wi) = if on { (r0[k] * c - i0[k] * s, r0[k] * s + i0[k] * c) } else { (r0[k], i0[k]) };
-                    assert!((re[k] - wr).abs() < 1e-15 && (im[k] - wi).abs() < 1e-15, "cphase({a},{b}) at {k}");
+                    let (wr, wi) = if on {
+                        (r0[k] * c - i0[k] * s, r0[k] * s + i0[k] * c)
+                    } else {
+                        (r0[k], i0[k])
+                    };
+                    assert!(
+                        (re[k] - wr).abs() < 1e-15 && (im[k] - wi).abs() < 1e-15,
+                        "cphase({a},{b}) at {k}"
+                    );
                 }
             }
         }

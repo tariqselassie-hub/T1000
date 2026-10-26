@@ -25,10 +25,7 @@ impl HeptalPauli {
 
     #[inline(always)]
     pub fn new(a: u8, b: u8) -> Self {
-        Self {
-            a: a % 7,
-            b: b % 7,
-        }
+        Self { a: a % 7, b: b % 7 }
     }
 
     #[inline(always)]
@@ -61,10 +58,7 @@ impl HeptalPauliString16 {
             u_mod[i] = u[i] % 7;
             v_mod[i] = v[i] % 7;
         }
-        Self {
-            u: u_mod,
-            v: v_mod,
-        }
+        Self { u: u_mod, v: v_mod }
     }
 }
 
@@ -154,9 +148,9 @@ unsafe fn symplectic_commutation_z7_native(
 /// - K_i = X_i * Z_0 * Z_{i-1} * Z_{i+1} (Rim Generators for i in 1..6)
 #[derive(Debug, Clone)]
 pub struct Wheel7HeptalStabilizerMatrix {
-    /// Generator X-powers: x_powers[gen_idx][qudit_idx] in {0..6}
+    /// Generator X-powers: `x_powers[gen_idx][qudit_idx]` in `{0..6}`
     pub x_powers: [[u8; 7]; 7],
-    /// Generator Z-powers: z_powers[gen_idx][qudit_idx] in {0..6}
+    /// Generator Z-powers: `z_powers[gen_idx][qudit_idx]` in `{0..6}`
     pub z_powers: [[u8; 7]; 7],
     /// Lookup table mapping 7-syndrome hash to (faulty_qudit, a_shift, b_clock)
     pub syndrome_lut: Vec<Option<(u8, u8, u8)>>,
@@ -225,8 +219,8 @@ impl Wheel7HeptalStabilizerMatrix {
         h
     }
 
-    /// Evaluates 7 stabilizer generator syndromes for an error E = prod_j X_j^{err_x[j]} Z_j^{err_z[j]}.
-    /// Syndrome s_k = <K_k, E>_7 = sum_j (X_k[j]*err_z[j] - Z_k[j]*err_x[j]) mod 7.
+    /// Evaluates 7 stabilizer generator syndromes for an error `E = prod_j X_j^{err_x[j]} Z_j^{err_z[j]}`.
+    /// Syndrome `s_k = <K_k, E>_7 = sum_j (X_k[j]*err_z[j] - Z_k[j]*err_x[j]) mod 7`.
     #[inline]
     pub fn compute_syndromes_scalar(
         x_p: &[[u8; 7]; 7],
@@ -394,6 +388,9 @@ mod tests {
                 }
             }
         }
-        assert_eq!(errors_tested, 336, "Must test exactly 7 * 48 = 336 single-qudit error channels!");
+        assert_eq!(
+            errors_tested, 336,
+            "Must test exactly 7 * 48 = 336 single-qudit error channels!"
+        );
     }
 }

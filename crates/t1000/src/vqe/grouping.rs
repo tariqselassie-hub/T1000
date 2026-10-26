@@ -53,7 +53,11 @@ fn add_pauli_applied(re: &mut [f64], im: &mut [f64], t: &PauliTerm, psi: &[f64])
     };
     for j in 0..psi.len() {
         let src = j ^ t.x as usize;
-        let sign = if ((src as u32) & t.z).count_ones() % 2 == 0 { 1.0 } else { -1.0 };
+        let sign = if ((src as u32) & t.z).count_ones() % 2 == 0 {
+            1.0
+        } else {
+            -1.0
+        };
         let v = t.coeff * sign * psi[src];
         re[j] += pr * v;
         im[j] += pi * v;
@@ -95,7 +99,10 @@ mod tests {
     #[test]
     fn commutation_is_per_qubit() {
         assert!(qubit_wise_commute(&term(0, 0b11, 1.0), &term(0, 0b01, 1.0))); // ZZ, ZI
-        assert!(!qubit_wise_commute(&term(0b11, 0, 1.0), &term(0, 0b11, 1.0))); // XX, ZZ
+        assert!(!qubit_wise_commute(
+            &term(0b11, 0, 1.0),
+            &term(0, 0b11, 1.0)
+        )); // XX, ZZ
         assert!(qubit_wise_commute(&term(0b01, 0, 1.0), &term(0b10, 0, 1.0))); // XI, IX
     }
 
@@ -111,7 +118,7 @@ mod tests {
         all.sort();
         assert_eq!(all, vec![0, 1, 2]);
         assert_eq!(groups.len(), 2); // {ZZ, ZI} and {XX}
-        // |00>: Z-type group is an eigenstate (variance 0), <XX> = 0 so the XX group has variance 0.4².
+                                     // |00>: Z-type group is an eigenstate (variance 0), <XX> = 0 so the XX group has variance 0.4².
         let psi = [1.0, 0.0, 0.0, 0.0];
         let m = group_moments(&h, &groups, &psi);
         for (g, (mean, var)) in groups.iter().zip(&m) {

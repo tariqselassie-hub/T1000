@@ -65,30 +65,33 @@ fn test_marginal_tensor_low_rank_svd_truncation() {
 
 #[test]
 fn test_multi_cut_3_cluster_contraction_execution() {
-    let edges = vec![
-        BoundaryEdge::new(17, 0),
-        BoundaryEdge::new(16, 1),
-    ];
+    let edges = vec![BoundaryEdge::new(17, 0), BoundaryEdge::new(16, 1)];
     let angles = vec![0.30, 0.40];
 
     // Mock evaluations for Clusters A, B, and C
     let eval_a = |ins: &[bool]| -> f64 {
-        if ins.iter().any(|&z| z) { 0.85 } else { 1.0 }
+        if ins.iter().any(|&z| z) {
+            0.85
+        } else {
+            1.0
+        }
     };
     let eval_b = |ins: &[bool]| -> f64 {
-        if ins.iter().any(|&z| z) { -0.75 } else { 1.0 }
+        if ins.iter().any(|&z| z) {
+            -0.75
+        } else {
+            1.0
+        }
     };
     let eval_c = |ins: &[bool]| -> f64 {
-        if ins.iter().any(|&z| z) { 0.90 } else { 1.0 }
+        if ins.iter().any(|&z| z) {
+            0.90
+        } else {
+            1.0
+        }
     };
 
-    let report = execute_multi_cut_plaquette_contraction(
-        edges,
-        angles,
-        eval_a,
-        eval_b,
-        eval_c,
-    );
+    let report = execute_multi_cut_plaquette_contraction(edges, angles, eval_a, eval_b, eval_c);
 
     assert_eq!(report.clusters_count, 3);
     assert_eq!(report.qubits_per_cluster, 18);

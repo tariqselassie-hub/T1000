@@ -334,7 +334,10 @@ fn main() {
 
     // 2. Generate Analog Library
     let analogs = generate_analog_library(&seed_smiles);
-    println!(" [*] Built {} novel candidates via chemical mutation.", analogs.len());
+    println!(
+        " [*] Built {} novel candidates via chemical mutation.",
+        analogs.len()
+    );
     println!(" [*] Executing quantum circuit evaluations...\n");
 
     let mut results: Vec<GeneratedMolecule> = Vec::new();
@@ -411,17 +414,32 @@ fn main() {
     }
     println!("╚══════╩══════════════════════════╩═════════════════════════╩═════════╩═════════╩═════════╩══════════╩════════════════════════╝\n");
 
-    let parent = results.iter().find(|m| m.name.contains("Seed Parent")).unwrap();
+    let parent = results
+        .iter()
+        .find(|m| m.name.contains("Seed Parent"))
+        .unwrap();
     let best = &results[0];
 
     println!("=========================================================================");
     println!(" OPTIMIZATION VERDICT & DISCOVERY LEAP                                   ");
     println!("=========================================================================");
-    println!(" Wildtype Lead    : {} (SMILES: {})", parent.name, parent.smiles);
-    println!("   logP = {:.4} | QED = {:.4} | SAS = {:.4} | Pareto = {:.5}", parent.logp, parent.qed, parent.sas, parent.pareto_score);
+    println!(
+        " Wildtype Lead    : {} (SMILES: {})",
+        parent.name, parent.smiles
+    );
+    println!(
+        "   logP = {:.4} | QED = {:.4} | SAS = {:.4} | Pareto = {:.5}",
+        parent.logp, parent.qed, parent.sas, parent.pareto_score
+    );
     println!(" Top Engineered  : {} (SMILES: {})", best.name, best.smiles);
-    println!("   logP = {:.4} | QED = {:.4} | SAS = {:.4} | Pareto = {:.5}", best.logp, best.qed, best.sas, best.pareto_score);
+    println!(
+        "   logP = {:.4} | QED = {:.4} | SAS = {:.4} | Pareto = {:.5}",
+        best.logp, best.qed, best.sas, best.pareto_score
+    );
     let gain = ((best.pareto_score - parent.pareto_score) / parent.pareto_score) * 100.0;
-    println!(" Lead Improvement : {:>+6.2}% Pareto Drug Efficacy Leap", gain);
+    println!(
+        " Lead Improvement : {:>+6.2}% Pareto Drug Efficacy Leap",
+        gain
+    );
     println!("=========================================================================\n");
 }

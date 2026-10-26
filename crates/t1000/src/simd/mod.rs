@@ -13,9 +13,9 @@
 //! - [`measurements`]: Pauli reductions, dual ZX accumulation, and fused observable readouts.
 //! - [`model`]: Strongly-typed [`SimdStateView`], [`SimdStateViewMut`], and [`SimdBackend`] domain models.
 
+pub mod algebra;
 #[cfg(target_arch = "x86_64")]
 pub(crate) mod avx512;
-pub mod algebra;
 pub mod eigensystem;
 pub mod guards;
 #[cfg(target_arch = "x86_64")]

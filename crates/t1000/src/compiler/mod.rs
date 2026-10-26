@@ -7,8 +7,8 @@ pub mod dag;
 pub mod executor;
 pub mod fusion;
 pub(crate) mod layered;
-mod permute;
 pub mod op;
+mod permute;
 pub mod scheduler;
 
 use crate::state::QuantumState;
@@ -110,7 +110,7 @@ impl CircuitBuilder {
     }
 
     /// Appends a Bell/GHZ state preparation block across the specified slice of qubits:
-    /// H(qubits[0]) followed by a chain of CNOT(qubits[i-1], qubits[i]).
+    /// `H(qubits[0])` followed by a chain of `CNOT(qubits[i-1], qubits[i])`.
     pub fn bell_ghz(&mut self, qubits: &[usize]) -> &mut Self {
         if qubits.is_empty() {
             return self;
@@ -123,7 +123,7 @@ impl CircuitBuilder {
     }
 
     /// Appends an Alternate Bell/GHZ state preparation block across the specified slice of qubits:
-    /// H(qubits[0]) followed by a chain of AntiCNOT(qubits[i-1], qubits[i]).
+    /// `H(qubits[0])` followed by a chain of `AntiCNOT(qubits[i-1], qubits[i])`.
     pub fn alt_bell_ghz(&mut self, qubits: &[usize]) -> &mut Self {
         if qubits.is_empty() {
             return self;

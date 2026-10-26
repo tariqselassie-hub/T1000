@@ -118,15 +118,15 @@ impl ParameterShiftEngine {
         }
     }
 
-    /// Forward pass predicting <O> on input features x:
-    /// y_pred = <0| U^†(x) W^†(θ) O W(θ) U(x) |0>
+    /// Forward pass predicting `<O>` on input features x:
+    /// `y_pred = <0| U^†(x) W^†(θ) O W(θ) U(x) |0>`
     pub fn predict(&self, x: &[f64], weights: &[f64]) -> f64 {
         let state_in = self.encoding.encode(x);
         let state_out = self.ansatz.forward(&state_in, weights);
         self.observable.expectation_value(&state_out)
     }
 
-    /// Exact analytic gradient d<O>/dθ via adjoint differentiation (one forward and one
+    /// Exact analytic gradient `d<O>/dθ` via adjoint differentiation (one forward and one
     /// backward sweep, independent of the parameter count).
     pub fn compute_circuit_gradients(&self, x: &[f64], weights: &[f64]) -> Vec<f64> {
         self.compute_circuit_gradients_for_state(&self.encoding.encode(x), weights)
@@ -149,7 +149,7 @@ impl ParameterShiftEngine {
         self.observable.expectation_value(&state_out)
     }
 
-    /// Exact analytic gradient d<O>/dθ on an arbitrary input state (adjoint differentiation).
+    /// Exact analytic gradient `d<O>/dθ` on an arbitrary input state (adjoint differentiation).
     pub fn compute_circuit_gradients_for_state(
         &self,
         state: &QuantumState,
@@ -230,7 +230,7 @@ impl ParameterShiftEngine {
 
     // ----- Parameter-shift reference implementations (2 * P circuit runs each) -----
 
-    /// d<O>/dθ_j = (<O>_{θ_j + π/2} - <O>_{θ_j - π/2}) / 2, evaluated by brute force.
+    /// `d<O>/dθ_j = (<O>_{θ_j + π/2} - <O>_{θ_j - π/2}) / 2`, evaluated by brute force.
     /// Kept for cross-checking the adjoint gradients and for benchmarks.
     pub fn compute_circuit_gradients_parameter_shift(
         &self,

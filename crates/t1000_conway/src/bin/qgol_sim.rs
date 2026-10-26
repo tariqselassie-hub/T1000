@@ -27,7 +27,6 @@ struct ScenarioTelemetry {
     history: Vec<StepTelemetry>,
 }
 
-
 fn run_glider_soliton_scenario(width: usize, height: usize) -> ScenarioTelemetry {
     println!(
         "{}[SCENARIO 1: Bethe-String Glider Soliton Propagation]{}",
@@ -230,7 +229,13 @@ fn run_multi_scale_simd_benchmark() -> Vec<ScaleBenchmarkResult> {
         let total = w * h;
         let lattice = Lattice2D::new(w, h, BoundaryCondition::Toroidal);
         let mut sim = QuantumConwaySimulator::new(lattice, HolonomyParams::default());
-        PatternFactory::inject_pattern(PatternType::Glider, &sim.lattice, &mut sim.state, w / 4, h / 4);
+        PatternFactory::inject_pattern(
+            PatternType::Glider,
+            &sim.lattice,
+            &mut sim.state,
+            w / 4,
+            h / 4,
+        );
 
         // Warmup
         for _ in 0..5 {
@@ -276,9 +281,18 @@ fn run_quantum_vortex_dipole_scenario(width: usize, height: usize) -> ScenarioTe
     params.rule = t1000_conway::QcaRuleKind::GrossPitaevskiiBec;
     params.non_linear_g = 1.2;
     let mut sim = QuantumConwaySimulator::new(lattice, params);
-    PatternFactory::inject_pattern(PatternType::VortexDipole, &sim.lattice, &mut sim.state, 5, 8);
+    PatternFactory::inject_pattern(
+        PatternType::VortexDipole,
+        &sim.lattice,
+        &mut sim.state,
+        5,
+        8,
+    );
 
-    println!("{}", TelemetryVisualizer::render_grid(&sim.lattice, &sim.state));
+    println!(
+        "{}",
+        TelemetryVisualizer::render_grid(&sim.lattice, &sim.state)
+    );
     let start = Instant::now();
     let mut history = Vec::new();
 
@@ -289,7 +303,10 @@ fn run_quantum_vortex_dipole_scenario(width: usize, height: usize) -> ScenarioTe
     let elapsed = start.elapsed().as_micros();
     let last = history.last().unwrap();
 
-    println!("{}", TelemetryVisualizer::render_grid(&sim.lattice, &sim.state));
+    println!(
+        "{}",
+        TelemetryVisualizer::render_grid(&sim.lattice, &sim.state)
+    );
     println!(
         "  -> Step 10 │ Max Vorticity: {:.4} │ Vortex Cores: {} │ Mean Flux: {:.4}",
         last.max_vorticity, last.vortex_count, last.mean_current_magnitude
@@ -331,7 +348,10 @@ fn run_floquet_chaos_scenario(width: usize, height: usize) -> ScenarioTelemetry 
     let elapsed = start.elapsed().as_micros();
     let last = history.last().unwrap();
 
-    println!("{}", TelemetryVisualizer::render_grid(&sim.lattice, &sim.state));
+    println!(
+        "{}",
+        TelemetryVisualizer::render_grid(&sim.lattice, &sim.state)
+    );
     println!(
         "  -> Step 12 │ OTOC Scrambling: {:.4} │ Entanglement S: {:.4} nats │ Chaos K: {:.2}",
         last.scrambling_otoc, last.entanglement_entropy, 2.4
@@ -378,7 +398,10 @@ fn main() {
     let report = t1000_conway::sweep_glider_interferometry(24, 24, 16, 12);
     println!(
         "  Visibility V: {:.4} │ Trans range: [{:.3}, {:.3}] │ Max Entanglement: {:.4} nats",
-        report.visibility, report.min_transmission, report.max_transmission, report.max_entanglement_nats
+        report.visibility,
+        report.min_transmission,
+        report.max_transmission,
+        report.max_entanglement_nats
     );
 
     let results = serde_json::json!({
@@ -397,5 +420,8 @@ fn main() {
     let json_path = out_dir.join("qgol_simulation_telemetry.json");
     let json_data = serde_json::to_string_pretty(&results).expect("Failed to serialize telemetry");
     fs::write(&json_path, json_data).expect("Failed to write telemetry JSON");
-    println!("\n[+] Saved Conway telemetry & S-matrix results to: {}", json_path.display());
+    println!(
+        "\n[+] Saved Conway telemetry & S-matrix results to: {}",
+        json_path.display()
+    );
 }

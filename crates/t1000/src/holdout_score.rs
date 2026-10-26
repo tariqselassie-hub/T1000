@@ -29,8 +29,15 @@ fn variance(t: &[f64]) -> f64 {
 impl ZincHoldout {
     /// Builds the aggregate from per-property held-out MSE, Pearson r and the held-out targets.
     pub fn new(tuned_mse: [f64; 3], pearson_r: [f64; 3], targets: [&[f64]; 3]) -> Self {
-        let relative: f64 = tuned_mse.iter().zip(targets).map(|(m, t)| m / variance(t)).sum();
-        Self { relative_mse: relative / 3.0, mean_pearson_r: pearson_r.iter().sum::<f64>() / 3.0 }
+        let relative: f64 = tuned_mse
+            .iter()
+            .zip(targets)
+            .map(|(m, t)| m / variance(t))
+            .sum();
+        Self {
+            relative_mse: relative / 3.0,
+            mean_pearson_r: pearson_r.iter().sum::<f64>() / 3.0,
+        }
     }
 
     /// The recording score: relative MSE decides, mean Pearson r guards.

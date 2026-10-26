@@ -61,7 +61,11 @@ fn level_angles(amps: &[f64], m: usize, t: usize) -> (Vec<f64>, Vec<bool>) {
             };
             let (zero, one) = (norm(0), norm(1));
             free.push(zero + one < 1e-300);
-            if zero + one < 1e-300 { 0.0 } else { 2.0 * one.atan2(zero) }
+            if zero + one < 1e-300 {
+                0.0
+            } else {
+                2.0 * one.atan2(zero)
+            }
         })
         .collect();
     (angles, free)
@@ -73,7 +77,11 @@ fn gray(i: usize) -> usize {
 
 /// `theta_i = 2^-k * sum_j (-1)^popcount(j & gray(i)) * alpha_j` (rotation angles from branch angles).
 fn walsh_entry(i: usize, j: usize, n: usize) -> f64 {
-    (if (j & gray(i)).count_ones().is_multiple_of(2) { 1.0 } else { -1.0 }) / n as f64
+    (if (j & gray(i)).count_ones().is_multiple_of(2) {
+        1.0
+    } else {
+        -1.0
+    }) / n as f64
 }
 
 /// Chooses the free branch angles so that the rotations listed first in `order` vanish, as far as
@@ -104,13 +112,20 @@ fn zero_with_free_angles(angles: &[f64], free: &[bool], order: &[usize]) -> Vec<
         .iter()
         .map(|&i| {
             let mut row: Vec<f64> = free_idx.iter().map(|&j| walsh_entry(i, j, n)).collect();
-            row.push(-(0..n).filter(|&j| !free[j]).map(|j| walsh_entry(i, j, n) * angles[j]).sum::<f64>());
+            row.push(
+                -(0..n)
+                    .filter(|&j| !free[j])
+                    .map(|j| walsh_entry(i, j, n) * angles[j])
+                    .sum::<f64>(),
+            );
             row
         })
         .collect();
     let mut pivots = Vec::new();
     for r in 0..aug.len() {
-        let col = (0..free_idx.len()).filter(|c| !pivots.contains(c)).max_by(|a, b| aug[r][*a].abs().total_cmp(&aug[r][*b].abs()));
+        let col = (0..free_idx.len())
+            .filter(|c| !pivots.contains(c))
+            .max_by(|a, b| aug[r][*a].abs().total_cmp(&aug[r][*b].abs()));
         let Some(col) = col else { break };
         let div = aug[r][col];
         aug[r].iter_mut().for_each(|v| *v /= div);
@@ -118,7 +133,10 @@ fn zero_with_free_angles(angles: &[f64], free: &[bool], order: &[usize]) -> Vec<
             if q != r {
                 let f = aug[q][col];
                 let pivot_row = aug[r].clone();
-                aug[q].iter_mut().zip(&pivot_row).for_each(|(x, y)| *x -= f * y);
+                aug[q]
+                    .iter_mut()
+                    .zip(&pivot_row)
+                    .for_each(|(x, y)| *x -= f * y);
             }
         }
         pivots.push(col);
@@ -135,16 +153,31 @@ fn zero_with_free_angles(angles: &[f64], free: &[bool], order: &[usize]) -> Vec<
 fn multiplexed_ry(angles: &[f64], target: usize, controls: &[usize], out: &mut Vec<PrepGate>) {
     let k = controls.len();
     if k == 0 {
-        out.push(PrepGate::Ry { qubit: target, theta: angles[0] });
+        out.push(PrepGate::Ry {
+            qubit: target,
+            theta: angles[0],
+        });
         return;
     }
     let n = 1usize << k;
     for i in 0..n {
-        let theta = (0..n).map(|j| walsh_entry(i, j, n) * angles[j]).sum::<f64>();
-        out.push(PrepGate::Ry { qubit: target, theta });
+        let theta = (0..n)
+            .map(|j| walsh_entry(i, j, n) * angles[j])
+            .sum::<f64>();
+        out.push(PrepGate::Ry {
+            qubit: target,
+            theta,
+        });
         // The control that flips between gray(i) and gray(i + 1); the last wraps to the top bit.
-        let flipped = if i + 1 < n { (gray(i) ^ gray(i + 1)).trailing_zeros() as usize } else { k - 1 };
-        out.push(PrepGate::Cnot { control: controls[flipped], target });
+        let flipped = if i + 1 < n {
+            (gray(i) ^ gray(i + 1)).trailing_zeros() as usize
+        } else {
+            k - 1
+        };
+        out.push(PrepGate::Cnot {
+            control: controls[flipped],
+            target,
+        });
     }
 }
 
@@ -156,8 +189,15 @@ pub fn amplitude_prep_raw(amps: &[f64]) -> Vec<PrepGate> {
 
 fn build(amps: &[f64], use_free_angles: bool) -> Vec<PrepGate> {
     let m = amps.len().trailing_zeros() as usize;
-    assert_eq!(1usize << m, amps.len(), "amplitude count must be a power of two");
-    assert!(amps.iter().all(|a| *a >= 0.0), "amplitudes must be non-negative");
+    assert_eq!(
+        1usize << m,
+        amps.len(),
+        "amplitude count must be a power of two"
+    );
+    assert!(
+        amps.iter().all(|a| *a >= 0.0),
+        "amplitudes must be non-negative"
+    );
     let mut gates = Vec::new();
     for t in (0..m).rev() {
         let controls: Vec<usize> = (t + 1..m).collect();
@@ -178,7 +218,12 @@ fn build(amps: &[f64], use_free_angles: bool) -> Vec<PrepGate> {
             .iter()
             .map(|order| {
                 let mut level = Vec::new();
-                multiplexed_ry(&zero_with_free_angles(&angles, &free, order), t, &controls, &mut level);
+                multiplexed_ry(
+                    &zero_with_free_angles(&angles, &free, order),
+                    t,
+                    &controls,
+                    &mut level,
+                );
                 optimize(&level)
             })
             .min_by_key(|g| {
@@ -204,7 +249,9 @@ pub fn optimize(gates: &[PrepGate]) -> Vec<PrepGate> {
     loop {
         let mut removed = false;
         'scan: for i in 0..gates.len() {
-            let PrepGate::Cnot { control, target } = gates[i] else { continue };
+            let PrepGate::Cnot { control, target } = gates[i] else {
+                continue;
+            };
             for j in i + 1..gates.len() {
                 match gates[j] {
                     g if g == gates[i] => {
@@ -214,7 +261,10 @@ pub fn optimize(gates: &[PrepGate]) -> Vec<PrepGate> {
                         break 'scan;
                     }
                     PrepGate::Ry { qubit, .. } if qubit == control || qubit == target => break,
-                    PrepGate::Cnot { control: c, target: t } if c == target || t == control => break,
+                    PrepGate::Cnot {
+                        control: c,
+                        target: t,
+                    } if c == target || t == control => break,
                     _ => {}
                 }
             }
@@ -254,7 +304,11 @@ mod tests {
                 x ^= x << 13;
                 x ^= x >> 7;
                 x ^= x << 17;
-                if i < sparsity { 0.05 + (x >> 11) as f64 / (1u64 << 53) as f64 } else { 0.0 }
+                if i < sparsity {
+                    0.05 + (x >> 11) as f64 / (1u64 << 53) as f64
+                } else {
+                    0.0
+                }
             })
             .collect()
     }
@@ -274,10 +328,21 @@ mod tests {
 
     #[test]
     fn prepares_the_normalised_vector_for_dense_and_sparse_inputs() {
-        for (m, sparsity, seed) in [(1, 2, 3), (2, 4, 5), (3, 8, 7), (4, 16, 11), (5, 32, 13), (5, 19, 17), (5, 5, 19)] {
+        for (m, sparsity, seed) in [
+            (1, 2, 3),
+            (2, 4, 5),
+            (3, 8, 7),
+            (4, 16, 11),
+            (5, 32, 13),
+            (5, 19, 17),
+            (5, 5, 19),
+        ] {
             let amps = pseudo(1 << m, seed, sparsity);
             for gates in [amplitude_prep_raw(&amps), amplitude_prep(&amps)] {
-                assert!(deviation(&amps, &gates, m) < 1e-10, "m={m} sparsity={sparsity}");
+                assert!(
+                    deviation(&amps, &gates, m) < 1e-10,
+                    "m={m} sparsity={sparsity}"
+                );
             }
         }
     }
@@ -297,15 +362,27 @@ mod tests {
     #[test]
     fn gate_counts_follow_the_construction() {
         let dense = amplitude_prep_raw(&pseudo(32, 29, 32));
-        assert_eq!(counts(&dense), GateCounts { rotations: 31, cnots: 30 });
+        assert_eq!(
+            counts(&dense),
+            GateCounts {
+                rotations: 31,
+                cnots: 30
+            }
+        );
     }
 
     #[test]
     fn optimisation_never_adds_gates_and_helps_sparse_vectors() {
         let sparse = pseudo(32, 31, 19);
-        let (raw, opt) = (counts(&amplitude_prep_raw(&sparse)), counts(&amplitude_prep(&sparse)));
+        let (raw, opt) = (
+            counts(&amplitude_prep_raw(&sparse)),
+            counts(&amplitude_prep(&sparse)),
+        );
         assert!(opt.cnots <= raw.cnots && opt.rotations <= raw.rotations);
-        assert!(opt.cnots < raw.cnots, "a 19-of-32 vector should lose CNOTs: {raw:?} -> {opt:?}");
+        assert!(
+            opt.cnots < raw.cnots,
+            "a 19-of-32 vector should lose CNOTs: {raw:?} -> {opt:?}"
+        );
     }
 
     #[test]
@@ -313,7 +390,13 @@ mod tests {
         // |01> (qubit 0 set) is a single Ry(pi) on qubit 0.
         let amps = [0.0, 1.0, 0.0, 0.0];
         let gates = amplitude_prep(&amps);
-        assert_eq!(counts(&gates), GateCounts { rotations: 1, cnots: 0 });
+        assert_eq!(
+            counts(&gates),
+            GateCounts {
+                rotations: 1,
+                cnots: 0
+            }
+        );
         assert!(deviation(&amps, &gates, 2) < 1e-10);
     }
 }

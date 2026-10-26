@@ -37,41 +37,6 @@ pub fn feature_count(n: usize, degree: usize) -> usize {
     c as usize - 1
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::baselines::quadratic_features;
-
-    #[test]
-    fn degree_two_matches_the_quadratic_features() {
-        let x = [0.5, -1.25, 2.0, 0.0, 3.5];
-        assert_eq!(polynomial_features(&x, 2), quadratic_features(&x));
-    }
-
-    #[test]
-    fn counts_follow_the_binomial_formula() {
-        assert_eq!(feature_count(19, 1), 19);
-        assert_eq!(feature_count(19, 2), 19 + 190);
-        assert_eq!(feature_count(19, 3), 19 + 190 + 1330);
-        for (n, d) in [(3, 3), (5, 4), (19, 3)] {
-            assert_eq!(
-                polynomial_features(&vec![1.0; n], d).len(),
-                feature_count(n, d)
-            );
-        }
-    }
-
-    #[test]
-    fn cubic_terms_are_the_ordered_products() {
-        let x = [2.0, 3.0];
-        // degree 1: 2, 3; degree 2: 4, 6, 9; degree 3: 8, 12, 18, 27.
-        assert_eq!(
-            polynomial_features(&x, 3),
-            vec![2.0, 3.0, 4.0, 6.0, 9.0, 8.0, 12.0, 18.0, 27.0]
-        );
-    }
-}
-
 /// Ridge regression on every monomial up to `degree` of the max-abs scaled descriptors.
 pub fn polynomial_ridge_baseline(
     degree: usize,
@@ -112,5 +77,40 @@ pub fn polynomial_ridge_baseline(
         n_features: x_train[0].len(),
         lambda: Some(head.lambda()),
         metrics: regression_metrics(&head.predict(&x_test), &y_test, names),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::baselines::quadratic_features;
+
+    #[test]
+    fn degree_two_matches_the_quadratic_features() {
+        let x = [0.5, -1.25, 2.0, 0.0, 3.5];
+        assert_eq!(polynomial_features(&x, 2), quadratic_features(&x));
+    }
+
+    #[test]
+    fn counts_follow_the_binomial_formula() {
+        assert_eq!(feature_count(19, 1), 19);
+        assert_eq!(feature_count(19, 2), 19 + 190);
+        assert_eq!(feature_count(19, 3), 19 + 190 + 1330);
+        for (n, d) in [(3, 3), (5, 4), (19, 3)] {
+            assert_eq!(
+                polynomial_features(&vec![1.0; n], d).len(),
+                feature_count(n, d)
+            );
+        }
+    }
+
+    #[test]
+    fn cubic_terms_are_the_ordered_products() {
+        let x = [2.0, 3.0];
+        // degree 1: 2, 3; degree 2: 4, 6, 9; degree 3: 8, 12, 18, 27.
+        assert_eq!(
+            polynomial_features(&x, 3),
+            vec![2.0, 3.0, 4.0, 6.0, 9.0, 8.0, 12.0, 18.0, 27.0]
+        );
     }
 }

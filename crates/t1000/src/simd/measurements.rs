@@ -124,7 +124,7 @@ pub(crate) fn measure_single_qubit_z_scalar(real: &[f64], imag: &[f64], qubit: u
 /// Computes all C(n,2) two-body correlators ⟨Z_i Z_j⟩ in a single linear pass over the
 /// statevector. For 12 qubits this produces 66 correlator values.
 ///
-/// Output layout: zz_out[pair_idx] where pair_idx = i * (i-1)/2 + j for i > j.
+/// Output layout: `zz_out[pair_idx]` where `pair_idx = i * (i-1)/2 + j` for `i > j`.
 /// Total pairs = n * (n-1) / 2.
 #[inline(always)]
 pub fn measure_zz_correlators(real: &[f64], imag: &[f64], n_qubits: usize, zz_out: &mut [f64]) {
@@ -558,7 +558,12 @@ mod tests {
             imag.push(im);
         }
         // Normalize
-        let norm: f64 = real.iter().zip(&imag).map(|(&r, &i)| r * r + i * i).sum::<f64>().sqrt();
+        let norm: f64 = real
+            .iter()
+            .zip(&imag)
+            .map(|(&r, &i)| r * r + i * i)
+            .sum::<f64>()
+            .sqrt();
         for r in real.iter_mut() {
             *r /= norm;
         }

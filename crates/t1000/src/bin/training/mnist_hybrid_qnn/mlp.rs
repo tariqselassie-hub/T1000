@@ -61,7 +61,10 @@ impl HybridMlpHead {
         self.b2.copy_from_slice(&p[off..off + N_CLASSES]);
     }
 
-    pub fn forward(&self, x: &[f64; N_FUSED]) -> ([f64; N_CLASSES], [f64; N_HIDDEN], [f64; N_HIDDEN]) {
+    pub fn forward(
+        &self,
+        x: &[f64; N_FUSED],
+    ) -> ([f64; N_CLASSES], [f64; N_HIDDEN], [f64; N_HIDDEN]) {
         let mut z1 = [0.0; N_HIDDEN];
         let mut a1 = [0.0; N_HIDDEN];
         for h in 0..N_HIDDEN {
@@ -136,7 +139,10 @@ impl HybridMlpHead {
     }
 }
 
-pub fn softmax_cross_entropy(logits: &[f64; N_CLASSES], label: usize) -> (f64, [f64; N_CLASSES], usize) {
+pub fn softmax_cross_entropy(
+    logits: &[f64; N_CLASSES],
+    label: usize,
+) -> (f64, [f64; N_CLASSES], usize) {
     let max_logit = logits.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
     let mut sum_exp = 0.0;
     let mut probs = [0.0; 10];

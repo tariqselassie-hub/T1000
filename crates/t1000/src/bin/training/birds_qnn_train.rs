@@ -656,7 +656,10 @@ fn main() {
             Ok(t1000::results::Outcome::Scratch) => {
                 println!("\nReport written to a scratch copy only (use --record to save)");
             }
-            Ok(_) => println!("\nReport successfully persisted to: {}", report_path.display()),
+            Ok(_) => println!(
+                "\nReport successfully persisted to: {}",
+                report_path.display()
+            ),
             Err(e) => eprintln!("\nCould not write the report: {e}"),
         }
     }

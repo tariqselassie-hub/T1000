@@ -372,7 +372,12 @@ mod kernel_tests {
     }
 
     fn max_dev(a: &(Vec<f64>, Vec<f64>), b: &(Vec<f64>, Vec<f64>)) -> f64 {
-        let d = |x: &[f64], y: &[f64]| x.iter().zip(y).map(|(p, q)| (p - q).abs()).fold(0.0, f64::max);
+        let d = |x: &[f64], y: &[f64]| {
+            x.iter()
+                .zip(y)
+                .map(|(p, q)| (p - q).abs())
+                .fold(0.0, f64::max)
+        };
         d(&a.0, &b.0).max(d(&a.1, &b.1))
     }
 
@@ -412,8 +417,18 @@ mod kernel_tests {
         if !is_x86_feature_detected!("avx512f") {
             return;
         }
-        check("avx512 ry", 16, super::super::avx512::apply_ry, apply_ry_scalar);
-        check("avx512 rz", 16, super::super::avx512::apply_rz, apply_rz_scalar);
+        check(
+            "avx512 ry",
+            16,
+            super::super::avx512::apply_ry,
+            apply_ry_scalar,
+        );
+        check(
+            "avx512 rz",
+            16,
+            super::super::avx512::apply_rz,
+            apply_rz_scalar,
+        );
     }
 
     #[test]

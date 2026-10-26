@@ -310,7 +310,10 @@ fn build_dirac_unitary(nbr_occ: f64, params: &HolonomyParams) -> HolonomyTransfe
 
 /// Cyclic Lotka-Volterra 3-Species Holonomy Unitary.
 /// Generates spiral wave reactions: |0> (Vacuum) -> |1> (Prey) -> |2> (Predator) -> |0>.
-fn build_cyclic_predator_prey_unitary(nbr_occ: f64, params: &HolonomyParams) -> HolonomyTransferMatrix {
+fn build_cyclic_predator_prey_unitary(
+    nbr_occ: f64,
+    params: &HolonomyParams,
+) -> HolonomyTransferMatrix {
     let rate = (PI / 3.0) * (1.0 / (1.0 + (-params.birth_sharpness * (nbr_occ - 3.0)).exp()));
     let cos_r = rate.cos();
     let sin_r = rate.sin();
@@ -351,4 +354,3 @@ fn build_cyclic_predator_prey_unitary(nbr_occ: f64, params: &HolonomyParams) -> 
 
     HolonomyTransferMatrix { elements: u }
 }
-

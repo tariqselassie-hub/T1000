@@ -16,10 +16,10 @@
 
 pub mod adjoint;
 pub mod adjoint_fusion;
-pub mod backend;
 pub mod ansatz;
-pub mod calibration;
+pub mod backend;
 pub mod baselines;
+pub mod calibration;
 pub mod canonical;
 pub mod cascaded_tree_valve;
 pub mod chemistry;
@@ -43,8 +43,8 @@ pub mod hopf_s4;
 pub mod hostinfo;
 pub mod ingest;
 pub mod lattice;
-pub mod linear_head;
 pub mod layer_fusion;
+pub mod linear_head;
 pub mod measurements;
 pub mod memory;
 pub mod molecular_walk_screener;
@@ -52,15 +52,15 @@ pub mod molfeatures;
 pub mod optimizer;
 pub mod parallel;
 pub mod photonic_interferometer;
+pub mod pitt_data;
 pub mod plaquette;
 pub mod polynomial;
 pub mod protocol;
-pub mod qec;
-pub mod qpu;
-pub mod qm9_data;
-pub mod pitt_data;
-pub mod qgnn;
 pub mod q_krr;
+pub mod qec;
+pub mod qgnn;
+pub mod qm9_data;
+pub mod qpu;
 pub mod qssm;
 pub mod quaternion;
 pub mod rcs;
@@ -83,8 +83,8 @@ pub mod zinc_data;
 pub mod zinc_holdout_eval;
 pub mod zinc_kernel_bench;
 pub mod zinc_readout_fit;
-pub mod zinc_stage_common;
 pub mod zinc_reuploading_model;
+pub mod zinc_stage_common;
 pub mod zinc_training_common;
 pub mod zipper;
 
@@ -159,6 +159,12 @@ pub use heptal_wave::{
     evolve_heptal_wave_cycle, HeptalWaveState, HeptalZipperConfig, HeptalZipperEngine,
     HeptalZipperReport, HeptalZipperStepTelemetry,
 };
+pub use hopf_s4::{
+    bell_rotation_state, compute_entanglement_invariants, compute_qubit_pair_hopf_s4,
+    damp_b5_bloch_vector, damp_werner_state_planckian, evaluate_werner_state,
+    planckian_damping_step, project_state_s7_to_s4, verify_planckian_bures_bound,
+    EntanglementInvariant, HopfS4Coordinate,
+};
 pub use ingest::{tokenize_text, CorpusIngestor, IngestedDoc, IngestionTelemetry};
 pub use lattice::{
     extract_lattice_frame, render_lattice_ascii, BoundaryCondition, LatticeConfig, LatticeFrame,
@@ -181,12 +187,6 @@ pub use plaquette::{
     CouplerMask, DiscreteStokesEngine, GaugeLink, NighthawkDualGraph, Plaquette, PlaquetteLattice,
     PlaquetteNode, PlaquetteZipper2D, PlaquetteZipperReport, PlaquetteZipperWindow,
     StokesPressureReport, WilsonFluxTableau, NUM_COUPLERS, NUM_PLAQUETTES, NUM_VERTICES,
-};
-pub use hopf_s4::{
-    bell_rotation_state, compute_entanglement_invariants, compute_qubit_pair_hopf_s4,
-    damp_b5_bloch_vector, damp_werner_state_planckian, evaluate_werner_state,
-    planckian_damping_step, project_state_s7_to_s4, verify_planckian_bures_bound,
-    EntanglementInvariant, HopfS4Coordinate,
 };
 pub use qec::{
     detect_and_recover, encode_logical_state, extract_syndrome, inject_pauli_error, PauliErrorKind,

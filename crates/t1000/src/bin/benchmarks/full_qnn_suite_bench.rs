@@ -108,7 +108,9 @@ fn main() {
     println!("┌────────────────────────────────────────────────────────────────────────────────────────┐");
     println!("│                T-1000 FULL QUANTUM NEURAL NETWORK (QNN) SUITE BENCHMARK                │");
     println!("│   Sovereign Architecture: AVX2+FMA SIMD, Lie Equivariance, MPS & QMUX Co-Processors    │");
-    println!("│   Legal Attribution: Terrence A. Jones SR (2026) | MIT OR Apache-2.0                  │");
+    println!(
+        "│   Legal Attribution: Terrence A. Jones SR (2026) | MIT OR Apache-2.0                  │"
+    );
     println!("└────────────────────────────────────────────────────────────────────────────────────────┘\n");
 
     let platform = "x86_64 AVX2+FMA Sovereign Core".to_string();
@@ -131,7 +133,10 @@ fn main() {
     }
     let qgnn_lat = (t0.elapsed().as_secs_f64() * 1_000_000.0) / f64::from(qgnn_iters);
     let qgnn_tput = 1_000_000.0 / qgnn_lat;
-    println!("  Latency:     {:8.2} us/mol | Throughput: {:9.1} mols/sec", qgnn_lat, qgnn_tput);
+    println!(
+        "  Latency:     {:8.2} us/mol | Throughput: {:9.1} mols/sec",
+        qgnn_lat, qgnn_tput
+    );
     println!("  Permutation: |Δy| = {:10.4e}", perm_drift);
 
     // -------------------------------------------------------------------------
@@ -149,8 +154,15 @@ fn main() {
     }
     let top_lat = (t1.elapsed().as_secs_f64() * 1_000_000.0) / f64::from(top_iters);
     let top_tel = last_top_tel.unwrap();
-    println!("  Latency:     {:8.2} us/sample | Hitting Prob: {:6.2}%", top_lat, top_tel.target_exit_prob * 100.0);
-    println!("  Contrast:    {:8.1}:1 | Norm: {:.10}", top_tel.routing_contrast, top_tel.final_norm);
+    println!(
+        "  Latency:     {:8.2} us/sample | Hitting Prob: {:6.2}%",
+        top_lat,
+        top_tel.target_exit_prob * 100.0
+    );
+    println!(
+        "  Contrast:    {:8.1}:1 | Norm: {:.10}",
+        top_tel.routing_contrast, top_tel.final_norm
+    );
 
     // -------------------------------------------------------------------------
     // 3. Ultrametric Tree Sorter & QMUX Engine
@@ -174,8 +186,14 @@ fn main() {
     let d_uw = ultrametric_tree_distance(0, 0, 0, 1, 0.5, 1.0);
     let d_wv = ultrametric_tree_distance(0, 1, 1, 1, 0.5, 1.0);
     let triangle_ok = d_uv <= d_uw.max(d_wv);
-    println!("  Latency:     {:8.2} us/sample | Throughput: {:9.1} samples/sec", tree_lat, tree_tput);
-    println!("  Registers:   H_C(1Q) x H_F(1Q) x H_E(2Q) | Triangle Valid: {}", triangle_ok);
+    println!(
+        "  Latency:     {:8.2} us/sample | Throughput: {:9.1} samples/sec",
+        tree_lat, tree_tput
+    );
+    println!(
+        "  Registers:   H_C(1Q) x H_F(1Q) x H_E(2Q) | Triangle Valid: {}",
+        triangle_ok
+    );
 
     // -------------------------------------------------------------------------
     // 4. Quantum State-Space Model (Q-SSM / Mamba)
@@ -190,8 +208,14 @@ fn main() {
         vec![0.5, -0.3, -0.2, 0.1],
     ];
     let qssm_rep = qssm.forward(&test_seq);
-    println!("  Token Latency: {:6.2} ns/token | Throughput: {:9.1} tokens/sec", qssm_rep.latency_per_token_ns, qssm_rep.tokens_per_second);
-    println!("  L1 Cache:    128 Bytes (W=3, 8 Amps) | Recon MSE: {:.6}", qssm_rep.reconstruction_mse);
+    println!(
+        "  Token Latency: {:6.2} ns/token | Throughput: {:9.1} tokens/sec",
+        qssm_rep.latency_per_token_ns, qssm_rep.tokens_per_second
+    );
+    println!(
+        "  L1 Cache:    128 Bytes (W=3, 8 Amps) | Recon MSE: {:.6}",
+        qssm_rep.reconstruction_mse
+    );
 
     // -------------------------------------------------------------------------
     // 5. Radix-7 Heptal Qudit MPS QNN
@@ -207,7 +231,10 @@ fn main() {
     }
     let heptal_lat = (t4.elapsed().as_secs_f64() * 1_000_000.0) / f64::from(heptal_iters);
     let heptal_tput = 1_000_000.0 / heptal_lat;
-    println!("  Latency:     {:8.2} us/mol | Throughput: {:9.1} mols/sec", heptal_lat, heptal_tput);
+    println!(
+        "  Latency:     {:8.2} us/mol | Throughput: {:9.1} mols/sec",
+        heptal_lat, heptal_tput
+    );
     println!("  L1 Footprint: 784 Bytes (7^2 Window) | Effective Space: 7^19 ~ 1.14e16");
 
     // -------------------------------------------------------------------------
@@ -225,8 +252,14 @@ fn main() {
     let vqc_lat = (t5.elapsed().as_secs_f64() * 1_000_000.0) / f64::from(vqc_iters);
     let vqc_tput = 1_000_000.0 / vqc_lat;
     let norm_14q = state_14q.l2_norm_sq();
-    println!("  Latency:     {:8.2} us/pass | Throughput: {:9.1} evals/sec", vqc_lat, vqc_tput);
-    println!("  State Size:  {:8} Amplitudes (262 KB) | Norm: {:.12}", dim_14q, norm_14q);
+    println!(
+        "  Latency:     {:8.2} us/pass | Throughput: {:9.1} evals/sec",
+        vqc_lat, vqc_tput
+    );
+    println!(
+        "  State Size:  {:8} Amplitudes (262 KB) | Norm: {:.12}",
+        dim_14q, norm_14q
+    );
 
     // -------------------------------------------------------------------------
     // 7. Reverse-Mode Adjoint Differentiation
@@ -255,10 +288,16 @@ fn main() {
         best
     };
     let (g_adj, t_adj) = best_of(5, &|| engine.compute_circuit_gradients(&x, &w));
-    let (g_ps, t_ps) = best_of(1, &|| engine.compute_circuit_gradients_parameter_shift(&x, &w));
+    let (g_ps, t_ps) = best_of(1, &|| {
+        engine.compute_circuit_gradients_parameter_shift(&x, &w)
+    });
     let adj_lat_ms = t_adj * 1000.0;
     let grad_norm: f64 = g_adj.iter().map(|g| g * g).sum::<f64>().sqrt();
-    let max_diff = g_adj.iter().zip(&g_ps).map(|(a, b)| (a - b).abs()).fold(0.0, f64::max);
+    let max_diff = g_adj
+        .iter()
+        .zip(&g_ps)
+        .map(|(a, b)| (a - b).abs())
+        .fold(0.0, f64::max);
     let speedup = t_ps / t_adj;
     println!(
         "  Latency:     {:8.3} ms ({} params) | Speedup vs Shift: {:6.1}x (measured, max |diff| {:.1e})",
@@ -326,5 +365,8 @@ fn main() {
     let out_file = out_dir.join("full_qnn_suite_telemetry.json");
     let json_text = serde_json::to_string_pretty(&summary).expect("JSON serialize");
     t1000::results::write(&out_file, json_text).expect("Write telemetry JSON");
-    println!("\n[+] Full QNN Suite Telemetry Persisted: {}", out_file.display());
+    println!(
+        "\n[+] Full QNN Suite Telemetry Persisted: {}",
+        out_file.display()
+    );
 }

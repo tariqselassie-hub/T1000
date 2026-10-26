@@ -500,6 +500,7 @@ fn main() {
     let out_dir = Path::new("results");
     fs::create_dir_all(out_dir).expect("Create results");
     let out_path = out_dir.join("orthogonal_proxy_rcs_t1000.json");
-    t1000::results::write(&out_path, serde_json::to_string_pretty(&telemetry).unwrap()).expect("Write JSON");
+    t1000::results::write(&out_path, serde_json::to_string_pretty(&telemetry).unwrap())
+        .expect("Write JSON");
     println!(" Telemetry saved to: {}", out_path.display());
 }

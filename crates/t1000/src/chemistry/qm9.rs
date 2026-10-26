@@ -11,7 +11,7 @@ use super::baseline::{
 };
 use super::coulomb::CoulombMatrix50;
 use crate::simd::eigensystem::solve_coulomb_eigensystem_50;
-use crate::smiles::{SmilesFeaturizer, SmilesFeatures};
+use crate::smiles::{SmilesFeatures, SmilesFeaturizer};
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{Read, Seek};
@@ -221,8 +221,12 @@ impl Qm9Record {
 
     /// Extracts structural physical-chemistry features from the B3LYP SMILES string.
     pub fn smiles_features(&self) -> Result<SmilesFeatures, String> {
-        SmilesFeaturizer::featurize(&self.smiles_b3lyp)
-            .map_err(|e| format!("Failed to featurize SMILES '{}': {:?}", self.smiles_b3lyp, e))
+        SmilesFeaturizer::featurize(&self.smiles_b3lyp).map_err(|e| {
+            format!(
+                "Failed to featurize SMILES '{}': {:?}",
+                self.smiles_b3lyp, e
+            )
+        })
     }
 
     /// Extracts the canonical 19-dimensional normalized feature vector for quantum Hilbert space embedding.
@@ -349,8 +353,8 @@ impl Qm9Record {
         reader: R,
         max_records: Option<usize>,
     ) -> Result<Vec<Self>, String> {
-        let mut archive = ZipArchive::new(reader)
-            .map_err(|e| format!("Failed to parse zip archive: {e}"))?;
+        let mut archive =
+            ZipArchive::new(reader).map_err(|e| format!("Failed to parse zip archive: {e}"))?;
 
         let mut records = Vec::new();
         let total_files = archive.len();

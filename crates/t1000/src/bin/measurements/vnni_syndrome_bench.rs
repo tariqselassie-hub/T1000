@@ -17,7 +17,6 @@ use t1000::qec::vnni::{
     SurfaceCode9QVnniMatrix, VnniBackend,
 };
 
-
 fn main() {
     println!("┌────────────────────────────────────────────────────────────────────────┐");
     println!("│      T-1000: AVX-VNNI HARDWARE-ACCELERATED QEC STABILIZER BENCHMARK    │");
@@ -42,9 +41,7 @@ fn main() {
     let src = [1, 2, 3, 4, 5, 6, 7, 8];
 
     // [1A] Serial Loop (Loop-Carried Dependency Bottleneck)
-    println!(
-        "─── [1A] 32-WAY INT8 DOT-PRODUCT: SERIAL (1-WAY DEPENDENCY CHAIN) ───"
-    );
+    println!("─── [1A] 32-WAY INT8 DOT-PRODUCT: SERIAL (1-WAY DEPENDENCY CHAIN) ───");
     let t0 = Instant::now();
     let mut acc = src;
     for _ in 0..iters {
@@ -65,9 +62,7 @@ fn main() {
     // [1B] 4-Way Unrolled Pipeline (Breaking 5-Cycle Dependency)
     #[cfg(target_arch = "x86_64")]
     if is_x86_feature_detected!("avxvnni") {
-        println!(
-            "─── [1B] 32-WAY INT8 DOT-PRODUCT: 4-WAY UNROLLED (SATURATING PORTS 0/5) ───"
-        );
+        println!("─── [1B] 32-WAY INT8 DOT-PRODUCT: 4-WAY UNROLLED (SATURATING PORTS 0/5) ───");
         let u8_syn = unsafe { _mm256_loadu_si256(a_u8.as_ptr() as *const __m256i) };
         let i8_w = unsafe { _mm256_loadu_si256(b_i8.as_ptr() as *const __m256i) };
 
@@ -85,7 +80,10 @@ fn main() {
         }
 
         println!("  Accumulated Checksum      : {:?}", final_4x);
-        println!("  Average Latency per Pass  : {:.3} ns ({:.1}x speedup)", dur_4x_ns, speedup_4x);
+        println!(
+            "  Average Latency per Pass  : {:.3} ns ({:.1}x speedup)",
+            dur_4x_ns, speedup_4x
+        );
         println!(
             "  Effective INT8 Throughput : {:.2} Giga-Ops / sec",
             ops_4x_sec / 1e9
@@ -93,9 +91,7 @@ fn main() {
         println!();
 
         // [1C] 8-Way Unrolled Pipeline (Full Dual-VNNI Saturation)
-        println!(
-            "─── [1C] 32-WAY INT8 DOT-PRODUCT: 8-WAY UNROLLED (FULL DUAL-VNNI PIPELINE) ───"
-        );
+        println!("─── [1C] 32-WAY INT8 DOT-PRODUCT: 8-WAY UNROLLED (FULL DUAL-VNNI PIPELINE) ───");
         let t1_8x = Instant::now();
         let out_8x = unsafe { bench_vnni_unrolled_8x(u8_syn, i8_w, iters) };
         let dur_8x = t1_8x.elapsed();
@@ -109,7 +105,10 @@ fn main() {
         }
 
         println!("  Accumulated Checksum      : {:?}", final_8x);
-        println!("  Average Latency per Pass  : {:.3} ns ({:.1}x speedup)", dur_8x_ns, speedup_8x);
+        println!(
+            "  Average Latency per Pass  : {:.3} ns ({:.1}x speedup)",
+            dur_8x_ns, speedup_8x
+        );
         println!(
             "  Effective INT8 Throughput : {:.2} Giga-Ops / sec",
             ops_8x_sec / 1e9
@@ -264,4 +263,3 @@ fn main() {
     println!("-> PASS: AVX-VNNI QEC Stabilizer & Syndrome Engine verified.");
     println!("────────────────────────────────────────────────────────────────────────");
 }
-

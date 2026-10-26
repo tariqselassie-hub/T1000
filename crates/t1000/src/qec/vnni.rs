@@ -54,7 +54,7 @@ impl VnniBackend {
 }
 
 /// 32-way INT8 dot-product kernel with runtime hardware dispatch.
-/// Computes: dst[k] = src[k] + sum_{b=0..3} (u8[4k + b] * i8[4k + b]) for k in 0..7.
+/// Computes: `dst[k] = src[k] + sum_{b=0..3} (u8[4k + b] * i8[4k + b])` for k in 0..7.
 #[inline(always)]
 pub fn vnni_dpbusd_32(src: [i32; 8], a_u8: [u8; 32], b_i8: [i8; 32]) -> [i32; 8] {
     #[cfg(target_arch = "x86_64")]
@@ -353,42 +353,42 @@ impl Default for SurfaceCode9QVnniMatrix {
 
 /// Minimum-weight homologous X-correction lookup table for all 16 Z-stabilizer syndromes.
 pub const LOOKUP_X_CORRECTION: [u16; 16] = [
-    0,                             // 0: ( 1,  1,  1,  1) -> No error
-    1 << 1,                        // 1: (-1,  1,  1,  1) -> X1
-    1 << 6,                        // 2: ( 1, -1,  1,  1) -> X6
-    1 << 4,                        // 3: (-1, -1,  1,  1) -> X4
-    1 << 0,                        // 4: ( 1,  1, -1,  1) -> X0
-    (1 << 0) | (1 << 1),           // 5: (-1,  1, -1,  1) -> X0 X1
-    1 << 3,                        // 6: ( 1, -1, -1,  1) -> X3
-    (1 << 1) | (1 << 3),           // 7: (-1, -1, -1,  1) -> X1 X3
-    1 << 8,                        // 8: ( 1,  1,  1, -1) -> X8
-    1 << 5,                        // 9: (-1,  1,  1, -1) -> X5
-    (1 << 6) | (1 << 8),           // 10: ( 1, -1,  1, -1) -> X6 X8
-    (1 << 4) | (1 << 8),           // 11: (-1, -1,  1, -1) -> X4 X8
-    (1 << 0) | (1 << 8),           // 12: ( 1,  1, -1, -1) -> X0 X8
-    (1 << 0) | (1 << 5),           // 13: (-1,  1, -1, -1) -> X0 X5
-    (1 << 3) | (1 << 8),           // 14: ( 1, -1, -1, -1) -> X3 X8
-    (1 << 3) | (1 << 5),           // 15: (-1, -1, -1, -1) -> X3 X5
+    0,                   // 0: ( 1,  1,  1,  1) -> No error
+    1 << 1,              // 1: (-1,  1,  1,  1) -> X1
+    1 << 6,              // 2: ( 1, -1,  1,  1) -> X6
+    1 << 4,              // 3: (-1, -1,  1,  1) -> X4
+    1 << 0,              // 4: ( 1,  1, -1,  1) -> X0
+    (1 << 0) | (1 << 1), // 5: (-1,  1, -1,  1) -> X0 X1
+    1 << 3,              // 6: ( 1, -1, -1,  1) -> X3
+    (1 << 1) | (1 << 3), // 7: (-1, -1, -1,  1) -> X1 X3
+    1 << 8,              // 8: ( 1,  1,  1, -1) -> X8
+    1 << 5,              // 9: (-1,  1,  1, -1) -> X5
+    (1 << 6) | (1 << 8), // 10: ( 1, -1,  1, -1) -> X6 X8
+    (1 << 4) | (1 << 8), // 11: (-1, -1,  1, -1) -> X4 X8
+    (1 << 0) | (1 << 8), // 12: ( 1,  1, -1, -1) -> X0 X8
+    (1 << 0) | (1 << 5), // 13: (-1,  1, -1, -1) -> X0 X5
+    (1 << 3) | (1 << 8), // 14: ( 1, -1, -1, -1) -> X3 X8
+    (1 << 3) | (1 << 5), // 15: (-1, -1, -1, -1) -> X3 X5
 ];
 
 /// Minimum-weight homologous Z-correction lookup table for all 16 X-stabilizer syndromes.
 pub const LOOKUP_Z_CORRECTION: [u16; 16] = [
-    0,                             // 0: ( 1,  1,  1,  1) -> No error
-    1 << 0,                        // 1: (-1,  1,  1,  1) -> Z0
-    1 << 5,                        // 2: ( 1, -1,  1,  1) -> Z5
-    1 << 4,                        // 3: (-1, -1,  1,  1) -> Z4
-    1 << 2,                        // 4: ( 1,  1, -1,  1) -> Z2
-    1 << 1,                        // 5: (-1,  1, -1,  1) -> Z1
-    (1 << 2) | (1 << 5),           // 6: ( 1, -1, -1,  1) -> Z2 Z5
-    (1 << 1) | (1 << 5),           // 7: (-1, -1, -1,  1) -> Z1 Z5
-    1 << 6,                        // 8: ( 1,  1,  1, -1) -> Z6
-    (1 << 0) | (1 << 6),           // 9: (-1,  1,  1, -1) -> Z0 Z6
-    1 << 7,                        // 10: ( 1, -1,  1, -1) -> Z7
-    (1 << 0) | (1 << 7),           // 11: (-1, -1,  1, -1) -> Z0 Z7
-    (1 << 2) | (1 << 6),           // 12: ( 1,  1, -1, -1) -> Z2 Z6
-    (1 << 1) | (1 << 6),           // 13: (-1,  1, -1, -1) -> Z1 Z6
-    (1 << 2) | (1 << 7),           // 14: ( 1, -1, -1, -1) -> Z2 Z7
-    (1 << 1) | (1 << 7),           // 15: (-1, -1, -1, -1) -> Z1 Z7
+    0,                   // 0: ( 1,  1,  1,  1) -> No error
+    1 << 0,              // 1: (-1,  1,  1,  1) -> Z0
+    1 << 5,              // 2: ( 1, -1,  1,  1) -> Z5
+    1 << 4,              // 3: (-1, -1,  1,  1) -> Z4
+    1 << 2,              // 4: ( 1,  1, -1,  1) -> Z2
+    1 << 1,              // 5: (-1,  1, -1,  1) -> Z1
+    (1 << 2) | (1 << 5), // 6: ( 1, -1, -1,  1) -> Z2 Z5
+    (1 << 1) | (1 << 5), // 7: (-1, -1, -1,  1) -> Z1 Z5
+    1 << 6,              // 8: ( 1,  1,  1, -1) -> Z6
+    (1 << 0) | (1 << 6), // 9: (-1,  1,  1, -1) -> Z0 Z6
+    1 << 7,              // 10: ( 1, -1,  1, -1) -> Z7
+    (1 << 0) | (1 << 7), // 11: (-1, -1,  1, -1) -> Z0 Z7
+    (1 << 2) | (1 << 6), // 12: ( 1,  1, -1, -1) -> Z2 Z6
+    (1 << 1) | (1 << 6), // 13: (-1,  1, -1, -1) -> Z1 Z6
+    (1 << 2) | (1 << 7), // 14: ( 1, -1, -1, -1) -> Z2 Z7
+    (1 << 1) | (1 << 7), // 15: (-1, -1, -1, -1) -> Z1 Z7
 ];
 
 /// Point datum in an empirical fault-tolerant threshold curve.
@@ -640,15 +640,24 @@ mod tests {
         let decoder = VnniQecDecoder::new();
         for q in 0..9 {
             let failed = decoder.run_trial(1 << q, 0);
-            assert!(!failed, "Single X error on qubit {q} caused logical failure!");
+            assert!(
+                !failed,
+                "Single X error on qubit {q} caused logical failure!"
+            );
         }
         for q in 0..9 {
             let failed = decoder.run_trial(0, 1 << q);
-            assert!(!failed, "Single Z error on qubit {q} caused logical failure!");
+            assert!(
+                !failed,
+                "Single Z error on qubit {q} caused logical failure!"
+            );
         }
         for q in 0..9 {
             let failed = decoder.run_trial(1 << q, 1 << q);
-            assert!(!failed, "Single Y error on qubit {q} caused logical failure!");
+            assert!(
+                !failed,
+                "Single Y error on qubit {q} caused logical failure!"
+            );
         }
     }
 
@@ -656,7 +665,10 @@ mod tests {
     fn test_vnni_decoder_two_qubit_logical_string_detected() {
         let decoder = VnniQecDecoder::new();
         let failed = decoder.run_trial((1 << 0) | (1 << 3), 0);
-        assert!(failed, "Two-qubit error along column 0 should trigger logical failure!");
+        assert!(
+            failed,
+            "Two-qubit error along column 0 should trigger logical failure!"
+        );
     }
 
     #[test]
@@ -681,11 +693,14 @@ mod tests {
             let res_4x = unsafe { bench_vnni_unrolled_4x(u8_syn, i8_w, iters) };
             let res_8x = unsafe { bench_vnni_unrolled_8x(u8_syn, i8_w, iters) };
 
-            assert_eq!(serial, res_4x, "4x unrolled VNNI output must match serial accumulation");
-            assert_eq!(serial, res_8x, "8x unrolled VNNI output must match serial accumulation");
+            assert_eq!(
+                serial, res_4x,
+                "4x unrolled VNNI output must match serial accumulation"
+            );
+            assert_eq!(
+                serial, res_8x,
+                "8x unrolled VNNI output must match serial accumulation"
+            );
         }
     }
 }
-
-
-

@@ -235,10 +235,22 @@ impl DiagonalPlan {
                 let tr1 = _mm256_loadu_pd(self.lo_re.as_ptr().add(j + 4));
                 let ti1 = _mm256_loadu_pd(self.lo_im.as_ptr().add(j + 4));
 
-                let dr0 = _mm256_mul_pd(flip0, _mm256_fmsub_pd(tr0, fr_vec, _mm256_mul_pd(ti0, fi_vec)));
-                let di0 = _mm256_mul_pd(flip0, _mm256_fmadd_pd(tr0, fi_vec, _mm256_mul_pd(ti0, fr_vec)));
-                let dr1 = _mm256_mul_pd(flip1, _mm256_fmsub_pd(tr1, fr_vec, _mm256_mul_pd(ti1, fi_vec)));
-                let di1 = _mm256_mul_pd(flip1, _mm256_fmadd_pd(tr1, fi_vec, _mm256_mul_pd(ti1, fr_vec)));
+                let dr0 = _mm256_mul_pd(
+                    flip0,
+                    _mm256_fmsub_pd(tr0, fr_vec, _mm256_mul_pd(ti0, fi_vec)),
+                );
+                let di0 = _mm256_mul_pd(
+                    flip0,
+                    _mm256_fmadd_pd(tr0, fi_vec, _mm256_mul_pd(ti0, fr_vec)),
+                );
+                let dr1 = _mm256_mul_pd(
+                    flip1,
+                    _mm256_fmsub_pd(tr1, fr_vec, _mm256_mul_pd(ti1, fi_vec)),
+                );
+                let di1 = _mm256_mul_pd(
+                    flip1,
+                    _mm256_fmadd_pd(tr1, fi_vec, _mm256_mul_pd(ti1, fr_vec)),
+                );
 
                 let ar0 = _mm256_loadu_pd(re.as_ptr().add(j));
                 let ai0 = _mm256_loadu_pd(im.as_ptr().add(j));
@@ -262,8 +274,10 @@ impl DiagonalPlan {
                 let tr = _mm256_loadu_pd(self.lo_re.as_ptr().add(j));
                 let ti = _mm256_loadu_pd(self.lo_im.as_ptr().add(j));
 
-                let dr = _mm256_mul_pd(flip, _mm256_fmsub_pd(tr, fr_vec, _mm256_mul_pd(ti, fi_vec)));
-                let di = _mm256_mul_pd(flip, _mm256_fmadd_pd(tr, fi_vec, _mm256_mul_pd(ti, fr_vec)));
+                let dr =
+                    _mm256_mul_pd(flip, _mm256_fmsub_pd(tr, fr_vec, _mm256_mul_pd(ti, fi_vec)));
+                let di =
+                    _mm256_mul_pd(flip, _mm256_fmadd_pd(tr, fi_vec, _mm256_mul_pd(ti, fr_vec)));
 
                 let ar = _mm256_loadu_pd(re.as_ptr().add(j));
                 let ai = _mm256_loadu_pd(im.as_ptr().add(j));
@@ -327,4 +341,3 @@ pub fn apply_rz_cz_layer(
         crate::parallel::for_each_block(real, imag, block, |h, re, im| plan.apply_block(h, re, im));
     }
 }
-

@@ -15,15 +15,31 @@ use t1000::qm9_data::{self, FeatureSet, PROPERTIES};
 
 const CSV: &str = "data/qm9/qm9.csv";
 
-fn r2_by_model(set: FeatureSet, train_n: usize, test_n: usize, seed: u64) -> Vec<(String, Vec<f64>)> {
+fn r2_by_model(
+    set: FeatureSet,
+    train_n: usize,
+    test_n: usize,
+    seed: u64,
+) -> Vec<(String, Vec<f64>)> {
     let t = Instant::now();
     let (rows, skipped) = qm9_data::load(CSV, set, usize::MAX).expect("load QM9");
-    println!("  {set:?}: {} molecules featurised in {:.1} s ({skipped} skipped)", rows.len(), t.elapsed().as_secs_f64());
+    println!(
+        "  {set:?}: {} molecules featurised in {:.1} s ({skipped} skipped)",
+        rows.len(),
+        t.elapsed().as_secs_f64()
+    );
     let (mut train, test) = qm9_data::split(rows, test_n, seed);
     train.truncate(train_n);
     let pair = |m: &qm9_data::Qm9Molecule| (m.features.clone(), m.properties.to_vec());
-    let (tr, te): (Vec<_>, Vec<_>) = (train.iter().map(pair).collect(), test.iter().map(pair).collect());
-    println!("  {set:?}: fitting ridge on {} training / {} held-out molecules", tr.len(), te.len());
+    let (tr, te): (Vec<_>, Vec<_>) = (
+        train.iter().map(pair).collect(),
+        test.iter().map(pair).collect(),
+    );
+    println!(
+        "  {set:?}: fitting ridge on {} training / {} held-out molecules",
+        tr.len(),
+        te.len()
+    );
     evaluate_baselines(&tr, &te, &PROPERTIES)
         .into_iter()
         .map(|b| (b.model, b.metrics.iter().map(|m| m.r2).collect()))
@@ -32,13 +48,27 @@ fn r2_by_model(set: FeatureSet, train_n: usize, test_n: usize, seed: u64) -> Vec
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let value = |flag: &str, default: usize| args.iter().position(|a| a == flag).and_then(|i| args.get(i + 1)).and_then(|v| v.parse().ok()).unwrap_or(default);
-    let (train_n, test_n, seed) = (value("--train", 20_000), value("--test", 10_000), value("--seed", 7) as u64);
+    let value = |flag: &str, default: usize| {
+        args.iter()
+            .position(|a| a == flag)
+            .and_then(|i| args.get(i + 1))
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(default)
+    };
+    let (train_n, test_n, seed) = (
+        value("--train", 20_000),
+        value("--test", 10_000),
+        value("--seed", 7) as u64,
+    );
     println!("QM9 baselines from 19 SMILES descriptors\n");
     let zinc = r2_by_model(FeatureSet::ZincLike, train_n, test_n, seed);
     let qm9 = r2_by_model(FeatureSet::Qm9, train_n, test_n, seed);
 
-    let get = |set: &[(String, Vec<f64>)], name: &str, i: usize| set.iter().find(|(m, _)| m == name).map_or(f64::NAN, |(_, v)| v[i]);
+    let get = |set: &[(String, Vec<f64>)], name: &str, i: usize| {
+        set.iter()
+            .find(|(m, _)| m == name)
+            .map_or(f64::NAN, |(_, v)| v[i])
+    };
     println!("\nHeld-out R2 (1.0 = perfect, 0 = no better than the mean)");
     println!("┌──────────┬───────────────────────────┬───────────────────────────┐");
     println!("│          │ ZINC-like descriptors     │ QM9 descriptors (with H)  │");

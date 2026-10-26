@@ -131,13 +131,21 @@ impl CompiledCircuit {
             self.num_qubits
         );
 
-        let ops: Vec<&CircuitOp> = self.stages.iter().flat_map(|stage| stage.ops.iter()).collect();
+        let ops: Vec<&CircuitOp> = self
+            .stages
+            .iter()
+            .flat_map(|stage| stage.ops.iter())
+            .collect();
         super::layered::execute_layered(&ops, self.num_qubits, state);
     }
 
     /// Executes every op as its own statevector pass. Reference path for the fused executor.
     pub fn execute_unfused(&self, state: &mut QuantumState) {
-        assert_eq!(state.dim, 1 << self.num_qubits, "state does not match circuit width");
+        assert_eq!(
+            state.dim,
+            1 << self.num_qubits,
+            "state does not match circuit width"
+        );
         for op in self.stages.iter().flat_map(|stage| stage.ops.iter()) {
             Self::execute_op(state, op);
         }
@@ -288,12 +296,17 @@ mod fused_tests {
         let mut b = CircuitBuilder::new(n);
         for l in 0..3 {
             for q in 0..n {
-                b.ry(q, 0.37 * (1 + l + q) as f64).rz(q, 0.21 * (3 + l * 7 + q) as f64);
+                b.ry(q, 0.37 * (1 + l + q) as f64)
+                    .rz(q, 0.21 * (3 + l * 7 + q) as f64);
             }
             for q in 0..n {
                 b.cz(q, (q + 1) % n);
             }
-            b.h(l).cnot(l, n - 1 - l).ry(n - 1, 0.5).ry(n - 1, -0.2).swap(0, n - 1);
+            b.h(l)
+                .cnot(l, n - 1 - l)
+                .ry(n - 1, 0.5)
+                .ry(n - 1, -0.2)
+                .swap(0, n - 1);
             for q in (0..n).step_by(3) {
                 b.controlled_phase(q, (q + 5) % n, 0.9).rz(q, 1.3);
             }
@@ -309,8 +322,13 @@ mod fused_tests {
             let mut plain = fused.clone();
             c.execute(&mut fused);
             c.execute_unfused(&mut plain);
-            let dev = fused.real.iter().zip(&plain.real).chain(fused.imag.iter().zip(&plain.imag))
-                .map(|(a, b)| (a - b).abs()).fold(0.0, f64::max);
+            let dev = fused
+                .real
+                .iter()
+                .zip(&plain.real)
+                .chain(fused.imag.iter().zip(&plain.imag))
+                .map(|(a, b)| (a - b).abs())
+                .fold(0.0, f64::max);
             assert!(dev < 1e-11, "n={n}: max deviation {dev}");
         }
     }

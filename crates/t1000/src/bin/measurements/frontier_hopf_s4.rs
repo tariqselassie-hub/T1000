@@ -251,34 +251,63 @@ fn main() {
 
     let rot_points = benchmark_rotation_trajectory(20);
     println!("\n[2] Continuous Entanglement Rotation (|psi(theta)> = cos(th)|00> + sin(th)|11>):");
-    println!("  Steps: {}, Range: 0.0 deg -> 90.0 deg (Crossing Bell Equator at 45.0 deg)", rot_points.len());
-    let mid = rot_points.iter().find(|p| (p.theta_deg - 45.0).abs() < 1e-3).unwrap();
-    println!("  At theta = 45.0 deg: y0 = {:.6}, Concurrence = {:.6}, Bell-CHSH = {:.6}",
-        mid.hopf_coord.y0, mid.invariants.concurrence, mid.invariants.bell_chsh);
+    println!(
+        "  Steps: {}, Range: 0.0 deg -> 90.0 deg (Crossing Bell Equator at 45.0 deg)",
+        rot_points.len()
+    );
+    let mid = rot_points
+        .iter()
+        .find(|p| (p.theta_deg - 45.0).abs() < 1e-3)
+        .unwrap();
+    println!(
+        "  At theta = 45.0 deg: y0 = {:.6}, Concurrence = {:.6}, Bell-CHSH = {:.6}",
+        mid.hopf_coord.y0, mid.invariants.concurrence, mid.invariants.bell_chsh
+    );
 
     let werner_points = benchmark_werner_sweep(20);
     println!("\n[3] Werner State Contraction into 5D Quaternionic Bloch Ball B5:");
-    let sep_pt = werner_points.iter().find(|p| (p.p - 0.35).abs() < 0.03).unwrap();
-    let tsir_pt = werner_points.iter().find(|p| (p.p - 0.70).abs() < 0.03).unwrap();
-    println!("  Separable Threshold (p ~ 0.33): Concurrence = {:.4}, Radius = {:.4}",
-        sep_pt.invariants.concurrence, sep_pt.hopf_coord.radius);
-    println!("  Tsirelson Violation Threshold (p ~ 0.707): Bell-CHSH = {:.4}, Radius = {:.4}",
-        tsir_pt.invariants.bell_chsh, tsir_pt.hopf_coord.radius);
+    let sep_pt = werner_points
+        .iter()
+        .find(|p| (p.p - 0.35).abs() < 0.03)
+        .unwrap();
+    let tsir_pt = werner_points
+        .iter()
+        .find(|p| (p.p - 0.70).abs() < 0.03)
+        .unwrap();
+    println!(
+        "  Separable Threshold (p ~ 0.33): Concurrence = {:.4}, Radius = {:.4}",
+        sep_pt.invariants.concurrence, sep_pt.hopf_coord.radius
+    );
+    println!(
+        "  Tsirelson Violation Threshold (p ~ 0.707): Bell-CHSH = {:.4}, Radius = {:.4}",
+        tsir_pt.invariants.bell_chsh, tsir_pt.hopf_coord.radius
+    );
 
     let throughput = benchmark_simd_throughput(1_000_000);
     println!("\n[4] AVX2 SIMD Throughput (1,000,000 S7 -> S4 Projections):");
     println!("  Total Time     : {:.2} ms", throughput.elapsed_ms);
-    println!("  Latency        : {:.2} ns / projection", throughput.latency_ns_per_eval);
-    println!("  Throughput     : {:.2} Million projections / sec", throughput.throughput_m_evals_sec);
+    println!(
+        "  Latency        : {:.2} ns / projection",
+        throughput.latency_ns_per_eval
+    );
+    println!(
+        "  Throughput     : {:.2} Million projections / sec",
+        throughput.throughput_m_evals_sec
+    );
     println!("  Max S4 Residual: {:.3e}", throughput.max_norm_error);
 
     let molecular_pairs = benchmark_molecular_pairwise();
     println!("\n[5] 6-Qubit Tri-Singlet Pairwise Entanglement Topology:");
     for pair in &molecular_pairs {
         if pair.invariants.concurrence > 0.01 {
-            println!("  Pair (q{}, q{}): Concurrence = {:.4}, Bell-CHSH = {:.4}, Bell Distance = {:.4}",
-                pair.qubit_pair.0, pair.qubit_pair.1,
-                pair.invariants.concurrence, pair.invariants.bell_chsh, pair.invariants.bell_plane_distance);
+            println!(
+                "  Pair (q{}, q{}): Concurrence = {:.4}, Bell-CHSH = {:.4}, Bell Distance = {:.4}",
+                pair.qubit_pair.0,
+                pair.qubit_pair.1,
+                pair.invariants.concurrence,
+                pair.invariants.bell_chsh,
+                pair.invariants.bell_plane_distance
+            );
         }
     }
 

@@ -191,7 +191,8 @@ mod tests {
         assert!((atomization_ev - (-17.172)).abs() < 0.05);
 
         // Round-trip reconstruction
-        let reconstructed = AtomicBaselineDecoder::reconstruct_total_energy(atomization, &z_methane);
+        let reconstructed =
+            AtomicBaselineDecoder::reconstruct_total_energy(atomization, &z_methane);
         assert!((reconstructed - u0_methane).abs() < 1e-12);
     }
 

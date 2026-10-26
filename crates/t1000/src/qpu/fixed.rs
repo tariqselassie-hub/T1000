@@ -77,7 +77,13 @@ mod tests {
         assert_eq!(round_and_saturate(half - 1), 0);
         assert_eq!(round_and_saturate(-half), 0, "ties round toward +infinity");
         assert_eq!(round_and_saturate(-half - 1), -1);
-        assert_eq!(round_and_saturate(i128::from(STATE_MAX) << (COEF_FRAC + 4)), STATE_MAX);
-        assert_eq!(round_and_saturate(i128::from(STATE_MIN) << (COEF_FRAC + 4)), STATE_MIN);
+        assert_eq!(
+            round_and_saturate(i128::from(STATE_MAX) << (COEF_FRAC + 4)),
+            STATE_MAX
+        );
+        assert_eq!(
+            round_and_saturate(i128::from(STATE_MIN) << (COEF_FRAC + 4)),
+            STATE_MIN
+        );
     }
 }

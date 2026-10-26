@@ -18,9 +18,11 @@
 
 use serde::Serialize;
 use std::env;
-use t1000::routing::{ansatz_program, cost, mean_cost, prep_program, route, search_layout, verify, Item, Topology};
-use t1000::state_prep::amplitude_prep;
 use t1000::datasets::DataOptions;
+use t1000::routing::{
+    ansatz_program, cost, mean_cost, prep_program, route, search_layout, verify, Item, Topology,
+};
+use t1000::state_prep::amplitude_prep;
 use t1000::zinc_data::{InputScaling, Scaler};
 
 const N_QUBITS: usize = 10;
@@ -33,7 +35,11 @@ struct Stats {
 }
 
 fn stats(v: &[usize]) -> Stats {
-    Stats { mean: v.iter().sum::<usize>() as f64 / v.len() as f64, min: *v.iter().min().unwrap(), max: *v.iter().max().unwrap() }
+    Stats {
+        mean: v.iter().sum::<usize>() as f64 / v.len() as f64,
+        min: *v.iter().min().unwrap(),
+        max: *v.iter().max().unwrap(),
+    }
 }
 
 #[derive(Serialize)]
@@ -63,7 +69,11 @@ fn programs(depth: usize, molecules: &[Vec<f64>], with_prep: bool) -> Vec<Vec<It
     molecules
         .iter()
         .map(|amps| {
-            let mut p = if with_prep { prep_program(&amplitude_prep(amps)) } else { Vec::new() };
+            let mut p = if with_prep {
+                prep_program(&amplitude_prep(amps))
+            } else {
+                Vec::new()
+            };
             p.extend(ansatz.iter().cloned());
             p
         })
@@ -74,13 +84,20 @@ fn programs(depth: usize, molecules: &[Vec<f64>], with_prep: bool) -> Vec<Vec<It
 /// (they cost no two-qubit gates and need no routing, but they add single-qubit error).
 fn data_rotations(uploads: usize, n_inputs: usize) -> usize {
     let n_chunks = n_inputs.div_ceil(N_QUBITS);
-    (0..uploads).map(|l| (n_inputs - (l % n_chunks) * N_QUBITS).min(N_QUBITS)).sum()
+    (0..uploads)
+        .map(|l| (n_inputs - (l % n_chunks) * N_QUBITS).min(N_QUBITS))
+        .sum()
 }
 
 fn evaluate(progs: &[Vec<Item>], topo: &Topology, layout: &[usize], depth: usize) -> Placement {
-    let costs: Vec<_> = progs.iter().map(|p| cost(&route(p, topo, layout).gates)).collect();
-    let pick = |f: fn(&t1000::routing::Cost) -> usize| stats(&costs.iter().map(f).collect::<Vec<_>>());
-    let ansatz_only = cost(&route(&ansatz_program(N_QUBITS, depth), topo, layout).gates).two_qubit_total();
+    let costs: Vec<_> = progs
+        .iter()
+        .map(|p| cost(&route(p, topo, layout).gates))
+        .collect();
+    let pick =
+        |f: fn(&t1000::routing::Cost) -> usize| stats(&costs.iter().map(f).collect::<Vec<_>>());
+    let ansatz_only =
+        cost(&route(&ansatz_program(N_QUBITS, depth), topo, layout).gates).two_qubit_total();
     Placement {
         two_qubit_total: pick(|c| c.two_qubit_total()),
         swaps: pick(|c| c.swaps),
@@ -91,15 +108,28 @@ fn evaluate(progs: &[Vec<Item>], topo: &Topology, layout: &[usize], depth: usize
 }
 
 fn fidelities(p: &Placement) -> [f64; 3] {
-    [1e-3f64, 5e-3, 1e-2].map(|p2| (1.0 - p2 / 10.0).powf(p.single_qubit.mean) * (1.0 - p2).powf(p.two_qubit_total.mean))
+    [1e-3f64, 5e-3, 1e-2].map(|p2| {
+        (1.0 - p2 / 10.0).powf(p.single_qubit.mean) * (1.0 - p2).powf(p.two_qubit_total.mean)
+    })
 }
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let value = |flag: &str, default: usize| args.iter().position(|a| a == flag).and_then(|i| args.get(i + 1)).and_then(|v| v.parse().ok()).unwrap_or(default);
+    let value = |flag: &str, default: usize| {
+        args.iter()
+            .position(|a| a == flag)
+            .and_then(|i| args.get(i + 1))
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(default)
+    };
     let no_prep = args.iter().any(|a| a == "--no-prep");
     let uploads = value("--uploads", 0);
-    let (restarts, search_n, eval_n, depth) = (value("--restarts", 40), value("--search-molecules", 4), value("--eval-molecules", 200), value("--depth", 4));
+    let (restarts, search_n, eval_n, depth) = (
+        value("--restarts", 40),
+        value("--search-molecules", 4),
+        value("--eval-molecules", 200),
+        value("--depth", 4),
+    );
 
     let data_options = DataOptions::from_args(&args);
     let data = data_options.load();
@@ -115,15 +145,27 @@ fn main() {
     let step = train.len() / eval_n;
     let eval_set: Vec<Vec<f64>> = (0..eval_n).map(|i| amps(i * step)).collect();
     let search_set: Vec<Vec<f64>> = (0..search_n).map(|i| amps(i * step + step / 2)).collect();
-    let (eval_progs, search_progs) = (programs(depth, &eval_set, !no_prep), programs(depth, &search_set, !no_prep));
+    let (eval_progs, search_progs) = (
+        programs(depth, &eval_set, !no_prep),
+        programs(depth, &search_set, !no_prep),
+    );
 
-    let topologies = [Topology::all_to_all(N_QUBITS), Topology::line(N_QUBITS), Topology::ring(N_QUBITS), Topology::grid(2, 5), Topology::heavy_hex_fragment()];
+    let topologies = [
+        Topology::all_to_all(N_QUBITS),
+        Topology::line(N_QUBITS),
+        Topology::ring(N_QUBITS),
+        Topology::grid(2, 5),
+        Topology::heavy_hex_fragment(),
+    ];
     let identity: Vec<usize> = (0..N_QUBITS).collect();
     println!("{}: routing the preparation + depth-{depth} ansatz of {eval_n} molecules ({} layout restarts, searched on {search_n} molecules)\n", data.label, restarts);
     let mut results = Vec::new();
     for topo in &topologies {
         let (layout, searched) = search_layout(&search_progs, topo, restarts, 7);
-        let (mut best, mut naive) = (evaluate(&eval_progs, topo, &layout, depth), evaluate(&eval_progs, topo, &identity, depth));
+        let (mut best, mut naive) = (
+            evaluate(&eval_progs, topo, &layout, depth),
+            evaluate(&eval_progs, topo, &identity, depth),
+        );
         let extra = data_rotations(uploads, train[0].features.len());
         for p in [&mut best, &mut naive] {
             p.single_qubit.mean += extra as f64;
@@ -131,10 +173,30 @@ fn main() {
             p.single_qubit.max += extra;
         }
         // Verify every routed circuit of the first molecule against the original.
-        let dev = verify(&eval_progs[0], &route(&eval_progs[0], topo, &layout), N_QUBITS).max(verify(&eval_progs[0], &route(&eval_progs[0], topo, &identity), N_QUBITS));
-        println!("{:<11} best layout {:?}  (search objective {:.1}, verified to {:.1e})", topo.name, layout, searched, dev);
+        let dev = verify(
+            &eval_progs[0],
+            &route(&eval_progs[0], topo, &layout),
+            N_QUBITS,
+        )
+        .max(verify(
+            &eval_progs[0],
+            &route(&eval_progs[0], topo, &identity),
+            N_QUBITS,
+        ));
+        println!(
+            "{:<11} best layout {:?}  (search objective {:.1}, verified to {:.1e})",
+            topo.name, layout, searched, dev
+        );
         let _ = mean_cost(&search_progs, topo, &layout);
-        results.push(TopologyResult { topology: topo.name.clone(), edges: topo.edges().len(), best_layout: layout, fidelity: fidelities(&best), naive_fidelity: fidelities(&naive), best, naive });
+        results.push(TopologyResult {
+            topology: topo.name.clone(),
+            edges: topo.edges().len(),
+            best_layout: layout,
+            fidelity: fidelities(&best),
+            naive_fidelity: fidelities(&naive),
+            best,
+            naive,
+        });
     }
 
     println!("\nTwo-qubit gates per molecule (CNOT-equivalents, SWAP = 3) and circuit fidelity");
@@ -150,13 +212,29 @@ fn main() {
         );
     }
     println!("└────────────┴───────┴──────────────────────┴────────────────────┴────────────────────┴─────────────────────────┘");
-    println!("\nPer topology, options for zinc_shot_noise at the typical device (--gate-error 0.005):");
+    println!(
+        "\nPer topology, options for zinc_shot_noise at the typical device (--gate-error 0.005):"
+    );
     for r in &results {
-        println!("  {:<11} --circuit-1q {:.1} --circuit-2q {:.1}", r.topology, r.best.single_qubit.mean, r.best.two_qubit_total.mean);
+        println!(
+            "  {:<11} --circuit-1q {:.1} --circuit-2q {:.1}",
+            r.topology, r.best.single_qubit.mean, r.best.two_qubit_total.mean
+        );
     }
 
     let json = serde_json::json!({ "depth": depth, "restarts": restarts, "search_molecules": search_n, "eval_molecules": eval_n, "results": results });
-    let base = if data.label.starts_with("QM9") { "qm9_routing_study" } else { "zinc_routing_study" };
-    let name = if no_prep { format!("{base}_reupload{uploads}") } else { base.to_string() };
-    let _ = t1000::results::write(format!("results/experiments/{name}.json"), serde_json::to_string_pretty(&json).unwrap_or_default());
+    let base = if data.label.starts_with("QM9") {
+        "qm9_routing_study"
+    } else {
+        "zinc_routing_study"
+    };
+    let name = if no_prep {
+        format!("{base}_reupload{uploads}")
+    } else {
+        base.to_string()
+    };
+    let _ = t1000::results::write(
+        format!("results/experiments/{name}.json"),
+        serde_json::to_string_pretty(&json).unwrap_or_default(),
+    );
 }

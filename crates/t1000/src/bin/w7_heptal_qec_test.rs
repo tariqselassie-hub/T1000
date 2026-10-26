@@ -131,8 +131,15 @@ fn run_qec_threshold_comparison() {
         "[AVX-VNNI TELEMETRY] Dual-W7 [[7,1,3]] Decoder (checksum: {})",
         checksum & 0xFF
     );
-    println!("  Latency per Dual-Patch Pass : {:.2} ns ({:.2} ns / logical qubit)", ns_per_pass, ns_per_pass * 0.5);
-    println!("  Throughput                  : {:.2} M dual-shots/sec", m_shots_sec);
+    println!(
+        "  Latency per Dual-Patch Pass : {:.2} ns ({:.2} ns / logical qubit)",
+        ns_per_pass,
+        ns_per_pass * 0.5
+    );
+    println!(
+        "  Throughput                  : {:.2} M dual-shots/sec",
+        m_shots_sec
+    );
     println!("-------------------------------------------------------------------------");
     println!(
         " {:>10} | {:>13} | {:>13} | {:>12} | {:>11}",
@@ -140,7 +147,9 @@ fn run_qec_threshold_comparison() {
     );
     println!("-------------------------------------------------------------------------");
 
-    let p_grid = [0.001, 0.002, 0.005, 0.010, 0.020, 0.050, 0.064, 0.0814, 0.100];
+    let p_grid = [
+        0.001, 0.002, 0.005, 0.010, 0.020, 0.050, 0.064, 0.0814, 0.100,
+    ];
     let mut rng = FastRng(0xDEADBEEF_CAFEBABE);
     let trials = 1_000_000usize;
 
@@ -169,7 +178,9 @@ fn run_qec_threshold_comparison() {
         }
         let pl_w7 = fail_w7 as f64 / (trials as f64);
         // Reference [[9,1,3]] quadratic curve from your telemetry: P_L ≈ 24.0 * p^2 (exact binomial)
-        let pl_surface9 = 1.0 - (1.0 - p).powi(9) - 9.0 * p * (1.0 - p).powi(8)
+        let pl_surface9 = 1.0
+            - (1.0 - p).powi(9)
+            - 9.0 * p * (1.0 - p).powi(8)
             - 12.0 * p.powi(2) * (1.0 - p).powi(7); // 24 weight-2 uncorrectable pairs out of 36
         let gain_w7 = p / pl_w7.max(1e-9);
 
@@ -242,7 +253,7 @@ impl Statevector14Q {
         }
     }
 
-    /// Computes weighted hub-and-rim <Z> observable
+    /// Computes weighted hub-and-rim `<Z>` observable
     fn expectation_hub_weighted_z(&self) -> f64 {
         let mut exp = 0.0;
         for idx in 0..self.re.len() {
@@ -256,12 +267,7 @@ impl Statevector14Q {
     }
 }
 
-fn forward_circuit(
-    coulomb_eigs: &[f64; 7],
-    params: &[f64],
-    depth: usize,
-    use_w7_hub: bool,
-) -> f64 {
+fn forward_circuit(coulomb_eigs: &[f64; 7], params: &[f64], depth: usize, use_w7_hub: bool) -> f64 {
     let mut sv = Statevector14Q::new();
 
     // Spectral Encoding: Map top 7 Coulomb Matrix eigenvalues onto both 7-node patches
@@ -311,11 +317,11 @@ fn run_w7_spectral_qnn_comparison() {
 
     // Synthetic QM9 7-eigenvalue Coulomb spectra (normalized) + ground-truth HOMO-LUMO gap (z-scored)
     let molecules: [([f64; 7], f64); 6] = [
-        ([2.85, 1.42, 1.10, 0.85, 0.62, 0.41, 0.19],  0.78), // High-stability aromatic-like
+        ([2.85, 1.42, 1.10, 0.85, 0.62, 0.41, 0.19], 0.78), // High-stability aromatic-like
         ([2.10, 1.85, 1.60, 1.25, 0.90, 0.55, 0.30], -0.65), // Strained small-gap cage
-        ([3.12, 1.15, 0.98, 0.77, 0.50, 0.32, 0.12],  0.84), // Heteroatom conjugated
+        ([3.12, 1.15, 0.98, 0.77, 0.50, 0.32, 0.12], 0.84), // Heteroatom conjugated
         ([1.75, 1.62, 1.48, 1.30, 1.12, 0.88, 0.64], -0.82), // Reactive radical-like
-        ([2.60, 1.50, 1.22, 0.95, 0.70, 0.45, 0.25],  0.35), // Balanced carbonyl
+        ([2.60, 1.50, 1.22, 0.95, 0.70, 0.45, 0.25], 0.35), // Balanced carbonyl
         ([2.30, 1.70, 1.40, 1.05, 0.80, 0.50, 0.22], -0.25), // Polar amine motif
     ];
 

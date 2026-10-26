@@ -96,11 +96,27 @@ fn main() {
     let theta_2 = lambda_2.acos();
 
     println!("[Phase 1] Mathematical & Unitarity Verification:");
-    println!("  - Classical Second Eigenvalue (lambda_2): {:.6}", lambda_2);
-    println!("  - Classical Spectral Gap (Delta):        {:.6}", gap_classical);
-    println!("  - Szegedy Eigenphase Gap (theta_2):      {:.6} rad ({:.2}x expansion)", theta_2, theta_2 / gap_classical);
-    println!("  - Szegedy W_49 Unitarity Error:          {:.3e}", unitarity_err);
-    println!("  - Szegedy Stationary Vector Residual:    {:.3e}\n", pi_state_err);
+    println!(
+        "  - Classical Second Eigenvalue (lambda_2): {:.6}",
+        lambda_2
+    );
+    println!(
+        "  - Classical Spectral Gap (Delta):        {:.6}",
+        gap_classical
+    );
+    println!(
+        "  - Szegedy Eigenphase Gap (theta_2):      {:.6} rad ({:.2}x expansion)",
+        theta_2,
+        theta_2 / gap_classical
+    );
+    println!(
+        "  - Szegedy W_49 Unitarity Error:          {:.3e}",
+        unitarity_err
+    );
+    println!(
+        "  - Szegedy Stationary Vector Residual:    {:.3e}\n",
+        pi_state_err
+    );
 
     // 2. Trajectory Showdown: Classical Markov vs Quantum Szegedy Walk (30 Steps)
     println!("[Phase 2] Trajectory Showdown: Classical Diffusion vs Quantum Szegedy Walk...");
@@ -143,9 +159,18 @@ fn main() {
     }
 
     let speedup_ratio = max_sink_q / max_sink_c;
-    println!("  - Peak Classical Sink Probability:       {:.4} (t = 2)", max_sink_c);
-    println!("  - Peak Quantum Szegedy Sink Probability: {:.4} (t = 4)", max_sink_q);
-    println!("  - Quantum Ballistic Speedup:              {:.2}x\n", speedup_ratio);
+    println!(
+        "  - Peak Classical Sink Probability:       {:.4} (t = 2)",
+        max_sink_c
+    );
+    println!(
+        "  - Peak Quantum Szegedy Sink Probability: {:.4} (t = 4)",
+        max_sink_q
+    );
+    println!(
+        "  - Quantum Ballistic Speedup:              {:.2}x\n",
+        speedup_ratio
+    );
 
     // 3. Decoherence-Free Subspace (DFS) Hub-Dephasing Benchmark
     println!("[Phase 3] Decoherence-Free Subspace (DFS) Hub-Dephasing Benchmark (50 Steps)...");
@@ -194,8 +219,16 @@ fn main() {
         state_bright[0] *= phase_kick;
 
         // Compute overlap fidelity with initial subspace unit vectors
-        let dot_d: f64 = state_dark.iter().zip(&dark_init).map(|(&a, &b)| a * b).sum();
-        let dot_b: f64 = state_bright.iter().zip(&bright_init).map(|(&a, &b)| a * b).sum();
+        let dot_d: f64 = state_dark
+            .iter()
+            .zip(&dark_init)
+            .map(|(&a, &b)| a * b)
+            .sum();
+        let dot_b: f64 = state_bright
+            .iter()
+            .zip(&bright_init)
+            .map(|(&a, &b)| a * b)
+            .sum();
 
         noise_steps.push(DarkStateNoiseStep {
             step: t,
@@ -209,9 +242,18 @@ fn main() {
     let final_dark_fid = noise_steps.last().unwrap().dark_fidelity;
     let final_bright_fid = noise_steps.last().unwrap().bright_fidelity;
 
-    println!("  - Dark State (v3 - v6) Max Hub Leakage:   {:.3e} (Exact DFS Protection)", max_dark_leakage);
-    println!("  - Dark State Final Fidelity:              {:.12}", final_dark_fid);
-    println!("  - Bright State Final Fidelity:            {:.6} (Dephased / Dispersed)\n", final_bright_fid);
+    println!(
+        "  - Dark State (v3 - v6) Max Hub Leakage:   {:.3e} (Exact DFS Protection)",
+        max_dark_leakage
+    );
+    println!(
+        "  - Dark State Final Fidelity:              {:.12}",
+        final_dark_fid
+    );
+    println!(
+        "  - Bright State Final Fidelity:            {:.6} (Dephased / Dispersed)\n",
+        final_bright_fid
+    );
 
     // 4. Molecular Stark Dipole Walk Showdown (Top 7 Pitt Leads)
     println!("[Phase 4] Molecular Stark Dipole Walk Showdown (Top 7 Pitt Leads)...");
@@ -267,10 +309,22 @@ fn main() {
     }
 
     let mol_speedup = max_sink_mol_q / max_sink_mol_c;
-    println!("  - Molecular Szegedy W_49 Unitarity Error: {:.3e}", mol_unitarity_err);
-    println!("  - Peak Classical Tilted Sink Probability: {:.4}", max_sink_mol_c);
-    println!("  - Peak Molecular Quantum Sink Prob:       {:.4} (t = {})", max_sink_mol_q, max_sink_mol_q_step);
-    println!("  - Molecular Quantum Hitting Speedup:      {:.2}x\n", mol_speedup);
+    println!(
+        "  - Molecular Szegedy W_49 Unitarity Error: {:.3e}",
+        mol_unitarity_err
+    );
+    println!(
+        "  - Peak Classical Tilted Sink Probability: {:.4}",
+        max_sink_mol_c
+    );
+    println!(
+        "  - Peak Molecular Quantum Sink Prob:       {:.4} (t = {})",
+        max_sink_mol_q, max_sink_mol_q_step
+    );
+    println!(
+        "  - Molecular Quantum Hitting Speedup:      {:.2}x\n",
+        mol_speedup
+    );
 
     // Assemble Report
     let report = DirectedQuantumWalkReport {

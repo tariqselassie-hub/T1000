@@ -105,7 +105,7 @@ pub struct GradientBenchmark {
     pub full_circuit_adjoint_seconds: f64,
 }
 
-/// Times one gradient of <GlobalMeanZ> by adjoint differentiation and by parameter shift.
+/// Times one gradient of `GlobalMeanZ` by adjoint differentiation and by parameter shift.
 fn benchmark_gradients(full_qubits: usize, full_depth: usize) -> GradientBenchmark {
     let best_of = |runs: usize, f: &mut dyn FnMut() -> Vec<f64>| -> (Vec<f64>, f64) {
         let mut best = (Vec::new(), f64::INFINITY);

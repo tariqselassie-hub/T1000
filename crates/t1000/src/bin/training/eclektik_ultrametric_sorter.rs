@@ -21,7 +21,8 @@ use eclektik_ultrametric_sorter::taxonomy::{
     N_LANGUAGES,
 };
 use eclektik_ultrametric_sorter::telemetry::{
-    save_eclektik_report, EclektikUltrametricReport, FamilyMetrics, GeometryMetrics, LanguageMetrics,
+    save_eclektik_report, EclektikUltrametricReport, FamilyMetrics, GeometryMetrics,
+    LanguageMetrics,
 };
 use rand::seq::SliceRandom;
 use rand::SeedableRng;
@@ -64,9 +65,21 @@ fn compute_geometry_metrics(
     let gamma2 = 1.0;
 
     // Pick samples: en (y=0, s=0), de (y=0, s=1), es (y=1, s=0)
-    let s_en = train_encoded.iter().find(|(_, m)| m.code == "en").map(|(v, _)| v).unwrap();
-    let s_de = train_encoded.iter().find(|(_, m)| m.code == "de").map(|(v, _)| v).unwrap();
-    let s_es = train_encoded.iter().find(|(_, m)| m.code == "es").map(|(v, _)| v).unwrap();
+    let s_en = train_encoded
+        .iter()
+        .find(|(_, m)| m.code == "en")
+        .map(|(v, _)| v)
+        .unwrap();
+    let s_de = train_encoded
+        .iter()
+        .find(|(_, m)| m.code == "de")
+        .map(|(v, _)| v)
+        .unwrap();
+    let s_es = train_encoded
+        .iter()
+        .find(|(_, m)| m.code == "es")
+        .map(|(v, _)| v)
+        .unwrap();
 
     let p_en = compute_ultrametric_branch_distribution(&sorter.forward(s_en), &sorter.cfg);
     let p_de = compute_ultrametric_branch_distribution(&sorter.forward(s_de), &sorter.cfg);
@@ -118,12 +131,10 @@ fn train_eclektik_sorter(
             for &idx in b_indices {
                 let (angles, meta) = &train_encoded[idx];
                 for f_off in 0..n_fine {
-                    let g_ry = sorter.parameter_shift_branch_grad(
-                        angles, f_off, false, meta.y, meta.s,
-                    );
-                    let g_rz = sorter.parameter_shift_branch_grad(
-                        angles, f_off, true, meta.y, meta.s,
-                    );
+                    let g_ry =
+                        sorter.parameter_shift_branch_grad(angles, f_off, false, meta.y, meta.s);
+                    let g_rz =
+                        sorter.parameter_shift_branch_grad(angles, f_off, true, meta.y, meta.s);
                     grad_branch[meta.y][f_off * 2] -= g_ry[meta.y];
                     grad_branch[meta.y][f_off * 2 + 1] -= g_rz[meta.y];
                 }
@@ -236,7 +247,14 @@ fn evaluate_test_set(
         });
     }
 
-    (coarse_acc, fine_acc, joint_acc, per_sample_us, fam_metrics, lang_metrics)
+    (
+        coarse_acc,
+        fine_acc,
+        joint_acc,
+        per_sample_us,
+        fam_metrics,
+        lang_metrics,
+    )
 }
 
 fn main() {
@@ -246,9 +264,15 @@ fn main() {
     println!("└────────────────────────────────────────────────────────────────────────┘");
 
     let data_path = locate_eclektik_file();
-    println!("\n [DATASET] Ingesting Parallel Corpus: {}", data_path.display());
+    println!(
+        "\n [DATASET] Ingesting Parallel Corpus: {}",
+        data_path.display()
+    );
     let samples = load_eclektik_samples(&data_path, None);
-    println!("   Total Multilingual Instances Ingested: {}", samples.len());
+    println!(
+        "   Total Multilingual Instances Ingested: {}",
+        samples.len()
+    );
 
     let (train_raw, test_raw) = split_train_test(samples, 0.80, 0x5EED_2026);
     println!("   Train Partition: {} samples (80.0%)", train_raw.len());
@@ -264,30 +288,68 @@ fn main() {
         .par_iter()
         .map(|s| (extract_multilingual_angles(&s.text), s.meta))
         .collect();
-    println!("   Encoded {} Feature Sets in {:.2}s", train_encoded.len() + test_encoded.len(), t_enc.elapsed().as_secs_f64());
+    println!(
+        "   Encoded {} Feature Sets in {:.2}s",
+        train_encoded.len() + test_encoded.len(),
+        t_enc.elapsed().as_secs_f64()
+    );
 
     let cfg = UltrametricTreeConfig::new(2, 2, 6);
     let mut sorter = UltrametricTreeSorter::new(cfg, 1);
     sorter.init_seeded(0xEC1E_0042);
 
     println!("\n [TOPOLOGY] 10-Qubit Factorized Register Configuration:");
-    println!("   Coarse Register H_C : {} Qubits (dim = 4: Germanic, Romance, EastAsian, AfroIndic)", cfg.n_coarse);
-    println!("   Fine Register H_F   : {} Qubits (dim = 4: Leaf Languages per Macro-Family)", cfg.n_fine);
-    println!("   Entropy Sink H_E    : {} Qubits (dim = 64: Thermal Language Noise Dump)", cfg.n_env);
-    println!("   Total Hilbert Space : {} Qubits (1,024 Complex Amplitudes)", cfg.total_qubits());
-    println!("   Trainable Parameters: {} (Zero Classical Readout Head)", sorter.total_parameters());
+    println!(
+        "   Coarse Register H_C : {} Qubits (dim = 4: Germanic, Romance, EastAsian, AfroIndic)",
+        cfg.n_coarse
+    );
+    println!(
+        "   Fine Register H_F   : {} Qubits (dim = 4: Leaf Languages per Macro-Family)",
+        cfg.n_fine
+    );
+    println!(
+        "   Entropy Sink H_E    : {} Qubits (dim = 64: Thermal Language Noise Dump)",
+        cfg.n_env
+    );
+    println!(
+        "   Total Hilbert Space : {} Qubits (1,024 Complex Amplitudes)",
+        cfg.total_qubits()
+    );
+    println!(
+        "   Trainable Parameters: {} (Zero Classical Readout Head)",
+        sorter.total_parameters()
+    );
 
     println!("\n [GEOMETRY] Pre-Training Ultrametric Triangle Invariant Verification:");
     let geom_pre = compute_geometry_metrics(&sorter, &train_encoded);
-    println!("   Identical Leaf Overlap (en vs en): {:.4}", geom_pre.identical_leaf_overlap);
-    println!("   Sibling Family Overlap (en vs de): {:.4}", geom_pre.sibling_family_overlap);
-    println!("   Disjoint Family Overlap(en vs es): {:.4}", geom_pre.disjoint_family_overlap);
-    println!("   Strong Triangle Inequality       : {}", if geom_pre.strong_triangle_inequality_holds { "PASS (Preserved)" } else { "FAIL" });
+    println!(
+        "   Identical Leaf Overlap (en vs en): {:.4}",
+        geom_pre.identical_leaf_overlap
+    );
+    println!(
+        "   Sibling Family Overlap (en vs de): {:.4}",
+        geom_pre.sibling_family_overlap
+    );
+    println!(
+        "   Disjoint Family Overlap(en vs es): {:.4}",
+        geom_pre.disjoint_family_overlap
+    );
+    println!(
+        "   Strong Triangle Inequality       : {}",
+        if geom_pre.strong_triangle_inequality_holds {
+            "PASS (Preserved)"
+        } else {
+            "FAIL"
+        }
+    );
 
     println!("\n [TRAINING] Optimizing Quantum Multiplexor Branches via Parameter-Shift...");
     let train_sec = train_eclektik_sorter(&mut sorter, &train_encoded, 4, 128, 0.05);
 
-    println!("\n [EVALUATION] Benchmarking Full Test Partition ({} instances)...", test_encoded.len());
+    println!(
+        "\n [EVALUATION] Benchmarking Full Test Partition ({} instances)...",
+        test_encoded.len()
+    );
     let (coarse_acc, fine_acc, joint_acc, latency_us, fam_metrics, lang_metrics) =
         evaluate_test_set(&sorter, &test_encoded);
 
@@ -297,7 +359,10 @@ fn main() {
     println!("│ Language Family         │ Total    │ Correct  │ Accuracy  │");
     println!("├─────────────────────────┼──────────┼──────────┼───────────┤");
     for fam in &fam_metrics {
-        println!("│ {:<23} │ {:<8} │ {:<8} │ {:>8.2}% │", fam.family, fam.total, fam.correct, fam.accuracy_pct);
+        println!(
+            "│ {:<23} │ {:<8} │ {:<8} │ {:>8.2}% │",
+            fam.family, fam.total, fam.correct, fam.accuracy_pct
+        );
     }
     println!("└─────────────────────────┴──────────┴──────────┴───────────┘");
 
@@ -305,7 +370,10 @@ fn main() {
     println!("│ ISO │ Language     │ Family      │ Total    │ Correct  │ Accuracy  │");
     println!("├─────┼──────────────┼─────────────┼──────────┼──────────┼───────────┤");
     for l in &lang_metrics {
-        println!("│ {:<3} │ {:<12} │ {:<11} │ {:<8} │ {:<8} │ {:>8.2}% │", l.code, l.name, l.family, l.total, l.correct, l.accuracy_pct);
+        println!(
+            "│ {:<3} │ {:<12} │ {:<11} │ {:<8} │ {:<8} │ {:>8.2}% │",
+            l.code, l.name, l.family, l.total, l.correct, l.accuracy_pct
+        );
     }
     println!("└─────┴──────────────┴─────────────┴──────────┴──────────┴───────────┘");
 
@@ -314,7 +382,14 @@ fn main() {
     println!("   Fine Sub-Language Accuracy   : {:>6.2}%", fine_acc);
     println!("   Joint 12-Way Leaf Accuracy   : {:>6.2}%", joint_acc);
     println!("   Inference Latency per Sample : {:>6.2} us", latency_us);
-    println!("   Post-Train Triangle Equality : {}", if geom_post.strong_triangle_inequality_holds { "CONSERVED" } else { "VIOLATED" });
+    println!(
+        "   Post-Train Triangle Equality : {}",
+        if geom_post.strong_triangle_inequality_holds {
+            "CONSERVED"
+        } else {
+            "VIOLATED"
+        }
+    );
 
     let report = EclektikUltrametricReport {
         timestamp_rfc3339: "2026-10-25T14:30:00Z".to_string(),

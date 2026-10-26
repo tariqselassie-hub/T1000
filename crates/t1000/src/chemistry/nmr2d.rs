@@ -79,7 +79,11 @@ pub fn predict_proton_environments(parsed: &ParsedSmiles) -> Vec<ProtonEnvironme
             2.50
         } else if atom.element == "N" {
             // Amine/Amide proton (-NH-)
-            if has_c_double_o { 6.80 } else { 2.10 }
+            if has_c_double_o {
+                6.80
+            } else {
+                2.10
+            }
         } else if atom.aromatic {
             // Aromatic ring protons (Benzene / Pyridine / Thiophene)
             if atom.element == "N" {
@@ -153,9 +157,8 @@ pub fn render_cosy_matrix(parsed: &ParsedSmiles) -> [f64; NMR_STATE_DIM] {
     let two_sigma_sq = 2.0 * sigma_bin * sigma_bin;
 
     // Helper to map ppm to continuous grid bin [0..31]
-    let ppm_to_bin = |ppm: f64| -> f64 {
-        ((ppm - PPM_MIN) / bin_width).clamp(0.0, (NMR_GRID_DIM - 1) as f64)
-    };
+    let ppm_to_bin =
+        |ppm: f64| -> f64 { ((ppm - PPM_MIN) / bin_width).clamp(0.0, (NMR_GRID_DIM - 1) as f64) };
 
     // 1. Diagonal Peaks: S(w1, w2) where w1 == w2
     for env in &envs {
@@ -189,9 +192,11 @@ pub fn render_cosy_matrix(parsed: &ParsedSmiles) -> [f64; NMR_STATE_DIM] {
             // Symmetric cross-peaks at (b_a, b_b) and (b_b, b_a)
             for &(center_r, center_c) in &[(b_a, b_b), (b_b, b_a)] {
                 let r_min = ((center_r - 2.5).floor() as isize).max(0) as usize;
-                let r_max = ((center_r + 2.5).ceil() as isize).min(NMR_GRID_DIM as isize - 1) as usize;
+                let r_max =
+                    ((center_r + 2.5).ceil() as isize).min(NMR_GRID_DIM as isize - 1) as usize;
                 let c_min = ((center_c - 2.5).floor() as isize).max(0) as usize;
-                let c_max = ((center_c + 2.5).ceil() as isize).min(NMR_GRID_DIM as isize - 1) as usize;
+                let c_max =
+                    ((center_c + 2.5).ceil() as isize).min(NMR_GRID_DIM as isize - 1) as usize;
 
                 for r in r_min..=r_max {
                     let dr = r as f64 - center_r;
@@ -269,7 +274,11 @@ pub fn extract_nmr_features(matrix: &[f64; NMR_STATE_DIM]) -> [f64; N_NMR_SPATIA
                 }
             }
         }
-        feats[32 + i] = if diag_sum > 1e-6 { off_sum / diag_sum } else { 0.0 };
+        feats[32 + i] = if diag_sum > 1e-6 {
+            off_sum / diag_sum
+        } else {
+            0.0
+        };
     }
 
     // 4. Amplitudes 48..65 (17 values): Total Spectral Moments & Cross-Coupling Entropy
@@ -287,7 +296,11 @@ pub fn extract_nmr_features(matrix: &[f64; NMR_STATE_DIM]) -> [f64; N_NMR_SPATIA
     }
     feats[48] = total_cross_mass;
     feats[49] = total_diag_mass;
-    feats[50] = if total_diag_mass > 1e-6 { total_cross_mass / total_diag_mass } else { 0.0 };
+    feats[50] = if total_diag_mass > 1e-6 {
+        total_cross_mass / total_diag_mass
+    } else {
+        0.0
+    };
 
     for k in 0..14 {
         feats[51 + k] = matrix[k * 2 * NMR_GRID_DIM + (31 - k * 2)];
@@ -303,13 +316,13 @@ pub const N_NMR_OBSERVABLES: usize = 80;
 /// Treats H_1024 as bipartite tensor product H_w1 (x) H_w2 (32x32 = 1,024).
 ///
 /// Layout:
-///   [0..10]  : 10 Single-qubit Z_i (marginal chemical shift projections along w1 and w2)
-///   [10..20] : 10 Single-qubit X_i (local transverse phase across adjacent dyadic bins)
-///   [20..65] : 45 All-pairs Z_i Z_j (0 <= i < j < 10) (intensity correlations)
-///   [65..70] :  5 Dyadic Mirror X_{s+5} X_s (s = 0..5) (real symmetric cross-peak bit-flip exchange)
-///   [70..75] :  5 Dyadic Mirror Y_{s+5} Y_s (s = 0..5) (phase-inverted cross-peak interference)
-///   [75..79] :  4 Adjacent-Scale Cross X_{s+6} X_s (s = 0..4) (cross-scale J-couplings)
-///   [79]     :  1 Global 10-qubit parity Z^{\otimes 10} (global parity anchor)
+///   `[0..10]`  : 10 Single-qubit Z_i (marginal chemical shift projections along w1 and w2)
+///   `[10..20]` : 10 Single-qubit X_i (local transverse phase across adjacent dyadic bins)
+///   `[20..65]` : 45 All-pairs Z_i Z_j (0 <= i < j < 10) (intensity correlations)
+///   `[65..70]` :  5 Dyadic Mirror X_{s+5} X_s (s = 0..5) (real symmetric cross-peak bit-flip exchange)
+///   `[70..75]` :  5 Dyadic Mirror Y_{s+5} Y_s (s = 0..5) (phase-inverted cross-peak interference)
+///   `[75..79]` :  4 Adjacent-Scale Cross X_{s+6} X_s (s = 0..4) (cross-scale J-couplings)
+///   `[79]`     :  1 Global 10-qubit parity Z^{\otimes 10} (global parity anchor)
 #[inline]
 pub fn measure_nmr2d_pauli_80(
     re: &[f64; NMR_STATE_DIM],
@@ -444,7 +457,10 @@ mod tests {
         let matrix = generate_cosy_spectrum("c1ccccc1").expect("Valid SMILES");
         let bin_7_4 = ((7.4 - PPM_MIN) / ((PPM_MAX - PPM_MIN) / 32.0)) as usize;
         let peak_val = matrix[bin_7_4 * NMR_GRID_DIM + bin_7_4];
-        assert!(peak_val > 0.05, "Aromatic peak should be prominent on diagonal");
+        assert!(
+            peak_val > 0.05,
+            "Aromatic peak should be prominent on diagonal"
+        );
     }
 
     #[test]
@@ -456,7 +472,12 @@ mod tests {
         for (i, im) in state.imag.iter_mut().enumerate() {
             *im = 0.05 * (i as f64).sin();
         }
-        let norm_sq: f64 = state.real.iter().zip(&state.imag).map(|(&r, &im)| r * r + im * im).sum();
+        let norm_sq: f64 = state
+            .real
+            .iter()
+            .zip(&state.imag)
+            .map(|(&r, &im)| r * r + im * im)
+            .sum();
         let inv_n = 1.0 / norm_sq.sqrt();
         for (r, im) in state.real.iter_mut().zip(&mut state.imag) {
             *r *= inv_n;

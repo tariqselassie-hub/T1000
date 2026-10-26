@@ -30,7 +30,10 @@ struct Row {
 
 fn main() {
     println!("=========================================================================");
-    println!(" MEASUREMENT GROUPING: SHOTS FOR CHEMICAL ACCURACY ({:.2} mHa)", CHEMICAL_ACCURACY * 1e3);
+    println!(
+        " MEASUREMENT GROUPING: SHOTS FOR CHEMICAL ACCURACY ({:.2} mHa)",
+        CHEMICAL_ACCURACY * 1e3
+    );
     println!("=========================================================================");
     println!(
         " {:<5} {:>3} {:>7} {:>7} {:>15} {:>15} {:>10} {:>12}",
@@ -56,11 +59,20 @@ fn main() {
             reduction_factor: 0.0,
             energy_check_error: (energy - stats.ideal_energy()).abs(),
         };
-        let row = Row { reduction_factor: row.shots_term_by_term / row.shots_grouped, ..row };
+        let row = Row {
+            reduction_factor: row.shots_term_by_term / row.shots_grouped,
+            ..row
+        };
         println!(
             " {:<5} {:>3} {:>7} {:>7} {:>15.3e} {:>15.3e} {:>9.1}x {:>12.1e}",
-            row.formula, row.qubits, row.pauli_terms, row.groups, row.shots_term_by_term,
-            row.shots_grouped, row.reduction_factor, row.energy_check_error
+            row.formula,
+            row.qubits,
+            row.pauli_terms,
+            row.groups,
+            row.shots_term_by_term,
+            row.shots_grouped,
+            row.reduction_factor,
+            row.energy_check_error
         );
         rows.push(row);
     }
@@ -68,6 +80,10 @@ fn main() {
     let dir = Path::new("results/data");
     let _ = fs::create_dir_all(dir);
     let path = dir.join("vqe_grouping_report.json");
-    t1000::results::write(&path, serde_json::to_string_pretty(&rows).expect("serialise")).expect("write report");
+    t1000::results::write(
+        &path,
+        serde_json::to_string_pretty(&rows).expect("serialise"),
+    )
+    .expect("write report");
     println!(" [OK] report: {}", path.display());
 }

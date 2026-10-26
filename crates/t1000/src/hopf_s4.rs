@@ -211,7 +211,8 @@ pub fn compute_qubit_pair_hopf_s4(
     // 2-qubit concurrence proxy
     let p_offdiag = (rho_re[0][3] * rho_re[0][3] + rho_im[0][3] * rho_im[0][3]).sqrt();
     let p_inner = (rho_re[1][2] * rho_re[1][2] + rho_im[1][2] * rho_im[1][2]).sqrt();
-    let concurrence = (2.0 * (p_offdiag - (p01 * p10).sqrt()).max(p_inner - (p00 * p11).sqrt())).clamp(0.0, 1.0);
+    let concurrence =
+        (2.0 * (p_offdiag - (p01 * p10).sqrt()).max(p_inner - (p00 * p11).sqrt())).clamp(0.0, 1.0);
 
     let bell_chsh = 2.0 * (1.0 + concurrence * concurrence).sqrt();
     let purity = rho_re.iter().flatten().map(|v| v * v).sum::<f64>()
@@ -237,9 +238,9 @@ pub fn compute_qubit_pair_hopf_s4(
 /// - Piecewise crossover at $\beta \Delta = 2$ ($2 T = \Delta$).
 #[inline(always)]
 pub fn planckian_damping_step(
-    temp_kbt: f64,      // Thermal energy scale (k_B * T) in natural units (\hbar = 1)
-    spectral_gap: f64,  // Lowest excitation gap \Delta
-    dt: f64,            // Discrete evolution step \delta t
+    temp_kbt: f64,     // Thermal energy scale (k_B * T) in natural units (\hbar = 1)
+    spectral_gap: f64, // Lowest excitation gap \Delta
+    dt: f64,           // Discrete evolution step \delta t
 ) -> (f64, f64) {
     let rate_planckian = (2.0 * temp_kbt).max(0.0);
     let rate_gapped = spectral_gap.max(0.0);
@@ -295,7 +296,8 @@ pub fn verify_planckian_bures_bound(
     if dt <= 0.0 {
         return theta_step.abs() < 1e-12;
     }
-    let max_angular_velocity = (std::f64::consts::PI * temp_kbt.max(0.0)).min(spectral_gap.max(0.0));
+    let max_angular_velocity =
+        (std::f64::consts::PI * temp_kbt.max(0.0)).min(spectral_gap.max(0.0));
     let allowable_theta = max_angular_velocity * dt;
     theta_step.abs() <= allowable_theta + 1e-12
 }

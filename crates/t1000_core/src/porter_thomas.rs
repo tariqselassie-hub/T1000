@@ -43,7 +43,7 @@ pub struct PorterThomasReport {
     pub shannon_entropy: f64,
     /// Empirical entropy deficit: ln(D) - S
     pub entropy_deficit: f64,
-    /// Theoretically expected entropy deficit for finite D: ln(D) - E[S_Haar]
+    /// Theoretically expected entropy deficit for finite D: `ln(D) - E[S_Haar]`
     pub expected_entropy_deficit: f64,
     /// Empirical Effective Participation Ratio (1 / sum(p^2))
     pub effective_participation_ratio: f64,
@@ -108,11 +108,11 @@ pub fn shannon_entropy(probs: &[f64]) -> f64 {
 }
 
 /// Returns the exact expected Haar-random measurement basis entropy for dimension D:
-/// E[S_Haar] = H_D - 1 = sum_{k=1}^D (1/k) - 1
+/// `E[S_Haar] = H_D - 1 = sum_{k=1}^D (1/k) - 1`
 ///
 /// In the large-D limit:
-/// E[S_Haar] -> ln(D) + gamma - 1
-/// E[Delta S] = ln(D) - E[S_Haar] -> 1 - gamma ≈ 0.422784 nats
+/// `E[S_Haar] -> ln(D) + gamma - 1`
+/// `E[Delta S] = ln(D) - E[S_Haar] -> 1 - gamma ≈ 0.422784 nats`
 pub fn expected_haar_entropy(dim: usize) -> f64 {
     if dim <= 1 {
         return 0.0;

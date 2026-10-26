@@ -34,34 +34,108 @@ pub struct PhotonicMode {
 /// The 16 physical optical spatial/temporal modes corresponding to the non-zero arcs of $P$.
 pub const PHOTONIC_MODES: [PhotonicMode; 16] = [
     // Hub v1 outgoing arcs (4 modes: 1/4 prob each)
-    PhotonicMode { mode_idx: 0, source_node: 0, target_node: 1, transition_prob: "1/4" },
-    PhotonicMode { mode_idx: 1, source_node: 0, target_node: 2, transition_prob: "1/4" },
-    PhotonicMode { mode_idx: 2, source_node: 0, target_node: 5, transition_prob: "1/4" },
-    PhotonicMode { mode_idx: 3, source_node: 0, target_node: 6, transition_prob: "1/4" },
-
+    PhotonicMode {
+        mode_idx: 0,
+        source_node: 0,
+        target_node: 1,
+        transition_prob: "1/4",
+    },
+    PhotonicMode {
+        mode_idx: 1,
+        source_node: 0,
+        target_node: 2,
+        transition_prob: "1/4",
+    },
+    PhotonicMode {
+        mode_idx: 2,
+        source_node: 0,
+        target_node: 5,
+        transition_prob: "1/4",
+    },
+    PhotonicMode {
+        mode_idx: 3,
+        source_node: 0,
+        target_node: 6,
+        transition_prob: "1/4",
+    },
     // Node v2 outgoing arcs (2 modes: 1/2 prob each)
-    PhotonicMode { mode_idx: 4, source_node: 1, target_node: 3, transition_prob: "1/2" },
-    PhotonicMode { mode_idx: 5, source_node: 1, target_node: 6, transition_prob: "1/2" },
-
+    PhotonicMode {
+        mode_idx: 4,
+        source_node: 1,
+        target_node: 3,
+        transition_prob: "1/2",
+    },
+    PhotonicMode {
+        mode_idx: 5,
+        source_node: 1,
+        target_node: 6,
+        transition_prob: "1/2",
+    },
     // Node v3 outgoing arcs (2 modes: 1/2 prob each)
-    PhotonicMode { mode_idx: 6, source_node: 2, target_node: 0, transition_prob: "1/2" },
-    PhotonicMode { mode_idx: 7, source_node: 2, target_node: 5, transition_prob: "1/2" },
-
+    PhotonicMode {
+        mode_idx: 6,
+        source_node: 2,
+        target_node: 0,
+        transition_prob: "1/2",
+    },
+    PhotonicMode {
+        mode_idx: 7,
+        source_node: 2,
+        target_node: 5,
+        transition_prob: "1/2",
+    },
     // Node v4 outgoing arcs (2 modes: 1/2 prob each)
-    PhotonicMode { mode_idx: 8, source_node: 3, target_node: 1, transition_prob: "1/2" },
-    PhotonicMode { mode_idx: 9, source_node: 3, target_node: 4, transition_prob: "1/2" },
-
+    PhotonicMode {
+        mode_idx: 8,
+        source_node: 3,
+        target_node: 1,
+        transition_prob: "1/2",
+    },
+    PhotonicMode {
+        mode_idx: 9,
+        source_node: 3,
+        target_node: 4,
+        transition_prob: "1/2",
+    },
     // Node v5 outgoing arcs (2 modes: 1/2 prob each)
-    PhotonicMode { mode_idx: 10, source_node: 4, target_node: 3, transition_prob: "1/2" },
-    PhotonicMode { mode_idx: 11, source_node: 4, target_node: 6, transition_prob: "1/2" },
-
+    PhotonicMode {
+        mode_idx: 10,
+        source_node: 4,
+        target_node: 3,
+        transition_prob: "1/2",
+    },
+    PhotonicMode {
+        mode_idx: 11,
+        source_node: 4,
+        target_node: 6,
+        transition_prob: "1/2",
+    },
     // Node v6 outgoing arcs (2 modes: 1/2 prob each)
-    PhotonicMode { mode_idx: 12, source_node: 5, target_node: 0, transition_prob: "1/2" },
-    PhotonicMode { mode_idx: 13, source_node: 5, target_node: 2, transition_prob: "1/2" },
-
+    PhotonicMode {
+        mode_idx: 12,
+        source_node: 5,
+        target_node: 0,
+        transition_prob: "1/2",
+    },
+    PhotonicMode {
+        mode_idx: 13,
+        source_node: 5,
+        target_node: 2,
+        transition_prob: "1/2",
+    },
     // Node v7 outgoing arcs (2 modes: 1/2 prob each)
-    PhotonicMode { mode_idx: 14, source_node: 6, target_node: 0, transition_prob: "1/2" },
-    PhotonicMode { mode_idx: 15, source_node: 6, target_node: 4, transition_prob: "1/2" },
+    PhotonicMode {
+        mode_idx: 14,
+        source_node: 6,
+        target_node: 0,
+        transition_prob: "1/2",
+    },
+    PhotonicMode {
+        mode_idx: 15,
+        source_node: 6,
+        target_node: 4,
+        transition_prob: "1/2",
+    },
 ];
 
 /// Physical 50:50 directional coupler (beamsplitter) in the integrated mesh.
@@ -104,10 +178,10 @@ impl PhotonicInterferometer {
 
         // 4-port Hub mixer (4 beamsplitters)
         let h4_base = [
-            [0.5,  0.5,  0.5,  0.5],
-            [0.5, -0.5,  0.5, -0.5],
-            [0.5,  0.5, -0.5, -0.5],
-            [0.5, -0.5, -0.5,  0.5],
+            [0.5, 0.5, 0.5, 0.5],
+            [0.5, -0.5, 0.5, -0.5],
+            [0.5, 0.5, -0.5, -0.5],
+            [0.5, -0.5, -0.5, 0.5],
         ];
         for r in 0..4 {
             for c in 0..4 {
@@ -136,8 +210,8 @@ impl PhotonicInterferometer {
             14, // Mode 14 (v7 -> v1) routes to Hub port 2
             3,  // Internal reflection mode 3 routes to Hub port 3
             // Target Node 1 inputs (v2 mixer: modes 4, 5):
-            0,  // Mode 0 (v1 -> v2) routes to v2 port 0
-            8,  // Mode 8 (v4 -> v2) routes to v2 port 1
+            0, // Mode 0 (v1 -> v2) routes to v2 port 0
+            8, // Mode 8 (v4 -> v2) routes to v2 port 1
             // Target Node 2 inputs (v3 mixer: modes 6, 7):
             1,  // Mode 1 (v1 -> v3) routes to v3 port 0
             13, // Mode 13 (v6 -> v3) routes to v3 port 1
@@ -148,8 +222,8 @@ impl PhotonicInterferometer {
             9,  // Mode 9 (v4 -> v5) routes to v5 port 0
             15, // Mode 15 (v7 -> v5) routes to v5 port 1
             // Target Node 5 inputs (v6 mixer: modes 12, 13):
-            2,  // Mode 2 (v1 -> v6) routes to v6 port 0
-            7,  // Mode 7 (v3 -> v6) routes to v6 port 1
+            2, // Mode 2 (v1 -> v6) routes to v6 port 0
+            7, // Mode 7 (v3 -> v6) routes to v6 port 1
             // Target Node 6 inputs (v7 mixer: modes 14, 15):
             5,  // Mode 5 (v2 -> v7) routes to v7 port 0
             11, // Mode 11 (v5 -> v7) routes to v7 port 1
@@ -175,17 +249,77 @@ impl PhotonicInterferometer {
         // List 10 physical directional couplers
         let couplers = vec![
             // Hub 4-port mixer (stage 1: 2 couplers; stage 2: 2 couplers)
-            Beamsplitter2x2 { coupler_id: 0, input_port_a: 0, input_port_b: 1, output_port_a: 0, output_port_b: 1 },
-            Beamsplitter2x2 { coupler_id: 1, input_port_a: 2, input_port_b: 3, output_port_a: 2, output_port_b: 3 },
-            Beamsplitter2x2 { coupler_id: 2, input_port_a: 0, input_port_b: 2, output_port_a: 0, output_port_b: 2 },
-            Beamsplitter2x2 { coupler_id: 3, input_port_a: 1, input_port_b: 3, output_port_a: 1, output_port_b: 3 },
+            Beamsplitter2x2 {
+                coupler_id: 0,
+                input_port_a: 0,
+                input_port_b: 1,
+                output_port_a: 0,
+                output_port_b: 1,
+            },
+            Beamsplitter2x2 {
+                coupler_id: 1,
+                input_port_a: 2,
+                input_port_b: 3,
+                output_port_a: 2,
+                output_port_b: 3,
+            },
+            Beamsplitter2x2 {
+                coupler_id: 2,
+                input_port_a: 0,
+                input_port_b: 2,
+                output_port_a: 0,
+                output_port_b: 2,
+            },
+            Beamsplitter2x2 {
+                coupler_id: 3,
+                input_port_a: 1,
+                input_port_b: 3,
+                output_port_a: 1,
+                output_port_b: 3,
+            },
             // Node v2..v7 2-port mixers (6 couplers)
-            Beamsplitter2x2 { coupler_id: 4, input_port_a: 4, input_port_b: 5, output_port_a: 4, output_port_b: 5 },
-            Beamsplitter2x2 { coupler_id: 5, input_port_a: 6, input_port_b: 7, output_port_a: 6, output_port_b: 7 },
-            Beamsplitter2x2 { coupler_id: 6, input_port_a: 8, input_port_b: 9, output_port_a: 8, output_port_b: 9 },
-            Beamsplitter2x2 { coupler_id: 7, input_port_a: 10, input_port_b: 11, output_port_a: 10, output_port_b: 11 },
-            Beamsplitter2x2 { coupler_id: 8, input_port_a: 12, input_port_b: 13, output_port_a: 12, output_port_b: 13 },
-            Beamsplitter2x2 { coupler_id: 9, input_port_a: 14, input_port_b: 15, output_port_a: 14, output_port_b: 15 },
+            Beamsplitter2x2 {
+                coupler_id: 4,
+                input_port_a: 4,
+                input_port_b: 5,
+                output_port_a: 4,
+                output_port_b: 5,
+            },
+            Beamsplitter2x2 {
+                coupler_id: 5,
+                input_port_a: 6,
+                input_port_b: 7,
+                output_port_a: 6,
+                output_port_b: 7,
+            },
+            Beamsplitter2x2 {
+                coupler_id: 6,
+                input_port_a: 8,
+                input_port_b: 9,
+                output_port_a: 8,
+                output_port_b: 9,
+            },
+            Beamsplitter2x2 {
+                coupler_id: 7,
+                input_port_a: 10,
+                input_port_b: 11,
+                output_port_a: 10,
+                output_port_b: 11,
+            },
+            Beamsplitter2x2 {
+                coupler_id: 8,
+                input_port_a: 12,
+                input_port_b: 13,
+                output_port_a: 12,
+                output_port_b: 13,
+            },
+            Beamsplitter2x2 {
+                coupler_id: 9,
+                input_port_a: 14,
+                input_port_b: 15,
+                output_port_a: 14,
+                output_port_b: 15,
+            },
         ];
 
         Self {
@@ -331,7 +465,7 @@ impl MolecularPockelsModulator {
             pockels_r33_pm_v: 30.8,
             ref_index: 2.14,
             confinement_gamma: 1.0,
-            electrode_gap_um: 4.0,       // 4.0 um standard electrode separation
+            electrode_gap_um: 4.0, // 4.0 um standard electrode separation
             waveguide_length_um: 10000.0, // 10 mm (1 cm) standard device length
             wavelength_nm: 1550.0,
         }
@@ -436,7 +570,10 @@ mod tests {
         let v_pi_linbo3 = linbo3_mod.v_pi();
 
         // Lead #1 must achieve sub-0.5V CMOS-level half-wave voltage (~0.132 V)
-        assert!(v_pi_mol < 0.5, "Molecular V_pi must be sub-0.5V: {v_pi_mol} V");
+        assert!(
+            v_pi_mol < 0.5,
+            "Molecular V_pi must be sub-0.5V: {v_pi_mol} V"
+        );
         assert!(
             v_pi_linbo3 > 1.5,
             "Lithium Niobate V_pi should be > 1.5V: {v_pi_linbo3} V"
@@ -506,7 +643,10 @@ mod tests {
         }
         let probs = walk.node_probabilities();
         let total_p: f64 = probs.iter().sum();
-        assert!((total_p - 1.0).abs() < 1e-12, "Quantum walk probability must sum to 1.0");
+        assert!(
+            (total_p - 1.0).abs() < 1e-12,
+            "Quantum walk probability must sum to 1.0"
+        );
         assert!(probs[6] > 0.0, "Sink node must receive quantum wavepacket");
     }
 }

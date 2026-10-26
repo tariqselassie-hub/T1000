@@ -59,7 +59,10 @@ fn main() {
         let s = solve_detailed(&molecule, &cfg).expect("solve");
         let n = s.report.n_qubits;
         if n > MAX_QUBITS {
-            skipped.push(Skipped { formula: s.report.formula.clone(), qubits: n });
+            skipped.push(Skipped {
+                formula: s.report.formula.clone(),
+                qubits: n,
+            });
             continue;
         }
         let hf = s.sector.dets[s.sector.hartree_fock()];
@@ -123,14 +126,20 @@ fn main() {
         );
     }
     for k in &skipped {
-        println!(" {:<5} {:>3}  exceeds the engine's {} qubits: not run", k.formula, k.qubits, MAX_QUBITS);
+        println!(
+            " {:<5} {:>3}  exceeds the engine's {} qubits: not run",
+            k.formula, k.qubits, MAX_QUBITS
+        );
     }
 
     let dir = Path::new("results/data");
     let _ = fs::create_dir_all(dir);
     let path = dir.join("qpu_precision_report.json");
     let json = serde_json::json!({ "rows": rows, "skipped": skipped });
-    t1000::results::write(&path, serde_json::to_string_pretty(&json).expect("serialise"))
-        .expect("write report");
+    t1000::results::write(
+        &path,
+        serde_json::to_string_pretty(&json).expect("serialise"),
+    )
+    .expect("write report");
     println!("\n [OK] report: {}", path.display());
 }

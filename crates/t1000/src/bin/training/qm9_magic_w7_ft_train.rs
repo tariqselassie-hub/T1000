@@ -61,8 +61,12 @@ pub struct MagicW7TrainingReport {
 #[derive(Debug)]
 struct FastRng(u64);
 impl FastRng {
-    #[inline(always)] fn new(seed: u64) -> Self { Self(seed) }
-    #[inline(always)] fn next_f64(&mut self) -> f64 {
+    #[inline(always)]
+    fn new(seed: u64) -> Self {
+        Self(seed)
+    }
+    #[inline(always)]
+    fn next_f64(&mut self) -> f64 {
         self.0 = self.0.wrapping_mul(6364136223846793005).wrapping_add(1);
         ((self.0 >> 11) as f64) * (1.0 / (1u64 << 53) as f64)
     }
@@ -78,7 +82,8 @@ fn apply_pauli_x(re: &mut [f64], im: &mut [f64], q: usize) {
     let step = 1 << q;
     for i in (0..re.len()).step_by(step * 2) {
         for j in i..(i + step) {
-            re.swap(j, j + step); im.swap(j, j + step);
+            re.swap(j, j + step);
+            im.swap(j, j + step);
         }
     }
 }
@@ -88,7 +93,8 @@ fn apply_pauli_z(re: &mut [f64], im: &mut [f64], q: usize) {
     let step = 1 << q;
     for i in (0..re.len()).step_by(step * 2) {
         for j in (i + step)..(i + step * 2) {
-            re[j] = -re[j]; im[j] = -im[j];
+            re[j] = -re[j];
+            im[j] = -im[j];
         }
     }
 }
@@ -142,7 +148,9 @@ fn initialize_w7_logical_state(re: &mut [f64], im: &mut [f64]) {
 }
 
 fn inject_depolarizing_noise(re: &mut [f64], im: &mut [f64], p_phys: f64, rng: &mut FastRng) {
-    if p_phys <= 1e-12 { return; }
+    if p_phys <= 1e-12 {
+        return;
+    }
     for q in 0..14 {
         let r = rng.next_f64();
         if r < p_phys {
@@ -150,7 +158,10 @@ fn inject_depolarizing_noise(re: &mut [f64], im: &mut [f64], p_phys: f64, rng: &
             match choice {
                 0 => apply_pauli_x(re, im, q),
                 1 => apply_pauli_z(re, im, q),
-                _ => { apply_pauli_x(re, im, q); apply_pauli_z(re, im, q); }
+                _ => {
+                    apply_pauli_x(re, im, q);
+                    apply_pauli_z(re, im, q);
+                }
             }
         }
     }
@@ -175,9 +186,14 @@ fn extract_and_recover_ancillas(re: &mut [f64], im: &mut [f64], corrections: &mu
         if syndrome_int != 0 {
             *corrections += 1;
             let target_qubit = match syndrome_int {
-                0b001 => 3, 0b010 => 5, 0b100 => 6,
-                0b011 => 1, 0b101 => 2, 0b110 => 4,
-                0b111 => 0, _ => 0,
+                0b001 => 3,
+                0b010 => 5,
+                0b100 => 6,
+                0b011 => 1,
+                0b101 => 2,
+                0b110 => 4,
+                0b111 => 0,
+                _ => 0,
             };
             apply_pauli_x(re, im, offset + target_qubit);
         }
@@ -188,21 +204,66 @@ fn load_qm9_dataset(limit: usize) -> Vec<Qm9Record> {
     let json_p = Path::new(FALLBACK_QM9_JSON);
     if json_p.exists() {
         if let Ok(f) = File::open(json_p) {
-            #[derive(Deserialize)] struct Wrap { molecules: Vec<WMol> }
-            #[derive(Deserialize)] struct WMol { id: usize, smiles: String, u0_hartree: f64, gap_hartree: f64, dipole_debye: f64, polarizability_bohr3: f64, atoms: Vec<WAtm> }
-            #[derive(Deserialize)] struct WAtm { element: String, coords: [f64; 3], mulliken_charge: f64 }
+            #[derive(Deserialize)]
+            struct Wrap {
+                molecules: Vec<WMol>,
+            }
+            #[derive(Deserialize)]
+            struct WMol {
+                id: usize,
+                smiles: String,
+                u0_hartree: f64,
+                gap_hartree: f64,
+                dipole_debye: f64,
+                polarizability_bohr3: f64,
+                atoms: Vec<WAtm>,
+            }
+            #[derive(Deserialize)]
+            struct WAtm {
+                element: String,
+                coords: [f64; 3],
+                mulliken_charge: f64,
+            }
             if let Ok(w) = serde_json::from_reader::<_, Wrap>(f) {
-                return w.molecules.into_iter().take(limit).map(|m| {
-                    let atoms: Vec<Qm9Atom> = m.atoms.into_iter().map(|a| Qm9Atom {
-                        symbol: a.element, coords: a.coords, mulliken_charge: a.mulliken_charge,
-                    }).collect();
-                    Qm9Record {
-                        index: m.id, tag: "gdb".to_string(), n_atoms: atoms.len(), rotational_constants: [0.0; 3],
-                        dipole_moment: m.dipole_debye, polarizability: m.polarizability_bohr3, homo: -0.3, lumo: -0.3 + m.gap_hartree,
-                        gap: m.gap_hartree, spatial_extent: 35.0, zpve: 0.05, u0: m.u0_hartree, u: m.u0_hartree, h: m.u0_hartree,
-                        g: m.u0_hartree, cv: 10.0, atoms, frequencies: vec![], smiles_gdb: m.smiles.clone(), smiles_b3lyp: m.smiles, inchi: String::new(),
-                    }
-                }).collect();
+                return w
+                    .molecules
+                    .into_iter()
+                    .take(limit)
+                    .map(|m| {
+                        let atoms: Vec<Qm9Atom> = m
+                            .atoms
+                            .into_iter()
+                            .map(|a| Qm9Atom {
+                                symbol: a.element,
+                                coords: a.coords,
+                                mulliken_charge: a.mulliken_charge,
+                            })
+                            .collect();
+                        Qm9Record {
+                            index: m.id,
+                            tag: "gdb".to_string(),
+                            n_atoms: atoms.len(),
+                            rotational_constants: [0.0; 3],
+                            dipole_moment: m.dipole_debye,
+                            polarizability: m.polarizability_bohr3,
+                            homo: -0.3,
+                            lumo: -0.3 + m.gap_hartree,
+                            gap: m.gap_hartree,
+                            spatial_extent: 35.0,
+                            zpve: 0.05,
+                            u0: m.u0_hartree,
+                            u: m.u0_hartree,
+                            h: m.u0_hartree,
+                            g: m.u0_hartree,
+                            cv: 10.0,
+                            atoms,
+                            frequencies: vec![],
+                            smiles_gdb: m.smiles.clone(),
+                            smiles_b3lyp: m.smiles,
+                            inchi: String::new(),
+                        }
+                    })
+                    .collect();
             }
         }
     }
@@ -227,13 +288,37 @@ fn main() {
     let p_phys = 0.015;
     let t_start = Instant::now();
 
-    println!("\nDataset: {} QM9 molecules | Epochs: {} | Physical Error p: {:.3}", n_mols, epochs, p_phys);
-    println!("Target Ground-State Energy: Mean = {:.2} eV, Std = {:.2} eV\n", mean_ev, std_ev);
+    println!(
+        "\nDataset: {} QM9 molecules | Epochs: {} | Physical Error p: {:.3}",
+        n_mols, epochs, p_phys
+    );
+    println!(
+        "Target Ground-State Energy: Mean = {:.2} eV, Std = {:.2} eV\n",
+        mean_ev, std_ev
+    );
 
     let trial_configs = [
-        ("Clean Ideal FT-QNN", false, false, 0.0, "Zero physical noise unmitigated Clifford+T baseline"),
-        ("Unmitigated Noisy", false, false, p_phys, "Physical depolarizing noise p=0.015 without distillation or QEC"),
-        ("Universal FT-QNN (W7+Magic)", true, true, p_phys, "Transversal bitwise CZ + Bravyi-Kitaev Magic Distillation + In-Register Ancillas"),
+        (
+            "Clean Ideal FT-QNN",
+            false,
+            false,
+            0.0,
+            "Zero physical noise unmitigated Clifford+T baseline",
+        ),
+        (
+            "Unmitigated Noisy",
+            false,
+            false,
+            p_phys,
+            "Physical depolarizing noise p=0.015 without distillation or QEC",
+        ),
+        (
+            "Universal FT-QNN (W7+Magic)",
+            true,
+            true,
+            p_phys,
+            "Transversal bitwise CZ + Bravyi-Kitaev Magic Distillation + In-Register Ancillas",
+        ),
     ];
 
     let mut trials: Vec<MagicTrialReport> = Vec::new();
@@ -263,7 +348,11 @@ fn main() {
 
                 // Variational encoding layer using Mulliken charges
                 for q in 0..14 {
-                    let chg = mol.atoms.get(q % mol.atoms.len()).map(|a| a.mulliken_charge).unwrap_or(0.0);
+                    let chg = mol
+                        .atoms
+                        .get(q % mol.atoms.len())
+                        .map(|a| a.mulliken_charge)
+                        .unwrap_or(0.0);
                     let angle = chg * weights[q];
                     apply_ry(&mut re, &mut im, q, angle);
                 }
@@ -287,9 +376,15 @@ fn main() {
                     }
                     if accepted {
                         accepted_distills += 1;
-                        let err_distilled = MagicW7InjectionEngine::calculate_distilled_error(p_err);
+                        let err_distilled =
+                            MagicW7InjectionEngine::calculate_distilled_error(p_err);
                         // Teleported T-rotation on Patch A hub (wire 0)
-                        apply_ry(&mut re, &mut im, 0, std::f64::consts::FRAC_PI_4 * (1.0 - err_distilled));
+                        apply_ry(
+                            &mut re,
+                            &mut im,
+                            0,
+                            std::f64::consts::FRAC_PI_4 * (1.0 - err_distilled),
+                        );
                     }
                 }
 
@@ -301,7 +396,11 @@ fn main() {
                 // Readout: Hub-to-Hub correlator <Z_0 Z_7>
                 let mut exp_z0_z7 = 0.0f64;
                 for idx in 0..STATE_DIM {
-                    let sign = if ((idx >> 0) & 1) ^ ((idx >> 7) & 1) == 0 { 1.0 } else { -1.0 };
+                    let sign = if ((idx >> 0) & 1) ^ ((idx >> 7) & 1) == 0 {
+                        1.0
+                    } else {
+                        -1.0
+                    };
                     exp_z0_z7 += sign * (re[idx] * re[idx] + im[idx] * im[idx]);
                 }
 
@@ -364,14 +463,17 @@ fn main() {
     };
 
     let out_dir = Path::new("results/data");
-    if !out_dir.exists() { let _ = std::fs::create_dir_all(out_dir); }
+    if !out_dir.exists() {
+        let _ = std::fs::create_dir_all(out_dir);
+    }
     if let Ok(mut f) = File::create(REPORT_PATH) {
         let json_str = serde_json::to_string_pretty(&report).unwrap();
         let _ = f.write_all(json_str.as_bytes());
         println!("Structured training report recorded: {}", REPORT_PATH);
     }
 
-    println!("Total execution time: {:.2} s ({:.2} s/epoch across 3 streams)",
+    println!(
+        "Total execution time: {:.2} s ({:.2} s/epoch across 3 streams)",
         t_start.elapsed().as_secs_f64(),
         t_start.elapsed().as_secs_f64() / epochs as f64
     );

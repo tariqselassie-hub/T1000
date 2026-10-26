@@ -26,7 +26,9 @@ pub fn locate_mnist_file(filename_candidates: &[&str]) -> Option<PathBuf> {
             if p1.is_file() {
                 return Some(p1);
             }
-            let stem = candidate.trim_end_matches(".idx3-ubyte").trim_end_matches(".idx1-ubyte");
+            let stem = candidate
+                .trim_end_matches(".idx3-ubyte")
+                .trim_end_matches(".idx1-ubyte");
             let p2 = Path::new(dir).join(stem).join(candidate);
             if p2.is_file() {
                 return Some(p2);
@@ -40,7 +42,9 @@ pub fn parse_mnist_images(path: &Path, max_samples: Option<usize>) -> Vec<Vec<f6
     let data = fs::read(path).expect("Failed to read MNIST images");
     assert!(data.len() >= 16, "IDX image header too small");
     let total_images = u32::from_be_bytes([data[4], data[5], data[6], data[7]]) as usize;
-    let count = max_samples.map(|m| m.min(total_images)).unwrap_or(total_images);
+    let count = max_samples
+        .map(|m| m.min(total_images))
+        .unwrap_or(total_images);
     let mut images = Vec::with_capacity(count);
     let offset = 16;
     for i in 0..count {
@@ -58,7 +62,9 @@ pub fn parse_mnist_labels(path: &Path, max_samples: Option<usize>) -> Vec<u8> {
     let data = fs::read(path).expect("Failed to read MNIST labels");
     assert!(data.len() >= 8, "IDX label header too small");
     let total_labels = u32::from_be_bytes([data[4], data[5], data[6], data[7]]) as usize;
-    let count = max_samples.map(|m| m.min(total_labels)).unwrap_or(total_labels);
+    let count = max_samples
+        .map(|m| m.min(total_labels))
+        .unwrap_or(total_labels);
     data[8..8 + count].to_vec()
 }
 
@@ -153,10 +159,14 @@ pub fn encode_mnist_state(pixels: &[f64], spatial: &[f64; N_SPATIAL]) -> Quantum
             let mut count8 = 0.0;
             for dr in 0..3 {
                 let r = (r8 * 7 + dr * 2) / 2;
-                if r >= 28 { continue; }
+                if r >= 28 {
+                    continue;
+                }
                 for dc in 0..3 {
                     let c = (c8 * 7 + dc * 2) / 2;
-                    if c >= 28 { continue; }
+                    if c >= 28 {
+                        continue;
+                    }
                     sum8 += pixels[r * 28 + c];
                     count8 += 1.0;
                 }

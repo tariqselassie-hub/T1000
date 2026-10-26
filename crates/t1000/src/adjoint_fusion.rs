@@ -153,7 +153,10 @@ pub fn ry_grad_and_undo(
     let high: Vec<usize> = (LOW_BITS..n).collect();
     for group in high.chunks(GROUP_QUBITS) {
         let g = group.len();
-        let ops: Vec<PairOp> = group.iter().map(|&q| pair_op(crate::layer_fusion::Gate1Q::Ry(-theta[q]))).collect();
+        let ops: Vec<PairOp> = group
+            .iter()
+            .map(|&q| pair_op(crate::layer_fusion::Gate1Q::Ry(-theta[q])))
+            .collect();
         let bases = dim >> (CHUNK_BITS + g);
         let grads = reduce_tasks(bases, BASES_PER_TASK, g, parallel, |b, acc| {
             // SAFETY: base `b` addresses chunks no other base touches.
@@ -175,7 +178,12 @@ unsafe fn low_block(joint: Joint, start: usize, blk: usize, theta: &[f64], acc: 
         for off in (0..blk).step_by(2 * half) {
             acc[q] += cross(
                 [lr.add(off), li.add(off), pr.add(off), pi.add(off)],
-                [lr.add(off + half), li.add(off + half), pr.add(off + half), pi.add(off + half)],
+                [
+                    lr.add(off + half),
+                    li.add(off + half),
+                    pr.add(off + half),
+                    pi.add(off + half),
+                ],
                 half,
             );
         }
@@ -194,7 +202,9 @@ unsafe fn low_block(joint: Joint, start: usize, blk: usize, theta: &[f64], acc: 
 /// The group's chunks for `b` must be valid and not accessed concurrently.
 unsafe fn high_group(joint: Joint, b: usize, qs: &[usize], ops: &[PairOp], acc: &mut [f64]) {
     let g = qs.len();
-    let x = qs.iter().fold(b, |x, &q| insert_zero_bit(x, q - CHUNK_BITS));
+    let x = qs
+        .iter()
+        .fold(b, |x, &q| insert_zero_bit(x, q - CHUNK_BITS));
     let base = x << CHUNK_BITS;
     for j in 0..g {
         let bit = 1usize << qs[j];
@@ -202,9 +212,19 @@ unsafe fn high_group(joint: Joint, b: usize, qs: &[usize], ops: &[PairOp], acc: 
             if mask & (1 << j) != 0 {
                 continue;
             }
-            let off: usize = (0..g).filter(|k| mask & (1 << k) != 0).map(|k| 1usize << qs[k]).sum();
+            let off: usize = (0..g)
+                .filter(|k| mask & (1 << k) != 0)
+                .map(|k| 1usize << qs[k])
+                .sum();
             let (a0, a1) = (base + off, base + off + bit);
-            let at = |a: usize| [joint.lam_re.add(a), joint.lam_im.add(a), joint.phi_re.add(a), joint.phi_im.add(a)];
+            let at = |a: usize| {
+                [
+                    joint.lam_re.add(a),
+                    joint.lam_im.add(a),
+                    joint.phi_re.add(a),
+                    joint.phi_im.add(a),
+                ]
+            };
             let (x0, x1) = (at(a0), at(a1));
             acc[j] += cross(x0, x1, CHUNK);
             chunk_pair(x0[2], x1[2], x0[3], x1[3], &ops[j]);
@@ -305,10 +325,18 @@ mod tests {
                 let want: f64 = (0..1usize << n)
                     .map(|x| {
                         let t = lam.real[x] * phi.imag[x] - lam.imag[x] * phi.real[x];
-                        if (x >> q) & 1 == 0 { t } else { -t }
+                        if (x >> q) & 1 == 0 {
+                            t
+                        } else {
+                            -t
+                        }
                     })
                     .sum();
-                assert!((got[q] - want).abs() < 1e-10, "n={n} q={q}: {} vs {want}", got[q]);
+                assert!(
+                    (got[q] - want).abs() < 1e-10,
+                    "n={n} q={q}: {} vs {want}",
+                    got[q]
+                );
             }
         }
     }
@@ -333,16 +361,31 @@ mod tests {
                             - lam_ref.imag[x0] * phi_ref.imag[x1]
                     })
                     .sum();
-                assert!((got[q] - want).abs() < 1e-10, "n={n} q={q}: {} vs {want}", got[q]);
+                assert!(
+                    (got[q] - want).abs() < 1e-10,
+                    "n={n} q={q}: {} vs {want}",
+                    got[q]
+                );
             }
             for (q, &t) in theta.iter().enumerate() {
                 for s in [&mut phi_ref, &mut lam_ref] {
                     apply_ry_kernel(&mut s.real, &mut s.imag, q, -t);
                 }
             }
-            let dev = |a: &[f64], b: &[f64]| a.iter().zip(b).map(|(x, y)| (x - y).abs()).fold(0.0, f64::max);
-            assert!(dev(&phi.real, &phi_ref.real).max(dev(&phi.imag, &phi_ref.imag)) < 1e-12, "n={n} phi");
-            assert!(dev(&lam.real, &lam_ref.real).max(dev(&lam.imag, &lam_ref.imag)) < 1e-12, "n={n} lambda");
+            let dev = |a: &[f64], b: &[f64]| {
+                a.iter()
+                    .zip(b)
+                    .map(|(x, y)| (x - y).abs())
+                    .fold(0.0, f64::max)
+            };
+            assert!(
+                dev(&phi.real, &phi_ref.real).max(dev(&phi.imag, &phi_ref.imag)) < 1e-12,
+                "n={n} phi"
+            );
+            assert!(
+                dev(&lam.real, &lam_ref.real).max(dev(&lam.imag, &lam_ref.imag)) < 1e-12,
+                "n={n} lambda"
+            );
         }
     }
 }

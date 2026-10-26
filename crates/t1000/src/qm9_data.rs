@@ -15,7 +15,9 @@ use std::fs;
 use std::path::Path;
 
 /// Properties kept from the CSV, with units after loading.
-pub const PROPERTIES: [&str; 9] = ["mu", "alpha", "homo", "lumo", "gap", "r2", "zpve", "cv", "u0_atom"];
+pub const PROPERTIES: [&str; 9] = [
+    "mu", "alpha", "homo", "lumo", "gap", "r2", "zpve", "cv", "u0_atom",
+];
 
 const HARTREE_TO_EV: f64 = 27.211_386_245_988;
 
@@ -101,14 +103,23 @@ fn parse_row(line: &str, set: FeatureSet) -> Option<Qm9Molecule> {
         num(16)?,
         num(17)?,
     ];
-    Some(Qm9Molecule { smiles, features, properties })
+    Some(Qm9Molecule {
+        smiles,
+        features,
+        properties,
+    })
 }
 
 /// Loads up to `max_rows` molecules; returns them with the number of rows that could not be
 /// parsed or featurised.
-pub fn load(path: impl AsRef<Path>, set: FeatureSet, max_rows: usize) -> Result<(Vec<Qm9Molecule>, usize), String> {
+pub fn load(
+    path: impl AsRef<Path>,
+    set: FeatureSet,
+    max_rows: usize,
+) -> Result<(Vec<Qm9Molecule>, usize), String> {
     let path = path.as_ref();
-    let text = fs::read_to_string(path).map_err(|e| format!("cannot read {}: {e}", path.display()))?;
+    let text =
+        fs::read_to_string(path).map_err(|e| format!("cannot read {}: {e}", path.display()))?;
     let (mut rows, mut skipped) = (Vec::new(), 0);
     for line in text.lines().skip(1).filter(|l| !l.trim().is_empty()) {
         match parse_row(line, set) {
@@ -126,7 +137,11 @@ pub fn load(path: impl AsRef<Path>, set: FeatureSet, max_rows: usize) -> Result<
 }
 
 /// Deterministic shuffle (seeded SplitMix64) then split into `(train, test)` with `test_size` test rows.
-pub fn split(mut rows: Vec<Qm9Molecule>, test_size: usize, seed: u64) -> (Vec<Qm9Molecule>, Vec<Qm9Molecule>) {
+pub fn split(
+    mut rows: Vec<Qm9Molecule>,
+    test_size: usize,
+    seed: u64,
+) -> (Vec<Qm9Molecule>, Vec<Qm9Molecule>) {
     let mut state = seed;
     let mut next = || {
         state = state.wrapping_add(0x9E37_79B9_7F4A_7C15);
@@ -146,7 +161,8 @@ pub fn split(mut rows: Vec<Qm9Molecule>, test_size: usize, seed: u64) -> (Vec<Qm
 mod tests {
     use super::*;
 
-    const ETHANOL: &str = "gdb_9,CCO,1,1,1,1.4,20.0,-0.26,0.08,0.34,0,0.08,0,0,0,0,10.0,-800.0,0,0,0";
+    const ETHANOL: &str =
+        "gdb_9,CCO,1,1,1,1.4,20.0,-0.26,0.08,0.34,0,0.08,0,0,0,0,10.0,-800.0,0,0,0";
 
     #[test]
     fn parses_a_row_into_descriptors_and_unit_converted_properties() {
@@ -179,13 +195,21 @@ mod tests {
     #[test]
     fn the_split_is_deterministic_disjoint_and_complete() {
         let rows: Vec<Qm9Molecule> = (0..100)
-            .map(|i| Qm9Molecule { smiles: i.to_string(), features: vec![i as f64], properties: [0.0; 9] })
+            .map(|i| Qm9Molecule {
+                smiles: i.to_string(),
+                features: vec![i as f64],
+                properties: [0.0; 9],
+            })
             .collect();
         let (a_train, a_test) = split(rows.clone(), 20, 5);
         let (b_train, b_test) = split(rows.clone(), 20, 5);
         assert_eq!((&a_train, &a_test), (&b_train, &b_test));
         assert_eq!((a_train.len(), a_test.len()), (80, 20));
-        let mut all: Vec<&str> = a_train.iter().chain(&a_test).map(|m| m.smiles.as_str()).collect();
+        let mut all: Vec<&str> = a_train
+            .iter()
+            .chain(&a_test)
+            .map(|m| m.smiles.as_str())
+            .collect();
         all.sort_unstable();
         all.dedup();
         assert_eq!(all.len(), 100);

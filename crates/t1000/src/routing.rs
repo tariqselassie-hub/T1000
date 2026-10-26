@@ -70,12 +70,22 @@ impl Topology {
                 }
             }
         }
-        assert!(dist.iter().flatten().all(|&d| d != usize::MAX), "topology {name} is not connected");
-        Self { name: name.to_string(), n, edges: edges.to_vec(), dist }
+        assert!(
+            dist.iter().flatten().all(|&d| d != usize::MAX),
+            "topology {name} is not connected"
+        );
+        Self {
+            name: name.to_string(),
+            n,
+            edges: edges.to_vec(),
+            dist,
+        }
     }
 
     pub fn all_to_all(n: usize) -> Self {
-        let edges: Vec<_> = (0..n).flat_map(|a| (a + 1..n).map(move |b| (a, b))).collect();
+        let edges: Vec<_> = (0..n)
+            .flat_map(|a| (a + 1..n).map(move |b| (a, b)))
+            .collect();
         Self::new("all-to-all", n, &edges)
     }
 
@@ -111,7 +121,21 @@ impl Topology {
     /// cycles, so this fragment is a conservative choice.
     pub fn heavy_hex_fragment() -> Self {
         // path 0-1-2-3-4, branch 1-5-6, branch 3-7-8-9
-        Self::new("heavy-hex", 10, &[(0, 1), (1, 2), (2, 3), (3, 4), (1, 5), (5, 6), (3, 7), (7, 8), (8, 9)])
+        Self::new(
+            "heavy-hex",
+            10,
+            &[
+                (0, 1),
+                (1, 2),
+                (2, 3),
+                (3, 4),
+                (1, 5),
+                (5, 6),
+                (3, 7),
+                (7, 8),
+                (8, 9),
+            ],
+        )
     }
 
     pub fn adjacent(&self, a: usize, b: usize) -> bool {
@@ -174,7 +198,11 @@ pub fn cost(gates: &[RGate]) -> Cost {
                 (a, b, 3)
             }
         };
-        let start = busy.get(&a).copied().unwrap_or(0).max(busy.get(&b).copied().unwrap_or(0));
+        let start = busy
+            .get(&a)
+            .copied()
+            .unwrap_or(0)
+            .max(busy.get(&b).copied().unwrap_or(0));
         busy.insert(a, start + layers);
         busy.insert(b, start + layers);
         c.depth = c.depth.max(start + layers);
@@ -194,7 +222,10 @@ impl Mapping {
             assert!(logical[p] == usize::MAX, "layout must be a permutation");
             logical[p] = l;
         }
-        Self { phys: layout.to_vec(), logical }
+        Self {
+            phys: layout.to_vec(),
+            logical,
+        }
     }
 
     fn swap(&mut self, p: usize, q: usize) {
@@ -233,12 +264,26 @@ fn route_pairs(
         if pairs.is_empty() {
             return;
         }
-        let total = |m: &Mapping| -> usize { pairs.iter().map(|&(a, b)| topo.distance(m.phys[a], m.phys[b])).sum() };
+        let total = |m: &Mapping| -> usize {
+            pairs
+                .iter()
+                .map(|&(a, b)| topo.distance(m.phys[a], m.phys[b]))
+                .sum()
+        };
         let current = total(map);
-        let ahead = |m: &Mapping| -> f64 { lookahead.iter().map(|&(a, b)| topo.distance(m.phys[a], m.phys[b]) as f64).sum() };
+        let ahead = |m: &Mapping| -> f64 {
+            lookahead
+                .iter()
+                .map(|&(a, b)| topo.distance(m.phys[a], m.phys[b]) as f64)
+                .sum()
+        };
         let mut best: Option<((usize, usize), f64)> = None;
         for &(p, q) in topo.edges() {
-            let involved = |x: usize| pairs.iter().any(|&(a, b)| map.logical[x] == a || map.logical[x] == b);
+            let involved = |x: usize| {
+                pairs
+                    .iter()
+                    .any(|&(a, b)| map.logical[x] == a || map.logical[x] == b)
+            };
             if !(involved(p) || involved(q)) {
                 continue;
             }
@@ -265,7 +310,15 @@ fn route_pairs(
                     let next = topo
                         .edges()
                         .iter()
-                        .filter_map(|&(x, y)| if x == pa { Some(y) } else if y == pa { Some(x) } else { None })
+                        .filter_map(|&(x, y)| {
+                            if x == pa {
+                                Some(y)
+                            } else if y == pa {
+                                Some(x)
+                            } else {
+                                None
+                            }
+                        })
                         .min_by_key(|&nb| topo.distance(nb, map.phys[b]))
                         .expect("connected topology");
                     map.swap(pa, next);
@@ -278,7 +331,11 @@ fn route_pairs(
 
 /// Routes `program` onto `topo` from the placement `layout` (`layout[logical]` = physical).
 pub fn route(program: &[Item], topo: &Topology, layout: &[usize]) -> Routed {
-    assert_eq!(layout.len(), topo.n, "logical and physical qubit counts must match");
+    assert_eq!(
+        layout.len(),
+        topo.n,
+        "logical and physical qubit counts must match"
+    );
     let mut map = Mapping::new(layout);
     let mut gates = Vec::new();
     for (index, item) in program.iter().enumerate() {
@@ -293,27 +350,63 @@ pub fn route(program: &[Item], topo: &Topology, layout: &[usize]) -> Routed {
             })
             .unwrap_or_default();
         match item {
-            Item::CzSet(pairs) => route_pairs(topo, &mut map, pairs.clone(), &ahead, |a, b| RGate::Cz { a, b }, &mut gates),
-            Item::Gate(RGate::Ry { qubit, theta }) => gates.push(RGate::Ry { qubit: map.phys[*qubit], theta: *theta }),
-            Item::Gate(RGate::Rz { qubit, theta }) => gates.push(RGate::Rz { qubit: map.phys[*qubit], theta: *theta }),
+            Item::CzSet(pairs) => route_pairs(
+                topo,
+                &mut map,
+                pairs.clone(),
+                &ahead,
+                |a, b| RGate::Cz { a, b },
+                &mut gates,
+            ),
+            Item::Gate(RGate::Ry { qubit, theta }) => gates.push(RGate::Ry {
+                qubit: map.phys[*qubit],
+                theta: *theta,
+            }),
+            Item::Gate(RGate::Rz { qubit, theta }) => gates.push(RGate::Rz {
+                qubit: map.phys[*qubit],
+                theta: *theta,
+            }),
             Item::Gate(RGate::Cnot { control, target }) => {
                 let (c, t) = (*control, *target);
                 // Keep the control/target roles: route the pair, then emit with current positions.
                 let mut scratch = Vec::new();
-                route_pairs(topo, &mut map, vec![(c, t)], &ahead, |a, b| RGate::Cz { a, b }, &mut scratch);
+                route_pairs(
+                    topo,
+                    &mut map,
+                    vec![(c, t)],
+                    &ahead,
+                    |a, b| RGate::Cz { a, b },
+                    &mut scratch,
+                );
                 let swaps_only = scratch.iter().filter(|g| matches!(g, RGate::Swap { .. }));
                 gates.extend(swaps_only);
-                gates.push(RGate::Cnot { control: map.phys[c], target: map.phys[t] });
+                gates.push(RGate::Cnot {
+                    control: map.phys[c],
+                    target: map.phys[t],
+                });
             }
-            Item::Gate(RGate::Cz { a, b }) => route_pairs(topo, &mut map, vec![(*a, *b)], &ahead, |x, y| RGate::Cz { a: x, b: y }, &mut gates),
+            Item::Gate(RGate::Cz { a, b }) => route_pairs(
+                topo,
+                &mut map,
+                vec![(*a, *b)],
+                &ahead,
+                |x, y| RGate::Cz { a: x, b: y },
+                &mut gates,
+            ),
             Item::Gate(RGate::Swap { a, b }) => {
-                gates.push(RGate::Swap { a: map.phys[*a], b: map.phys[*b] });
+                gates.push(RGate::Swap {
+                    a: map.phys[*a],
+                    b: map.phys[*b],
+                });
                 let (pa, pb) = (map.phys[*a], map.phys[*b]);
                 map.swap(pa, pb);
             }
         }
     }
-    Routed { gates, final_map: map.phys }
+    Routed {
+        gates,
+        final_map: map.phys,
+    }
 }
 
 /// The state-preparation gates as program items (they act on the lowest logical qubits).
@@ -337,12 +430,20 @@ pub fn ansatz_program(n: usize, depth: usize) -> Vec<Item> {
     let mut items = Vec::new();
     for layer in 0..depth {
         for qubit in 0..n {
-            items.push(Item::Gate(RGate::Ry { qubit, theta: angle() }));
+            items.push(Item::Gate(RGate::Ry {
+                qubit,
+                theta: angle(),
+            }));
         }
         for qubit in 0..n {
-            items.push(Item::Gate(RGate::Rz { qubit, theta: angle() }));
+            items.push(Item::Gate(RGate::Rz {
+                qubit,
+                theta: angle(),
+            }));
         }
-        items.push(Item::CzSet(crate::ansatz::entangling_pairs(n, layer).collect()));
+        items.push(Item::CzSet(
+            crate::ansatz::entangling_pairs(n, layer).collect(),
+        ));
     }
     items
 }
@@ -368,14 +469,22 @@ impl Rng {
 
 /// Mean two-qubit cost of routing every program in `programs` from `layout`.
 pub fn mean_cost(programs: &[Vec<Item>], topo: &Topology, layout: &[usize]) -> f64 {
-    let total: usize = programs.iter().map(|p| cost(&route(p, topo, layout).gates).two_qubit_total()).sum();
+    let total: usize = programs
+        .iter()
+        .map(|p| cost(&route(p, topo, layout).gates).two_qubit_total())
+        .sum();
     total as f64 / programs.len() as f64
 }
 
 /// Looks for the placement with the lowest mean routed cost over `programs`: the identity layout
 /// and `restarts` random layouts, each improved by pairwise exchanges until none helps.
 /// Returns the layout and its mean two-qubit cost; never worse than the identity layout.
-pub fn search_layout(programs: &[Vec<Item>], topo: &Topology, restarts: usize, seed: u64) -> (Vec<usize>, f64) {
+pub fn search_layout(
+    programs: &[Vec<Item>],
+    topo: &Topology,
+    restarts: usize,
+    seed: u64,
+) -> (Vec<usize>, f64) {
     let n = topo.n;
     let mut rng = Rng(seed);
     let identity: Vec<usize> = (0..n).collect();
@@ -449,7 +558,9 @@ pub fn verify(program: &[Item], routed: &Routed, n: usize) -> f64 {
     let mut worst = 0.0f64;
     for x in 0..1usize << n {
         // Logical basis state x lives at the physical index with bit final_map[l] = bit l of x.
-        let y = (0..n).fold(0usize, |acc, l| acc | (((x >> l) & 1) << routed.final_map[l]));
+        let y = (0..n).fold(0usize, |acc, l| {
+            acc | (((x >> l) & 1) << routed.final_map[l])
+        });
         worst = worst
             .max((logical.real[x] - physical.real[y]).abs())
             .max((logical.imag[x] - physical.imag[y]).abs());
@@ -466,23 +577,48 @@ mod tests {
         let mut angle = || (rng.next() % 6283) as f64 / 1000.0;
         let mut items = Vec::new();
         for q in 0..n {
-            items.push(Item::Gate(RGate::Ry { qubit: q, theta: angle() }));
+            items.push(Item::Gate(RGate::Ry {
+                qubit: q,
+                theta: angle(),
+            }));
         }
         for round in 0..3 {
             let stride = 1 + round;
-            items.push(Item::CzSet((0..n).map(|q| (q, (q + stride) % n)).filter(|&(a, b)| a != b).collect()));
+            items.push(Item::CzSet(
+                (0..n)
+                    .map(|q| (q, (q + stride) % n))
+                    .filter(|&(a, b)| a != b)
+                    .collect(),
+            ));
             for q in 0..n {
-                items.push(Item::Gate(RGate::Ry { qubit: q, theta: angle() }));
-                items.push(Item::Gate(RGate::Rz { qubit: q, theta: angle() }));
+                items.push(Item::Gate(RGate::Ry {
+                    qubit: q,
+                    theta: angle(),
+                }));
+                items.push(Item::Gate(RGate::Rz {
+                    qubit: q,
+                    theta: angle(),
+                }));
             }
-            items.push(Item::Gate(RGate::Cnot { control: round, target: n - 1 - round }));
-            items.push(Item::Gate(RGate::Cnot { control: n - 1, target: round + 1 }));
+            items.push(Item::Gate(RGate::Cnot {
+                control: round,
+                target: n - 1 - round,
+            }));
+            items.push(Item::Gate(RGate::Cnot {
+                control: n - 1,
+                target: round + 1,
+            }));
         }
         items
     }
 
     fn topologies() -> Vec<Topology> {
-        vec![Topology::all_to_all(6), Topology::line(6), Topology::ring(6), Topology::grid(2, 3)]
+        vec![
+            Topology::all_to_all(6),
+            Topology::line(6),
+            Topology::ring(6),
+            Topology::grid(2, 3),
+        ]
     }
 
     #[test]
@@ -523,7 +659,11 @@ mod tests {
                     _ => None,
                 };
                 if let Some((a, b)) = pair {
-                    assert!(topo.adjacent(a, b), "{}: gate on non-neighbours {a},{b}", topo.name);
+                    assert!(
+                        topo.adjacent(a, b),
+                        "{}: gate on non-neighbours {a},{b}",
+                        topo.name
+                    );
                 }
             }
         }
@@ -532,7 +672,11 @@ mod tests {
     #[test]
     fn all_to_all_needs_no_swaps_and_a_matching_ring_layout_none_either() {
         let program = random_program(6, 5);
-        let free = route(&program, &Topology::all_to_all(6), &(0..6).collect::<Vec<_>>());
+        let free = route(
+            &program,
+            &Topology::all_to_all(6),
+            &(0..6).collect::<Vec<_>>(),
+        );
         assert_eq!(cost(&free.gates).swaps, 0);
         // One layer of nearest-neighbour CZs on a ring placed identically needs no swaps.
         let ring_layer = vec![Item::CzSet((0..6).map(|q| (q, (q + 1) % 6)).collect())];
@@ -546,7 +690,11 @@ mod tests {
         for topo in topologies() {
             let identity = mean_cost(&programs, &topo, &(0..6).collect::<Vec<_>>());
             let (layout, best) = search_layout(&programs, &topo, 12, 7);
-            assert!(best <= identity + 1e-9, "{}: {best} > {identity}", topo.name);
+            assert!(
+                best <= identity + 1e-9,
+                "{}: {best} > {identity}",
+                topo.name
+            );
             assert!((mean_cost(&programs, &topo, &layout) - best).abs() < 1e-9);
         }
     }
@@ -556,7 +704,13 @@ mod tests {
         let program = ansatz_program(10, 4);
         let sets: Vec<&Vec<(usize, usize)>> = program
             .iter()
-            .filter_map(|i| if let Item::CzSet(p) = i { Some(p) } else { None })
+            .filter_map(|i| {
+                if let Item::CzSet(p) = i {
+                    Some(p)
+                } else {
+                    None
+                }
+            })
             .collect();
         assert_eq!(sets.len(), 4);
         assert!(sets.iter().all(|s| s.len() == 10));
@@ -565,16 +719,26 @@ mod tests {
         assert_eq!(sets[1][0], (0, 2));
         assert_eq!(sets[2][0], (0, 4));
         assert_eq!(sets[3][0], (0, 8));
-        let singles = program.iter().filter(|i| matches!(i, Item::Gate(_))).count();
+        let singles = program
+            .iter()
+            .filter(|i| matches!(i, Item::Gate(_)))
+            .count();
         assert_eq!(singles, 4 * 20);
     }
 
     #[test]
     fn a_routed_ansatz_plus_preparation_matches_the_original_on_ten_qubits() {
-        let prep = crate::state_prep::amplitude_prep(&[0.3, 0.1, 0.5, 0.2, 0.05, 0.4, 0.3, 0.1, 0.2, 0.25, 0.15, 0.3, 0.1, 0.35, 0.2, 0.05, 0.4, 0.1, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
+        let prep = crate::state_prep::amplitude_prep(&[
+            0.3, 0.1, 0.5, 0.2, 0.05, 0.4, 0.3, 0.1, 0.2, 0.25, 0.15, 0.3, 0.1, 0.35, 0.2, 0.05,
+            0.4, 0.1, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        ]);
         let mut program = prep_program(&prep);
         program.extend(ansatz_program(10, 2));
-        for topo in [Topology::line(10), Topology::grid(2, 5), Topology::heavy_hex_fragment()] {
+        for topo in [
+            Topology::line(10),
+            Topology::grid(2, 5),
+            Topology::heavy_hex_fragment(),
+        ] {
             let (layout, _) = search_layout(std::slice::from_ref(&program), &topo, 2, 3);
             let routed = route(&program, &topo, &layout);
             assert!(verify(&program, &routed, 10) < 1e-9, "{}", topo.name);
@@ -584,10 +748,16 @@ mod tests {
     #[test]
     fn cost_counts_swaps_as_three_and_tracks_depth() {
         let gates = [
-            RGate::Ry { qubit: 0, theta: 0.1 },
+            RGate::Ry {
+                qubit: 0,
+                theta: 0.1,
+            },
             RGate::Cz { a: 0, b: 1 },
             RGate::Swap { a: 1, b: 2 },
-            RGate::Cnot { control: 2, target: 3 },
+            RGate::Cnot {
+                control: 2,
+                target: 3,
+            },
         ];
         let c = cost(&gates);
         assert_eq!((c.single, c.native_two, c.swaps), (1, 2, 1));

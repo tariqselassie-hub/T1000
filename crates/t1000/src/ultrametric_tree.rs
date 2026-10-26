@@ -340,7 +340,7 @@ pub struct UltrametricTreeSorter {
     pub n_trunk_layers: usize,
     /// Parameters for Stage 1: Global Trunk Feature Extraction.
     pub trunk_params: Vec<f64>,
-    /// Parameters for Stage 2: QMUX Branch Unitaries [d_C][n_fine_params].
+    /// Parameters for Stage 2: QMUX Branch Unitaries `[d_C][n_fine_params]`.
     pub branch_params: Vec<Vec<f64>>,
     /// Couplings for Stage 3: Spurious Decoupling Bridges between H_F and H_E.
     pub sink_couplings: Vec<f64>,
@@ -584,9 +584,9 @@ impl UltrametricTreeSorter {
             loss_coarse,
             loss_fine,
             loss_decorr,
-            coarse_accuracy: (correct_coarse as f64) / n,
-            fine_accuracy: (correct_fine as f64) / n,
-            joint_accuracy: (correct_joint as f64) / n,
+            coarse_accuracy: f64::from(correct_coarse) / n,
+            fine_accuracy: f64::from(correct_fine) / n,
+            joint_accuracy: f64::from(correct_joint) / n,
         }
     }
 

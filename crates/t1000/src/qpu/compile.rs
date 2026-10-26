@@ -15,7 +15,11 @@ use crate::vqe::uccsd::Excitation;
 const S: f64 = std::f64::consts::FRAC_1_SQRT_2;
 
 fn single(target: u8, m: [f64; 8]) -> Gate {
-    Gate { target, ctrl: 0, m: m.map(quantize_coef) }
+    Gate {
+        target,
+        ctrl: 0,
+        m: m.map(quantize_coef),
+    }
 }
 
 /// Hadamard.
@@ -89,7 +93,11 @@ pub fn compile_ansatz(excitations: &[Excitation], theta: &[f64]) -> Vec<Gate> {
     excitations
         .iter()
         .zip(theta)
-        .flat_map(|(e, &t)| rotations(e).into_iter().flat_map(move |r| compile_rotation(&r, r.coeff * t)))
+        .flat_map(|(e, &t)| {
+            rotations(e)
+                .into_iter()
+                .flat_map(move |r| compile_rotation(&r, r.coeff * t))
+        })
         .collect()
 }
 
@@ -124,11 +132,31 @@ mod tests {
         // Strings over qubits 0..4 using X, Y and Z, started from a non-trivial basis state with
         // a Hadamard to spread amplitude, so phases are exercised.
         let cases = [
-            PauliRotation { x: 0b0001, z: 0b0000, coeff: 1.0 },
-            PauliRotation { x: 0b0010, z: 0b0010, coeff: 1.0 },
-            PauliRotation { x: 0b0000, z: 0b0100, coeff: 1.0 },
-            PauliRotation { x: 0b1011, z: 0b0110, coeff: 1.0 },
-            PauliRotation { x: 0b0111, z: 0b1101, coeff: 1.0 },
+            PauliRotation {
+                x: 0b0001,
+                z: 0b0000,
+                coeff: 1.0,
+            },
+            PauliRotation {
+                x: 0b0010,
+                z: 0b0010,
+                coeff: 1.0,
+            },
+            PauliRotation {
+                x: 0b0000,
+                z: 0b0100,
+                coeff: 1.0,
+            },
+            PauliRotation {
+                x: 0b1011,
+                z: 0b0110,
+                coeff: 1.0,
+            },
+            PauliRotation {
+                x: 0b0111,
+                z: 0b1101,
+                coeff: 1.0,
+            },
         ];
         for r in cases {
             let phi = 0.37;
@@ -147,15 +175,25 @@ mod tests {
             apply_rotation(&mut re, &mut im, &r, phi);
             for k in 0..16 {
                 let v = q.read(k, 1).unwrap()[0];
-                assert!((dequantize_state(v.0, F) - re[k]).abs() < 1e-5, "{r:?} re[{k}]");
-                assert!((dequantize_state(v.1, F) - im[k]).abs() < 1e-5, "{r:?} im[{k}]");
+                assert!(
+                    (dequantize_state(v.0, F) - re[k]).abs() < 1e-5,
+                    "{r:?} re[{k}]"
+                );
+                assert!(
+                    (dequantize_state(v.1, F) - im[k]).abs() < 1e-5,
+                    "{r:?} im[{k}]"
+                );
             }
         }
     }
 
     #[test]
     fn gate_count_matches_the_documented_ladder_cost() {
-        let r = PauliRotation { x: 0b1111, z: 0b1000, coeff: 1.0 };
+        let r = PauliRotation {
+            x: 0b1111,
+            z: 0b1000,
+            coeff: 1.0,
+        };
         let gates = compile_rotation(&r, 0.1);
         let cnots = gates.iter().filter(|g| g.ctrl != 0).count();
         assert_eq!(cnots, 2 * (r.weight() - 1));

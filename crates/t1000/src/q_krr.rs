@@ -394,7 +394,7 @@ mod tests {
             feature_scale: 1.0,
         });
 
-        let samples = vec![
+        let samples = [
             vec![0.1, 0.2, 0.3],
             vec![1.2, 0.8, 0.5],
             vec![2.5, 1.9, 0.1],

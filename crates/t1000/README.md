@@ -50,13 +50,15 @@
 | **[`glued_tree_valve`](src/glued_tree_valve.rs)** | Multi-Exit Topological Tree Valve & Quantum Router ($K$-way welded tree) utilizing Aharonov-Bohm phase holonomy for ballistic routing. |
 | **[`cascaded_tree_valve`](src/cascaded_tree_valve.rs)** | Cascaded Multi-Tier Glued-Tree Valve & Deep Router demonstrating multi-stage coherent routing through sequential dual welds without measurement collapse. |
 | **[`molfeatures`](src/molfeatures.rs)** | Native OpenSMILES parser with 19 structural descriptors mapped to parameterized rotation angles $R_y(x_i)$. |
+| **[`pitt_data`](src/pitt_data.rs)** | High-throughput Pitt Quantum Repository (106k molecules, PM7) ingestion, 3D Cartesian dipole vector decomposition $(\mu_x, \mu_y, \mu_z)$, and non-Abelian Stark rotation angle generator. |
+| **[`q_krr`](src/q_krr.rs)** | Quantum Kernel Ridge Regression (Q-KRR) computing exact parameter-free state fidelity kernels $k(x_i, x_j) = |\langle \psi(x_i)|\psi(x_j)\rangle|^2$ and parallel Rayon Cholesky linear solves bypassing barren plateaus. |
 
 ---
 
 ## Executable Binaries (`src/bin/`)
 
 The crate organizes CLI binaries into four domain subdirectories:
-* **`src/bin/training/`**: QNN variational training pipelines (`qm9_magic_w7_ft_train`, `qm9_transversal_w7_train`, `qm9_fault_tolerant_train`, `qm9_vqc_train`, `mnist_qnn_train`, `mnist_ultrametric_sorter`, `birds_hybrid_qnn_train`, `zinc_qnn_train`).
+* **`src/bin/training/`**: QNN variational training and kernel regression pipelines (`pitt_qkrr_train`, `pitt_vqc_train`, `qm9_magic_w7_ft_train`, `qm9_transversal_w7_train`, `qm9_fault_tolerant_train`, `qm9_vqc_train`, `mnist_qnn_train`, `mnist_ultrametric_sorter`, `birds_hybrid_qnn_train`, `zinc_qnn_train`).
 * **`src/bin/benchmarks/`**: Reproducible architectural showdowns (`molecular_eigensystem_bench`, `qgnn_molecular_bench`, `vnni_threshold_bench`, `full_qnn_suite_bench`, `glued_trees_bench`, `glued_tree_valve_bench`, `cascaded_tree_valve_bench`, `ultrametric_tree_sorter_bench`, `fidelity_orthogonality_bench`, `path_a_vs_c_sorter_bench`, `zinc_scaled_14q_16q_bench`, `zinc_heptal_qnn_bench`).
 * **`src/bin/measurements/`**: Quantum hardware telemetry and algorithms (`virtual_36q_cut_bridge_bench`, `frontier_rcs`, `vnni_syndrome_bench`, `cut_bridge_chsh_bench`, `coherence_frontier_push`, `nighthawk_r2_bench`).
 * **`src/bin/screening/`**: High-throughput chemical discovery (`continuous_walk_qm9_filter`, `zinc_dual_search`, `zinc_250k_screen`, `eval_single_mol`).

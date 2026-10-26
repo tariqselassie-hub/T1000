@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 // Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
 
-//! Exact algebraic arithmetic in the cyclotomic ring Z[ω] with ω = exp(i*pi/4) = (1 + i) / sqrt(2).
+//! Exact algebraic arithmetic in the cyclotomic ring `Z[ω]` with ω = exp(i*pi/4) = (1 + i) / sqrt(2).
 //!
 //! Every single-qubit Clifford+T operator can be represented as:
 //! U = (1 / sqrt(2)^k) * [ u, -conj(v); v, conj(u) ]
-//! where u, v in Z[ω] and |u|^2 + |v|^2 = 2^k.
+//! where u, v in `Z[ω]` and |u|^2 + |v|^2 = 2^k.
 
 use num_complex::Complex64;
 use serde::{Deserialize, Serialize};
 
-/// Element of the cyclotomic integer ring Z[ω] represented in the basis {1, ω, ω^2, ω^3}:
+/// Element of the cyclotomic integer ring `Z[ω]` represented in the basis {1, ω, ω^2, ω^3}:
 /// z = a + b*ω + c*ω^2 + d*ω^3, with ω^4 = -1.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct ZOmega {
@@ -56,7 +56,7 @@ impl ZOmega {
         c: 0,
         d: 1,
     };
-    /// Exact representation of sqrt(2) in Z[ω]: ω - ω^3
+    /// Exact representation of sqrt(2) in `Z[ω]`: ω - ω^3
     pub const SQRT2: Self = Self {
         a: 0,
         b: 1,
@@ -93,7 +93,7 @@ impl ZOmega {
         }
     }
 
-    /// Multiplication in Z[ω] modulo (ω^4 + 1 = 0).
+    /// Multiplication in `Z[ω]` modulo (ω^4 + 1 = 0).
     ///
     /// Identities:
     /// ω^4 = -1, ω^5 = -ω, ω^6 = -ω^2, ω^7 = -ω^3.
@@ -119,7 +119,7 @@ impl ZOmega {
         }
     }
 
-    /// Complex conjugate in Z[ω]: ω -> ω^7 = -ω^3, ω^2 -> -ω^2, ω^3 -> -ω.
+    /// Complex conjugate in `Z[ω]`: ω -> ω^7 = -ω^3, ω^2 -> -ω^2, ω^3 -> -ω.
     #[inline(always)]
     pub fn conj(self) -> Self {
         Self {
@@ -146,7 +146,7 @@ impl ZOmega {
         Complex64::new(re, im)
     }
 
-    /// Exact division by sqrt(2) = (ω - ω^3) in Z[ω].
+    /// Exact division by sqrt(2) = (ω - ω^3) in `Z[ω]`.
     ///
     /// Since (ω - ω^3)^2 = 2, multiplying by (ω - ω^3) and checking if coordinates are even
     /// yields exact quotient without floating-point rounding error.
@@ -164,7 +164,7 @@ impl ZOmega {
         }
     }
 
-    /// Exact division by lambda = (1 + ω) in Z[ω].
+    /// Exact division by lambda = (1 + ω) in `Z[ω]`.
     ///
     /// Since (1 + ω) * (1 - ω + ω^2 - ω^3) = 1 - ω^4 = 2,
     /// multiplying by (1 - ω + ω^2 - ω^3) and checking if coordinates are even

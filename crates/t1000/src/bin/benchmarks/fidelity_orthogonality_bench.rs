@@ -303,7 +303,11 @@ fn compute_fidelity_metrics(
                 if idx_a != idx_b {
                     total_fid += states[idx_a].fidelity(&states[idx_b]);
                     let mut d_sq = 0.0;
-                    for (&ea, &eb) in exps_all[idx_a].iter().take(NUM_CORRELATORS).zip(exps_all[idx_b].iter()) {
+                    for (&ea, &eb) in exps_all[idx_a]
+                        .iter()
+                        .take(NUM_CORRELATORS)
+                        .zip(exps_all[idx_b].iter())
+                    {
                         let diff = ea - eb;
                         d_sq += diff * diff;
                     }

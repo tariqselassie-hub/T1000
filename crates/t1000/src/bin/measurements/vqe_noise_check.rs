@@ -62,7 +62,11 @@ struct Op {
 
 fn to_op(g: &Gate) -> Op {
     let c = |k: usize| (dequantize_coef(g.m[2 * k]), dequantize_coef(g.m[2 * k + 1]));
-    Op { target: g.target as usize, ctrl: g.ctrl as usize, m: [c(0), c(1), c(2), c(3)] }
+    Op {
+        target: g.target as usize,
+        ctrl: g.ctrl as usize,
+        m: [c(0), c(1), c(2), c(3)],
+    }
 }
 
 fn apply_gate(state: &mut [C], op: &Op) {
@@ -74,7 +78,12 @@ fn apply_gate(state: &mut [C], op: &Op) {
         }
         let i1 = i0 | bit;
         let (a, b) = (state[i0], state[i1]);
-        let (p, q, r, s) = (mul(op.m[0], a), mul(op.m[1], b), mul(op.m[2], a), mul(op.m[3], b));
+        let (p, q, r, s) = (
+            mul(op.m[0], a),
+            mul(op.m[1], b),
+            mul(op.m[2], a),
+            mul(op.m[3], b),
+        );
         state[i0] = (p.0 + q.0, p.1 + q.1);
         state[i1] = (r.0 + s.0, r.1 + s.1);
     }
@@ -122,7 +131,11 @@ fn pauli_expectation(psi: &[C], t: &PauliTerm) -> f64 {
     let mut acc = 0.0;
     for j in 0..psi.len() {
         let src = j ^ t.x as usize;
-        let sign = if ((src as u32) & t.z).count_ones() % 2 == 0 { 1.0 } else { -1.0 };
+        let sign = if ((src as u32) & t.z).count_ones() % 2 == 0 {
+            1.0
+        } else {
+            -1.0
+        };
         let v = psi[src];
         let (wr, wi) = (sign * (pr * v.0 - pi * v.1), sign * (pr * v.1 + pi * v.0));
         acc += psi[j].0 * wr + psi[j].1 * wi;
@@ -134,7 +147,12 @@ fn pauli_expectation(psi: &[C], t: &PauliTerm) -> f64 {
 /// of the simulated state drifts from 1 over thousands of gates.
 fn energy(psi: &[C], constant: f64, terms: &[PauliTerm]) -> f64 {
     let norm: f64 = psi.iter().map(|v| v.0 * v.0 + v.1 * v.1).sum();
-    constant + terms.iter().map(|t| t.coeff * pauli_expectation(psi, t)).sum::<f64>() / norm
+    constant
+        + terms
+            .iter()
+            .map(|t| t.coeff * pauli_expectation(psi, t))
+            .sum::<f64>()
+            / norm
 }
 
 fn random_error(state: &mut [C], op: &Op, rng: &mut Rng) {
@@ -219,7 +237,10 @@ fn main() {
         let psi = prepare_state(&s.excitations, &s.reference, &s.theta);
         let stats = TermStatistics::new(h, &s.sector, &psi);
         let hf = s.sector.dets[s.sector.hartree_fock()] as usize;
-        let ops: Vec<Op> = compile_ansatz(&s.excitations, &s.theta).iter().map(to_op).collect();
+        let ops: Vec<Op> = compile_ansatz(&s.excitations, &s.theta)
+            .iter()
+            .map(to_op)
+            .collect();
         let cnots = ops.iter().filter(|o| o.ctrl != 0).count();
         let one_q = ops.len() - cnots;
         let mut init = vec![(0.0, 0.0); 1 << n];
@@ -240,7 +261,10 @@ fn main() {
             let p1 = p2 / 10.0;
             let f = (1.0 - p1).powi(one_q as i32) * (1.0 - p2).powi(cnots as i32);
             let analytic = (f - 1.0) * (e_ideal - h.constant);
-            let probs: Vec<f64> = ops.iter().map(|o| if o.ctrl == 0 { p1 } else { p2 }).collect();
+            let probs: Vec<f64> = ops
+                .iter()
+                .map(|o| if o.ctrl == 0 { p1 } else { p2 })
+                .collect();
             // P(first error at gate i) = prod_{j<i}(1 - p_j) p_i; the total is 1 - F.
             let mut cum = Vec::with_capacity(ops.len());
             let (mut alive, mut total) = (1.0f64, 0.0f64);
@@ -256,7 +280,15 @@ fn main() {
                     let mut r = Rng::new(7919 + i as u64);
                     let u = r.unit() * any_error;
                     let first = cum.partition_point(|&c| c < u).min(ops.len() - 1);
-                    trajectory(&init, &ops, &probs, Some(first), 1000 + i as u64, h.constant, &h.terms)
+                    trajectory(
+                        &init,
+                        &ops,
+                        &probs,
+                        Some(first),
+                        1000 + i as u64,
+                        h.constant,
+                        &h.terms,
+                    )
                 })
                 .collect();
             let n_s = samples.len() as f64;
@@ -302,16 +334,25 @@ fn main() {
         }
         tolerances.push((formula, lo, crossing(&mc_points, target)));
     }
-    println!("\n Largest two-qubit error (p1 = p2/10) keeping the energy bias under {target:.2} mHa:");
+    println!(
+        "\n Largest two-qubit error (p1 = p2/10) keeping the energy bias under {target:.2} mHa:"
+    );
     for (f, a, m) in &tolerances {
         match m {
-            Some(m) => println!("  {f:<5} analytic {a:.1e}   Monte-Carlo (interpolated) {m:.1e}   ({:.1}x higher)", m / a),
+            Some(m) => println!(
+                "  {f:<5} analytic {a:.1e}   Monte-Carlo (interpolated) {m:.1e}   ({:.1}x higher)",
+                m / a
+            ),
             None => println!("  {f:<5} analytic {a:.1e}   Monte-Carlo: not bracketed by the grid"),
         }
     }
     let dir = Path::new("results/data");
     let _ = fs::create_dir_all(dir);
     let path = dir.join("vqe_noise_check_report.json");
-    t1000::results::write(&path, serde_json::to_string_pretty(&rows).expect("serialise")).expect("write report");
+    t1000::results::write(
+        &path,
+        serde_json::to_string_pretty(&rows).expect("serialise"),
+    )
+    .expect("write report");
     println!("\n [OK] report: {}", path.display());
 }

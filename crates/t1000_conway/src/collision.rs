@@ -123,8 +123,22 @@ pub fn setup_glider_collision(
     let amp_a = Complex64::new(inv_sqrt2, 0.0);
     let amp_b = Complex64::from_polar(inv_sqrt2, phase_rad);
 
-    inject_directed_glider(&sim.lattice, &mut sim.state, x_a, y_a, GliderDirection::SouthEast, amp_a);
-    inject_directed_glider(&sim.lattice, &mut sim.state, x_b, y_b, GliderDirection::SouthWest, amp_b);
+    inject_directed_glider(
+        &sim.lattice,
+        &mut sim.state,
+        x_a,
+        y_a,
+        GliderDirection::SouthEast,
+        amp_a,
+    );
+    inject_directed_glider(
+        &sim.lattice,
+        &mut sim.state,
+        x_b,
+        y_b,
+        GliderDirection::SouthWest,
+        amp_b,
+    );
 }
 
 /// Execute a glider collision simulation run and compute scattering matrix observables.
@@ -200,8 +214,8 @@ pub fn sweep_glider_interferometry(
     num_phases: usize,
     steps: usize,
 ) -> GliderInterferometryReport {
-    use crate::lattice::BoundaryCondition;
     use crate::holonomy::HolonomyParams;
+    use crate::lattice::BoundaryCondition;
 
     let mut sweep_results = Vec::with_capacity(num_phases);
     let mut min_t = 1.0f64;
@@ -215,7 +229,8 @@ pub fn sweep_glider_interferometry(
     let y_b = 2;
 
     for i in 0..num_phases {
-        let phase = 2.0 * std::f64::consts::PI * (f64::from(i as u32) / f64::from(num_phases as u32));
+        let phase =
+            2.0 * std::f64::consts::PI * (f64::from(i as u32) / f64::from(num_phases as u32));
         let lattice = Lattice2D::new(width, height, BoundaryCondition::Toroidal);
         let sim = QuantumConwaySimulator::new(lattice, HolonomyParams::default());
 

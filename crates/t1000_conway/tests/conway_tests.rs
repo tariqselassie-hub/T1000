@@ -155,13 +155,25 @@ fn test_simd_vs_scalar_agreement() {
     let indices = [0, 1, 2, 3];
 
     t1000_conway::simd::apply_unitary_4cells(
-        &mut re0_simd, &mut im0_simd, &mut re1_simd, &mut im1_simd, &mut re2_simd, &mut im2_simd,
-        indices, &u4,
+        &mut re0_simd,
+        &mut im0_simd,
+        &mut re1_simd,
+        &mut im1_simd,
+        &mut re2_simd,
+        &mut im2_simd,
+        indices,
+        &u4,
     );
 
     t1000_conway::simd::apply_unitary_4cells_scalar(
-        &mut re0_scal, &mut im0_scal, &mut re1_scal, &mut im1_scal, &mut re2_scal, &mut im2_scal,
-        indices, &u4,
+        &mut re0_scal,
+        &mut im0_scal,
+        &mut re1_scal,
+        &mut im1_scal,
+        &mut re2_scal,
+        &mut im2_scal,
+        indices,
+        &u4,
     );
 
     for lane in 0..4 {
@@ -179,11 +191,22 @@ fn test_scale_to_32x32_and_64x64() {
     for &dim in &[32, 64] {
         let lattice = Lattice2D::new(dim, dim, BoundaryCondition::Toroidal);
         let mut sim = QuantumConwaySimulator::new(lattice, HolonomyParams::default());
-        PatternFactory::inject_pattern(PatternType::Glider, &sim.lattice, &mut sim.state, dim / 4, dim / 4);
+        PatternFactory::inject_pattern(
+            PatternType::Glider,
+            &sim.lattice,
+            &mut sim.state,
+            dim / 4,
+            dim / 4,
+        );
 
         for _ in 0..5 {
             let telem = sim.step();
-            assert!(telem.max_norm_error < 1e-12, "Norm failed at dim {}: {:.2e}", dim, telem.max_norm_error);
+            assert!(
+                telem.max_norm_error < 1e-12,
+                "Norm failed at dim {}: {:.2e}",
+                dim,
+                telem.max_norm_error
+            );
         }
     }
 }
@@ -226,7 +249,13 @@ fn test_multi_rule_unitarity_invariance() {
 fn test_quantum_vortex_dipole_current_and_circulation() {
     let lattice = Lattice2D::new(16, 16, BoundaryCondition::Toroidal);
     let mut sim = QuantumConwaySimulator::new(lattice, HolonomyParams::default());
-    PatternFactory::inject_pattern(PatternType::VortexDipole, &sim.lattice, &mut sim.state, 4, 8);
+    PatternFactory::inject_pattern(
+        PatternType::VortexDipole,
+        &sim.lattice,
+        &mut sim.state,
+        4,
+        8,
+    );
 
     let telem = sim.step();
     assert!(telem.max_norm_error < 1e-12);
@@ -257,5 +286,3 @@ fn test_floquet_chaos_scrambling() {
         assert!(telem.scrambling_otoc >= 0.0);
     }
 }
-
-

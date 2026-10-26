@@ -89,7 +89,12 @@ pub fn save_eclektik_report(report: &EclektikUltrametricReport) {
     let mut csv_file = t1000::results::create(&csv_path).unwrap();
     writeln!(csv_file, "code,name,family,total,correct,accuracy_pct").unwrap();
     for l in &report.language_metrics {
-        writeln!(csv_file, "{},{},{},{},{},{:.2}", l.code, l.name, l.family, l.total, l.correct, l.accuracy_pct).unwrap();
+        writeln!(
+            csv_file,
+            "{},{},{},{},{},{:.2}",
+            l.code, l.name, l.family, l.total, l.correct, l.accuracy_pct
+        )
+        .unwrap();
     }
 
     println!("\n [PERSISTENCE]");

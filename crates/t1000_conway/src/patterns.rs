@@ -68,7 +68,9 @@ impl PatternFactory {
             }
             PatternType::Pentadecathlon => Self::inject_pentadecathlon(lattice, state, x0, y0),
             PatternType::VortexDipole => Self::inject_vortex_dipole(lattice, state, x0, y0),
-            PatternType::HighLifeReplicator => Self::inject_highlife_replicator(lattice, state, x0, y0),
+            PatternType::HighLifeReplicator => {
+                Self::inject_highlife_replicator(lattice, state, x0, y0)
+            }
             PatternType::TurbulentSoup => Self::inject_turbulent_soup(lattice, state, 42),
             PatternType::DiracWavepacket => Self::inject_dirac_wavepacket(lattice, state, x0, y0),
             PatternType::BelousovSpiral => Self::inject_belousov_spiral(lattice, state, x0, y0),
@@ -204,7 +206,16 @@ impl PatternFactory {
         y0: usize,
     ) {
         let offsets = [
-            (1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 0), (9, 0), (10, 0)
+            (1, 0),
+            (2, 0),
+            (3, 0),
+            (4, 0),
+            (5, 0),
+            (6, 0),
+            (7, 0),
+            (8, 0),
+            (9, 0),
+            (10, 0),
         ];
         for (dx, dy) in offsets {
             let x = (x0 + dx) % lattice.width;
@@ -263,10 +274,17 @@ impl PatternFactory {
         y0: usize,
     ) {
         let coords = [
-            (1, 0), (2, 0), (3, 0),
-            (0, 1), (3, 1),
-            (0, 2), (3, 2),
-            (0, 3), (1, 3), (2, 3), (3, 3),
+            (1, 0),
+            (2, 0),
+            (3, 0),
+            (0, 1),
+            (3, 1),
+            (0, 2),
+            (3, 2),
+            (0, 3),
+            (1, 3),
+            (2, 3),
+            (3, 3),
             (2, 4),
         ];
         for (dx, dy) in coords {
@@ -278,14 +296,12 @@ impl PatternFactory {
     }
 
     /// Ergodic Turbulent Quantum Soup: Random coherent phases across lattice.
-    pub fn inject_turbulent_soup(
-        lattice: &Lattice2D,
-        state: &mut QuantumCellStateSoA,
-        seed: u64,
-    ) {
+    pub fn inject_turbulent_soup(lattice: &Lattice2D, state: &mut QuantumCellStateSoA, seed: u64) {
         let mut rng = seed;
         let mut next_f64 = || -> f64 {
-            rng = rng.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+            rng = rng
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
             ((rng >> 32) as f64) / (u32::MAX as f64)
         };
 
@@ -296,10 +312,20 @@ impl PatternFactory {
                 let is_ffs = p_alive > 0.88;
                 if is_ffs {
                     let amp2 = Complex64::from_polar(1.0, phase);
-                    state.set_cell_superposition(i, Complex64::new(0.0, 0.0), Complex64::new(0.0, 0.0), amp2);
+                    state.set_cell_superposition(
+                        i,
+                        Complex64::new(0.0, 0.0),
+                        Complex64::new(0.0, 0.0),
+                        amp2,
+                    );
                 } else {
                     let amp1 = Complex64::from_polar(1.0, phase);
-                    state.set_cell_superposition(i, Complex64::new(0.0, 0.0), amp1, Complex64::new(0.0, 0.0));
+                    state.set_cell_superposition(
+                        i,
+                        Complex64::new(0.0, 0.0),
+                        amp1,
+                        Complex64::new(0.0, 0.0),
+                    );
                 }
             } else {
                 state.set_cell_vacuum(i);
@@ -330,7 +356,8 @@ impl PatternFactory {
                 if envelope > 0.04 {
                     let phase = p_x * dx + p_y * dy;
                     let amp1 = Complex64::from_polar(envelope * 0.8, phase);
-                    let amp2 = Complex64::from_polar(envelope * 0.4, phase + std::f64::consts::PI * 0.5);
+                    let amp2 =
+                        Complex64::from_polar(envelope * 0.4, phase + std::f64::consts::PI * 0.5);
                     let rem_sq = (1.0 - (amp1.norm_sqr() + amp2.norm_sqr())).max(0.0);
                     let amp0 = Complex64::new(rem_sq.sqrt(), 0.0);
 

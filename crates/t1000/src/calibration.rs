@@ -26,10 +26,16 @@ impl AffineFit {
             sxx += (a - mx) * (a - mx);
         }
         if sxx < 1e-300 {
-            return Self { slope: 0.0, intercept: my };
+            return Self {
+                slope: 0.0,
+                intercept: my,
+            };
         }
         let slope = sxy / sxx;
-        Self { slope, intercept: my - slope * mx }
+        Self {
+            slope,
+            intercept: my - slope * mx,
+        }
     }
 
     pub fn apply(&self, x: f64) -> f64 {
@@ -85,7 +91,10 @@ pub fn calibrate(
 ) -> Calibrated {
     let column = |rows: &[[f64; 3]], k: usize| rows.iter().map(|r| r[k]).collect::<Vec<f64>>();
     let mut out = Calibrated {
-        fits: [AffineFit { slope: 0.0, intercept: 0.0 }; 3],
+        fits: [AffineFit {
+            slope: 0.0,
+            intercept: 0.0,
+        }; 3],
         test_mse: [0.0; 3],
         test_mae: [0.0; 3],
         test_r2: [0.0; 3],
@@ -115,8 +124,12 @@ impl Calibrated {
         for (k, name) in ["logP", "qed ", "SAS "].iter().enumerate() {
             println!(
                 "  {name}   {:>10.4}   {:>14.4}   {:>14.4}   {:>13.4}   {:>5.3}  {:>9.4}",
-                raw_mse[k], self.test_mse[k], self.test_mae[k], self.test_r2[k],
-                self.fits[k].slope, self.fits[k].intercept
+                raw_mse[k],
+                self.test_mse[k],
+                self.test_mae[k],
+                self.test_r2[k],
+                self.fits[k].slope,
+                self.fits[k].intercept
             );
         }
     }

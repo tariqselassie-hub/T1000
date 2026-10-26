@@ -33,12 +33,12 @@ use serde::{Deserialize, Serialize};
 /// Canonical 7-node directed transition matrix $P$.
 pub const DIRECTED_HEPTAL_P: [[f64; 7]; 7] = [
     [0.0, 0.25, 0.25, 0.0, 0.0, 0.25, 0.25], // Row 0 (v1 - Hub)
-    [0.0, 0.0,  0.0,  0.5, 0.0, 0.0,  0.5 ], // Row 1 (v2)
-    [0.5, 0.0,  0.0,  0.0, 0.0, 0.5,  0.0 ], // Row 2 (v3)
-    [0.0, 0.5,  0.0,  0.0, 0.5, 0.0,  0.0 ], // Row 3 (v4)
-    [0.0, 0.0,  0.0,  0.5, 0.0, 0.0,  0.5 ], // Row 4 (v5 - Twin with v2)
-    [0.5, 0.0,  0.5,  0.0, 0.0, 0.0,  0.0 ], // Row 5 (v6)
-    [0.5, 0.0,  0.0,  0.0, 0.5, 0.0,  0.0 ], // Row 6 (v7 - Sink/Feedback)
+    [0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.5],     // Row 1 (v2)
+    [0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0],     // Row 2 (v3)
+    [0.0, 0.5, 0.0, 0.0, 0.5, 0.0, 0.0],     // Row 3 (v4)
+    [0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.5],     // Row 4 (v5 - Twin with v2)
+    [0.5, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0],     // Row 5 (v6)
+    [0.5, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0],     // Row 6 (v7 - Sink/Feedback)
 ];
 
 /// Exact rational stationary probability distribution: pi = 1/42 * [8, 5, 4, 6, 7, 4, 8].
@@ -385,7 +385,7 @@ impl MolecularDipoleGraph {
                 [-44.80, 0.00, 1.20],   // v6 - Lead #6 C20H23N7O6 (44.80 D)
                 [38.50, 0.00, -1.00],   // v7 (Sink) - Lead #7 C30H56O3 (38.51 D)
             ],
-            e_field: [0.05, 0.0, 0.0],  // 0.05 a.u. field aligned along X-axis
+            e_field: [0.05, 0.0, 0.0], // 0.05 a.u. field aligned along X-axis
             beta: 0.05,
         }
     }
@@ -742,7 +742,10 @@ mod tests {
         }
 
         let ent = ctqw.entropy();
-        assert!(ent > 0.0, "Entropy should be positive after ballistic transit");
+        assert!(
+            ent > 0.0,
+            "Entropy should be positive after ballistic transit"
+        );
     }
 
     #[test]
@@ -781,10 +784,15 @@ mod tests {
         let p_tilt = dipoles.tilted_transition_matrix();
         for row in &p_tilt {
             let sum: f64 = row.iter().sum();
-            assert!((sum - 1.0).abs() < 1e-12, "Row stochasticity violated: {sum}");
+            assert!(
+                (sum - 1.0).abs() < 1e-12,
+                "Row stochasticity violated: {sum}"
+            );
         }
         let walk = BipartiteSzegedyWalk::with_molecular_dipole_drift(&dipoles);
-        assert!(walk.unitarity_error() < 1e-13, "Dipole walk must be unitary");
+        assert!(
+            walk.unitarity_error() < 1e-13,
+            "Dipole walk must be unitary"
+        );
     }
 }
-

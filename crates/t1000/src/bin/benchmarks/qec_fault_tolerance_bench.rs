@@ -80,7 +80,11 @@ fn run_magic_distillation_bench() -> DistillationFactoryReport {
         let p_acc = telem.acceptance_probability;
         let eps_out = telem.output_infidelity;
         let theo = telem.theoretical_infidelity;
-        let suppression = if eps_out > 1e-15 { eps_in / eps_out } else { 1.0 / theo };
+        let suppression = if eps_out > 1e-15 {
+            eps_in / eps_out
+        } else {
+            1.0 / theo
+        };
 
         println!(
             "{POLAR}│{RESET}  {:6.3}%  {POLAR}│{RESET}   {:6.2}%    {POLAR}│{EMERALD}  {:10.4e} {POLAR}│{RESET}  {:10.4e} {POLAR}│{AMBER}  {:8.1}x  {POLAR}│{EMERALD} PASS [CUBIC] {POLAR}│{RESET}",
@@ -100,17 +104,47 @@ fn run_magic_distillation_bench() -> DistillationFactoryReport {
 }
 
 fn run_lattice_surgery_bench() -> SurgeryBenchSection {
-    println!("\n{BOLD}{AMBER}─── PILLAR 2: 18-QUBIT PLANAR SURFACE CODE LATTICE SURGERY ───{RESET}");
+    println!(
+        "\n{BOLD}{AMBER}─── PILLAR 2: 18-QUBIT PLANAR SURFACE CODE LATTICE SURGERY ───{RESET}"
+    );
     println!("{SLATE}Patch 1 (Ctrl: q0..q8) + Patch 2 (Target: q9..q17) • 262,144 Complex Amplitudes (4 MB L3){RESET}");
 
     let start = Instant::now();
 
     // 1. Verify Truth Table across all 4 computational basis inputs
     let basis_pairs = [
-        ((1.0, 0.0), (0.0, 0.0), (1.0, 0.0), (0.0, 0.0), 1.0, "|00>L -> |00>L"),
-        ((1.0, 0.0), (0.0, 0.0), (0.0, 0.0), (1.0, 0.0), -1.0, "|01>L -> |01>L"),
-        ((0.0, 0.0), (1.0, 0.0), (1.0, 0.0), (0.0, 0.0), 1.0, "|10>L -> |11>L"),
-        ((0.0, 0.0), (1.0, 0.0), (0.0, 0.0), (1.0, 0.0), -1.0, "|11>L -> |10>L"),
+        (
+            (1.0, 0.0),
+            (0.0, 0.0),
+            (1.0, 0.0),
+            (0.0, 0.0),
+            1.0,
+            "|00>L -> |00>L",
+        ),
+        (
+            (1.0, 0.0),
+            (0.0, 0.0),
+            (0.0, 0.0),
+            (1.0, 0.0),
+            -1.0,
+            "|01>L -> |01>L",
+        ),
+        (
+            (0.0, 0.0),
+            (1.0, 0.0),
+            (1.0, 0.0),
+            (0.0, 0.0),
+            1.0,
+            "|10>L -> |11>L",
+        ),
+        (
+            (0.0, 0.0),
+            (1.0, 0.0),
+            (0.0, 0.0),
+            (1.0, 0.0),
+            -1.0,
+            "|11>L -> |10>L",
+        ),
     ];
 
     println!("{POLAR}┌───────────────────┬───────────────┬────────────────┬────────────────┬──────────────┐{RESET}");
@@ -144,10 +178,19 @@ fn run_lattice_surgery_bench() -> SurgeryBenchSection {
     let elapsed = start.elapsed();
 
     println!("\n{BOLD}{EMERALD}Lattice Surgery Bell State Generation (|Phi+>L):{RESET}");
-    println!("  {POLAR}• Logical Correlation <Z_L(1) Z_L(2)>:{RESET} {EMERALD}{:+.12}{RESET}", bell_telem.logical_zz_correlation);
-    println!("  {POLAR}• Logical Correlation <X_L(1) X_L(2)>:{RESET} {EMERALD}{:+.12}{RESET}", bell_telem.logical_xx_correlation);
+    println!(
+        "  {POLAR}• Logical Correlation <Z_L(1) Z_L(2)>:{RESET} {EMERALD}{:+.12}{RESET}",
+        bell_telem.logical_zz_correlation
+    );
+    println!(
+        "  {POLAR}• Logical Correlation <X_L(1) X_L(2)>:{RESET} {EMERALD}{:+.12}{RESET}",
+        bell_telem.logical_xx_correlation
+    );
     println!("  {POLAR}• Logical Overlap Fidelity F(Phi+):   {RESET} {EMERALD}{:+.12}{RESET} {BOLD}(Exact 1.0){RESET}", fidelity);
-    println!("  {POLAR}• 18Q Statevector Execution Latency:  {RESET} {AMBER}{:.3} ms{RESET}", elapsed.as_secs_f64() * 1000.0);
+    println!(
+        "  {POLAR}• 18Q Statevector Execution Latency:  {RESET} {AMBER}{:.3} ms{RESET}",
+        elapsed.as_secs_f64() * 1000.0
+    );
 
     SurgeryBenchSection {
         patch_distance: 3,
@@ -162,7 +205,9 @@ fn run_lattice_surgery_bench() -> SurgeryBenchSection {
 }
 
 fn run_error_recovery_bench() -> RecoveryBenchSection {
-    println!("\n{BOLD}{AMBER}─── PILLAR 3: PHYSICAL ERROR INJECTION & SYNDROME CORRECTION ───{RESET}");
+    println!(
+        "\n{BOLD}{AMBER}─── PILLAR 3: PHYSICAL ERROR INJECTION & SYNDROME CORRECTION ───{RESET}"
+    );
     println!("{SLATE}Injecting Pauli errors onto boundary data qubits and testing active recovery{RESET}");
 
     // Encode 9Q surface code patch
@@ -177,10 +222,22 @@ fn run_error_recovery_bench() -> RecoveryBenchSection {
     let recovery = detect_and_recover(&mut corrupted, &clean, QecCodeKind::SurfaceCode9Q, 0);
     let syndrome = &recovery.syndrome;
 
-    println!("  {POLAR}• Injected Error:{RESET} {AMBER}Pauli-X on Boundary Data Qubit {}{RESET}", target_qubit);
-    println!("  {POLAR}• Syndrome Bits: {RESET} {POLAR}{:?}{RESET}", syndrome.syndrome_bits);
-    println!("  {POLAR}• Error Detected:{RESET} {EMERALD}{}{RESET}", syndrome.error_detected);
-    println!("  {POLAR}• Identified Q:  {RESET} {EMERALD}{:?}{RESET}", syndrome.faulty_qubit);
+    println!(
+        "  {POLAR}• Injected Error:{RESET} {AMBER}Pauli-X on Boundary Data Qubit {}{RESET}",
+        target_qubit
+    );
+    println!(
+        "  {POLAR}• Syndrome Bits: {RESET} {POLAR}{:?}{RESET}",
+        syndrome.syndrome_bits
+    );
+    println!(
+        "  {POLAR}• Error Detected:{RESET} {EMERALD}{}{RESET}",
+        syndrome.error_detected
+    );
+    println!(
+        "  {POLAR}• Identified Q:  {RESET} {EMERALD}{:?}{RESET}",
+        syndrome.faulty_qubit
+    );
     println!("  {POLAR}• Post-Recovery: {RESET} {EMERALD}Fidelity = {:.12}{RESET} {BOLD}(100% Corrected){RESET}", recovery.fidelity_restored);
 
     RecoveryBenchSection {
@@ -209,11 +266,16 @@ fn main() {
     let out_dir = Path::new("results/experiments");
     std::fs::create_dir_all(out_dir).expect("Failed to create results directory");
     let out_path = out_dir.join("qec_fault_tolerance_telemetry.json");
-    let json_bytes = serde_json::to_string_pretty(&telemetry).expect("Failed to serialize telemetry");
+    let json_bytes =
+        serde_json::to_string_pretty(&telemetry).expect("Failed to serialize telemetry");
     let mut f = t1000::results::create(&out_path).expect("Failed to write telemetry file");
-    f.write_all(json_bytes.as_bytes()).expect("Failed to write to file");
+    f.write_all(json_bytes.as_bytes())
+        .expect("Failed to write to file");
 
     println!("\n{BOLD}{EMERALD}═══════════════════════════════════════════════════════════════════════════════════════{RESET}");
-    println!("{BOLD}{EMERALD} EXPERIMENTAL RUN COMPLETE: Sovereign Telemetry written to {}{RESET}", out_path.display());
+    println!(
+        "{BOLD}{EMERALD} EXPERIMENTAL RUN COMPLETE: Sovereign Telemetry written to {}{RESET}",
+        out_path.display()
+    );
     println!("{BOLD}{EMERALD}═══════════════════════════════════════════════════════════════════════════════════════{RESET}\n");
 }

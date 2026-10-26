@@ -92,7 +92,9 @@ impl MagicW7InjectionEngine {
         let p_acc = (1.0 - 15.0 * input_error).clamp(0.01, 1.0);
         let mut accepted = false;
         for _ in 0..10 {
-            rng = rng.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+            rng = rng
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
             let sample = ((rng >> 16) & 0xFFFF) as f64 / 65535.0;
             if sample <= p_acc {
                 accepted = true;

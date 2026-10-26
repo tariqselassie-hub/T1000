@@ -32,7 +32,9 @@ use telemetry::{
 };
 
 use t1000::adjoint::AdjointWorkspace;
-use t1000::{adjoint_gradient_buffered, AdamOptimizer, CircuitAnsatz, PauliObservable, QuantumState};
+use t1000::{
+    adjoint_gradient_buffered, AdamOptimizer, CircuitAnsatz, PauliObservable, QuantumState,
+};
 
 const N_QUBITS: usize = 10;
 
@@ -124,10 +126,19 @@ fn main() {
     let mut opt_head = AdamOptimizer::new_unwrapped(n_head_params, base_lr_head);
 
     println!("\n [ARCHITECTURE] Sovereign Hybrid Model Configuration:");
-    println!("   Quantum Register       : {} Qubits (1,024 Hilbert Amplitudes)", N_QUBITS);
-    println!("   Circuit Depth          : {} layers (Ring CZ + Ry/Rz)", depth);
+    println!(
+        "   Quantum Register       : {} Qubits (1,024 Hilbert Amplitudes)",
+        N_QUBITS
+    );
+    println!(
+        "   Circuit Depth          : {} layers (Ring CZ + Ry/Rz)",
+        depth
+    );
     println!("   Observables (Z+X+ZZ)   : {} Correlators", N_OBSERVABLES);
-    println!("   Spatial Feature Stream : {} Multi-Scale 2D Features", N_SPATIAL);
+    println!(
+        "   Spatial Feature Stream : {} Multi-Scale 2D Features",
+        N_SPATIAL
+    );
     println!(
         "   Total Trainable Params : {} Quantum + {} Classical = {}",
         n_ansatz_params,
@@ -193,7 +204,8 @@ fn main() {
                             sample_loss = loss;
                             sample_correct = if pred == *label { 1 } else { 0 };
 
-                            let d_fused = head.backward(&fused, &z1, &a1, &d_logits, &mut local_head_grad);
+                            let d_fused =
+                                head.backward(&fused, &z1, &a1, &d_logits, &mut local_head_grad);
                             d_fused[..N_OBSERVABLES].to_vec()
                         },
                         &mut ws,
@@ -206,8 +218,12 @@ fn main() {
                     |mut acc, elem| {
                         acc.0 += elem.0;
                         acc.1 += elem.1;
-                        for i in 0..n_ansatz_params { acc.2[i] += elem.2[i]; }
-                        for i in 0..n_head_params { acc.3[i] += elem.3[i]; }
+                        for i in 0..n_ansatz_params {
+                            acc.2[i] += elem.2[i];
+                        }
+                        for i in 0..n_head_params {
+                            acc.3[i] += elem.3[i];
+                        }
                         acc
                     },
                 );
@@ -217,7 +233,8 @@ fn main() {
 
             // Apply L2 weight decay (ridge regularization) on classical head
             let weight_decay = 1e-4;
-            let avg_ansatz_grad: Vec<f64> = batch_ansatz_grad.iter().map(|&g| g / batch_len).collect();
+            let avg_ansatz_grad: Vec<f64> =
+                batch_ansatz_grad.iter().map(|&g| g / batch_len).collect();
             let avg_head_grad: Vec<f64> = batch_head_grad
                 .iter()
                 .enumerate()
@@ -233,49 +250,57 @@ fn main() {
         let train_acc = 100.0 * f64::from(train_correct) / (n_train as f64);
 
         // Test evaluation with full per-neuron activation tracking
-        let (test_loss, test_correct, mean_coherence, (firing_counts, act_sums, act_maxs)) = test_samples
-            .par_iter()
-            .map(|(input_state, spatial, label)| {
-                let mut phi = input_state.clone();
-                ansatz.forward_in_place(&mut phi, &ansatz_weights);
-                let coh = compute_l1_coherence(&phi);
-                let mut fused = [0.0; N_FUSED];
-                for (i, o) in observables.iter().enumerate() {
-                    fused[i] = o.expectation_value(&phi);
-                }
-                fused[N_OBSERVABLES..].copy_from_slice(spatial);
-
-                let (logits, _z1, a1) = head.forward(&fused);
-                let (loss, _, pred) = softmax_cross_entropy(&logits, *label);
-                let correct = if pred == *label { 1 } else { 0 };
-
-                let mut local_counts = [0usize; N_HIDDEN];
-                let mut local_sums = [0.0f64; N_HIDDEN];
-                let mut local_maxs = [0.0f64; N_HIDDEN];
-                for h in 0..N_HIDDEN {
-                    if a1[h] > 0.0 {
-                        local_counts[h] = 1;
+        let (test_loss, test_correct, mean_coherence, (firing_counts, act_sums, act_maxs)) =
+            test_samples
+                .par_iter()
+                .map(|(input_state, spatial, label)| {
+                    let mut phi = input_state.clone();
+                    ansatz.forward_in_place(&mut phi, &ansatz_weights);
+                    let coh = compute_l1_coherence(&phi);
+                    let mut fused = [0.0; N_FUSED];
+                    for (i, o) in observables.iter().enumerate() {
+                        fused[i] = o.expectation_value(&phi);
                     }
-                    local_sums[h] = a1[h];
-                    local_maxs[h] = a1[h];
-                }
+                    fused[N_OBSERVABLES..].copy_from_slice(spatial);
 
-                (loss, correct, coh, (local_counts, local_sums, local_maxs))
-            })
-            .reduce(
-                || (0.0, 0, 0.0, ([0; N_HIDDEN], [0.0; N_HIDDEN], [0.0; N_HIDDEN])),
-                |mut acc, elem| {
-                    acc.0 += elem.0;
-                    acc.1 += elem.1;
-                    acc.2 += elem.2;
+                    let (logits, _z1, a1) = head.forward(&fused);
+                    let (loss, _, pred) = softmax_cross_entropy(&logits, *label);
+                    let correct = if pred == *label { 1 } else { 0 };
+
+                    let mut local_counts = [0usize; N_HIDDEN];
+                    let mut local_sums = [0.0f64; N_HIDDEN];
+                    let mut local_maxs = [0.0f64; N_HIDDEN];
                     for h in 0..N_HIDDEN {
-                        (acc.3).0[h] += (elem.3).0[h];
-                        (acc.3).1[h] += (elem.3).1[h];
-                        (acc.3).2[h] = (acc.3).2[h].max((elem.3).2[h]);
+                        if a1[h] > 0.0 {
+                            local_counts[h] = 1;
+                        }
+                        local_sums[h] = a1[h];
+                        local_maxs[h] = a1[h];
                     }
-                    acc
-                },
-            );
+
+                    (loss, correct, coh, (local_counts, local_sums, local_maxs))
+                })
+                .reduce(
+                    || {
+                        (
+                            0.0,
+                            0,
+                            0.0,
+                            ([0; N_HIDDEN], [0.0; N_HIDDEN], [0.0; N_HIDDEN]),
+                        )
+                    },
+                    |mut acc, elem| {
+                        acc.0 += elem.0;
+                        acc.1 += elem.1;
+                        acc.2 += elem.2;
+                        for h in 0..N_HIDDEN {
+                            (acc.3).0[h] += (elem.3).0[h];
+                            (acc.3).1[h] += (elem.3).1[h];
+                            (acc.3).2[h] = (acc.3).2[h].max((elem.3).2[h]);
+                        }
+                        acc
+                    },
+                );
 
         last_firing_counts = firing_counts;
         last_act_sums = act_sums;
@@ -328,7 +353,11 @@ fn main() {
         final_ep.test_accuracy_pct, final_ep.mean_coherence_l1
     );
     println!("╚═══════════════════════════════════╩══════════════╩═════════════╩══════════════╝");
-    println!(" [NEURON HEALTH] Hidden Neurons Active: {}/128 | Dead: {}/128", 128 - dead_count, dead_count);
+    println!(
+        " [NEURON HEALTH] Hidden Neurons Active: {}/128 | Dead: {}/128",
+        128 - dead_count,
+        dead_count
+    );
 
     save_report(
         &history,
@@ -426,8 +455,10 @@ fn export_neural_probe(
 
             let max_logit = logits.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
             let exp_sum: f64 = logits.iter().map(|&l| (l - max_logit).exp()).sum();
-            let probabilities: Vec<f64> =
-                logits.iter().map(|&l| (l - max_logit).exp() / exp_sum).collect();
+            let probabilities: Vec<f64> = logits
+                .iter()
+                .map(|&l| (l - max_logit).exp() / exp_sum)
+                .collect();
             let confidence = probabilities[pred];
 
             selected_samples.push(NeuralProbeSample {
@@ -468,8 +499,14 @@ fn export_neural_probe(
     let _ = fs::write("results/data/mnist_neural_probe.json", &json_str);
 
     println!("\n [NEURAL PROBE EXPORT]");
-    println!("   Active Neurons : {}/{}", report.active_neurons_count, report.total_neurons);
-    println!("   Dead Neurons   : {} ({:?})", report.dead_neurons_count, report.dead_neurons);
+    println!(
+        "   Active Neurons : {}/{}",
+        report.active_neurons_count, report.total_neurons
+    );
+    println!(
+        "   Dead Neurons   : {} ({:?})",
+        report.dead_neurons_count, report.dead_neurons
+    );
     println!("   Web Telemetry  : web/data/mnist_neural_probe.json");
     println!("   Data Telemetry : results/data/mnist_neural_probe.json");
 }

@@ -66,7 +66,12 @@ fn parity_features_into(p: &[f64], n: usize, max_weight: usize, out: &mut [f64])
 
 /// Writes the expectation values of `state` into `out` (`out.len() == kind.count(n)`).
 pub fn z_features_into(state: &QuantumState, kind: Observables, out: &mut [f64]) {
-    let p: Vec<f64> = state.real.iter().zip(&state.imag).map(|(r, i)| r * r + i * i).collect();
+    let p: Vec<f64> = state
+        .real
+        .iter()
+        .zip(&state.imag)
+        .map(|(r, i)| r * r + i * i)
+        .collect();
     probability_features_into(&p, kind, out);
 }
 
@@ -76,8 +81,15 @@ pub fn z_features_into(state: &QuantumState, kind: Observables, out: &mut [f64])
 /// frequencies after readout mitigation (which can dip below zero) are valid input.
 pub fn probability_features_into(p: &[f64], kind: Observables, out: &mut [f64]) {
     let n = p.len().trailing_zeros() as usize;
-    assert!(n <= MAX_QUBITS && 1usize << n == p.len(), "distribution must have 2^n entries");
-    assert_eq!(out.len(), kind.count(n), "feature buffer has the wrong length");
+    assert!(
+        n <= MAX_QUBITS && 1usize << n == p.len(),
+        "distribution must have 2^n entries"
+    );
+    assert_eq!(
+        out.len(),
+        kind.count(n),
+        "feature buffer has the wrong length"
+    );
     out.fill(0.0);
     if let Observables::ParityUpTo(k) = kind {
         return parity_features_into(p, n, k, out);
@@ -90,7 +102,10 @@ pub fn probability_features_into(p: &[f64], kind: Observables, out: &mut [f64]) 
         for (q, s) in sign.iter_mut().enumerate().take(n) {
             *s = 1.0 - 2.0 * ((i >> q) & 1) as f64;
         }
-        out[..n].iter_mut().zip(&sign).for_each(|(o, s)| *o += weight * s);
+        out[..n]
+            .iter_mut()
+            .zip(&sign)
+            .for_each(|(o, s)| *o += weight * s);
         if matches!(kind, Observables::ZAndZz) {
             let mut k = n;
             for q in 0..n {
@@ -123,7 +138,8 @@ impl CircuitFeatureMap<'_> {
         inputs
             .into_iter()
             .map(|x| {
-                self.ansatz.forward_into(&self.encoding.encode(x), self.weights, &mut scratch);
+                self.ansatz
+                    .forward_into(&self.encoding.encode(x), self.weights, &mut scratch);
                 let mut row = vec![0.0; self.n_features()];
                 z_features_into(&scratch, self.observables, &mut row);
                 row
@@ -133,7 +149,11 @@ impl CircuitFeatureMap<'_> {
 }
 
 fn standardize(row: &[f64], center: &[f64], spread: &[f64]) -> Vec<f64> {
-    row.iter().zip(center).zip(spread).map(|((v, c), s)| (v - c) / s).collect()
+    row.iter()
+        .zip(center)
+        .zip(spread)
+        .map(|((v, c), s)| (v - c) / s)
+        .collect()
 }
 
 /// Ridge penalties reaching far above [`RIDGE_LAMBDAS`], for features with sampling noise: the
@@ -149,7 +169,13 @@ pub fn select_features(features: &[Vec<f64>], targets: &[Vec<f64>], k: usize) ->
     let mut scored: Vec<(usize, f64)> = (0..d)
         .map(|j| {
             let col = columns(features, j);
-            (j, target_cols.iter().map(|t| pearson_r(&col, t).abs()).fold(0.0, f64::max))
+            (
+                j,
+                target_cols
+                    .iter()
+                    .map(|t| pearson_r(&col, t).abs())
+                    .fold(0.0, f64::max),
+            )
         })
         .collect();
     scored.sort_by(|a, b| b.1.total_cmp(&a.1));
@@ -160,7 +186,9 @@ pub fn select_features(features: &[Vec<f64>], targets: &[Vec<f64>], k: usize) ->
 
 /// The listed columns of every row.
 pub fn project(rows: &[Vec<f64>], columns: &[usize]) -> Vec<Vec<f64>> {
-    rows.iter().map(|r| columns.iter().map(|&j| r[j]).collect()).collect()
+    rows.iter()
+        .map(|r| columns.iter().map(|&j| r[j]).collect())
+        .collect()
 }
 
 /// Standardisation followed by a ridge regression: the complete, self-contained readout.
@@ -186,20 +214,38 @@ impl LinearHead {
     pub fn fit_with(features: &[Vec<f64>], targets: &[Vec<f64>], lambdas: &[f64]) -> Self {
         let n = features.len() as f64;
         let d = features[0].len();
-        let center: Vec<f64> = (0..d).map(|j| features.iter().map(|r| r[j]).sum::<f64>() / n).collect();
+        let center: Vec<f64> = (0..d)
+            .map(|j| features.iter().map(|r| r[j]).sum::<f64>() / n)
+            .collect();
         let spread: Vec<f64> = (0..d)
             .map(|j| {
-                let var = features.iter().map(|r| (r[j] - center[j]).powi(2)).sum::<f64>() / n;
-                if var > 1e-24 { var.sqrt() } else { 1.0 }
+                let var = features
+                    .iter()
+                    .map(|r| (r[j] - center[j]).powi(2))
+                    .sum::<f64>()
+                    / n;
+                if var > 1e-24 {
+                    var.sqrt()
+                } else {
+                    1.0
+                }
             })
             .collect();
-        let scaled: Vec<Vec<f64>> = features.iter().map(|r| standardize(r, &center, &spread)).collect();
+        let scaled: Vec<Vec<f64>> = features
+            .iter()
+            .map(|r| standardize(r, &center, &spread))
+            .collect();
         let ridge = fit_ridge_validated(&scaled, targets, lambdas);
-        Self { center, spread, ridge }
+        Self {
+            center,
+            spread,
+            ridge,
+        }
     }
 
     pub fn predict_one(&self, row: &[f64]) -> Vec<f64> {
-        self.ridge.predict_one(&standardize(row, &self.center, &self.spread))
+        self.ridge
+            .predict_one(&standardize(row, &self.center, &self.spread))
     }
 
     pub fn predict(&self, rows: &[Vec<f64>]) -> Vec<Vec<f64>> {
@@ -233,7 +279,9 @@ pub fn weights_fingerprint(weights: &[f64]) -> String {
     let hash = weights
         .iter()
         .flat_map(|w| w.to_bits().to_le_bytes())
-        .fold(0xcbf2_9ce4_8422_2325u64, |h, b| (h ^ u64::from(b)).wrapping_mul(0x0100_0000_01b3));
+        .fold(0xcbf2_9ce4_8422_2325u64, |h, b| {
+            (h ^ u64::from(b)).wrapping_mul(0x0100_0000_01b3)
+        });
     format!("{hash:016x}")
 }
 
@@ -270,7 +318,9 @@ mod tests {
     fn parity_features_match_the_direct_sums() {
         let n = 4;
         let mut s = QuantumState::zero(1 << n);
-        let amps = [0.3, 0.1, 0.5, 0.2, 0.05, 0.4, 0.3, 0.1, 0.2, 0.25, 0.15, 0.3, 0.1, 0.35, 0.2, 0.05];
+        let amps = [
+            0.3, 0.1, 0.5, 0.2, 0.05, 0.4, 0.3, 0.1, 0.2, 0.25, 0.15, 0.3, 0.1, 0.35, 0.2, 0.05,
+        ];
         let norm = amps.iter().map(|a: &f64| a * a).sum::<f64>().sqrt();
         s.real.iter_mut().zip(amps).for_each(|(r, a)| *r = a / norm);
         let kind = Observables::ParityUpTo(3);
@@ -280,9 +330,20 @@ mod tests {
         let masks: Vec<usize> = (1..1usize << n).filter(|m| m.count_ones() <= 3).collect();
         for (value, mask) in got.iter().zip(masks) {
             let want: f64 = (0..1usize << n)
-                .map(|x| s.real[x] * s.real[x] * if (x & mask).count_ones() % 2 == 0 { 1.0 } else { -1.0 })
+                .map(|x| {
+                    s.real[x]
+                        * s.real[x]
+                        * if (x & mask).count_ones() % 2 == 0 {
+                            1.0
+                        } else {
+                            -1.0
+                        }
+                })
                 .sum();
-            assert!((value - want).abs() < 1e-12, "mask {mask:b}: {value} vs {want}");
+            assert!(
+                (value - want).abs() < 1e-12,
+                "mask {mask:b}: {value} vs {want}"
+            );
         }
         // Weight-1 masks reproduce the single-qubit Z block.
         let mut z = vec![0.0; n];
@@ -302,7 +363,10 @@ mod tests {
         let doubled: Vec<f64> = p.iter().map(|v| 2.0 * v).collect();
         let mut twice = vec![0.0; base.len()];
         probability_features_into(&doubled, Observables::ZAndZz, &mut twice);
-        assert!(base.iter().zip(&twice).all(|(a, b)| (2.0 * a - b).abs() < 1e-12));
+        assert!(base
+            .iter()
+            .zip(&twice)
+            .all(|(a, b)| (2.0 * a - b).abs() < 1e-12));
         // Z0 = p0 - p1 + p2 - p3 = 0.5 - 0.3 + 0.25 + 0.05.
         assert!((base[0] - 0.5).abs() < 1e-12);
     }
@@ -327,7 +391,9 @@ mod tests {
     #[test]
     fn feature_selection_ranks_by_target_correlation() {
         // Column 1 equals the target, column 0 is unrelated, column 2 is the target reversed.
-        let features: Vec<Vec<f64>> = (0..20).map(|i| vec![((i * 7) % 5) as f64, i as f64, -(i as f64)]).collect();
+        let features: Vec<Vec<f64>> = (0..20)
+            .map(|i| vec![((i * 7) % 5) as f64, i as f64, -(i as f64)])
+            .collect();
         let targets: Vec<Vec<f64>> = (0..20).map(|i| vec![i as f64]).collect();
         assert_eq!(select_features(&features, &targets, 2), vec![1, 2]);
         assert_eq!(select_features(&features, &targets, 1).len(), 1);

@@ -54,7 +54,11 @@ impl MolecularLaplacian {
             return Err("Molecule must contain at least 2 atoms".to_string());
         }
 
-        let z_vals: Vec<f64> = record.atoms.iter().map(|a| element_symbol_to_z(&a.symbol)).collect();
+        let z_vals: Vec<f64> = record
+            .atoms
+            .iter()
+            .map(|a| element_symbol_to_z(&a.symbol))
+            .collect();
 
         // 1. Build Coulomb adjacency matrix A_ij = (Z_i * Z_j) / ||r_i - r_j||
         let mut adj = vec![0.0; n * n];
@@ -79,7 +83,11 @@ impl MolecularLaplacian {
         let mut lap = vec![0.0; n * n];
         for i in 0..n {
             for j in 0..n {
-                lap[i * n + j] = if i == j { deg[i] - adj[i * n + j] } else { -adj[i * n + j] };
+                lap[i * n + j] = if i == j {
+                    deg[i] - adj[i * n + j]
+                } else {
+                    -adj[i * n + j]
+                };
             }
         }
 

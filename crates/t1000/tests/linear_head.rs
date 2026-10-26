@@ -21,14 +21,21 @@ fn inputs(count: usize) -> Vec<Vec<f64>> {
         x ^= x << 17;
         0.1 + (x >> 11) as f64 / (1u64 << 53) as f64
     };
-    (0..count).map(|_| (0..N_INPUTS).map(|_| next()).collect()).collect()
+    (0..count)
+        .map(|_| (0..N_INPUTS).map(|_| next()).collect())
+        .collect()
 }
 
 fn map_and_rows() -> (Vec<Vec<f64>>, Vec<Vec<f64>>) {
     let encoding = DataEncodingLayer::new(N_QUBITS, EncodingKind::Amplitude);
     let ansatz = CircuitAnsatz::new(N_QUBITS, 2).with_pi_layer(true);
     let weights = ansatz.weights.clone();
-    let map = CircuitFeatureMap { encoding: &encoding, ansatz: &ansatz, weights: &weights, observables: Observables::ZAndZz };
+    let map = CircuitFeatureMap {
+        encoding: &encoding,
+        ansatz: &ansatz,
+        weights: &weights,
+        observables: Observables::ZAndZz,
+    };
     let x = inputs(300);
     let rows = map.feature_matrix(x.iter().map(Vec::as_slice));
     let again = map.feature_matrix(x.iter().map(Vec::as_slice));
@@ -37,7 +44,13 @@ fn map_and_rows() -> (Vec<Vec<f64>>, Vec<Vec<f64>>) {
     // Targets: exact linear combinations of three different feature columns.
     let targets = rows
         .iter()
-        .map(|f| vec![2.0 * f[3] - f[7] + 0.5, f[1] + 3.0 * f[9], -f[5] + 0.25 * f[0] + 1.0])
+        .map(|f| {
+            vec![
+                2.0 * f[3] - f[7] + 0.5,
+                f[1] + 3.0 * f[9],
+                -f[5] + 0.25 * f[0] + 1.0,
+            ]
+        })
         .collect();
     (rows, targets)
 }
@@ -49,7 +62,12 @@ fn head_recovers_targets_that_are_linear_in_the_circuit_features() {
     let preds = head.predict(&rows[200..]);
     let metrics = regression_metrics(&preds, &targets[200..], &["a", "b", "c"]);
     for m in &metrics {
-        assert!(m.r2 > 0.999, "{}: held-out R2 {} should be ~1 for an exactly linear target", m.target, m.r2);
+        assert!(
+            m.r2 > 0.999,
+            "{}: held-out R2 {} should be ~1 for an exactly linear target",
+            m.target,
+            m.r2
+        );
     }
 }
 
@@ -61,7 +79,12 @@ fn saved_head_reloads_to_matching_predictions() {
     let reloaded: LinearHead = serde_json::from_str(&json).unwrap();
     // The JSON float parser is not guaranteed bit-exact, so compare to rounding.
     let (a, b) = (head.predict(&rows[200..]), reloaded.predict(&rows[200..]));
-    let worst = a.iter().flatten().zip(b.iter().flatten()).map(|(x, y)| (x - y).abs()).fold(0.0, f64::max);
+    let worst = a
+        .iter()
+        .flatten()
+        .zip(b.iter().flatten())
+        .map(|(x, y)| (x - y).abs())
+        .fold(0.0, f64::max);
     assert!(worst < 1e-12, "reloaded head deviates by {worst}");
 }
 
@@ -74,7 +97,12 @@ fn unexplained_variance(degree: usize) -> f64 {
     let encoding = DataEncodingLayer::new(5, EncodingKind::Amplitude);
     let ansatz = CircuitAnsatz::new(5, 3).with_pi_layer(true);
     let weights = ansatz.weights.clone();
-    let map = CircuitFeatureMap { encoding: &encoding, ansatz: &ansatz, weights: &weights, observables: Observables::ParityUpTo(4) };
+    let map = CircuitFeatureMap {
+        encoding: &encoding,
+        ansatz: &ansatz,
+        weights: &weights,
+        observables: Observables::ParityUpTo(4),
+    };
     let inputs: Vec<Vec<f64>> = inputs(600).into_iter().map(|v| v[..6].to_vec()).collect();
     let features = map.feature_matrix(inputs.iter().map(Vec::as_slice));
     let monomials: Vec<Vec<f64>> = inputs
@@ -94,7 +122,11 @@ fn unexplained_variance(degree: usize) -> f64 {
         if var < 1e-20 {
             continue; // a constant feature is trivially reproduced
         }
-        let err: f64 = predicted.iter().zip(&truth).map(|(p, t)| (p[k] - t).powi(2)).sum();
+        let err: f64 = predicted
+            .iter()
+            .zip(&truth)
+            .map(|(p, t)| (p[k] - t).powi(2))
+            .sum();
         worst = worst.max(err / var);
     }
     worst
@@ -107,7 +139,10 @@ fn unexplained_variance(degree: usize) -> f64 {
 #[test]
 fn circuit_features_are_quadratic_forms_in_the_normalised_input() {
     let worst = unexplained_variance(2);
-    assert!(worst < 1e-8, "a circuit feature left {worst:e} of its variance unexplained by quadratic forms");
+    assert!(
+        worst < 1e-8,
+        "a circuit feature left {worst:e} of its variance unexplained by quadratic forms"
+    );
 }
 
 /// Negative control for the test above: degree-1 monomials alone must leave a large share of some
@@ -115,5 +150,8 @@ fn circuit_features_are_quadratic_forms_in_the_normalised_input() {
 #[test]
 fn linear_monomials_alone_do_not_explain_the_circuit_features() {
     let worst = unexplained_variance(1);
-    assert!(worst > 0.05, "only {worst:e} left unexplained by linear terms; the control is not discriminating");
+    assert!(
+        worst > 0.05,
+        "only {worst:e} left unexplained by linear terms; the control is not discriminating"
+    );
 }

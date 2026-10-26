@@ -160,7 +160,8 @@ fn main() {
     if let Some(parent) = report_path.parent() {
         fs::create_dir_all(parent).expect("Create results dir");
     }
-    t1000::results::write(report_path, serde_json::to_string_pretty(&report).unwrap()).expect("Write report");
+    t1000::results::write(report_path, serde_json::to_string_pretty(&report).unwrap())
+        .expect("Write report");
     println!(
         "\nReport successfully written to: {}",
         report_path.display()

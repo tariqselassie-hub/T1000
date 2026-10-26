@@ -13,9 +13,7 @@ use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 use std::time::Instant;
-use t1000::chemistry::{
-    AtomicBaselineDecoder, Qm9Record, HARTREE_TO_EV, HARTREE_TO_KCAL_MOL,
-};
+use t1000::chemistry::{AtomicBaselineDecoder, Qm9Record, HARTREE_TO_EV, HARTREE_TO_KCAL_MOL};
 use t1000::simd::apply_cz_kernel;
 
 const QUBIT_COUNT: usize = 6;
@@ -128,13 +126,7 @@ impl SimpleVqcModel {
     }
 
     /// Parameter-shift gradient step on readout and final-layer rotation weights.
-    pub fn train_step(
-        &mut self,
-        thetas: &[f64],
-        phis: &[f64],
-        target: f64,
-        lr: f64,
-    ) -> f64 {
+    pub fn train_step(&mut self, thetas: &[f64], phis: &[f64], target: f64, lr: f64) -> f64 {
         let z_exps = self.forward(thetas, phis);
         let mut pred = self.readout_bias;
         for (w, z) in self.readout_weights.iter().zip(z_exps.iter()) {
@@ -176,16 +168,24 @@ impl SimpleVqcModel {
 fn load_qm9_dataset(limit: usize) -> Vec<Qm9Record> {
     let zip_path = Path::new(DEFAULT_QM9_ZIP);
     if zip_path.exists() {
-        println!("║ Ingesting up to {} molecules from: {:?}...", limit, zip_path);
+        println!(
+            "║ Ingesting up to {} molecules from: {:?}...",
+            limit, zip_path
+        );
         match Qm9Record::stream_from_zip(zip_path, Some(limit)) {
             Ok(records) if !records.is_empty() => return records,
-            Ok(_) | Err(_) => println!("║ Stream from ZIP failed or empty, using local web fallback..."),
+            Ok(_) | Err(_) => {
+                println!("║ Stream from ZIP failed or empty, using local web fallback...")
+            }
         }
     }
 
     let json_path = Path::new(FALLBACK_QM9_JSON);
     if json_path.exists() {
-        println!("║ Ingesting from local verified web dataset: {:?}...", json_path);
+        println!(
+            "║ Ingesting from local verified web dataset: {:?}...",
+            json_path
+        );
         if let Ok(file) = File::open(json_path) {
             #[derive(Deserialize)]
             struct WebQm9Wrapper {
@@ -290,7 +290,9 @@ fn run_trial_raw_unconditioned(records: &[Qm9Record], epochs: usize) -> ModelTri
 
     ModelTrialReport {
         name: "Raw Unconditioned VQC (Target: Total U_0)".to_string(),
-        description: "Direct linear readout decoding of extensive U_0 from bounded Pauli expectations".to_string(),
+        description:
+            "Direct linear readout decoding of extensive U_0 from bounded Pauli expectations"
+                .to_string(),
         initial_loss_mse: initial_loss,
         final_loss_mse: final_loss,
         loss_reduction_pct: ((initial_loss - final_loss) / initial_loss) * 100.0,
@@ -344,7 +346,9 @@ fn run_trial_atomic_baseline(records: &[Qm9Record], epochs: usize) -> ModelTrial
 
     ModelTrialReport {
         name: "Atomic Baseline Decomposition (Target: Delta U_0)".to_string(),
-        description: "Extensive core subtraction; VQC decodes strictly bounded chemical binding energy".to_string(),
+        description:
+            "Extensive core subtraction; VQC decodes strictly bounded chemical binding energy"
+                .to_string(),
         initial_loss_mse: initial_loss,
         final_loss_mse: final_loss,
         loss_reduction_pct: ((initial_loss - final_loss) / initial_loss) * 100.0,
@@ -404,14 +408,25 @@ fn run_trial_gap_prediction(records: &[Qm9Record], epochs: usize) -> ModelTrialR
 }
 
 fn main() {
-    println!("╔════════════════════════════════════════════════════════════════════════════════════╗");
-    println!("║       T-1000 SOVEREIGN QM9 AB INITIO VQC TRAINING & BASELINE BENCHMARK             ║");
-    println!("╚════════════════════════════════════════════════════════════════════════════════════╝");
+    println!(
+        "╔════════════════════════════════════════════════════════════════════════════════════╗"
+    );
+    println!(
+        "║       T-1000 SOVEREIGN QM9 AB INITIO VQC TRAINING & BASELINE BENCHMARK             ║"
+    );
+    println!(
+        "╚════════════════════════════════════════════════════════════════════════════════════╝"
+    );
 
     let records = load_qm9_dataset(100);
     let n_mols = records.len();
-    println!("║ Successfully staged {} ab initio DFT molecules for empirical convergence.", n_mols);
-    println!("╟────────────────────────────────────────────────────────────────────────────────────╢");
+    println!(
+        "║ Successfully staged {} ab initio DFT molecules for empirical convergence.",
+        n_mols
+    );
+    println!(
+        "╟────────────────────────────────────────────────────────────────────────────────────╢"
+    );
 
     let epochs = 5;
 
@@ -429,22 +444,55 @@ fn main() {
 
     let variance_reduction = t1.initial_loss_mse / t2.initial_loss_mse.max(1e-9);
 
-    println!("╟────────────────────────────────────────────────────────────────────────────────────╢");
-    println!("║                        EMPIRICAL CONVERGENCE MATRIX RESULTS                        ║");
-    println!("╟────────────────────────────────────────────────────────────────────────────────────╢");
+    println!(
+        "╟────────────────────────────────────────────────────────────────────────────────────╢"
+    );
+    println!(
+        "║                        EMPIRICAL CONVERGENCE MATRIX RESULTS                        ║"
+    );
+    println!(
+        "╟────────────────────────────────────────────────────────────────────────────────────╢"
+    );
     println!("║ Trial 1 (Raw Extensive U_0):");
-    println!("║   Loss: {:.4} -> {:.4} Ha^2 ({:+.1}% reduction)", t1.initial_loss_mse, t1.final_loss_mse, t1.loss_reduction_pct);
-    println!("║   MAE:  {:.3} eV ({:.1} kcal/mol) | Condition Number: {:.1}", t1.mae_ev, t1.mae_kcal_mol, t1.condition_number_proxy);
-    println!("╟────────────────────────────────────────────────────────────────────────────────────╢");
+    println!(
+        "║   Loss: {:.4} -> {:.4} Ha^2 ({:+.1}% reduction)",
+        t1.initial_loss_mse, t1.final_loss_mse, t1.loss_reduction_pct
+    );
+    println!(
+        "║   MAE:  {:.3} eV ({:.1} kcal/mol) | Condition Number: {:.1}",
+        t1.mae_ev, t1.mae_kcal_mol, t1.condition_number_proxy
+    );
+    println!(
+        "╟────────────────────────────────────────────────────────────────────────────────────╢"
+    );
     println!("║ Trial 2 (Atomic Baseline Delta U_0):");
-    println!("║   Loss: {:.4} -> {:.4} Ha^2 ({:+.1}% reduction)", t2.initial_loss_mse, t2.final_loss_mse, t2.loss_reduction_pct);
-    println!("║   MAE:  {:.3} eV ({:.1} kcal/mol) | Condition Number: {:.2}", t2.mae_ev, t2.mae_kcal_mol, t2.condition_number_proxy);
-    println!("║   Variance Reduction Factor: {:.1}x suppression of core extensive drift", variance_reduction);
-    println!("╟────────────────────────────────────────────────────────────────────────────────────╢");
+    println!(
+        "║   Loss: {:.4} -> {:.4} Ha^2 ({:+.1}% reduction)",
+        t2.initial_loss_mse, t2.final_loss_mse, t2.loss_reduction_pct
+    );
+    println!(
+        "║   MAE:  {:.3} eV ({:.1} kcal/mol) | Condition Number: {:.2}",
+        t2.mae_ev, t2.mae_kcal_mol, t2.condition_number_proxy
+    );
+    println!(
+        "║   Variance Reduction Factor: {:.1}x suppression of core extensive drift",
+        variance_reduction
+    );
+    println!(
+        "╟────────────────────────────────────────────────────────────────────────────────────╢"
+    );
     println!("║ Trial 3 (Ab Initio HOMO-LUMO Gap):");
-    println!("║   Loss: {:.4} -> {:.4} eV^2 ({:+.1}% reduction)", t3.initial_loss_mse, t3.final_loss_mse, t3.loss_reduction_pct);
-    println!("║   MAE:  {:.3} eV ({:.1} kcal/mol)", t3.mae_ev, t3.mae_kcal_mol);
-    println!("╚════════════════════════════════════════════════════════════════════════════════════╝");
+    println!(
+        "║   Loss: {:.4} -> {:.4} eV^2 ({:+.1}% reduction)",
+        t3.initial_loss_mse, t3.final_loss_mse, t3.loss_reduction_pct
+    );
+    println!(
+        "║   MAE:  {:.3} eV ({:.1} kcal/mol)",
+        t3.mae_ev, t3.mae_kcal_mol
+    );
+    println!(
+        "╚════════════════════════════════════════════════════════════════════════════════════╝"
+    );
 
     let report = Qm9VqcTrainingReport {
         timestamp_utc: "2026-10-19T22:00:00Z".to_string(),

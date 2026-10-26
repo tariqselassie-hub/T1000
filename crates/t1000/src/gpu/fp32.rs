@@ -83,7 +83,13 @@ impl Fp32GpuEngine {
                     continue;
                 }
                 let mut devs = vec![ptr::null_mut(); nd as usize];
-                (d.clGetDeviceIDs)(p, CL_DEVICE_TYPE_GPU, nd, devs.as_mut_ptr(), ptr::null_mut());
+                (d.clGetDeviceIDs)(
+                    p,
+                    CL_DEVICE_TYPE_GPU,
+                    nd,
+                    devs.as_mut_ptr(),
+                    ptr::null_mut(),
+                );
                 let dev = devs[0];
                 let mut nb = [0u8; 256];
                 (d.clGetDeviceInfo)(
@@ -98,7 +104,8 @@ impl Fp32GpuEngine {
                     .to_string();
 
                 let mut err = 0i32;
-                let ctx = (d.clCreateContext)(ptr::null(), 1, &dev, None, ptr::null_mut(), &mut err);
+                let ctx =
+                    (d.clCreateContext)(ptr::null(), 1, &dev, None, ptr::null_mut(), &mut err);
                 if err != CL_SUCCESS || ctx.is_null() {
                     return None;
                 }
@@ -126,7 +133,16 @@ impl Fp32GpuEngine {
                     (e == CL_SUCCESS && !k.is_null()).then_some(k)
                 };
                 let (k_u1q, k_perm2, k_cphase) = (mk("u1q")?, mk("perm2")?, mk("cphase")?);
-                return Some(Self { d, ctx, queue, program, k_u1q, k_perm2, k_cphase, device_name });
+                return Some(Self {
+                    d,
+                    ctx,
+                    queue,
+                    program,
+                    k_u1q,
+                    k_perm2,
+                    k_cphase,
+                    device_name,
+                });
             }
         }
         None
@@ -148,17 +164,41 @@ impl Fp32GpuEngine {
     }
 
     unsafe fn arg<T>(&self, k: ClKernel, i: u32, v: &T) {
-        (self.d.clSetKernelArg)(k, i, std::mem::size_of::<T>(), v as *const T as *const c_void);
+        (self.d.clSetKernelArg)(
+            k,
+            i,
+            std::mem::size_of::<T>(),
+            v as *const T as *const c_void,
+        );
     }
 
     unsafe fn launch(&self, k: ClKernel, work: usize) -> Result<(), String> {
         let r = (self.d.clEnqueueNDRangeKernel)(
-            self.queue, k, 1, ptr::null(), &work, ptr::null(), 0, ptr::null(), ptr::null_mut(),
+            self.queue,
+            k,
+            1,
+            ptr::null(),
+            &work,
+            ptr::null(),
+            0,
+            ptr::null(),
+            ptr::null_mut(),
         );
-        if r == CL_SUCCESS { Ok(()) } else { Err(format!("clEnqueueNDRangeKernel failed: {r}")) }
+        if r == CL_SUCCESS {
+            Ok(())
+        } else {
+            Err(format!("clEnqueueNDRangeKernel failed: {r}"))
+        }
     }
 
-    unsafe fn u1q(&self, re: &ClMem, im: &ClMem, dim: usize, q: usize, m: [f32; 8]) -> Result<(), String> {
+    unsafe fn u1q(
+        &self,
+        re: &ClMem,
+        im: &ClMem,
+        dim: usize,
+        q: usize,
+        m: [f32; 8],
+    ) -> Result<(), String> {
         let k = self.k_u1q;
         self.arg(k, 0, re);
         self.arg(k, 1, im);
@@ -169,7 +209,16 @@ impl Fp32GpuEngine {
         self.launch(k, dim / 2)
     }
 
-    unsafe fn perm2(&self, re: &ClMem, im: &ClMem, dim: usize, qa: usize, qb: usize, off_a: u32, off_b: u32) -> Result<(), String> {
+    unsafe fn perm2(
+        &self,
+        re: &ClMem,
+        im: &ClMem,
+        dim: usize,
+        qa: usize,
+        qb: usize,
+        off_a: u32,
+        off_b: u32,
+    ) -> Result<(), String> {
         let (lo, hi) = (qa.min(qb) as u32, qa.max(qb) as u32);
         let k = self.k_perm2;
         self.arg(k, 0, re);
@@ -181,7 +230,14 @@ impl Fp32GpuEngine {
         self.launch(k, dim / 4)
     }
 
-    unsafe fn cphase(&self, re: &ClMem, im: &ClMem, dim: usize, mask: u32, theta: f64) -> Result<(), String> {
+    unsafe fn cphase(
+        &self,
+        re: &ClMem,
+        im: &ClMem,
+        dim: usize,
+        mask: u32,
+        theta: f64,
+    ) -> Result<(), String> {
         let (s, c) = (theta.sin() as f32, theta.cos() as f32);
         let k = self.k_cphase;
         self.arg(k, 0, re);
@@ -192,7 +248,13 @@ impl Fp32GpuEngine {
         self.launch(k, dim)
     }
 
-    unsafe fn apply(&self, re: &ClMem, im: &ClMem, dim: usize, op: &CircuitOp) -> Result<(), String> {
+    unsafe fn apply(
+        &self,
+        re: &ClMem,
+        im: &ClMem,
+        dim: usize,
+        op: &CircuitOp,
+    ) -> Result<(), String> {
         match op {
             CircuitOp::Ry { qubit, theta } => {
                 let (s, c) = ((theta * 0.5).sin() as f32, (theta * 0.5).cos() as f32);
@@ -203,14 +265,33 @@ impl Fp32GpuEngine {
                 self.u1q(re, im, dim, *qubit, [c, -s, 0.0, 0.0, 0.0, 0.0, c, s])
             }
             CircuitOp::Unitary1Q { qubit, matrix: u } => self.u1q(
-                re, im, dim, *qubit,
-                [u.u00_re as f32, u.u00_im as f32, u.u01_re as f32, u.u01_im as f32,
-                 u.u10_re as f32, u.u10_im as f32, u.u11_re as f32, u.u11_im as f32],
+                re,
+                im,
+                dim,
+                *qubit,
+                [
+                    u.u00_re as f32,
+                    u.u00_im as f32,
+                    u.u01_re as f32,
+                    u.u01_im as f32,
+                    u.u10_re as f32,
+                    u.u10_im as f32,
+                    u.u11_re as f32,
+                    u.u11_im as f32,
+                ],
             ),
-            CircuitOp::CZ { q1, q2 } => self.cphase(re, im, dim, (1u32 << q1) | (1u32 << q2), std::f64::consts::PI),
-            CircuitOp::ControlledPhase { control, target, theta } => {
-                self.cphase(re, im, dim, (1u32 << control) | (1u32 << target), *theta)
-            }
+            CircuitOp::CZ { q1, q2 } => self.cphase(
+                re,
+                im,
+                dim,
+                (1u32 << q1) | (1u32 << q2),
+                std::f64::consts::PI,
+            ),
+            CircuitOp::ControlledPhase {
+                control,
+                target,
+                theta,
+            } => self.cphase(re, im, dim, (1u32 << control) | (1u32 << target), *theta),
             CircuitOp::CNOT { control, target } => {
                 let (c, t) = (1u32 << control, 1u32 << target);
                 self.perm2(re, im, dim, *control, *target, c, c | t)
@@ -218,16 +299,18 @@ impl Fp32GpuEngine {
             CircuitOp::AntiCNOT { control, target } => {
                 self.perm2(re, im, dim, *control, *target, 0, 1u32 << target)
             }
-            CircuitOp::SWAP { q1, q2 } => {
-                self.perm2(re, im, dim, *q1, *q2, 1u32 << q1, 1u32 << q2)
-            }
+            CircuitOp::SWAP { q1, q2 } => self.perm2(re, im, dim, *q1, *q2, 1u32 << q1, 1u32 << q2),
             CircuitOp::RademacherPhase { .. } => Err("RademacherPhase has no FP32 kernel".into()),
         }
     }
 
     /// Runs the compiled circuit on the device, updating `state` in place.
     /// On `Err` the state is left untouched so the caller can fall back to the CPU.
-    pub fn execute(&self, circuit: &CompiledCircuit, state: &mut QuantumState) -> Result<(), String> {
+    pub fn execute(
+        &self,
+        circuit: &CompiledCircuit,
+        state: &mut QuantumState,
+    ) -> Result<(), String> {
         if !Self::supports(circuit) {
             return Err("circuit not supported by FP32 GPU backend".into());
         }
@@ -242,9 +325,23 @@ impl Fp32GpuEngine {
         unsafe {
             let mut e = 0i32;
             let flags = CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR;
-            let re = (self.d.clCreateBuffer)(self.ctx, flags, dim * 4, host_re.as_ptr() as *mut c_void, &mut e);
-            if e != CL_SUCCESS { return Err(format!("alloc failed: {e}")); }
-            let im = (self.d.clCreateBuffer)(self.ctx, flags, dim * 4, host_im.as_ptr() as *mut c_void, &mut e);
+            let re = (self.d.clCreateBuffer)(
+                self.ctx,
+                flags,
+                dim * 4,
+                host_re.as_ptr() as *mut c_void,
+                &mut e,
+            );
+            if e != CL_SUCCESS {
+                return Err(format!("alloc failed: {e}"));
+            }
+            let im = (self.d.clCreateBuffer)(
+                self.ctx,
+                flags,
+                dim * 4,
+                host_im.as_ptr() as *mut c_void,
+                &mut e,
+            );
             if e != CL_SUCCESS {
                 (self.d.clReleaseMemObject)(re);
                 return Err(format!("alloc failed: {e}"));
@@ -259,8 +356,28 @@ impl Fp32GpuEngine {
                 }
             }
             if result.is_ok() {
-                let r1 = (self.d.clEnqueueReadBuffer)(self.queue, re, CL_TRUE, 0, dim * 4, out_re.as_mut_ptr() as *mut c_void, 0, ptr::null(), ptr::null_mut());
-                let r2 = (self.d.clEnqueueReadBuffer)(self.queue, im, CL_TRUE, 0, dim * 4, out_im.as_mut_ptr() as *mut c_void, 0, ptr::null(), ptr::null_mut());
+                let r1 = (self.d.clEnqueueReadBuffer)(
+                    self.queue,
+                    re,
+                    CL_TRUE,
+                    0,
+                    dim * 4,
+                    out_re.as_mut_ptr() as *mut c_void,
+                    0,
+                    ptr::null(),
+                    ptr::null_mut(),
+                );
+                let r2 = (self.d.clEnqueueReadBuffer)(
+                    self.queue,
+                    im,
+                    CL_TRUE,
+                    0,
+                    dim * 4,
+                    out_im.as_mut_ptr() as *mut c_void,
+                    0,
+                    ptr::null(),
+                    ptr::null_mut(),
+                );
                 if r1 != CL_SUCCESS || r2 != CL_SUCCESS {
                     result = Err(format!("readback failed: {r1}/{r2}"));
                 }
@@ -271,8 +388,12 @@ impl Fp32GpuEngine {
             (self.d.clReleaseMemObject)(im);
             result?;
         }
-        for (dst, src) in state.real.iter_mut().zip(&out_re) { *dst = f64::from(*src); }
-        for (dst, src) in state.imag.iter_mut().zip(&out_im) { *dst = f64::from(*src); }
+        for (dst, src) in state.real.iter_mut().zip(&out_re) {
+            *dst = f64::from(*src);
+        }
+        for (dst, src) in state.imag.iter_mut().zip(&out_im) {
+            *dst = f64::from(*src);
+        }
         Ok(())
     }
 }

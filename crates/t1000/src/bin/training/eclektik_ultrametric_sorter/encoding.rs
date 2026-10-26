@@ -55,15 +55,15 @@ pub fn encode_multilingual_text(text: &str) -> Vec<Complex64> {
     for &ch in &chars {
         let u = ch as u32;
         let bucket = match u {
-            0x0000..=0x007F => (u % 32) as usize,                // ASCII Latin
+            0x0000..=0x007F => (u % 32) as usize, // ASCII Latin
             0x0080..=0x024F => 32 + ((u - 0x0080) % 32) as usize, // Extended Latin / Diacritics
             0x0590..=0x05FF => 64 + ((u - 0x0590) % 32) as usize, // Hebrew
             0x0900..=0x097F => 96 + ((u - 0x0900) % 32) as usize, // Devanagari (Hindi)
-            0x3040..=0x309F => 128 + ((u - 0x3040) % 16) as usize,// Hiragana (Japanese)
-            0x30A0..=0x30FF => 144 + ((u - 0x30A0) % 16) as usize,// Katakana (Japanese)
-            0x4E00..=0x9FFF => 160 + ((u - 0x4E00) % 48) as usize,// CJK Ideographs (Chinese/Kanji)
-            0xAC00..=0xD7AF => 208 + ((u - 0xAC00) % 32) as usize,// Hangul (Korean)
-            _ => 240 + (u % 16) as usize,                         // Other symbols & punctuation
+            0x3040..=0x309F => 128 + ((u - 0x3040) % 16) as usize, // Hiragana (Japanese)
+            0x30A0..=0x30FF => 144 + ((u - 0x30A0) % 16) as usize, // Katakana (Japanese)
+            0x4E00..=0x9FFF => 160 + ((u - 0x4E00) % 48) as usize, // CJK Ideographs (Chinese/Kanji)
+            0xAC00..=0xD7AF => 208 + ((u - 0xAC00) % 32) as usize, // Hangul (Korean)
+            _ => 240 + (u % 16) as usize,         // Other symbols & punctuation
         };
         script_counts[bucket.min(255)] += 1.0;
     }
@@ -119,13 +119,26 @@ pub fn extract_multilingual_angles(text: &str) -> [f64; 10] {
             0xAC00..=0xD7AF => n_hangul += 1,
             0x0590..=0x05FF => n_hebrew += 1,
             0x0900..=0x097F => n_deva += 1,
-            _ => {},
+            _ => {}
         }
     }
 
     let id_kw = [
-        "yang", "pada", "di", "dan", "dengan", "dari", "ke", "untuk",
-        "adalah", "siapa", "tahun", "oleh", "apakah", "bagaimana", "dimana",
+        "yang",
+        "pada",
+        "di",
+        "dan",
+        "dengan",
+        "dari",
+        "ke",
+        "untuk",
+        "adalah",
+        "siapa",
+        "tahun",
+        "oleh",
+        "apakah",
+        "bagaimana",
+        "dimana",
     ];
     let id_hits = words.iter().filter(|w| id_kw.contains(w)).count();
     let is_id = id_hits >= 1;
@@ -139,20 +152,24 @@ pub fn extract_multilingual_angles(text: &str) -> [f64; 10] {
     // Wire 0: Coarse bit 0
     if !asian_afro {
         let rom_kw = [
-            "de", "la", "el", "en", "es", "que", "los", "las", "del", "le",
-            "les", "des", "est", "per", "di", "il", "con", "un", "una", "por", "dans",
-            "chi", "cosa", "quando", "dove", "quale", "quali", "della", "delle", "dei",
-            "nel", "nella", "ha", "che", "o", "os", "do", "da", "dos", "das", "não",
-            "foi", "quem", "no", "na", "quién", "qué", "cuál", "al", "se", "si", "su", "era",
+            "de", "la", "el", "en", "es", "que", "los", "las", "del", "le", "les", "des", "est",
+            "per", "di", "il", "con", "un", "una", "por", "dans", "chi", "cosa", "quando", "dove",
+            "quale", "quali", "della", "delle", "dei", "nel", "nella", "ha", "che", "o", "os",
+            "do", "da", "dos", "das", "não", "foi", "quem", "no", "na", "quién", "qué", "cuál",
+            "al", "se", "si", "su", "era",
         ];
         let ger_kw = [
-            "the", "who", "was", "in", "of", "and", "what", "to", "is", "that",
-            "with", "for", "der", "die", "das", "wer", "wurde", "und", "von", "zu", "den", "mit",
-            "wie", "wo", "wann", "warum", "welche", "welcher", "welches", "durch", "nach", "bei",
+            "the", "who", "was", "in", "of", "and", "what", "to", "is", "that", "with", "for",
+            "der", "die", "das", "wer", "wurde", "und", "von", "zu", "den", "mit", "wie", "wo",
+            "wann", "warum", "welche", "welcher", "welches", "durch", "nach", "bei",
         ];
         let r_hits = words.iter().filter(|w| rom_kw.contains(w)).count();
         let g_hits = words.iter().filter(|w| ger_kw.contains(w)).count();
-        angles[0] = if r_hits > g_hits { 0.95 * pi } else { 0.05 * pi };
+        angles[0] = if r_hits > g_hits {
+            0.95 * pi
+        } else {
+            0.05 * pi
+        };
     } else {
         let is_afro = (n_hebrew + n_deva > 0) || is_id;
         angles[0] = if is_afro { 0.95 * pi } else { 0.05 * pi };
@@ -164,12 +181,18 @@ pub fn extract_multilingual_angles(text: &str) -> [f64; 10] {
         if angles[0] < 0.5 * pi {
             // Germanic: en (s=0: bit0=0, bit1=0), de (s=1: bit0=1, bit1=0)
             let de_kw = [
-                "der", "die", "das", "wer", "wurde", "und", "von", "zu", "den", "mit",
-                "ist", "im", "dem", "nicht", "nach", "eine", "ein", "als", "auch",
+                "der", "die", "das", "wer", "wurde", "und", "von", "zu", "den", "mit", "ist", "im",
+                "dem", "nicht", "nach", "eine", "ein", "als", "auch",
             ];
             let has_umlaut = chars.iter().any(|&c| "äöüßÄÖÜ".contains(c));
-            let de_hits = words.iter().filter(|w| de_kw.contains(w)).count() + if has_umlaut { 3 } else { 0 };
-            let en_hits = words.iter().filter(|w| ["the", "who", "was", "in", "of", "and", "what", "to", "is"].contains(w)).count();
+            let de_hits =
+                words.iter().filter(|w| de_kw.contains(w)).count() + if has_umlaut { 3 } else { 0 };
+            let en_hits = words
+                .iter()
+                .filter(|w| {
+                    ["the", "who", "was", "in", "of", "and", "what", "to", "is"].contains(w)
+                })
+                .count();
             if de_hits > en_hits {
                 angles[2] = 0.95 * pi; // bit 0 = 1
                 angles[3] = 0.05 * pi; // bit 1 = 0
@@ -180,44 +203,81 @@ pub fn extract_multilingual_angles(text: &str) -> [f64; 10] {
         } else {
             // Romance: es (s=0: 00), fr (s=1: 10), it (s=2: 01), pt (s=3: 11)
             let fr_words = [
-                "le", "la", "les", "des", "est", "du", "une", "qui", "dans", "pour", "ce",
-                "ont", "sur", "au", "aux", "avec", "été", "quel", "quelle", "quels", "quelles", "quand", "comment",
+                "le", "la", "les", "des", "est", "du", "une", "qui", "dans", "pour", "ce", "ont",
+                "sur", "au", "aux", "avec", "été", "quel", "quelle", "quels", "quelles", "quand",
+                "comment",
             ];
             let pt_words = [
-                "o", "os", "do", "dos", "das", "em", "para", "com", "não", "foi", "quem",
-                "no", "na", "nos", "nas", "pelo", "pela", "mais", "seus", "suas", "quais",
+                "o", "os", "do", "dos", "das", "em", "para", "com", "não", "foi", "quem", "no",
+                "na", "nos", "nas", "pelo", "pela", "mais", "seus", "suas", "quais",
             ];
             let it_words = [
                 "il", "di", "del", "della", "dei", "delle", "chi", "nel", "nella", "per", "ha",
-                "che", "sono", "ed", "anche", "dopo", "stato", "stata", "gli", "degli", "questa", "questo", "quale", "quali", "cosa", "quando", "dove", "come", "era", "durante",
+                "che", "sono", "ed", "anche", "dopo", "stato", "stata", "gli", "degli", "questa",
+                "questo", "quale", "quali", "cosa", "quando", "dove", "come", "era", "durante",
             ];
             let es_words = [
-                "el", "los", "las", "del", "quién", "por", "fue", "más", "pero", "al", "es",
-                "son", "su", "sus", "como", "entre", "sobre", "este", "esta", "en", "con", "qué", "cuál", "cuáles", "cuándo", "dónde",
+                "el", "los", "las", "del", "quién", "por", "fue", "más", "pero", "al", "es", "son",
+                "su", "sus", "como", "entre", "sobre", "este", "esta", "en", "con", "qué", "cuál",
+                "cuáles", "cuándo", "dónde",
             ];
 
             let mut fr_score = words.iter().filter(|w| fr_words.contains(w)).count();
             fr_score += chars.iter().filter(|&c| "éèêëàçùôû".contains(*c)).count() * 2;
-            if words.contains(&"qui") { fr_score += 4; }
+            if words.contains(&"qui") {
+                fr_score += 4;
+            }
 
             let mut pt_score = words.iter().filter(|w| pt_words.contains(w)).count();
             pt_score += chars.iter().filter(|&c| "ãõ".contains(*c)).count() * 3;
-            if words.contains(&"quem") { pt_score += 4; }
-            if words.contains(&"do") || words.contains(&"não") { pt_score += 3; }
-            if words.contains(&"em") && !words.contains(&"en") { pt_score += 2; }
+            if words.contains(&"quem") {
+                pt_score += 4;
+            }
+            if words.contains(&"do") || words.contains(&"não") {
+                pt_score += 3;
+            }
+            if words.contains(&"em") && !words.contains(&"en") {
+                pt_score += 2;
+            }
 
             let mut it_score = words.iter().filter(|w| it_words.contains(w)).count();
-            it_score += words.iter().filter(|w| w.ends_with("zione") || w.ends_with("zioni") || w.ends_with("aggio") || w.ends_with("mente")).count();
-            if words.contains(&"chi") { it_score += 4; }
-            if words.contains(&"quale") || words.contains(&"quali") || words.contains(&"cosa") || words.contains(&"dove") { it_score += 4; }
-            if words.contains(&"di") { it_score += 3; }
-            if words.contains(&"il") || words.contains(&"gli") { it_score += 3; }
+            it_score += words
+                .iter()
+                .filter(|w| {
+                    w.ends_with("zione")
+                        || w.ends_with("zioni")
+                        || w.ends_with("aggio")
+                        || w.ends_with("mente")
+                })
+                .count();
+            if words.contains(&"chi") {
+                it_score += 4;
+            }
+            if words.contains(&"quale")
+                || words.contains(&"quali")
+                || words.contains(&"cosa")
+                || words.contains(&"dove")
+            {
+                it_score += 4;
+            }
+            if words.contains(&"di") {
+                it_score += 3;
+            }
+            if words.contains(&"il") || words.contains(&"gli") {
+                it_score += 3;
+            }
 
             let mut es_score = words.iter().filter(|w| es_words.contains(w)).count();
             es_score += chars.iter().filter(|&c| "¿¡ñ".contains(*c)).count() * 3;
-            if words.contains(&"quién") { es_score += 4; }
-            if words.contains(&"el") { es_score += 3; }
-            if words.contains(&"en") && !words.contains(&"em") { es_score += 2; }
+            if words.contains(&"quién") {
+                es_score += 4;
+            }
+            if words.contains(&"el") {
+                es_score += 3;
+            }
+            if words.contains(&"en") && !words.contains(&"em") {
+                es_score += 2;
+            }
 
             let scores = [
                 ("it", it_score, 0.05 * pi, 0.95 * pi), // it (s=2: bit0=0, bit1=1)
@@ -274,7 +334,10 @@ pub fn extract_multilingual_angles(text: &str) -> [f64; 10] {
     angles[5] = punct_ratio * pi;
 
     let vowels = "aeiouAEIOU";
-    let vowel_count = chars.iter().filter(|&&c| vowels.chars().any(|v| v == c)).count();
+    let vowel_count = chars
+        .iter()
+        .filter(|&&c| vowels.chars().any(|v| v == c))
+        .count();
     let vowel_ratio = (vowel_count as f64 / chars.len().max(1) as f64 * 3.0).clamp(0.0, 1.0);
     angles[6] = vowel_ratio * pi;
 

@@ -211,7 +211,10 @@ fn main() {
     // Keep-best: when recording, a run only replaces the saved result if its 26-qubit latency
     // is lower. Without --record the files go to a scratch directory (see t1000::results).
     let out_path = PathBuf::from("results/experiments/qnn_scaling_26_qubits.json");
-    let top_latency_ms = report.points.last().map_or(f64::MAX, |p| p.total_latency_ms);
+    let top_latency_ms = report
+        .points
+        .last()
+        .map_or(f64::MAX, |p| p.total_latency_ms);
     if let Ok(json) = serde_json::to_string_pretty(&report) {
         let outcome = t1000::results::write_if_better(
             &out_path,

@@ -104,7 +104,7 @@ pub struct BifurcationResult {
 /// Run a quantum-inspired simulated bifurcation over a discrete energy landscape.
 ///
 /// # Algorithm
-/// 1. Normalize energies to [0,1].
+/// 1. Normalize energies to `[0,1]`.
 /// 2. Map each normalized energy to a phase rotation: low energy → large phase
 ///    (constructive interference for minima).
 /// 3. Iterate: phase gate → Hamiltonian time evolve → normalize → POVM measure

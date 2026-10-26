@@ -137,7 +137,15 @@ pub fn evaluate_interference_contrast(
         }
     }
 
-    let mean_intra = if intra_scores.is_empty() { 0.0 } else { intra_scores.iter().sum::<f64>() / intra_scores.len() as f64 };
-    let mean_inter = if inter_scores.is_empty() { 0.0 } else { inter_scores.iter().sum::<f64>() / inter_scores.len() as f64 };
+    let mean_intra = if intra_scores.is_empty() {
+        0.0
+    } else {
+        intra_scores.iter().sum::<f64>() / intra_scores.len() as f64
+    };
+    let mean_inter = if inter_scores.is_empty() {
+        0.0
+    } else {
+        inter_scores.iter().sum::<f64>() / inter_scores.len() as f64
+    };
     (mean_intra, mean_inter, mean_intra - mean_inter)
 }

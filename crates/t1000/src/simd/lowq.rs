@@ -17,7 +17,10 @@ unsafe fn split<const Q: usize>(v0: __m256d, v1: __m256d) -> (__m256d, __m256d) 
     if Q == 0 {
         (_mm256_unpacklo_pd(v0, v1), _mm256_unpackhi_pd(v0, v1))
     } else {
-        (_mm256_permute2f128_pd::<0x20>(v0, v1), _mm256_permute2f128_pd::<0x31>(v0, v1))
+        (
+            _mm256_permute2f128_pd::<0x20>(v0, v1),
+            _mm256_permute2f128_pd::<0x31>(v0, v1),
+        )
     }
 }
 
@@ -34,7 +37,10 @@ pub(super) unsafe fn ry<const Q: usize>(real: &mut [f64], imag: &mut [f64], thet
     let (vc, vs) = (_mm256_set1_pd(c), _mm256_set1_pd(s));
     for plane in [real.as_mut_ptr(), imag.as_mut_ptr()] {
         for k in (0..real.len()).step_by(8) {
-            let (lo, hi) = split::<Q>(_mm256_loadu_pd(plane.add(k)), _mm256_loadu_pd(plane.add(k + 4)));
+            let (lo, hi) = split::<Q>(
+                _mm256_loadu_pd(plane.add(k)),
+                _mm256_loadu_pd(plane.add(k + 4)),
+            );
             let new_lo = _mm256_fmsub_pd(vc, lo, _mm256_mul_pd(vs, hi));
             let new_hi = _mm256_fmadd_pd(vs, lo, _mm256_mul_pd(vc, hi));
             let (n0, n1) = merge::<Q>(new_lo, new_hi);
@@ -51,15 +57,27 @@ pub(super) unsafe fn rz<const Q: usize>(real: &mut [f64], imag: &mut [f64], thet
     let (s_neg, c_neg) = (-theta * 0.5).sin_cos();
     // Lane j of a vector at offset k (a multiple of 4) holds index k + j, so bit Q is bit Q of j.
     let (vc, vs) = if Q == 0 {
-        (_mm256_set_pd(c_pos, c_neg, c_pos, c_neg), _mm256_set_pd(s_pos, s_neg, s_pos, s_neg))
+        (
+            _mm256_set_pd(c_pos, c_neg, c_pos, c_neg),
+            _mm256_set_pd(s_pos, s_neg, s_pos, s_neg),
+        )
     } else {
-        (_mm256_set_pd(c_pos, c_pos, c_neg, c_neg), _mm256_set_pd(s_pos, s_pos, s_neg, s_neg))
+        (
+            _mm256_set_pd(c_pos, c_pos, c_neg, c_neg),
+            _mm256_set_pd(s_pos, s_pos, s_neg, s_neg),
+        )
     };
     for k in (0..real.len()).step_by(4) {
         let r = _mm256_loadu_pd(real.as_ptr().add(k));
         let im = _mm256_loadu_pd(imag.as_ptr().add(k));
-        _mm256_storeu_pd(real.as_mut_ptr().add(k), _mm256_fmsub_pd(r, vc, _mm256_mul_pd(im, vs)));
-        _mm256_storeu_pd(imag.as_mut_ptr().add(k), _mm256_fmadd_pd(r, vs, _mm256_mul_pd(im, vc)));
+        _mm256_storeu_pd(
+            real.as_mut_ptr().add(k),
+            _mm256_fmsub_pd(r, vc, _mm256_mul_pd(im, vs)),
+        );
+        _mm256_storeu_pd(
+            imag.as_mut_ptr().add(k),
+            _mm256_fmadd_pd(r, vs, _mm256_mul_pd(im, vc)),
+        );
     }
 }
 

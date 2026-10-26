@@ -29,7 +29,14 @@ fn avx2() -> bool {
 ///
 /// # Safety
 /// The four pointers must be valid for `len` reads and writes, and the ranges must not overlap.
-pub(crate) unsafe fn u_pair(r0: *mut f64, r1: *mut f64, i0: *mut f64, i1: *mut f64, len: usize, u: &Unitary2x2) {
+pub(crate) unsafe fn u_pair(
+    r0: *mut f64,
+    r1: *mut f64,
+    i0: *mut f64,
+    i1: *mut f64,
+    len: usize,
+    u: &Unitary2x2,
+) {
     #[cfg(target_arch = "x86_64")]
     {
         if len >= 8 && wide() {
@@ -46,7 +53,15 @@ pub(crate) unsafe fn u_pair(r0: *mut f64, r1: *mut f64, i0: *mut f64, i1: *mut f
 ///
 /// # Safety
 /// As for [`u_pair`].
-pub(crate) unsafe fn rot_pair(r0: *mut f64, r1: *mut f64, i0: *mut f64, i1: *mut f64, len: usize, s: f64, c: f64) {
+pub(crate) unsafe fn rot_pair(
+    r0: *mut f64,
+    r1: *mut f64,
+    i0: *mut f64,
+    i1: *mut f64,
+    len: usize,
+    s: f64,
+    c: f64,
+) {
     #[cfg(target_arch = "x86_64")]
     {
         if len >= 8 && wide() {
@@ -87,7 +102,16 @@ pub(crate) fn u_block(re: &mut [f64], im: &mut [f64], q: usize, u: &Unitary2x2) 
         let (r0, r1) = re_b.split_at_mut(half);
         let (i0, i1) = im_b.split_at_mut(half);
         // SAFETY: the four slices are disjoint and each holds `half` elements.
-        unsafe { u_pair(r0.as_mut_ptr(), r1.as_mut_ptr(), i0.as_mut_ptr(), i1.as_mut_ptr(), half, u) };
+        unsafe {
+            u_pair(
+                r0.as_mut_ptr(),
+                r1.as_mut_ptr(),
+                i0.as_mut_ptr(),
+                i1.as_mut_ptr(),
+                half,
+                u,
+            )
+        };
     }
 }
 
@@ -115,39 +139,112 @@ macro_rules! complex_gate {
     ($name:ident, $vec:ty, $set1:ident, $mul:ident, $fmadd:ident, $fmsub:ident, $fnmadd:ident) => {
         /// `(new0_re, new0_im, new1_re, new1_im)` for `new0 = a x + b y`, `new1 = c x + d y`.
         #[inline(always)]
-        unsafe fn $name(u: &Unitary2x2, xr: $vec, xi: $vec, yr: $vec, yi: $vec) -> ($vec, $vec, $vec, $vec) {
+        unsafe fn $name(
+            u: &Unitary2x2,
+            xr: $vec,
+            xi: $vec,
+            yr: $vec,
+            yi: $vec,
+        ) -> ($vec, $vec, $vec, $vec) {
             let v = |x: f64| $set1(x);
-            let n0r = $fmadd(v(u.u01_re), yr, $fnmadd(v(u.u01_im), yi, $fmsub(v(u.u00_re), xr, $mul(v(u.u00_im), xi))));
-            let n0i = $fmadd(v(u.u01_re), yi, $fmadd(v(u.u01_im), yr, $fmadd(v(u.u00_re), xi, $mul(v(u.u00_im), xr))));
-            let n1r = $fmadd(v(u.u11_re), yr, $fnmadd(v(u.u11_im), yi, $fmsub(v(u.u10_re), xr, $mul(v(u.u10_im), xi))));
-            let n1i = $fmadd(v(u.u11_re), yi, $fmadd(v(u.u11_im), yr, $fmadd(v(u.u10_re), xi, $mul(v(u.u10_im), xr))));
+            let n0r = $fmadd(
+                v(u.u01_re),
+                yr,
+                $fnmadd(
+                    v(u.u01_im),
+                    yi,
+                    $fmsub(v(u.u00_re), xr, $mul(v(u.u00_im), xi)),
+                ),
+            );
+            let n0i = $fmadd(
+                v(u.u01_re),
+                yi,
+                $fmadd(
+                    v(u.u01_im),
+                    yr,
+                    $fmadd(v(u.u00_re), xi, $mul(v(u.u00_im), xr)),
+                ),
+            );
+            let n1r = $fmadd(
+                v(u.u11_re),
+                yr,
+                $fnmadd(
+                    v(u.u11_im),
+                    yi,
+                    $fmsub(v(u.u10_re), xr, $mul(v(u.u10_im), xi)),
+                ),
+            );
+            let n1i = $fmadd(
+                v(u.u11_re),
+                yi,
+                $fmadd(
+                    v(u.u11_im),
+                    yr,
+                    $fmadd(v(u.u10_re), xi, $mul(v(u.u10_im), xr)),
+                ),
+            );
             (n0r, n0i, n1r, n1i)
         }
     };
 }
 
 #[cfg(target_arch = "x86_64")]
-complex_gate!(gate256, __m256d, _mm256_set1_pd, _mm256_mul_pd, _mm256_fmadd_pd, _mm256_fmsub_pd, _mm256_fnmadd_pd);
+complex_gate!(
+    gate256,
+    __m256d,
+    _mm256_set1_pd,
+    _mm256_mul_pd,
+    _mm256_fmadd_pd,
+    _mm256_fmsub_pd,
+    _mm256_fnmadd_pd
+);
 #[cfg(target_arch = "x86_64")]
-complex_gate!(gate512, __m512d, _mm512_set1_pd, _mm512_mul_pd, _mm512_fmadd_pd, _mm512_fmsub_pd, _mm512_fnmadd_pd);
+complex_gate!(
+    gate512,
+    __m512d,
+    _mm512_set1_pd,
+    _mm512_mul_pd,
+    _mm512_fmadd_pd,
+    _mm512_fmsub_pd,
+    _mm512_fnmadd_pd
+);
 
 #[cfg(target_arch = "x86_64")]
 /// The 256-bit complex gate on vectors, for the interleaved low-qubit kernels in `lowq`.
 #[inline(always)]
-pub(super) unsafe fn gate_256(u: &Unitary2x2, xr: __m256d, xi: __m256d, yr: __m256d, yi: __m256d) -> (__m256d, __m256d, __m256d, __m256d) {
+pub(super) unsafe fn gate_256(
+    u: &Unitary2x2,
+    xr: __m256d,
+    xi: __m256d,
+    yr: __m256d,
+    yi: __m256d,
+) -> (__m256d, __m256d, __m256d, __m256d) {
     gate256(u, xr, xi, yr, yi)
 }
 
 #[cfg(target_arch = "x86_64")]
 /// The 512-bit complex gate on vectors, for the interleaved low-qubit kernels in `avx512`.
 #[inline(always)]
-pub(super) unsafe fn gate_512(u: &Unitary2x2, xr: __m512d, xi: __m512d, yr: __m512d, yi: __m512d) -> (__m512d, __m512d, __m512d, __m512d) {
+pub(super) unsafe fn gate_512(
+    u: &Unitary2x2,
+    xr: __m512d,
+    xi: __m512d,
+    yr: __m512d,
+    yi: __m512d,
+) -> (__m512d, __m512d, __m512d, __m512d) {
     gate512(u, xr, xi, yr, yi)
 }
 
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx2", enable = "fma")]
-unsafe fn u_pair_avx2(r0: *mut f64, r1: *mut f64, i0: *mut f64, i1: *mut f64, len: usize, u: &Unitary2x2) {
+unsafe fn u_pair_avx2(
+    r0: *mut f64,
+    r1: *mut f64,
+    i0: *mut f64,
+    i1: *mut f64,
+    len: usize,
+    u: &Unitary2x2,
+) {
     let vec_len = len - len % 4;
     for k in (0..vec_len).step_by(4) {
         let ld = |p: *mut f64| _mm256_loadu_pd(p.add(k));
@@ -162,7 +259,14 @@ unsafe fn u_pair_avx2(r0: *mut f64, r1: *mut f64, i0: *mut f64, i1: *mut f64, le
 
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx512f")]
-unsafe fn u_pair_avx512(r0: *mut f64, r1: *mut f64, i0: *mut f64, i1: *mut f64, len: usize, u: &Unitary2x2) {
+unsafe fn u_pair_avx512(
+    r0: *mut f64,
+    r1: *mut f64,
+    i0: *mut f64,
+    i1: *mut f64,
+    len: usize,
+    u: &Unitary2x2,
+) {
     let vec_len = len - len % 8;
     for k in (0..vec_len).step_by(8) {
         let ld = |p: *mut f64| _mm512_loadu_pd(p.add(k));
@@ -177,7 +281,15 @@ unsafe fn u_pair_avx512(r0: *mut f64, r1: *mut f64, i0: *mut f64, i1: *mut f64, 
 
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx2", enable = "fma")]
-unsafe fn rot_pair_avx2(r0: *mut f64, r1: *mut f64, i0: *mut f64, i1: *mut f64, len: usize, s: f64, c: f64) {
+unsafe fn rot_pair_avx2(
+    r0: *mut f64,
+    r1: *mut f64,
+    i0: *mut f64,
+    i1: *mut f64,
+    len: usize,
+    s: f64,
+    c: f64,
+) {
     let (vc, vs) = (_mm256_set1_pd(c), _mm256_set1_pd(s));
     let vec_len = len - len % 4;
     for (x0, x1) in [(r0, r1), (i0, i1)] {
@@ -196,7 +308,15 @@ unsafe fn rot_pair_avx2(r0: *mut f64, r1: *mut f64, i0: *mut f64, i1: *mut f64, 
 
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx512f")]
-unsafe fn rot_pair_avx512(r0: *mut f64, r1: *mut f64, i0: *mut f64, i1: *mut f64, len: usize, s: f64, c: f64) {
+unsafe fn rot_pair_avx512(
+    r0: *mut f64,
+    r1: *mut f64,
+    i0: *mut f64,
+    i1: *mut f64,
+    len: usize,
+    s: f64,
+    c: f64,
+) {
     let (vc, vs) = (_mm512_set1_pd(c), _mm512_set1_pd(s));
     let vec_len = len - len % 8;
     for (x0, x1) in [(r0, r1), (i0, i1)] {
@@ -220,8 +340,14 @@ mod tests {
     fn gate() -> Unitary2x2 {
         // A non-trivial complex matrix (not required to be unitary for kernel equivalence).
         Unitary2x2 {
-            u00_re: 0.6, u00_im: -0.3, u01_re: 0.2, u01_im: 0.5,
-            u10_re: -0.4, u10_im: 0.7, u11_re: 0.9, u11_im: 0.1,
+            u00_re: 0.6,
+            u00_im: -0.3,
+            u01_re: 0.2,
+            u01_im: 0.5,
+            u10_re: -0.4,
+            u10_im: 0.7,
+            u11_re: 0.9,
+            u11_im: 0.1,
         }
     }
 
@@ -238,13 +364,28 @@ mod tests {
         for base in (0..re.len()).step_by(2 * half) {
             for k in base..base + half {
                 let (r, i) = (re.as_mut_ptr(), im.as_mut_ptr());
-                unsafe { u_pair_scalar(r.add(k), r.add(k + half), i.add(k), i.add(k + half), 0, 1, u) };
+                unsafe {
+                    u_pair_scalar(
+                        r.add(k),
+                        r.add(k + half),
+                        i.add(k),
+                        i.add(k + half),
+                        0,
+                        1,
+                        u,
+                    )
+                };
             }
         }
     }
 
     fn dev(a: &(Vec<f64>, Vec<f64>), b: &(Vec<f64>, Vec<f64>)) -> f64 {
-        let d = |x: &[f64], y: &[f64]| x.iter().zip(y).map(|(p, q)| (p - q).abs()).fold(0.0, f64::max);
+        let d = |x: &[f64], y: &[f64]| {
+            x.iter()
+                .zip(y)
+                .map(|(p, q)| (p - q).abs())
+                .fold(0.0, f64::max)
+        };
         d(&a.0, &b.0).max(d(&a.1, &b.1))
     }
 
@@ -271,16 +412,34 @@ mod tests {
                     let mut got = planes(len);
                     unsafe {
                         if q == 0 {
-                            super::super::lowq::u::<0>(got.0.as_mut_ptr(), got.1.as_mut_ptr(), len, &gate());
+                            super::super::lowq::u::<0>(
+                                got.0.as_mut_ptr(),
+                                got.1.as_mut_ptr(),
+                                len,
+                                &gate(),
+                            );
                         } else {
-                            super::super::lowq::u::<1>(got.0.as_mut_ptr(), got.1.as_mut_ptr(), len, &gate());
+                            super::super::lowq::u::<1>(
+                                got.0.as_mut_ptr(),
+                                got.1.as_mut_ptr(),
+                                len,
+                                &gate(),
+                            );
                         }
                     }
                     assert!(dev(&got, &want) < 1e-13, "avx2 low n={n} q={q}");
                 }
                 if is_x86_feature_detected!("avx512f") && q < 3 {
                     let mut got = planes(len);
-                    unsafe { super::super::avx512::u_low(got.0.as_mut_ptr(), got.1.as_mut_ptr(), len, q, &gate()) };
+                    unsafe {
+                        super::super::avx512::u_low(
+                            got.0.as_mut_ptr(),
+                            got.1.as_mut_ptr(),
+                            len,
+                            q,
+                            &gate(),
+                        )
+                    };
                     assert!(dev(&got, &want) < 1e-13, "avx512 low n={n} q={q}");
                 }
             }
@@ -295,13 +454,33 @@ mod tests {
             let run = |f: unsafe fn(*mut f64, *mut f64, *mut f64, *mut f64, usize, &Unitary2x2)| {
                 let (mut a, mut b) = (planes(len), planes(len));
                 b.0.iter_mut().for_each(|v| *v += 0.5);
-                unsafe { f(a.0.as_mut_ptr(), b.0.as_mut_ptr(), a.1.as_mut_ptr(), b.1.as_mut_ptr(), len, &gate()) };
+                unsafe {
+                    f(
+                        a.0.as_mut_ptr(),
+                        b.0.as_mut_ptr(),
+                        a.1.as_mut_ptr(),
+                        b.1.as_mut_ptr(),
+                        len,
+                        &gate(),
+                    )
+                };
                 (a, b)
             };
             unsafe {
-                u_pair_scalar(want_a.0.as_mut_ptr(), want_b.0.as_mut_ptr(), want_a.1.as_mut_ptr(), want_b.1.as_mut_ptr(), 0, len, &gate());
+                u_pair_scalar(
+                    want_a.0.as_mut_ptr(),
+                    want_b.0.as_mut_ptr(),
+                    want_a.1.as_mut_ptr(),
+                    want_b.1.as_mut_ptr(),
+                    0,
+                    len,
+                    &gate(),
+                );
             }
-            let mut variants: Vec<(&str, unsafe fn(*mut f64, *mut f64, *mut f64, *mut f64, usize, &Unitary2x2))> = vec![("dispatch", u_pair)];
+            let mut variants: Vec<(
+                &str,
+                unsafe fn(*mut f64, *mut f64, *mut f64, *mut f64, usize, &Unitary2x2),
+            )> = vec![("dispatch", u_pair)];
             if avx2() {
                 variants.push(("avx2", u_pair_avx2));
             }
@@ -310,7 +489,10 @@ mod tests {
             }
             for (name, f) in variants {
                 let (a, b) = run(f);
-                assert!(dev(&a, &want_a).max(dev(&b, &want_b)) < 1e-13, "{name} len={len}");
+                assert!(
+                    dev(&a, &want_a).max(dev(&b, &want_b)) < 1e-13,
+                    "{name} len={len}"
+                );
             }
         }
     }

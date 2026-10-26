@@ -23,7 +23,10 @@ pub struct ReadoutError {
 impl ReadoutError {
     /// Typical asymmetric device: `p10 = e`, `p01 = e / 2`.
     pub fn typical(e: f64) -> Self {
-        Self { p01: e / 2.0, p10: e }
+        Self {
+            p01: e / 2.0,
+            p10: e,
+        }
     }
 }
 
@@ -51,7 +54,14 @@ pub fn apply_readout(p: &mut [f64], n: usize, e: ReadoutError) {
 pub fn invert_readout(p: &mut [f64], n: usize, e: ReadoutError) {
     let det = (1.0 - e.p01) * (1.0 - e.p10) - e.p01 * e.p10;
     assert!(det.abs() > 1e-9, "readout confusion matrix is singular");
-    apply_per_qubit(p, n, [[(1.0 - e.p10) / det, -e.p10 / det], [-e.p01 / det, (1.0 - e.p01) / det]]);
+    apply_per_qubit(
+        p,
+        n,
+        [
+            [(1.0 - e.p10) / det, -e.p10 / det],
+            [-e.p01 / det, (1.0 - e.p01) / det],
+        ],
+    );
 }
 
 /// Global depolarizing channel: `p -> fidelity * p + (1 - fidelity) / len`.
@@ -79,7 +89,10 @@ mod tests {
     #[test]
     fn readout_keeps_total_probability_and_matches_the_closed_form() {
         let n = 4;
-        let e = ReadoutError { p01: 0.01, p10: 0.03 };
+        let e = ReadoutError {
+            p01: 0.01,
+            p10: 0.03,
+        };
         let mut p = vec![0.0; 1 << n];
         p[0] = 1.0; // true state |0000>
         apply_readout(&mut p, n, e);
@@ -107,7 +120,16 @@ mod tests {
         let (n, e) = (4, 0.05);
         let original = distribution(n);
         let parity = |p: &[f64], mask: usize| -> f64 {
-            p.iter().enumerate().map(|(x, v)| if (x & mask).count_ones() % 2 == 0 { *v } else { -*v }).sum()
+            p.iter()
+                .enumerate()
+                .map(|(x, v)| {
+                    if (x & mask).count_ones() % 2 == 0 {
+                        *v
+                    } else {
+                        -*v
+                    }
+                })
+                .sum()
         };
         let mut noisy = original.clone();
         apply_readout(&mut noisy, n, ReadoutError { p01: e, p10: e });
@@ -125,7 +147,12 @@ mod tests {
         let mut p = original.clone();
         depolarize(&mut p, 0.8);
         assert!((p.iter().sum::<f64>() - 1.0).abs() < 1e-12);
-        let z0 = |p: &[f64]| -> f64 { p.iter().enumerate().map(|(x, v)| if x & 1 == 0 { *v } else { -*v }).sum() };
+        let z0 = |p: &[f64]| -> f64 {
+            p.iter()
+                .enumerate()
+                .map(|(x, v)| if x & 1 == 0 { *v } else { -*v })
+                .sum()
+        };
         assert!((z0(&p) - 0.8 * z0(&original)).abs() < 1e-12);
         let mut fully = original;
         depolarize(&mut fully, 0.0);

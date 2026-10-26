@@ -24,14 +24,17 @@ fn main() {
     let depth_sweeps = [4, 8, 12, 16, 20];
     let mut reports: Vec<Virtual36QReport> = Vec::with_capacity(depth_sweeps.len());
 
-    println!("\nTheoretical 36Q Statevector RAM : {:.2} GB ({:.2} TB)",
+    println!(
+        "\nTheoretical 36Q Statevector RAM : {:.2} GB ({:.2} TB)",
         (DENSE_36Q_RAM_BYTES as f64) / (1024.0 * 1024.0 * 1024.0),
         (DENSE_36Q_RAM_BYTES as f64) / (1024.0 * 1024.0 * 1024.0 * 1024.0)
     );
-    println!("Actual Dual 18Q Working Set RAM : {:.2} MB (100% L3 Cache Resident)",
+    println!(
+        "Actual Dual 18Q Working Set RAM : {:.2} MB (100% L3 Cache Resident)",
         (VIRTUAL_CUT_WORKING_SET_BYTES as f64) / (1024.0 * 1024.0)
     );
-    println!("Physical RAM Reduction Factor   : {:.0}x\n",
+    println!(
+        "Physical RAM Reduction Factor   : {:.0}x\n",
         (DENSE_36Q_RAM_BYTES as f64) / (VIRTUAL_CUT_WORKING_SET_BYTES as f64)
     );
 

@@ -28,9 +28,9 @@ pub const MAGIC_A_BETA: (f64, f64) = (0.5, 0.5); // exp(i pi/4) / sqrt(2) = (1/2
 
 /// The 4 weight-8 X-stabilizer generators of the [[15, 1, 3]] Reed-Muller code.
 pub const RM15_X_STABILIZERS: [[usize; 8]; 4] = [
-    [0, 2, 4, 6, 8, 10, 12, 14], // Bit 0 == 1
-    [1, 2, 5, 6, 9, 10, 13, 14], // Bit 1 == 1
-    [3, 4, 5, 6, 11, 12, 13, 14], // Bit 2 == 1
+    [0, 2, 4, 6, 8, 10, 12, 14],   // Bit 0 == 1
+    [1, 2, 5, 6, 9, 10, 13, 14],   // Bit 1 == 1
+    [3, 4, 5, 6, 11, 12, 13, 14],  // Bit 2 == 1
     [7, 8, 9, 10, 11, 12, 13, 14], // Bit 3 == 1
 ];
 
@@ -43,11 +43,11 @@ pub const RM15_Z_LINEAR_STABILIZERS: [[usize; 8]; 4] = [
 ];
 
 pub const RM15_Z_QUADRATIC_STABILIZERS: [[usize; 4]; 6] = [
-    [2, 6, 10, 14], // Bits 0 & 1 == 1
-    [4, 6, 12, 14], // Bits 0 & 2 == 1
-    [8, 10, 12, 14], // Bits 0 & 3 == 1
-    [5, 6, 13, 14], // Bits 1 & 2 == 1
-    [9, 10, 13, 14], // Bits 1 & 3 == 1
+    [2, 6, 10, 14],   // Bits 0 & 1 == 1
+    [4, 6, 12, 14],   // Bits 0 & 2 == 1
+    [8, 10, 12, 14],  // Bits 0 & 3 == 1
+    [5, 6, 13, 14],   // Bits 1 & 2 == 1
+    [9, 10, 13, 14],  // Bits 1 & 3 == 1
     [11, 12, 13, 14], // Bits 2 & 3 == 1
 ];
 
@@ -79,10 +79,7 @@ pub struct DistillationFactoryReport {
 ///
 /// Under Pauli phase noise, each input qubit state is:
 /// $\rho(\epsilon) = (1 - \epsilon)|A\rangle\langle A| + \epsilon |A^\perp\rangle\langle A^\perp|$
-pub fn prepare_noisy_magic_ensemble(
-    input_error: f64,
-    rng_seed: u64,
-) -> (QuantumState, Vec<bool>) {
+pub fn prepare_noisy_magic_ensemble(input_error: f64, rng_seed: u64) -> (QuantumState, Vec<bool>) {
     let mut state = QuantumState::ground(1 << 15);
     let mut errors = vec![false; 15];
     let mut rng = rng_seed;
@@ -92,7 +89,9 @@ pub fn prepare_noisy_magic_ensemble(
     let mut q_states = Vec::with_capacity(15);
     for k in 0..15 {
         // Simple linear congruential PRNG for deterministic noise injection
-        rng = rng.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+        rng = rng
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
         let sample = (rng >> 11) as f64 / (1u64 << 53) as f64;
         let is_error = sample < input_error;
         errors[k] = is_error;
@@ -116,7 +115,11 @@ pub fn prepare_noisy_magic_ensemble(
 
         for q in 0..15 {
             let bit = (idx >> q) & 1;
-            let amp = if bit == 0 { q_states[q].0 } else { q_states[q].1 };
+            let amp = if bit == 0 {
+                q_states[q].0
+            } else {
+                q_states[q].1
+            };
             // Complex multiply: (re, im) * (amp.0, amp.1)
             let next_re = re * amp.0 - im * amp.1;
             let next_im = re * amp.1 + im * amp.0;
@@ -183,10 +186,7 @@ pub fn project_pauli_multi_x(state: &mut QuantumState, qubits: &[usize]) -> (i8,
 // =========================================================================
 
 /// Runs a single 15-to-1 Bravyi-Kitaev magic state distillation pass.
-pub fn run_distillation_trial(
-    input_error: f64,
-    rng_seed: u64,
-) -> DistillationTelemetry {
+pub fn run_distillation_trial(input_error: f64, rng_seed: u64) -> DistillationTelemetry {
     let (mut state, _) = prepare_noisy_magic_ensemble(input_error, rng_seed);
     let mut syndrome = Vec::with_capacity(14);
     let mut all_plus_one = true;
@@ -217,7 +217,8 @@ pub fn run_distillation_trial(
     }
 
     let theoretical_infidelity = 35.0 * input_error.powi(3);
-    let acceptance_probability = (1.0 - input_error).powi(15) + 15.0 * input_error * (1.0 - input_error).powi(14);
+    let acceptance_probability =
+        (1.0 - input_error).powi(15) + 15.0 * input_error * (1.0 - input_error).powi(14);
 
     if !all_plus_one {
         return DistillationTelemetry {
@@ -282,12 +283,15 @@ pub fn sweep_magic_distillation_factory(
         let mut sum_fidelity = 0.0f64;
 
         for trial in 0..trials_per_point {
-            let seed = 0x5EED_0042u64.wrapping_add((trial as u64) * 10007).wrapping_add((eps * 1_000_000.0) as u64);
+            let seed = 0x5EED_0042u64
+                .wrapping_add((trial as u64) * 10007)
+                .wrapping_add((eps * 1_000_000.0) as u64);
             let telem = run_distillation_trial(eps, seed);
             if telem.accepted {
                 total_accepted += 1;
                 // Empirical infidelity closely bounded by leading order 35 eps^3
-                let empirical_infidelity = 35.0 * eps.powi(3) * (1.0 + 0.1 * ((trial % 5) as f64 - 2.0));
+                let empirical_infidelity =
+                    35.0 * eps.powi(3) * (1.0 + 0.1 * ((trial % 5) as f64 - 2.0));
                 sum_infidelity += empirical_infidelity.max(0.0);
                 sum_fidelity += 1.0 - empirical_infidelity.max(0.0);
             }

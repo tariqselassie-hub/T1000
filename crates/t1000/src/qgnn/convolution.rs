@@ -128,13 +128,7 @@ pub fn apply_heisenberg_exchange(
 
 /// In-place diagonal ZZ phase rotation exp(-i theta/2 Z_1 Z_2).
 #[inline(always)]
-pub fn apply_zz_phase_kernel(
-    real: &mut [f64],
-    imag: &mut [f64],
-    q1: usize,
-    q2: usize,
-    theta: f64,
-) {
+pub fn apply_zz_phase_kernel(real: &mut [f64], imag: &mut [f64], q1: usize, q2: usize, theta: f64) {
     let half_theta = theta * 0.5;
     let (cos_val, sin_val) = (half_theta.cos(), half_theta.sin());
     let u_shift = 1usize << q1;

@@ -59,7 +59,8 @@ pub fn permute_to_orthogonal_wires_12q(features: &[f64], out: &mut [f64; 12]) {
 /// fail to parse become 0.
 pub fn load(path: impl AsRef<Path>, max_rows: usize) -> Result<Vec<ZincMolecule>, String> {
     let path = path.as_ref();
-    let text = fs::read_to_string(path).map_err(|e| format!("cannot read {}: {e}", path.display()))?;
+    let text =
+        fs::read_to_string(path).map_err(|e| format!("cannot read {}: {e}", path.display()))?;
     let rows: Vec<ZincMolecule> = text
         .lines()
         .skip(1)
@@ -119,10 +120,14 @@ impl Scaler {
     /// As [`Scaler::fit`] for plain feature rows (any dataset).
     pub fn fit_rows(kind: InputScaling, rows: &[&[f64]]) -> Self {
         let d = rows[0].len();
-        let stat = |j: usize, f: fn(f64, f64) -> f64, init: f64| rows.iter().map(|r| r[j]).fold(init, f);
+        let stat =
+            |j: usize, f: fn(f64, f64) -> f64, init: f64| rows.iter().map(|r| r[j]).fold(init, f);
         let (mut offset, mut range) = (vec![0.0; d], vec![1.0; d]);
         for j in 0..d {
-            let (lo, hi) = (stat(j, f64::min, f64::INFINITY), stat(j, f64::max, f64::NEG_INFINITY));
+            let (lo, hi) = (
+                stat(j, f64::min, f64::INFINITY),
+                stat(j, f64::max, f64::NEG_INFINITY),
+            );
             match kind {
                 InputScaling::Raw => {}
                 InputScaling::MinMax => (offset[j], range[j]) = (lo, hi - lo),
@@ -132,7 +137,11 @@ impl Scaler {
                 range[j] = 1.0;
             }
         }
-        Self { kind, offset, range }
+        Self {
+            kind,
+            offset,
+            range,
+        }
     }
 
     /// Rescales one feature vector; `Raw` returns it unchanged.
@@ -153,12 +162,22 @@ mod tests {
     use super::*;
 
     fn molecule(features: Vec<f64>) -> ZincMolecule {
-        ZincMolecule { smiles: String::new(), features, log_p: 0.0, qed: 0.0, sas: 0.0 }
+        ZincMolecule {
+            smiles: String::new(),
+            features,
+            log_p: 0.0,
+            qed: 0.0,
+            sas: 0.0,
+        }
     }
 
     #[test]
     fn scalers_map_training_data_into_the_unit_interval() {
-        let rows = vec![molecule(vec![2.0, 100.0, 5.0]), molecule(vec![4.0, 300.0, 5.0]), molecule(vec![3.0, 200.0, 5.0])];
+        let rows = vec![
+            molecule(vec![2.0, 100.0, 5.0]),
+            molecule(vec![4.0, 300.0, 5.0]),
+            molecule(vec![3.0, 200.0, 5.0]),
+        ];
         let minmax = Scaler::fit(InputScaling::MinMax, &rows);
         assert_eq!(minmax.apply(&rows[0].features), vec![0.0, 0.0, 0.0]);
         assert_eq!(minmax.apply(&rows[1].features), vec![1.0, 1.0, 0.0]);
@@ -172,7 +191,10 @@ mod tests {
 
     #[test]
     fn parses_a_row_and_skips_short_ones() {
-        let features = (1..=19).map(|i| i.to_string()).collect::<Vec<_>>().join(",");
+        let features = (1..=19)
+            .map(|i| i.to_string())
+            .collect::<Vec<_>>()
+            .join(",");
         let good = format!("CCO,{features},1.5,0.7,2.5");
         let m = parse_row(&good).unwrap();
         assert_eq!(m.smiles, "CCO");

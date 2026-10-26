@@ -2,7 +2,7 @@
 //! FP32 iGPU prototype: device-resident OpenCL statevector vs rayon FP32 CPU reference.
 //!
 //! Circuit per layer: Ry on every qubit, then one fused diagonal pass (Rz on every qubit
-//! plus ring CZ). Usage: igpu_fp32_proto [min_q] [max_q] [depth] [max_cpu_q]
+//! plus ring CZ). Usage: `igpu_fp32_proto [min_q] [max_q] [depth] [max_cpu_q]`
 
 use rayon::prelude::*;
 use std::ffi::{c_char, c_void, CStr, CString};
@@ -128,11 +128,25 @@ unsafe fn setup() -> Option<Gpu> {
             continue;
         }
         let mut devs = vec![ptr::null_mut(); nd as usize];
-        (d.clGetDeviceIDs)(p, CL_DEVICE_TYPE_GPU, nd, devs.as_mut_ptr(), ptr::null_mut());
+        (d.clGetDeviceIDs)(
+            p,
+            CL_DEVICE_TYPE_GPU,
+            nd,
+            devs.as_mut_ptr(),
+            ptr::null_mut(),
+        );
         let dev = devs[0];
         let mut nb = [0u8; 256];
-        (d.clGetDeviceInfo)(dev, CL_DEVICE_NAME, 256, nb.as_mut_ptr() as *mut c_void, ptr::null_mut());
-        let name = CStr::from_ptr(nb.as_ptr() as *const c_char).to_string_lossy().to_string();
+        (d.clGetDeviceInfo)(
+            dev,
+            CL_DEVICE_NAME,
+            256,
+            nb.as_mut_ptr() as *mut c_void,
+            ptr::null_mut(),
+        );
+        let name = CStr::from_ptr(nb.as_ptr() as *const c_char)
+            .to_string_lossy()
+            .to_string();
         let mut err = 0i32;
         let ctx = (d.clCreateContext)(ptr::null(), 1, &dev, None, ptr::null_mut(), &mut err);
         if err != CL_SUCCESS {
@@ -153,31 +167,76 @@ unsafe fn setup() -> Option<Gpu> {
             (d.clCreateKernel)(prog, c.as_ptr(), &mut e)
         };
         let (init, ry, diag) = (mk("init_kernel"), mk("ry_kernel"), mk("diag_kernel"));
-        return Some(Gpu { d, ctx, queue, init, ry, diag, name });
+        return Some(Gpu {
+            d,
+            ctx,
+            queue,
+            init,
+            ry,
+            diag,
+            name,
+        });
     }
     None
 }
 
 unsafe fn arg<T>(g: &Gpu, k: ClKernel, i: u32, v: &T) {
-    (g.d.clSetKernelArg)(k, i, std::mem::size_of::<T>(), v as *const T as *const c_void);
+    (g.d.clSetKernelArg)(
+        k,
+        i,
+        std::mem::size_of::<T>(),
+        v as *const T as *const c_void,
+    );
 }
 
-unsafe fn run(g: &Gpu, n: usize, depth: usize, ry: &[f32], rz: &[f32], readback: bool)
-    -> (f64, Option<(Vec<f32>, Vec<f32>)>)
-{
+unsafe fn run(
+    g: &Gpu,
+    n: usize,
+    depth: usize,
+    ry: &[f32],
+    rz: &[f32],
+    readback: bool,
+) -> (f64, Option<(Vec<f32>, Vec<f32>)>) {
     let dim = 1usize << n;
     let mut e = 0i32;
-    let re = (g.d.clCreateBuffer)(g.ctx, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, dim * 4, ptr::null_mut(), &mut e);
+    let re = (g.d.clCreateBuffer)(
+        g.ctx,
+        CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
+        dim * 4,
+        ptr::null_mut(),
+        &mut e,
+    );
     assert_eq!(e, 0, "alloc re");
-    let im = (g.d.clCreateBuffer)(g.ctx, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, dim * 4, ptr::null_mut(), &mut e);
+    let im = (g.d.clCreateBuffer)(
+        g.ctx,
+        CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
+        dim * 4,
+        ptr::null_mut(),
+        &mut e,
+    );
     assert_eq!(e, 0, "alloc im");
     let half: Vec<f32> = rz.iter().map(|a| a * 0.5).collect();
-    let hb = (g.d.clCreateBuffer)(g.ctx, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, half.len() * 4,
-        half.as_ptr() as *mut c_void, &mut e);
+    let hb = (g.d.clCreateBuffer)(
+        g.ctx,
+        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+        half.len() * 4,
+        half.as_ptr() as *mut c_void,
+        &mut e,
+    );
     assert_eq!(e, 0, "alloc ang");
     let gws = dim;
     let enq = |k: ClKernel, w: usize| {
-        let r = (g.d.clEnqueueNDRangeKernel)(g.queue, k, 1, ptr::null(), &w, ptr::null(), 0, ptr::null(), ptr::null_mut());
+        let r = (g.d.clEnqueueNDRangeKernel)(
+            g.queue,
+            k,
+            1,
+            ptr::null(),
+            &w,
+            ptr::null(),
+            0,
+            ptr::null(),
+            ptr::null_mut(),
+        );
         assert_eq!(r, 0, "enqueue {r}");
     };
     (g.d.clFinish)(g.queue);
@@ -198,8 +257,13 @@ unsafe fn run(g: &Gpu, n: usize, depth: usize, ry: &[f32], rz: &[f32], readback:
         }
         // Per-layer slice of the angle table is passed by creating a sub-view via offset buffer:
         // simplest correct approach is a dedicated small buffer per layer.
-        let layer_buf = (g.d.clCreateBuffer)(g.ctx, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, n * 4,
-            half[l * n..].as_ptr() as *mut c_void, &mut e);
+        let layer_buf = (g.d.clCreateBuffer)(
+            g.ctx,
+            CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+            n * 4,
+            half[l * n..].as_ptr() as *mut c_void,
+            &mut e,
+        );
         arg(g, g.diag, 0, &re);
         arg(g, g.diag, 1, &im);
         arg(g, g.diag, 2, &layer_buf);
@@ -213,8 +277,28 @@ unsafe fn run(g: &Gpu, n: usize, depth: usize, ry: &[f32], rz: &[f32], readback:
     let out = if readback {
         let mut hr = vec![0f32; dim];
         let mut hi = vec![0f32; dim];
-        (g.d.clEnqueueReadBuffer)(g.queue, re, CL_TRUE, 0, dim * 4, hr.as_mut_ptr() as *mut c_void, 0, ptr::null(), ptr::null_mut());
-        (g.d.clEnqueueReadBuffer)(g.queue, im, CL_TRUE, 0, dim * 4, hi.as_mut_ptr() as *mut c_void, 0, ptr::null(), ptr::null_mut());
+        (g.d.clEnqueueReadBuffer)(
+            g.queue,
+            re,
+            CL_TRUE,
+            0,
+            dim * 4,
+            hr.as_mut_ptr() as *mut c_void,
+            0,
+            ptr::null(),
+            ptr::null_mut(),
+        );
+        (g.d.clEnqueueReadBuffer)(
+            g.queue,
+            im,
+            CL_TRUE,
+            0,
+            dim * 4,
+            hi.as_mut_ptr() as *mut c_void,
+            0,
+            ptr::null(),
+            ptr::null_mut(),
+        );
         Some((hr, hi))
     } else {
         None
@@ -226,12 +310,18 @@ unsafe fn run(g: &Gpu, n: usize, depth: usize, ry: &[f32], rz: &[f32], readback:
 }
 
 fn main() {
-    let a: Vec<usize> = std::env::args().skip(1).filter_map(|s| s.parse().ok()).collect();
+    let a: Vec<usize> = std::env::args()
+        .skip(1)
+        .filter_map(|s| s.parse().ok())
+        .collect();
     let (lo, hi) = (*a.first().unwrap_or(&12), *a.get(1).unwrap_or(&26));
     let depth = *a.get(2).unwrap_or(&12);
     let max_cpu = *a.get(3).unwrap_or(&26);
     let g = unsafe { setup() }.expect("FP32 OpenCL setup failed");
-    println!("Device: {} | depth {depth} | FP32 SoA, device-resident", g.name);
+    println!(
+        "Device: {} | depth {depth} | FP32 SoA, device-resident",
+        g.name
+    );
 
     // Correctness: GPU vs CPU FP32 at a small size.
     let n = 12;
@@ -239,11 +329,19 @@ fn main() {
     let (cr, ci) = cpu_run(n, depth, &ry, &rz);
     let (_, out) = unsafe { run(&g, n, depth, &ry, &rz, true) };
     let (gr, gi) = out.unwrap();
-    let maxdiff = cr.iter().zip(&gr).chain(ci.iter().zip(&gi)).map(|(x, y)| (x - y).abs()).fold(0f32, f32::max);
+    let maxdiff = cr
+        .iter()
+        .zip(&gr)
+        .chain(ci.iter().zip(&gi))
+        .map(|(x, y)| (x - y).abs())
+        .fold(0f32, f32::max);
     let norm: f32 = gr.iter().zip(&gi).map(|(x, y)| x * x + y * y).sum();
     println!("Check N={n}: max|GPU-CPU| = {maxdiff:.2e}, GPU norm = {norm:.6}\n");
 
-    println!("{:>3} {:>9} {:>10} {:>10} {:>8}", "N", "state_MB", "cpu32_s", "gpu32_s", "speedup");
+    println!(
+        "{:>3} {:>9} {:>10} {:>10} {:>8}",
+        "N", "state_MB", "cpu32_s", "gpu32_s", "speedup"
+    );
     for n in (lo..=hi).step_by(2) {
         let (ry, rz) = angles(depth, n);
         let mb = (1usize << n) * 8 / (1 << 20);

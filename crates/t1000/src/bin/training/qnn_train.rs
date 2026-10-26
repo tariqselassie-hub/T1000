@@ -259,7 +259,11 @@ fn main() {
         " Final Loss         : {:.5} ({:.1}% reduction)",
         final_loss, loss_reduction_pct
     );
-    println!(" Final Accuracy     : {:.1}% (train, {} samples)", final_acc, dataset.len());
+    println!(
+        " Final Accuracy     : {:.1}% (train, {} samples)",
+        final_acc,
+        dataset.len()
+    );
     println!(
         " Holdout Loss       : {:.5} | Accuracy {:.1}% ({} unseen samples)",
         holdout_loss,
@@ -323,7 +327,9 @@ fn main() {
                 println!("[~] Telemetry written to a scratch copy only (use --record to save)");
             }
             Ok(t1000::results::Outcome::WrittenVariant) => {
-                println!("[+] Different settings from the saved run: recorded as a separate variant");
+                println!(
+                    "[+] Different settings from the saved run: recorded as a separate variant"
+                );
             }
             Ok(_) => println!("[+] Training telemetry exported to: {}", out_path.display()),
             Err(e) => eprintln!("[!] Could not write telemetry: {e}"),

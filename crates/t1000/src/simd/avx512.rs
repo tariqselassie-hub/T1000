@@ -34,14 +34,26 @@ pub(crate) fn use_for(dim: usize) -> bool {
 }
 
 /// Element picks (0-7 from the first vector, 8-15 from the second) for qubits 0, 1, 2.
-const SPLIT_LO: [[i64; 8]; 3] =
-    [[0, 2, 4, 6, 8, 10, 12, 14], [0, 1, 4, 5, 8, 9, 12, 13], [0, 1, 2, 3, 8, 9, 10, 11]];
-const SPLIT_HI: [[i64; 8]; 3] =
-    [[1, 3, 5, 7, 9, 11, 13, 15], [2, 3, 6, 7, 10, 11, 14, 15], [4, 5, 6, 7, 12, 13, 14, 15]];
-const MERGE_A: [[i64; 8]; 3] =
-    [[0, 8, 1, 9, 2, 10, 3, 11], [0, 1, 8, 9, 2, 3, 10, 11], [0, 1, 2, 3, 8, 9, 10, 11]];
-const MERGE_B: [[i64; 8]; 3] =
-    [[4, 12, 5, 13, 6, 14, 7, 15], [4, 5, 12, 13, 6, 7, 14, 15], [4, 5, 6, 7, 12, 13, 14, 15]];
+const SPLIT_LO: [[i64; 8]; 3] = [
+    [0, 2, 4, 6, 8, 10, 12, 14],
+    [0, 1, 4, 5, 8, 9, 12, 13],
+    [0, 1, 2, 3, 8, 9, 10, 11],
+];
+const SPLIT_HI: [[i64; 8]; 3] = [
+    [1, 3, 5, 7, 9, 11, 13, 15],
+    [2, 3, 6, 7, 10, 11, 14, 15],
+    [4, 5, 6, 7, 12, 13, 14, 15],
+];
+const MERGE_A: [[i64; 8]; 3] = [
+    [0, 8, 1, 9, 2, 10, 3, 11],
+    [0, 1, 8, 9, 2, 3, 10, 11],
+    [0, 1, 2, 3, 8, 9, 10, 11],
+];
+const MERGE_B: [[i64; 8]; 3] = [
+    [4, 12, 5, 13, 6, 14, 7, 15],
+    [4, 5, 12, 13, 6, 7, 14, 15],
+    [4, 5, 6, 7, 12, 13, 14, 15],
+];
 
 #[target_feature(enable = "avx512f")]
 unsafe fn idx(table: &[i64; 8]) -> __m512i {
@@ -61,13 +73,19 @@ pub(super) unsafe fn apply_ry(real: &mut [f64], imag: &mut [f64], qubit: usize, 
         let (a_i, b_i) = (idx(&MERGE_A[qubit]), idx(&MERGE_B[qubit]));
         for plane in [real.as_mut_ptr(), imag.as_mut_ptr()] {
             for k in (0..real.len()).step_by(16) {
-                let (v0, v1) = (_mm512_loadu_pd(plane.add(k)), _mm512_loadu_pd(plane.add(k + 8)));
+                let (v0, v1) = (
+                    _mm512_loadu_pd(plane.add(k)),
+                    _mm512_loadu_pd(plane.add(k + 8)),
+                );
                 let lo = _mm512_permutex2var_pd(v0, lo_i, v1);
                 let hi = _mm512_permutex2var_pd(v0, hi_i, v1);
                 let new_lo = _mm512_fmsub_pd(vc, lo, _mm512_mul_pd(vs, hi));
                 let new_hi = _mm512_fmadd_pd(vs, lo, _mm512_mul_pd(vc, hi));
                 _mm512_storeu_pd(plane.add(k), _mm512_permutex2var_pd(new_lo, a_i, new_hi));
-                _mm512_storeu_pd(plane.add(k + 8), _mm512_permutex2var_pd(new_lo, b_i, new_hi));
+                _mm512_storeu_pd(
+                    plane.add(k + 8),
+                    _mm512_permutex2var_pd(new_lo, b_i, new_hi),
+                );
             }
         }
         return;
@@ -76,9 +94,15 @@ pub(super) unsafe fn apply_ry(real: &mut [f64], imag: &mut [f64], qubit: usize, 
     for plane in [real.as_mut_ptr(), imag.as_mut_ptr()] {
         for base in (0..real.len()).step_by(2 * half) {
             for k in (base..base + half).step_by(8) {
-                let (x0, x1) = (_mm512_loadu_pd(plane.add(k)), _mm512_loadu_pd(plane.add(k + half)));
+                let (x0, x1) = (
+                    _mm512_loadu_pd(plane.add(k)),
+                    _mm512_loadu_pd(plane.add(k + half)),
+                );
                 _mm512_storeu_pd(plane.add(k), _mm512_fmsub_pd(vc, x0, _mm512_mul_pd(vs, x1)));
-                _mm512_storeu_pd(plane.add(k + half), _mm512_fmadd_pd(vs, x0, _mm512_mul_pd(vc, x1)));
+                _mm512_storeu_pd(
+                    plane.add(k + half),
+                    _mm512_fmadd_pd(vs, x0, _mm512_mul_pd(vc, x1)),
+                );
             }
         }
     }
@@ -93,15 +117,25 @@ pub(super) unsafe fn apply_rz(real: &mut [f64], imag: &mut [f64], qubit: usize, 
     let (s_pos, c_pos) = (theta * 0.5).sin_cos();
     let (s_neg, c_neg) = (-theta * 0.5).sin_cos();
     let rotate = |plane_r: *mut f64, plane_i: *mut f64, k: usize, vc: __m512d, vs: __m512d| {
-        let (r, im) = (_mm512_loadu_pd(plane_r.add(k)), _mm512_loadu_pd(plane_i.add(k)));
-        _mm512_storeu_pd(plane_r.add(k), _mm512_fmsub_pd(r, vc, _mm512_mul_pd(im, vs)));
-        _mm512_storeu_pd(plane_i.add(k), _mm512_fmadd_pd(r, vs, _mm512_mul_pd(im, vc)));
+        let (r, im) = (
+            _mm512_loadu_pd(plane_r.add(k)),
+            _mm512_loadu_pd(plane_i.add(k)),
+        );
+        _mm512_storeu_pd(
+            plane_r.add(k),
+            _mm512_fmsub_pd(r, vc, _mm512_mul_pd(im, vs)),
+        );
+        _mm512_storeu_pd(
+            plane_i.add(k),
+            _mm512_fmadd_pd(r, vs, _mm512_mul_pd(im, vc)),
+        );
     };
     let (pr, pi) = (real.as_mut_ptr(), imag.as_mut_ptr());
     if qubit < 3 {
         // Bit `qubit` of lane j is bit `qubit` of the index, since vectors start at multiples of 8.
         let lane = |neg: f64, pos: f64| {
-            let v: [f64; 8] = std::array::from_fn(|j| if (j >> qubit) & 1 == 1 { pos } else { neg });
+            let v: [f64; 8] =
+                std::array::from_fn(|j| if (j >> qubit) & 1 == 1 { pos } else { neg });
             _mm512_loadu_pd(v.as_ptr())
         };
         let (vc, vs) = (lane(c_neg, c_pos), lane(s_neg, s_pos));
@@ -130,12 +164,21 @@ pub(super) unsafe fn apply_rz(real: &mut [f64], imag: &mut [f64], qubit: usize, 
 /// # Safety
 /// `re` and `im` must be valid for `len` reads and writes; the CPU must support AVX-512F.
 #[target_feature(enable = "avx512f")]
-pub(super) unsafe fn u_low(re: *mut f64, im: *mut f64, len: usize, qubit: usize, gate: &Unitary2x2) {
+pub(super) unsafe fn u_low(
+    re: *mut f64,
+    im: *mut f64,
+    len: usize,
+    qubit: usize,
+    gate: &Unitary2x2,
+) {
     let (lo_i, hi_i) = (idx(&SPLIT_LO[qubit]), idx(&SPLIT_HI[qubit]));
     let (a_i, b_i) = (idx(&MERGE_A[qubit]), idx(&MERGE_B[qubit]));
     let split = |p: *mut f64, k: usize| {
         let (v0, v1) = (_mm512_loadu_pd(p.add(k)), _mm512_loadu_pd(p.add(k + 8)));
-        (_mm512_permutex2var_pd(v0, lo_i, v1), _mm512_permutex2var_pd(v0, hi_i, v1))
+        (
+            _mm512_permutex2var_pd(v0, lo_i, v1),
+            _mm512_permutex2var_pd(v0, hi_i, v1),
+        )
     };
     for k in (0..len).step_by(16) {
         let ((xr, yr), (xi, yi)) = (split(re, k), split(im, k));

@@ -3,7 +3,7 @@
 
 //! Where benchmark and training binaries write their results.
 //!
-//! [`write`] and [`create`] are drop-in replacements for `std::fs::write` and
+//! [`write()`] and [`create()`] are drop-in replacements for `std::fs::write` and
 //! `std::fs::File::create`. A run never touches a saved result unless asked to record:
 //!
 //! | mode                                    | destination of a path inside the workspace          |
@@ -102,9 +102,15 @@ impl Policy {
             self.root.join(rel)
         } else if self.record {
             let tail = rel.strip_prefix("results").unwrap_or(&rel);
-            self.root.join("results/hosts").join(&self.host_slug).join(tail)
+            self.root
+                .join("results/hosts")
+                .join(&self.host_slug)
+                .join(tail)
         } else {
-            self.root.join("target/bench-scratch").join(&self.host_slug).join(rel)
+            self.root
+                .join("target/bench-scratch")
+                .join(&self.host_slug)
+                .join(rel)
         }
     }
 
@@ -197,7 +203,13 @@ pub fn write_if_better(
     value: f64,
     better: Better,
 ) -> io::Result<Outcome> {
-    let score = Score { metric, value, better, guard: None, settings: "" };
+    let score = Score {
+        metric,
+        value,
+        better,
+        guard: None,
+        settings: "",
+    };
     write_scored(path, contents, &score)
 }
 
@@ -222,7 +234,11 @@ fn write_scored_with(
     if !policy.record {
         fs::write(&actual, contents)?;
         policy.note(path, &actual);
-        return Ok(if actual == path { Outcome::Written } else { Outcome::Scratch });
+        return Ok(if actual == path {
+            Outcome::Written
+        } else {
+            Outcome::Scratch
+        });
     }
     let mut target = actual.clone();
     let mut variant = false;
@@ -243,7 +259,11 @@ fn write_scored_with(
     fs::write(&target, contents)?;
     fs::write(sidecar_path(&target), render(score))?;
     policy.note(path, &target);
-    Ok(if variant { Outcome::WrittenVariant } else { Outcome::Written })
+    Ok(if variant {
+        Outcome::WrittenVariant
+    } else {
+        Outcome::Written
+    })
 }
 
 /// Why `score` must not replace `saved`, if it must not.
@@ -291,9 +311,9 @@ fn sidecar_path(file: &Path) -> PathBuf {
 /// Companion files of a result (a CSV next to a JSON) use this when [`Outcome::WrittenVariant`]
 /// was returned, so both land under the same variant name.
 pub fn variant_path(file: &Path, settings: &str) -> PathBuf {
-    let hash = settings
-        .bytes()
-        .fold(0xcbf2_9ce4_8422_2325u64, |h, b| (h ^ u64::from(b)).wrapping_mul(0x0100_0000_01b3));
+    let hash = settings.bytes().fold(0xcbf2_9ce4_8422_2325u64, |h, b| {
+        (h ^ u64::from(b)).wrapping_mul(0x0100_0000_01b3)
+    });
     let stem = file.file_stem().unwrap_or_default().to_string_lossy();
     let name = match file.extension() {
         Some(ext) => format!("{stem}.{:08x}.{}", hash as u32, ext.to_string_lossy()),
@@ -312,7 +332,10 @@ struct Saved {
 }
 
 fn render(score: &Score) -> String {
-    let mut out = format!("settings {}\nmetric {} {:e}\n", score.settings, score.metric, score.value);
+    let mut out = format!(
+        "settings {}\nmetric {} {:e}\n",
+        score.settings, score.metric, score.value
+    );
     if let Some(g) = score.guard {
         out.push_str(&format!("guard {} {:e}\n", g.name, g.value));
     }
@@ -322,15 +345,27 @@ fn render(score: &Score) -> String {
 /// Reads the current format, or the earlier single-line `<metric> <value>` form.
 fn read_saved(sidecar: &Path) -> Option<Saved> {
     let text = fs::read_to_string(sidecar).ok()?;
-    let mut saved = Saved { settings: String::new(), metric: String::new(), value: 0.0, guard: None };
+    let mut saved = Saved {
+        settings: String::new(),
+        metric: String::new(),
+        value: 0.0,
+        guard: None,
+    };
     let pair = |rest: &str| -> Option<(String, f64)> {
         let (name, v) = rest.trim().rsplit_once(' ')?;
         Some((name.to_string(), v.parse().ok()?))
     };
     let mut lines = text.lines().peekable();
-    if lines.peek().is_some_and(|l| !l.starts_with("settings") && !l.starts_with("metric")) {
+    if lines
+        .peek()
+        .is_some_and(|l| !l.starts_with("settings") && !l.starts_with("metric"))
+    {
         let (metric, value) = pair(lines.next()?)?;
-        return Some(Saved { metric, value, ..saved });
+        return Some(Saved {
+            metric,
+            value,
+            ..saved
+        });
     }
     for line in lines {
         match line.split_once(' ') {
@@ -406,7 +441,10 @@ mod tests {
     fn paths_outside_the_workspace_are_untouched() {
         for record in [false, true] {
             let p = policy(record, false);
-            assert_eq!(p.resolve(Path::new("/tmp/x.json")), PathBuf::from("/tmp/x.json"));
+            assert_eq!(
+                p.resolve(Path::new("/tmp/x.json")),
+                PathBuf::from("/tmp/x.json")
+            );
         }
     }
 
@@ -419,7 +457,10 @@ mod tests {
 
     fn temp_policy(tag: &str) -> Policy {
         let root = std::env::temp_dir().join(format!("t1000_results_{tag}_{}", std::process::id()));
-        Policy { root, ..policy(true, true) }
+        Policy {
+            root,
+            ..policy(true, true)
+        }
     }
 
     fn score<'a>(value: f64, guard: Option<f64>, settings: &'a str) -> Score<'a> {
@@ -427,7 +468,12 @@ mod tests {
             metric: "holdout_loss",
             value,
             better: Better::Lower,
-            guard: guard.map(|v| Guard { name: "accuracy", value: v, better: Better::Higher, tolerance: 1.0 }),
+            guard: guard.map(|v| Guard {
+                name: "accuracy",
+                value: v,
+                better: Better::Higher,
+                tolerance: 1.0,
+            }),
             settings,
         }
     }
@@ -440,16 +486,37 @@ mod tests {
     fn keep_best_only_replaces_with_an_improvement() {
         let p = temp_policy("best");
         let file = p.root.join("results/run.json");
-        assert_eq!(put(&p, &file, "first", &score(10.0, None, "a")), Outcome::Written);
-        assert_eq!(put(&p, &file, "slower", &score(12.0, None, "a")), Outcome::KeptBest);
+        assert_eq!(
+            put(&p, &file, "first", &score(10.0, None, "a")),
+            Outcome::Written
+        );
+        assert_eq!(
+            put(&p, &file, "slower", &score(12.0, None, "a")),
+            Outcome::KeptBest
+        );
         assert_eq!(fs::read_to_string(&file).unwrap(), "first");
-        assert_eq!(put(&p, &file, "faster", &score(8.0, None, "a")), Outcome::Written);
+        assert_eq!(
+            put(&p, &file, "faster", &score(8.0, None, "a")),
+            Outcome::Written
+        );
         assert_eq!(fs::read_to_string(&file).unwrap(), "faster");
-        let forced = Policy { force: true, ..p.clone() };
-        assert_eq!(put(&forced, &file, "forced", &score(99.0, None, "a")), Outcome::Written);
+        let forced = Policy {
+            force: true,
+            ..p.clone()
+        };
+        assert_eq!(
+            put(&forced, &file, "forced", &score(99.0, None, "a")),
+            Outcome::Written
+        );
         assert_eq!(fs::read_to_string(&file).unwrap(), "forced");
-        let scratch = Policy { record: false, ..p.clone() };
-        assert_eq!(put(&scratch, &file, "scratch", &score(1000.0, None, "a")), Outcome::Scratch);
+        let scratch = Policy {
+            record: false,
+            ..p.clone()
+        };
+        assert_eq!(
+            put(&scratch, &file, "scratch", &score(1000.0, None, "a")),
+            Outcome::Scratch
+        );
         assert_eq!(fs::read_to_string(&file).unwrap(), "forced");
         fs::remove_dir_all(&p.root).unwrap();
     }
@@ -460,12 +527,21 @@ mod tests {
         let file = p.root.join("results/run.json");
         put(&p, &file, "base", &score(0.50, Some(90.0), "a"));
         // Better loss, accuracy down 5 points: rejected.
-        assert_eq!(put(&p, &file, "overfit", &score(0.40, Some(85.0), "a")), Outcome::KeptBest);
+        assert_eq!(
+            put(&p, &file, "overfit", &score(0.40, Some(85.0), "a")),
+            Outcome::KeptBest
+        );
         // Better loss, accuracy down within the 1 point tolerance: accepted.
-        assert_eq!(put(&p, &file, "ok", &score(0.40, Some(89.5), "a")), Outcome::Written);
+        assert_eq!(
+            put(&p, &file, "ok", &score(0.40, Some(89.5), "a")),
+            Outcome::Written
+        );
         assert_eq!(fs::read_to_string(&file).unwrap(), "ok");
         // Worse loss with better accuracy: still rejected, loss decides.
-        assert_eq!(put(&p, &file, "lucky", &score(0.45, Some(99.0), "a")), Outcome::KeptBest);
+        assert_eq!(
+            put(&p, &file, "lucky", &score(0.45, Some(99.0), "a")),
+            Outcome::KeptBest
+        );
         fs::remove_dir_all(&p.root).unwrap();
     }
 
@@ -480,7 +556,10 @@ mod tests {
         let variant = variant_path(&file, "epochs=3");
         assert_eq!(fs::read_to_string(&variant).unwrap(), "short");
         // The variant has its own best: a worse run with the same settings is rejected.
-        assert_eq!(put(&p, &file, "worse", &score(0.30, None, "epochs=3")), Outcome::KeptBest);
+        assert_eq!(
+            put(&p, &file, "worse", &score(0.30, None, "epochs=3")),
+            Outcome::KeptBest
+        );
         assert_eq!(fs::read_to_string(&variant).unwrap(), "short");
         fs::remove_dir_all(&p.root).unwrap();
     }
@@ -492,7 +571,13 @@ mod tests {
         fs::create_dir_all(file.parent().unwrap()).unwrap();
         fs::write(&file, "saved").unwrap();
         fs::write(sidecar_path(&file), "latency_ms 1.0e4\n").unwrap();
-        let s = Score { metric: "latency_ms", value: 12000.0, better: Better::Lower, guard: None, settings: "" };
+        let s = Score {
+            metric: "latency_ms",
+            value: 12000.0,
+            better: Better::Lower,
+            guard: None,
+            settings: "",
+        };
         assert_eq!(put(&p, &file, "slower", &s), Outcome::KeptBest);
         assert_eq!(fs::read_to_string(&file).unwrap(), "saved");
         fs::remove_dir_all(&p.root).unwrap();

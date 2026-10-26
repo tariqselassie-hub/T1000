@@ -148,7 +148,11 @@ pub fn measure_logical_zz_correlation(
     for i in 0..state.dim {
         let z1_parity = (i & p1.logical_z_mask).count_ones() % 2;
         let z2_parity = (i & p2.logical_z_mask).count_ones() % 2;
-        let sign = if z1_parity ^ z2_parity == 0 { 1.0 } else { -1.0 };
+        let sign = if z1_parity ^ z2_parity == 0 {
+            1.0
+        } else {
+            -1.0
+        };
         let p = state.real[i] * state.real[i] + state.imag[i] * state.imag[i];
         exp_val += sign * p;
     }
@@ -163,15 +167,25 @@ pub fn measure_logical_xx_correlation(
 ) -> f64 {
     let mut rotated = state.clone();
     // Rotate logical X to Z basis via Hadamards on X_L support
-    let x_qubits = [p1.data_qubits[0], p1.data_qubits[3], p1.data_qubits[6],
-                    p2.data_qubits[0], p2.data_qubits[3], p2.data_qubits[6]];
+    let x_qubits = [
+        p1.data_qubits[0],
+        p1.data_qubits[3],
+        p1.data_qubits[6],
+        p2.data_qubits[0],
+        p2.data_qubits[3],
+        p2.data_qubits[6],
+    ];
     for &q in &x_qubits {
         crate::qec::apply_hadamard(&mut rotated, q);
     }
 
     let mut exp_val = 0.0f64;
-    let z_mask = (1 << p1.data_qubits[0]) | (1 << p1.data_qubits[3]) | (1 << p1.data_qubits[6])
-               | (1 << p2.data_qubits[0]) | (1 << p2.data_qubits[3]) | (1 << p2.data_qubits[6]);
+    let z_mask = (1 << p1.data_qubits[0])
+        | (1 << p1.data_qubits[3])
+        | (1 << p1.data_qubits[6])
+        | (1 << p2.data_qubits[0])
+        | (1 << p2.data_qubits[3])
+        | (1 << p2.data_qubits[6]);
 
     for i in 0..rotated.dim {
         let parity = (i & z_mask).count_ones() % 2;
@@ -186,11 +200,7 @@ pub fn measure_logical_xx_correlation(
 ///
 /// Measures boundary operators $Z_{2} Z_{9}, Z_{5} Z_{12}, Z_{8} Z_{15}$ which in product
 /// correspond to the non-destructive measurement of $M_{ZZ} = Z_L^{(1)} \otimes Z_L^{(2)}$.
-pub fn perform_z_merge(
-    state: &mut QuantumState,
-    p1: &PlanarPatch,
-    p2: &PlanarPatch,
-) -> (i8, f64) {
+pub fn perform_z_merge(state: &mut QuantumState, p1: &PlanarPatch, p2: &PlanarPatch) -> (i8, f64) {
     let exp_zz = measure_logical_zz_correlation(state, p1, p2);
     let outcome: i8 = if exp_zz >= -1e-12 { 1 } else { -1 };
 
@@ -210,12 +220,7 @@ pub fn perform_z_merge(
 
 /// Executes a $Z$-type lattice surgery split, restoring independent patch stabilizers.
 /// If the merge measurement yielded $m = -1$, applies a classical Pauli-$X_L$ frame correction.
-pub fn perform_z_split(
-    state: &mut QuantumState,
-    _p1: &PlanarPatch,
-    p2: &PlanarPatch,
-    outcome: i8,
-) {
+pub fn perform_z_split(state: &mut QuantumState, _p1: &PlanarPatch, p2: &PlanarPatch, outcome: i8) {
     if outcome == -1 {
         // Apply logical X_L to target patch: X on qubits 9, 12, 15
         apply_pauli_x(state, p2.data_qubits[0]);
@@ -225,23 +230,29 @@ pub fn perform_z_split(
 }
 
 /// Executes an $X$-type lattice surgery merge measuring $M_{XX} = X_L^{(1)} \otimes X_L^{(2)}$.
-pub fn perform_x_merge(
-    state: &mut QuantumState,
-    p1: &PlanarPatch,
-    p2: &PlanarPatch,
-) -> (i8, f64) {
+pub fn perform_x_merge(state: &mut QuantumState, p1: &PlanarPatch, p2: &PlanarPatch) -> (i8, f64) {
     let exp_xx = measure_logical_xx_correlation(state, p1, p2);
     let outcome: i8 = if exp_xx >= -1e-12 { 1 } else { -1 };
 
     // Rotate to Z basis
-    let x_qubits = [p1.data_qubits[0], p1.data_qubits[3], p1.data_qubits[6],
-                    p2.data_qubits[0], p2.data_qubits[3], p2.data_qubits[6]];
+    let x_qubits = [
+        p1.data_qubits[0],
+        p1.data_qubits[3],
+        p1.data_qubits[6],
+        p2.data_qubits[0],
+        p2.data_qubits[3],
+        p2.data_qubits[6],
+    ];
     for &q in &x_qubits {
         crate::qec::apply_hadamard(state, q);
     }
 
-    let z_mask = (1 << p1.data_qubits[0]) | (1 << p1.data_qubits[3]) | (1 << p1.data_qubits[6])
-               | (1 << p2.data_qubits[0]) | (1 << p2.data_qubits[3]) | (1 << p2.data_qubits[6]);
+    let z_mask = (1 << p1.data_qubits[0])
+        | (1 << p1.data_qubits[3])
+        | (1 << p1.data_qubits[6])
+        | (1 << p2.data_qubits[0])
+        | (1 << p2.data_qubits[3])
+        | (1 << p2.data_qubits[6]);
 
     for i in 0..state.dim {
         let parity = (i & z_mask).count_ones() % 2;
@@ -274,7 +285,8 @@ pub fn execute_fault_tolerant_logical_cnot(
 ) -> LatticeSurgeryTelemetry {
     // 1. Synthesize logical CNOT: if control patch is |1_L> (odd Z-parity), flip target logical X_L
     let z_ctrl_mask = ctrl.logical_z_mask;
-    let x_flip_mask = (1 << target.data_qubits[0]) | (1 << target.data_qubits[3]) | (1 << target.data_qubits[6]);
+    let x_flip_mask =
+        (1 << target.data_qubits[0]) | (1 << target.data_qubits[3]) | (1 << target.data_qubits[6]);
 
     let mut visited = vec![false; state.dim];
     for i in 0..state.dim {
@@ -309,14 +321,17 @@ pub fn execute_fault_tolerant_logical_cnot(
 /// Generates a fault-tolerant maximally entangled logical Bell pair:
 /// $|\Phi^+\rangle_L = \frac{1}{\sqrt{2}}(|00\rangle_L + |11\rangle_L)$
 /// by preparing $|0_L\rangle_1 \otimes |+_L\rangle_2$ and applying the lattice surgery CNOT.
-pub fn generate_fault_tolerant_bell_pair() -> (QuantumState, PlanarPatch, PlanarPatch, LatticeSurgeryTelemetry) {
+pub fn generate_fault_tolerant_bell_pair() -> (
+    QuantumState,
+    PlanarPatch,
+    PlanarPatch,
+    LatticeSurgeryTelemetry,
+) {
     let inv_sqrt2 = std::f64::consts::FRAC_1_SQRT_2;
     // Control (Patch 1) initialized to |+_L>: alpha = (1/sqrt2, 0), beta = (1/sqrt2, 0)
     // Target (Patch 2) initialized to |0_L>: alpha = (1, 0), beta = (0, 0)
-    let (mut state, p1, p2) = encode_dual_planar_patches(
-        (inv_sqrt2, 0.0), (inv_sqrt2, 0.0),
-        (1.0, 0.0), (0.0, 0.0),
-    );
+    let (mut state, p1, p2) =
+        encode_dual_planar_patches((inv_sqrt2, 0.0), (inv_sqrt2, 0.0), (1.0, 0.0), (0.0, 0.0));
 
     let telem = execute_fault_tolerant_logical_cnot(&mut state, &p1, &p2);
     (state, p1, p2, telem)

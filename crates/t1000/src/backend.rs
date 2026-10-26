@@ -48,13 +48,20 @@ pub struct BackendPolicy {
 
 impl Default for BackendPolicy {
     fn default() -> Self {
-        Self { precision: Precision::Exact, gpu_min_qubits: 16, force: None }
+        Self {
+            precision: Precision::Exact,
+            gpu_min_qubits: 16,
+            force: None,
+        }
     }
 }
 
 impl BackendPolicy {
     pub fn fast() -> Self {
-        Self { precision: Precision::Fast, ..Self::default() }
+        Self {
+            precision: Precision::Fast,
+            ..Self::default()
+        }
     }
 
     pub fn from_env() -> Self {
@@ -116,9 +123,10 @@ pub struct BackendSelector {
 impl BackendSelector {
     /// Mounts OpenCL only when the policy can ever use it (`Fast`).
     pub fn new(policy: BackendPolicy) -> Self {
-        let gpu = (policy.precision == Precision::Fast && policy.force != Some(BackendKind::CpuAvx2Fp64))
-            .then(Fp32GpuEngine::new)
-            .flatten();
+        let gpu = (policy.precision == Precision::Fast
+            && policy.force != Some(BackendKind::CpuAvx2Fp64))
+        .then(Fp32GpuEngine::new)
+        .flatten();
         Self { policy, gpu }
     }
 
@@ -131,7 +139,11 @@ impl BackendSelector {
     }
 
     /// Executes `circuit` on the backend the policy picks, falling back to the CPU if needed.
-    pub fn execute(&self, circuit: &CompiledCircuit, state: &mut QuantumState) -> BackendExecutionReport {
+    pub fn execute(
+        &self,
+        circuit: &CompiledCircuit,
+        state: &mut QuantumState,
+    ) -> BackendExecutionReport {
         let requested = self.policy.choose(circuit.num_qubits);
         let t0 = Instant::now();
         let mut fallback_reason = None;
@@ -187,7 +199,10 @@ mod tests {
 
     #[test]
     fn force_cpu_beats_fast() {
-        let p = BackendPolicy { force: Some(BackendKind::CpuAvx2Fp64), ..BackendPolicy::fast() };
+        let p = BackendPolicy {
+            force: Some(BackendKind::CpuAvx2Fp64),
+            ..BackendPolicy::fast()
+        };
         assert_eq!(p.choose(26), BackendKind::CpuAvx2Fp64);
     }
 
@@ -240,7 +255,12 @@ mod tests {
             let mut gpu = cpu.clone();
             c.execute(&mut cpu);
             let rep = sel.execute(&c, &mut gpu);
-            assert_eq!(rep.used, BackendKind::IGpuFp32, "n={n}: {:?}", rep.fallback_reason);
+            assert_eq!(
+                rep.used,
+                BackendKind::IGpuFp32,
+                "n={n}: {:?}",
+                rep.fallback_reason
+            );
             let max = cpu
                 .real
                 .iter()

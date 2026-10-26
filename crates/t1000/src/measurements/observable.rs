@@ -21,7 +21,7 @@ pub enum PauliObservable {
     AllZ,
     /// Multi-qubit parity or linear combination: sum_k w_k Z_k
     LinearZ(Vec<(usize, f64)>),
-    /// Global multi-qubit observable: <H> = (1/N) * sum_{i=0}^{N-1} <Z_i>
+    /// Global multi-qubit observable: `<H> = (1/N) * sum_{i=0}^{N-1} <Z_i>`
     /// Distributes gradient backpropagation directly across all qubits.
     GlobalMeanZ,
 }
@@ -80,9 +80,16 @@ impl PauliObservable {
                 }
             }
             PauliObservable::AllZ => {
-                scale_by(&mut out, |idx| {
-                    if idx.count_ones() % 2 == 0 { 1.0 } else { -1.0 }
-                });
+                scale_by(
+                    &mut out,
+                    |idx| {
+                        if idx.count_ones() % 2 == 0 {
+                            1.0
+                        } else {
+                            -1.0
+                        }
+                    },
+                );
             }
             PauliObservable::LinearZ(weights) => {
                 for &(q, _) in weights {
@@ -212,7 +219,7 @@ impl PauliObservable {
     }
 
     /// Compute exact quantum expectation value:
-    /// <O> = <psi | O | psi>
+    /// `<O> = <psi | O | psi>`
     pub fn expectation_value(&self, state: &QuantumState) -> f64 {
         let n_qubits = (state.dim as f64).log2().round() as usize;
 

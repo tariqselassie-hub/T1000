@@ -44,12 +44,22 @@ fn single(rng: &mut Rng) -> Mat {
     let theta = rng.unit() * 2.0 * PI;
     let (c, s) = ((theta / 2.0).cos(), (theta / 2.0).sin());
     match rng.below(6) {
-        0 => [(c, 0.0), (-s, 0.0), (s, 0.0), (c, 0.0)],                         // RY
-        1 => [(c, -s), (0.0, 0.0), (0.0, 0.0), (c, s)],                         // RZ
-        2 => [(c, 0.0), (0.0, -s), (0.0, -s), (c, 0.0)],                        // RX
-        3 => [(FRAC_1_SQRT_2, 0.0), (FRAC_1_SQRT_2, 0.0), (FRAC_1_SQRT_2, 0.0), (-FRAC_1_SQRT_2, 0.0)], // H
-        4 => [(1.0, 0.0), (0.0, 0.0), (0.0, 0.0), (0.0, 1.0)],                  // S
-        _ => [(1.0, 0.0), (0.0, 0.0), (0.0, 0.0), (FRAC_1_SQRT_2, FRAC_1_SQRT_2)], // T
+        0 => [(c, 0.0), (-s, 0.0), (s, 0.0), (c, 0.0)],  // RY
+        1 => [(c, -s), (0.0, 0.0), (0.0, 0.0), (c, s)],  // RZ
+        2 => [(c, 0.0), (0.0, -s), (0.0, -s), (c, 0.0)], // RX
+        3 => [
+            (FRAC_1_SQRT_2, 0.0),
+            (FRAC_1_SQRT_2, 0.0),
+            (FRAC_1_SQRT_2, 0.0),
+            (-FRAC_1_SQRT_2, 0.0),
+        ], // H
+        4 => [(1.0, 0.0), (0.0, 0.0), (0.0, 0.0), (0.0, 1.0)], // S
+        _ => [
+            (1.0, 0.0),
+            (0.0, 0.0),
+            (0.0, 0.0),
+            (FRAC_1_SQRT_2, FRAC_1_SQRT_2),
+        ], // T
     }
 }
 
@@ -57,7 +67,11 @@ fn circuit(n: usize, layers: usize, rng: &mut Rng) -> Vec<Op> {
     let mut ops = Vec::new();
     for _ in 0..layers {
         for q in 0..n {
-            ops.push(Op { target: q, ctrl: 0, m: single(rng) });
+            ops.push(Op {
+                target: q,
+                ctrl: 0,
+                m: single(rng),
+            });
         }
         for _ in 0..n / 2 {
             let a = rng.below(n as u64) as usize;
@@ -70,7 +84,11 @@ fn circuit(n: usize, layers: usize, rng: &mut Rng) -> Vec<Op> {
             } else {
                 [(0.0, 0.0), (1.0, 0.0), (1.0, 0.0), (0.0, 0.0)] // X (CNOT)
             };
-            ops.push(Op { target: a, ctrl: 1 << b, m });
+            ops.push(Op {
+                target: a,
+                ctrl: 1 << b,
+                m,
+            });
         }
     }
     ops
@@ -85,7 +103,12 @@ fn apply_f64(state: &mut [C], op: &Op) {
         let i1 = i0 | bit;
         let (a, b) = (state[i0], state[i1]);
         let mul = |m: C, v: C| (m.0 * v.0 - m.1 * v.1, m.0 * v.1 + m.1 * v.0);
-        let (p, q, r, s) = (mul(op.m[0], a), mul(op.m[1], b), mul(op.m[2], a), mul(op.m[3], b));
+        let (p, q, r, s) = (
+            mul(op.m[0], a),
+            mul(op.m[1], b),
+            mul(op.m[2], a),
+            mul(op.m[3], b),
+        );
         state[i0] = (p.0 + q.0, p.1 + q.1);
         state[i1] = (r.0 + s.0, r.1 + s.1);
     }
@@ -97,7 +120,11 @@ fn gate_of(op: &Op) -> Gate {
         m[2 * k] = quantize_coef(c.0);
         m[2 * k + 1] = quantize_coef(c.1);
     }
-    Gate { target: op.target as u8, ctrl: op.ctrl as u16, m }
+    Gate {
+        target: op.target as u8,
+        ctrl: op.ctrl as u16,
+        m,
+    }
 }
 
 fn infidelity(reference: &[C], fixed: &[C]) -> f64 {
@@ -145,7 +172,11 @@ fn main() {
             let mut drift: Vec<Vec<f64>> = vec![Vec::new(); FRACS.len()];
             let mut gates = 0;
             for seed in 0..SEEDS {
-                let mut rng = Rng(0x2026_0A11_5EED_0000 ^ ((n as u64) << 32) ^ ((layers as u64) << 16) ^ seed as u64 ^ 1);
+                let mut rng = Rng(0x2026_0A11_5EED_0000
+                    ^ ((n as u64) << 32)
+                    ^ ((layers as u64) << 16)
+                    ^ seed as u64
+                    ^ 1);
                 let ops = circuit(n, layers, &mut rng);
                 gates = ops.len();
                 let mut reference = vec![(0.0, 0.0); 1 << n];
@@ -161,10 +192,14 @@ fn main() {
                         assert!(q.apply_gate(&gate_of(op)));
                     }
                     let amps = q.read(0, 1 << n).expect("read");
-                    let fixed: Vec<C> =
-                        amps.iter().map(|a| (dequantize_state(a.0, frac), dequantize_state(a.1, frac))).collect();
+                    let fixed: Vec<C> = amps
+                        .iter()
+                        .map(|a| (dequantize_state(a.0, frac), dequantize_state(a.1, frac)))
+                        .collect();
                     cells[fi].push(infidelity(&reference, &fixed));
-                    drift[fi].push((fixed.iter().map(|a| a.0 * a.0 + a.1 * a.1).sum::<f64>() - 1.0).abs());
+                    drift[fi].push(
+                        (fixed.iter().map(|a| a.0 * a.0 + a.1 * a.1).sum::<f64>() - 1.0).abs(),
+                    );
                 }
             }
             print!(" {:>3} {:>6} {:>7}", n, layers, gates);
@@ -174,8 +209,13 @@ fn main() {
                 let md = median(&mut drift[fi]);
                 print!(" {:>11.2e}", med);
                 rows.push(Row {
-                    qubits: n, layers, gates, fraction_bits: frac,
-                    median_infidelity: med, worst_infidelity: worst, median_norm_drift: md,
+                    qubits: n,
+                    layers,
+                    gates,
+                    fraction_bits: frac,
+                    median_infidelity: med,
+                    worst_infidelity: worst,
+                    median_norm_drift: md,
                 });
             }
             println!();
@@ -184,6 +224,10 @@ fn main() {
     let dir = Path::new("results/data");
     let _ = fs::create_dir_all(dir);
     let path = dir.join("qpu_scaling_report.json");
-    t1000::results::write(&path, serde_json::to_string_pretty(&rows).expect("serialise")).expect("write report");
+    t1000::results::write(
+        &path,
+        serde_json::to_string_pretty(&rows).expect("serialise"),
+    )
+    .expect("write report");
     println!("\n [OK] report: {}", path.display());
 }

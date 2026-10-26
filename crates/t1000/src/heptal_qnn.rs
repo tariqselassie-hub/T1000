@@ -79,9 +79,9 @@ pub struct HeptalPrediction {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HeptalMolecularZipperQnn {
     pub config: HeptalQnnConfig,
-    /// Variational phase weights: [n_qudits][7]
+    /// Variational phase weights: `[n_qudits][7]`
     pub phase_weights: Vec<[f64; 7]>,
-    /// Linear readout weights for logP: [n_qudits * 3 + 1] (Re, Im, Entropy per qudit + bias)
+    /// Linear readout weights for logP: `[n_qudits * 3 + 1]` (Re, Im, Entropy per qudit + bias)
     pub logp_weights: Vec<f64>,
     /// Linear readout weights for QED
     pub qed_weights: Vec<f64>,

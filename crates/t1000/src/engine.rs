@@ -282,7 +282,8 @@ impl T1000Engine {
             author: "Terrence A. Jones SR".to_string(),
             license: "MIT OR Apache-2.0".to_string(),
             sim_backend: "256-bit AVX2 + FMA SOA".to_string(),
-            fpga_target: "Artix-7 1000_QPU (14 qubits, 2 x 64 KB BRAM banks, 40 DSP48E1)".to_string(),
+            fpga_target: "Artix-7 1000_QPU (14 qubits, 2 x 64 KB BRAM banks, 40 DSP48E1)"
+                .to_string(),
             max_dense_qubits: 26,
             zipper_max_qubits: 200,
             plaquette_2d_max_qubits: 2000,

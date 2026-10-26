@@ -38,4 +38,3 @@ pub use simd::apply_unitary_4cells;
 pub use simulator::{QuantumConwaySimulator, StepTelemetry};
 pub use state::{CellBasis, QuantumCellStateSoA};
 pub use telemetry::{colors, TelemetryVisualizer};
-

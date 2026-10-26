@@ -6,8 +6,8 @@ use t1000::state::QuantumState;
 
 #[test]
 fn test_magic_state_coefficients_norm() {
-    let norm_sq = MAGIC_ALPHA.0.powi(2) + MAGIC_ALPHA.1.powi(2)
-        + MAGIC_BETA.0.powi(2) + MAGIC_BETA.1.powi(2);
+    let norm_sq =
+        MAGIC_ALPHA.0.powi(2) + MAGIC_ALPHA.1.powi(2) + MAGIC_BETA.0.powi(2) + MAGIC_BETA.1.powi(2);
     assert!((norm_sq - 1.0).abs() < 1e-12);
 }
 

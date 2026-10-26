@@ -40,7 +40,12 @@ pub struct QpuModel {
 
 impl Default for QpuModel {
     fn default() -> Self {
-        QpuModel { n: MAX_QUBITS, re: vec![0; MAX_DIM], im: vec![0; MAX_DIM], circuit: Vec::new() }
+        QpuModel {
+            n: MAX_QUBITS,
+            re: vec![0; MAX_DIM],
+            im: vec![0; MAX_DIM],
+            circuit: Vec::new(),
+        }
     }
 }
 
@@ -93,7 +98,11 @@ impl QpuModel {
         if addr + count > self.dim() {
             return None;
         }
-        Some((addr..addr + count).map(|k| (self.re[k], self.im[k])).collect())
+        Some(
+            (addr..addr + count)
+                .map(|k| (self.re[k], self.im[k]))
+                .collect(),
+        )
     }
 
     /// Whether a gate is legal for the active register.
@@ -107,7 +116,10 @@ impl QpuModel {
         if !self.gate_is_valid(g) {
             return false;
         }
-        let m: Vec<i128> = g.m.iter().map(|&c| i128::from(sign_extend_coef(c))).collect();
+        let m: Vec<i128> =
+            g.m.iter()
+                .map(|&c| i128::from(sign_extend_coef(c)))
+                .collect();
         let bit = 1usize << g.target;
         let ctrl = usize::from(g.ctrl);
         for i0 in 0..self.dim() {
@@ -189,7 +201,11 @@ mod tests {
     const F: u32 = 28;
 
     fn gate(target: u8, ctrl: u16, m: [f64; 8]) -> Gate {
-        Gate { target, ctrl, m: m.map(quantize_coef) }
+        Gate {
+            target,
+            ctrl,
+            m: m.map(quantize_coef),
+        }
     }
 
     fn hadamard(t: u8) -> Gate {
@@ -260,7 +276,8 @@ mod tests {
         }
         let (r, _) = amp(&q, 0);
         assert!((r - 1.0).abs() < 1e-5, "{r}");
-        let norm = dequantize_state(1, 0) * 0.0 + q.norm_squared() as f64 / f64::powi(2.0, 2 * F as i32);
+        let norm =
+            dequantize_state(1, 0) * 0.0 + q.norm_squared() as f64 / f64::powi(2.0, 2 * F as i32);
         assert!((norm - 1.0).abs() < 1e-5);
     }
 
@@ -282,8 +299,20 @@ mod tests {
         let mut q = zero_state(3);
         let before = q.read(0, 8).unwrap();
         assert!(!q.apply_gate(&hadamard(3)), "target outside the register");
-        assert!(!q.apply_gate(&Gate { ctrl: 0b100, ..hadamard(2) }), "control equals target");
-        assert!(!q.apply_gate(&Gate { ctrl: 0b1000, ..hadamard(0) }), "control outside register");
+        assert!(
+            !q.apply_gate(&Gate {
+                ctrl: 0b100,
+                ..hadamard(2)
+            }),
+            "control equals target"
+        );
+        assert!(
+            !q.apply_gate(&Gate {
+                ctrl: 0b1000,
+                ..hadamard(0)
+            }),
+            "control outside register"
+        );
         assert!(!q.load(6, &[(1, 1), (2, 2), (3, 3)]));
         assert!(q.read(7, 2).is_none());
         assert_eq!(q.read(0, 8).unwrap(), before);

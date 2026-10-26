@@ -57,7 +57,11 @@ unsafe impl Sync for Planes {}
 
 /// Applies `Ry(angles[q])` to every qubit `q < angles.len()` of the statevector.
 pub fn apply_ry_layer(real: &mut [f64], imag: &mut [f64], angles: &[f64]) {
-    assert!(angles.len() <= MAX_LAYER_QUBITS, "{} angles exceed the layer limit", angles.len());
+    assert!(
+        angles.len() <= MAX_LAYER_QUBITS,
+        "{} angles exceed the layer limit",
+        angles.len()
+    );
     let mut gates = [(0usize, Gate1Q::Ry(0.0)); MAX_LAYER_QUBITS];
     for (q, (slot, &theta)) in gates.iter_mut().zip(angles).enumerate() {
         *slot = (q, Gate1Q::Ry(theta));
@@ -69,8 +73,14 @@ pub fn apply_ry_layer(real: &mut [f64], imag: &mut [f64], angles: &[f64]) {
 pub fn apply_1q_layer(real: &mut [f64], imag: &mut [f64], gates: &mut [LayerGate]) {
     let n_qubits = crate::simd::assert_statevector(real, imag);
     gates.sort_unstable_by_key(|g| g.0);
-    assert!(gates.windows(2).all(|w| w[0].0 != w[1].0), "layer qubits must be distinct");
-    assert!(gates.iter().all(|g| g.0 < n_qubits), "layer qubit out of range");
+    assert!(
+        gates.windows(2).all(|w| w[0].0 != w[1].0),
+        "layer qubits must be distinct"
+    );
+    assert!(
+        gates.iter().all(|g| g.0 < n_qubits),
+        "layer qubit out of range"
+    );
     let parallel = crate::parallel::use_parallel(real.len());
 
     let split = gates.partition_point(|g| g.0 < LOW_BITS);
@@ -102,7 +112,9 @@ fn apply_low_block(real: &mut [f64], imag: &mut [f64], gates: &[LayerGate], para
                 .for_each(|(re, im)| run(re, im));
         });
     } else {
-        real.chunks_mut(block).zip(imag.chunks_mut(block)).for_each(|(re, im)| run(re, im));
+        real.chunks_mut(block)
+            .zip(imag.chunks_mut(block))
+            .for_each(|(re, im)| run(re, im));
     }
 }
 
@@ -110,7 +122,10 @@ fn apply_low_block(real: &mut [f64], imag: &mut [f64], gates: &[LayerGate], para
 fn apply_high_group(real: &mut [f64], imag: &mut [f64], group: &[LayerGate], par: bool) {
     let g = group.len();
     let bases = real.len() >> (CHUNK_BITS + g);
-    let planes = Planes { re: real.as_mut_ptr(), im: imag.as_mut_ptr() };
+    let planes = Planes {
+        re: real.as_mut_ptr(),
+        im: imag.as_mut_ptr(),
+    };
     let mut qs = [0usize; GROUP_QUBITS];
     let mut ops = [PairOp::Rot { s: 0.0, c: 1.0 }; GROUP_QUBITS];
     for (j, &(q, gate)) in group.iter().enumerate() {
@@ -135,7 +150,9 @@ pub(crate) fn insert_zero_bit(x: usize, p: usize) -> usize {
 /// Runs the butterfly stages on the `2^g` chunks addressed by base index `b`.
 fn apply_group(p: Planes, b: usize, qs: &[usize], ops: &[PairOp]) {
     let g = qs.len();
-    let x = qs.iter().fold(b, |x, &q| insert_zero_bit(x, q - CHUNK_BITS));
+    let x = qs
+        .iter()
+        .fold(b, |x, &q| insert_zero_bit(x, q - CHUNK_BITS));
     let base = x << CHUNK_BITS;
     for j in 0..g {
         let bit = 1usize << qs[j];
@@ -143,7 +160,10 @@ fn apply_group(p: Planes, b: usize, qs: &[usize], ops: &[PairOp]) {
             if mask & (1 << j) != 0 {
                 continue;
             }
-            let off: usize = (0..g).filter(|k| mask & (1 << k) != 0).map(|k| 1usize << qs[k]).sum();
+            let off: usize = (0..g)
+                .filter(|k| mask & (1 << k) != 0)
+                .map(|k| 1usize << qs[k])
+                .sum();
             let (a0, a1) = (base + off, base + off + bit);
             // SAFETY: `a0` and `a1` are distinct chunks of this group, inside the statevector,
             // and no other base touches them.
@@ -160,7 +180,10 @@ fn apply_group(p: Planes, b: usize, qs: &[usize], ops: &[PairOp]) {
 #[derive(Clone, Copy)]
 pub(crate) enum PairOp {
     /// Real rotation `[c -s; s c]`: half the arithmetic of the complex kernel.
-    Rot { s: f64, c: f64 },
+    Rot {
+        s: f64,
+        c: f64,
+    },
     Mat(Unitary2x2),
 }
 
@@ -178,7 +201,13 @@ pub(crate) fn pair_op(gate: Gate1Q) -> PairOp {
 ///
 /// # Safety
 /// The four pointers must be valid for `CHUNK` reads and writes, and the ranges must not overlap.
-pub(crate) unsafe fn chunk_pair(r0: *mut f64, r1: *mut f64, i0: *mut f64, i1: *mut f64, op: &PairOp) {
+pub(crate) unsafe fn chunk_pair(
+    r0: *mut f64,
+    r1: *mut f64,
+    i0: *mut f64,
+    i1: *mut f64,
+    op: &PairOp,
+) {
     use crate::simd::unitary::{rot_pair, u_pair};
     match op {
         PairOp::Mat(u) => u_pair(r0, r1, i0, i1, CHUNK, u),
@@ -208,11 +237,22 @@ mod tests {
 
     fn rz_matrix(theta: f64) -> Unitary2x2 {
         let (s, c) = (theta * 0.5).sin_cos();
-        Unitary2x2 { u00_re: c, u00_im: -s, u11_re: c, u11_im: s, ..Unitary2x2::IDENTITY }
+        Unitary2x2 {
+            u00_re: c,
+            u00_im: -s,
+            u11_re: c,
+            u11_im: s,
+            ..Unitary2x2::IDENTITY
+        }
     }
 
     fn max_dev(a: &QuantumState, b: &QuantumState) -> f64 {
-        let d = |x: &[f64], y: &[f64]| x.iter().zip(y).map(|(p, q)| (p - q).abs()).fold(0.0, f64::max);
+        let d = |x: &[f64], y: &[f64]| {
+            x.iter()
+                .zip(y)
+                .map(|(p, q)| (p - q).abs())
+                .fold(0.0, f64::max)
+        };
         d(&a.real, &b.real).max(d(&a.imag, &b.imag))
     }
 
@@ -233,7 +273,11 @@ mod tests {
             let mut r = s.clone();
             let angles: Vec<f64> = (0..n).map(|q| 0.17 + 0.31 * q as f64).collect();
             apply_ry_layer(&mut s.real, &mut s.imag, &angles);
-            let gates: Vec<LayerGate> = angles.iter().enumerate().map(|(q, &t)| (q, Gate1Q::Ry(t))).collect();
+            let gates: Vec<LayerGate> = angles
+                .iter()
+                .enumerate()
+                .map(|(q, &t)| (q, Gate1Q::Ry(t)))
+                .collect();
             reference(&mut r, &gates);
             assert!(max_dev(&s, &r) < 1e-12, "n={n}");
         }
@@ -249,7 +293,14 @@ mod tests {
                 .step_by(2)
                 .map(|q| {
                     let t = 0.4 + 0.23 * q as f64;
-                    (q, if q % 4 == 0 { Gate1Q::Ry(t) } else { Gate1Q::U(rz_matrix(t)) })
+                    (
+                        q,
+                        if q % 4 == 0 {
+                            Gate1Q::Ry(t)
+                        } else {
+                            Gate1Q::U(rz_matrix(t))
+                        },
+                    )
                 })
                 .collect();
             let want = gates.clone();
