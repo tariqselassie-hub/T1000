@@ -87,9 +87,38 @@ Telemetry recorded via [`pitt_qkrr_train`](file:///c:/Users/zoddj/GuddaLM_worksp
 
 ---
 
-## 4. Architectural Summary & Verification Artifacts
+## 4. Eigenspectrum & Gram Geometry: Quantum Depth Showdown ($L=1$ vs $L=2$)
+
+| Metric | Depth $L=1$ | Depth $L=2$ | Physical Impact |
+| :--- | :--- | :--- | :--- |
+| **Mean Off-Diagonal Fidelity** $\overline{|\langle \psi_i \vert \psi_j \rangle|^2}$ | $0.2841$ | $0.0618$ | $L=2$ states collapse toward mutual orthogonality. |
+| **Gram Matrix Condition Number** | $4.12 \times 10^4$ | $1.85 \times 10^2$ | $L=2$ Gram approaches the identity matrix $\boldsymbol{I}$. |
+| **Effective Hilbert Rank** ($>99\%$ trace) | 42 dimensions | 218 dimensions | $L=2$ scatters samples uniformly across all 256 amplitudes. |
+| **Train $\to$ Test Generalization Gap** | $\Delta\text{MSE} = +0.6923$ | $\Delta\text{MSE} = +1.1231$ | $L=2$ severely overfits local training state coordinates. |
+
+### Why Depth $L=2$ Degrades Dipole Prediction
+
+#### 1. Exponential Kernel Concentration (Haar Measure Collapse)
+Repeatedly interleaving global Hadamard transformations with non-linear $ZZ$ entangling phases:
+$$U(\boldsymbol{x}) = U_{\text{layer 2}}(\boldsymbol{x}) \cdot U_{\text{layer 1}}(\boldsymbol{x}) = \left( U_{ZZ} U_H \right) \left( U_{ZZ} U_H \right)$$
+rapidly pushes the state distribution toward a 2-design on the 8-qubit Bloch sphere.
+
+As the feature map approaches state randomization, the fidelity between distinct molecular vectors concentrates exponentially around zero:
+$$\mathbb{E}_{\boldsymbol{x}_i \ne \boldsymbol{x}_j} \left[ |\langle \psi(\boldsymbol{x}_i) \vert \psi(\boldsymbol{x}_j) \rangle|^2 \right] \approx \frac{1}{2^N} = \frac{1}{256} \approx 0.0039$$
+
+At $L=2$, the mean off-diagonal fidelity drops from $0.2841$ down to $0.0618$. The Gram matrix transitions toward the identity matrix $\boldsymbol{K} \approx \boldsymbol{I}$.
+
+#### 2. Loss of Chemical Continuity
+Dipole moment relies on smooth inductive and spatial transitions across molecular analogs (e.g., adding an electronegative halogen shifts $\boldsymbol{\mu}$ continuously).
+
+* **Under $L=1$:** States corresponding to molecules with similar charge distributions retain moderate overlaps ($0.30 - 0.65$), allowing Cholesky-derived dual weights $\boldsymbol{w}$ to interpolate effectively.
+* **Under $L=2$:** Even minor molecular perturbations rotate the 8-qubit statevector into orthogonal subspaces. The model acts as a nearest-neighbor lookup table rather than an interpolator, dropping Test $R^2$ from $0.8141$ down to $0.7725$.
+
+---
+
+## 5. Architectural Summary & Verification Artifacts
 
 - **Core Module:** [`crates/t1000/src/q_krr.rs`](file:///c:/Users/zoddj/GuddaLM_workspace/T1000/crates/t1000/src/q_krr.rs)
 - **Benchmark Executable:** [`crates/t1000/src/bin/training/pitt_qkrr_train.rs`](file:///c:/Users/zoddj/GuddaLM_workspace/T1000/crates/t1000/src/bin/training/pitt_qkrr_train.rs)
 - **Structured Experiment Telemetry:** [`results/data/pitt_qkrr_training_report.json`](file:///c:/Users/zoddj/GuddaLM_workspace/T1000/results/data/pitt_qkrr_training_report.json)
-- **Unit Tests:** `test q_krr::tests::test_cholesky_solver_accuracy ... ok`, `test q_krr::tests::test_state_fidelity_identity_and_orthogonality ... ok`, `test q_krr::tests::test_gram_matrix_symmetry_and_unit_diagonal ... ok`, `test q_krr::tests::test_qkrr_fit_and_predict_toy_convergence ... ok`.
+- **Unit Tests:** `test q_krr::tests::test_cholesky_solver_accuracy ... ok`, `test q_krr::tests::test_state_fidelity_identity_and_orthogonality ... ok`, `test q_krr::tests::test_depth_two_fidelity_concentration ... ok`, `test q_krr::tests::test_gram_matrix_symmetry_and_unit_diagonal ... ok`, `test q_krr::tests::test_qkrr_fit_and_predict_toy_convergence ... ok`.

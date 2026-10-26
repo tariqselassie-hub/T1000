@@ -28,6 +28,8 @@ use std::f64::consts::PI;
 pub struct QKRRConfig {
     /// Number of qubits in statevector encoding (e.g. 8 qubits -> 256 complex amplitudes).
     pub num_qubits: usize,
+    /// Circuit depth (number of interleaved Hadamard + ZZ entangling layers, default 1).
+    pub depth: usize,
     /// Ridge regularization parameter lambda > 0 (e.g. 1e-3 to 1e-1).
     pub lambda: f64,
     /// Angular scale factor for single-qubit phase rotations.
@@ -38,6 +40,7 @@ impl Default for QKRRConfig {
     fn default() -> Self {
         Self {
             num_qubits: 8,
+            depth: 1,
             lambda: 1e-2,
             feature_scale: 1.0,
         }
@@ -111,7 +114,8 @@ impl QuantumKernelRegressor {
     }
 
     /// Encodes normalized molecular features into an N-qubit statevector (dim = 2^N).
-    /// Employs Hadamard base, single-qubit Rz phases, and second-order entangling ZZ phases.
+    /// Employs Hadamard base, single-qubit Rz phases, and second-order entangling ZZ phases,
+    /// repeated for `config.depth` interleaved layers.
     pub fn encode_state(&self, features: &[f64]) -> Vec<Complex64> {
         let dim = 1 << self.config.num_qubits;
         let mut state = vec![Complex64::new(0.0, 0.0); dim];
@@ -122,37 +126,57 @@ impl QuantumKernelRegressor {
             *amp = Complex64::new(norm_factor, 0.0);
         }
 
-        // Apply product state phases: exp(-i * phi_k)
-        for (i, amp) in state.iter_mut().enumerate() {
-            let mut phase = 0.0f64;
+        let depth = self.config.depth.max(1);
+        let inv_sqrt2 = std::f64::consts::FRAC_1_SQRT_2;
 
-            // Single-qubit phase contributions
-            for (p, &xp) in features.iter().take(self.config.num_qubits).enumerate() {
-                if (i >> p) & 1 == 1 {
-                    phase += xp * self.config.feature_scale;
-                }
-            }
-
-            // Entangling two-qubit ZZ phase contributions: (PI - x_p) * (PI - x_q) * 0.5
-            let n_q = self.config.num_qubits;
-            for p in 0..n_q {
-                for q in (p + 1)..n_q {
-                    let bit_p = (i >> p) & 1;
-                    let bit_q = (i >> q) & 1;
-                    if bit_p ^ bit_q == 1 {
-                        let xp = features[p.min(features.len() - 1)];
-                        let xq = features[q.min(features.len() - 1)];
-                        phase += (PI - xp) * (PI - xq) * 0.5;
+        for layer in 0..depth {
+            if layer > 0 {
+                // Interleaved global Hadamard transform H^{\otimes N}
+                for w in 0..self.config.num_qubits {
+                    let bit_step = 1 << w;
+                    for i in 0..dim {
+                        if (i & bit_step) == 0 {
+                            let a = state[i];
+                            let b = state[i + bit_step];
+                            state[i] = Complex64::new((a.re + b.re) * inv_sqrt2, (a.im + b.im) * inv_sqrt2);
+                            state[i + bit_step] = Complex64::new((a.re - b.re) * inv_sqrt2, (a.im - b.im) * inv_sqrt2);
+                        }
                     }
                 }
             }
 
-            let cos_p = phase.cos();
-            let sin_p = -phase.sin();
-            *amp = Complex64::new(
-                amp.re * cos_p - amp.im * sin_p,
-                amp.re * sin_p + amp.im * cos_p,
-            );
+            // Apply product state phases: exp(-i * phi_k)
+            for (i, amp) in state.iter_mut().enumerate() {
+                let mut phase = 0.0f64;
+
+                // Single-qubit phase contributions
+                for (p, &xp) in features.iter().take(self.config.num_qubits).enumerate() {
+                    if (i >> p) & 1 == 1 {
+                        phase += xp * self.config.feature_scale;
+                    }
+                }
+
+                // Entangling two-qubit ZZ phase contributions: (PI - x_p) * (PI - x_q) * 0.5
+                let n_q = self.config.num_qubits;
+                for p in 0..n_q {
+                    for q in (p + 1)..n_q {
+                        let bit_p = (i >> p) & 1;
+                        let bit_q = (i >> q) & 1;
+                        if bit_p ^ bit_q == 1 {
+                            let xp = features[p.min(features.len() - 1)];
+                            let xq = features[q.min(features.len() - 1)];
+                            phase += (PI - xp) * (PI - xq) * 0.5;
+                        }
+                    }
+                }
+
+                let cos_p = phase.cos();
+                let sin_p = -phase.sin();
+                *amp = Complex64::new(
+                    amp.re * cos_p - amp.im * sin_p,
+                    amp.re * sin_p + amp.im * cos_p,
+                );
+            }
         }
 
         state
@@ -186,6 +210,36 @@ impl QuantumKernelRegressor {
         }
 
         gram
+    }
+
+    /// Computes summary geometry metrics on a Gram matrix K:
+    /// returns `(mean_off_diagonal_fidelity, max_off_diag, min_off_diag)`.
+    pub fn compute_gram_metrics(gram: &[f64], n: usize) -> (f64, f64, f64) {
+        if n <= 1 {
+            return (1.0, 1.0, 1.0);
+        }
+        let mut sum_off = 0.0;
+        let mut count = 0usize;
+        let mut max_off = f64::NEG_INFINITY;
+        let mut min_off = f64::INFINITY;
+
+        for i in 0..n {
+            for j in 0..n {
+                if i != j {
+                    let val = gram[i * n + j];
+                    sum_off += val;
+                    count += 1;
+                    if val > max_off {
+                        max_off = val;
+                    }
+                    if val < min_off {
+                        min_off = val;
+                    }
+                }
+            }
+        }
+
+        (sum_off / (count as f64), max_off, min_off)
     }
 
     /// Trains the kernel model via Cholesky decomposition on (K + lambda * I).
@@ -390,6 +444,7 @@ mod tests {
     fn test_gram_matrix_symmetry_and_unit_diagonal() {
         let reg = QuantumKernelRegressor::new(QKRRConfig {
             num_qubits: 3,
+            depth: 1,
             lambda: 0.01,
             feature_scale: 1.0,
         });
@@ -427,6 +482,7 @@ mod tests {
     fn test_qkrr_fit_and_predict_toy_convergence() {
         let config = QKRRConfig {
             num_qubits: 4,
+            depth: 1,
             lambda: 1e-3,
             feature_scale: 0.5,
         };
@@ -449,5 +505,37 @@ mod tests {
             "Q-KRR must fit training points closely, got MSE {mse}"
         );
         assert!(r2 > 0.99, "Q-KRR R^2 must be > 0.99, got {r2}");
+    }
+
+    #[test]
+    fn test_depth_two_fidelity_concentration() {
+        // 8-qubit comparison: Depth L=1 retains chemical overlap; Depth L=2 concentrates toward orthogonal collapse
+        let reg_l1 = QuantumKernelRegressor::new(QKRRConfig {
+            num_qubits: 8,
+            depth: 1,
+            lambda: 0.01,
+            feature_scale: 1.0,
+        });
+        let reg_l2 = QuantumKernelRegressor::new(QKRRConfig {
+            num_qubits: 8,
+            depth: 2,
+            lambda: 0.01,
+            feature_scale: 1.0,
+        });
+
+        let mol_a = vec![0.5, 1.2, 0.8, 1.5, 0.3, 2.1, 0.7, 1.9];
+        let mol_b = vec![0.6, 1.1, 0.9, 1.4, 0.4, 2.0, 0.8, 1.8]; // Minor perturbation
+
+        let state_a_l1 = reg_l1.encode_state(&mol_a);
+        let state_b_l1 = reg_l1.encode_state(&mol_b);
+        let fid_l1 = QuantumKernelRegressor::state_fidelity(&state_a_l1, &state_b_l1);
+
+        let state_a_l2 = reg_l2.encode_state(&mol_a);
+        let state_b_l2 = reg_l2.encode_state(&mol_b);
+        let fid_l2 = QuantumKernelRegressor::state_fidelity(&state_a_l2, &state_b_l2);
+
+        // L=1 retains continuous overlap (> 0.20), whereas L=2 drops significantly closer to 1/256
+        assert!(fid_l1 > fid_l2, "L=1 fidelity ({fid_l1}) must exceed L=2 fidelity ({fid_l2})");
+        assert!(fid_l1 > 0.20, "L=1 must preserve chemical continuity, got {fid_l1}");
     }
 }

@@ -187,6 +187,9 @@ fn main() {
     let lambda: f64 = get_arg("--lambda")
         .and_then(|s| s.parse().ok())
         .unwrap_or(1e-2);
+    let depth: usize = get_arg("--depth")
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(1);
 
     let (target_idx, target_unit) = match target_name {
         "polarizability" | "alpha" => (4, "A^3"),
@@ -219,7 +222,7 @@ fn main() {
     );
     println!(
         "│ Hilbert Encoding Dimension              │ {:<33} │",
-        format!("{} Qubits (dim=256)", N_QUBITS)
+        format!("{} Qubits (dim=256, depth={})", N_QUBITS, depth)
     );
     println!("└─────────────────────────────────────────┴───────────────────────────────────┘");
 
@@ -341,6 +344,7 @@ fn main() {
     let t2 = Instant::now();
     let config = QKRRConfig {
         num_qubits: N_QUBITS,
+        depth,
         lambda,
         feature_scale: 1.0,
     };
