@@ -3,6 +3,8 @@
 
 # T-1000 Scientific Finding: Interaction-Free Quantum Zeno Anomaly Detection and Ghost Boundary Sentry Filtering on Financial Transactions
 
+> **Audit note (2026-10-26).** The first version picked the F1-maximising threshold (0.52) on the 10,000 holdout transactions and reported precision, recall, F1 and balanced accuracy at that threshold, so those four numbers had seen the test labels. The binary now picks the threshold on the 15,000 training transactions (0.53) and applies it unchanged to the holdout set: F1 17.91 % -> 17.31 %, balanced accuracy 60.37 % -> 59.37 %, recall 35.39 % -> 32.40 %, precision 11.98 % -> 11.81 %. AUROC (0.6777) and the alert means do not depend on a threshold and are unchanged. The report keeps the test-tuned F1 as `oracle_test_f1_score_pct`, for reference only. Two other corrections: only the 10 feature-scale parameters are trained (the 10 phase and 16 typology parameters stay at their initial values), and inference runs on all cores, not one.
+
 **Document ID:** `T1000-FINDING-2026-040`  
 **Deen Monograph:** `M166`  
 **Author:** Terrence A. Jones SR  
@@ -26,9 +28,9 @@ $$\mathcal{H}_{1024} = \mathcal{H}_{\text{flux}} \oplus \mathcal{H}_{\text{bound
 
 ### Key Empirical Results (15,000 Train / 10,000 Holdout Test Samples)
 - **Sentry Routing Contrast:** Clean transactions achieve a baseline leakage of $P_{\text{alert}} = 0.3385$ ($66.2\%$ confined in $\mathcal{H}_{\text{flux}}$), whereas fraudulent vectors elevate alert probability to $P_{\text{alert}} = 0.4639$, yielding a **$1.37:1$ routing contrast ratio** ($+37.1\%$ signal amplification into the boundary strata).
-- **Discrimination Capability:** Evaluated on 10,000 holdout transactions ($5.34\%$ positive fraud prevalence), the system achieves an **AUROC of $0.6777$** and a **Balanced Accuracy of $60.37\%$** (optimal threshold $0.52$, $35.39\%$ recall, $11.98\%$ precision).
-- **Sub-Microsecond Latency:** Full 10-qubit unitary evolution and Zeno boundary projection executes in **$0.80\,\mu\text{s/sample}$** (**$1,256,000\text{ transactions/sec}$**), enabling inline, zero-jitter perimeter filtering.
-- **Zero Classical Readout Weights:** Requires **zero classical linear layers**, operating purely via Hilbert space subspace projection across $36$ variational quantum parameters, with 3-epoch parameter-shift training converging in **$5.77\text{ seconds}$** in pure Rust.
+- **Discrimination Capability:** Evaluated on 10,000 holdout transactions ($5.34\%$ positive fraud prevalence), the system achieves an **AUROC of $0.6777$** and a **Balanced Accuracy of $59.37\%$** at threshold $0.53$, chosen on the training set ($32.40\%$ recall, $11.81\%$ precision, $F_1 = 17.31\%$).
+- **Sub-Microsecond Latency:** Full 10-qubit unitary evolution and Zeno boundary projection averages **$0.85\,\mu\text{s/sample}$** over the holdout batch evaluated in parallel on all cores (about $1.18$ M transactions/sec on this host).
+- **Zero Classical Readout Weights:** Requires **zero classical linear layers**, operating purely via Hilbert space subspace projection. The circuit declares $36$ parameters, of which the $10$ feature-scale parameters are trained; 3-epoch parameter-shift training takes **$5.82\text{ seconds}$** in pure Rust.
 
 ---
 
@@ -95,12 +97,13 @@ Hardware execution on 15,000 training transactions and 10,000 holdout test trans
 | **Clean Baseline $P_{\text{alert}}$** | **$0.3385$** ($33.8\%$) | — | $66.2\%$ of clean transactions remain pinned in $\mathcal{H}_{\text{flux}}$. |
 | **Fraud Vector $P_{\text{alert}}$** | **$0.4639$** ($46.4\%$) | — | Detectable phase scattering into excited strata. |
 | **AUROC Score** | **$0.6777$** | $0.5000$ (Random Guess) | Non-trivial separation without classical readout weights. |
-| **Balanced Accuracy** | **$60.37\%$** | $50.00\%$ (Random Chance) | Correctly handles the extreme $5.34\%$ fraud imbalance. |
-| **Optimal Threshold** | **$0.52$** | — | Swept across holdout distribution to maximize $F_1$. |
-| **Fraud Recall** | **$35.39\%$** | — | Isolates 189 fraud attempts from 10,000 stream without false positives swarm. |
-| **Fraud Precision** | **$11.98\%$** | $5.34\%$ (Base Prevalence) | $2.24\times$ enrichment over raw dataset prevalence. |
-| **Inference Latency** | **$0.80\,\mu\text{s/sample}$** | $< 10.0\,\mu\text{s}$ Target | $> 1,250,000\text{ transactions/sec}$ single-thread throughput. |
-| **Training Duration** | **$5.77\text{ sec}$** | — | Converges in 3 epochs via quantum parameter shift. |
+| **Balanced Accuracy** | **$59.37\%$** | $50.00\%$ (Random Chance) | At the training-set threshold; class-balanced, so the $5.34\%$ prevalence does not inflate it. |
+| **Operating Threshold** | **$0.53$** | — | Swept on the 15,000 training transactions to maximize $F_1$ (train $F_1 = 20.16\%$), then fixed. |
+| **Fraud Recall** | **$32.40\%$** | — | 173 of 534 holdout fraud cases flagged. |
+| **Fraud Precision** | **$11.81\%$** | $5.34\%$ (Base Prevalence) | $2.21\times$ enrichment over prevalence; about 1,465 alerts, of which about 1,290 are false positives. |
+| **Fraud $F_1$** | **$17.31\%$** | — | A threshold tuned on the holdout labels would give $17.91\%$ (not a valid estimate). |
+| **Inference Latency** | **$0.85\,\mu\text{s/sample}$** | $< 10.0\,\mu\text{s}$ Target | Mean over the holdout batch, evaluated in parallel on all cores (`par_iter`). |
+| **Training Duration** | **$5.82\text{ sec}$** | — | 3 epochs of parameter-shift updates on the 10 feature-scale parameters. |
 | **Classical Readout Weights** | **$0$** | Hundreds (Standard ML) | Pure unitary quantum mechanics. |
 
 ---
@@ -109,7 +112,7 @@ Hardware execution on 15,000 training transactions and 10,000 holdout test trans
 
 The complete scientific visual analysis is compiled in [`results/charts/bank_fraud_zeno_telemetry.png`](file:///c:/Users/zoddj/GuddaLM_workspace/T1000/results/charts/bank_fraud_zeno_telemetry.png):
 - **Panel 1: Sentry Routing Contrast:** Bar chart illustrating the $0.3385 \to 0.4639$ contrast separation ($1.37:1$ ratio).
-- **Panel 2: ROC Curve & Frontier:** Empirical ROC curve demonstrating AUROC $= 0.6777$ and optimal operating cut.
+- **Panel 2: ROC Curve & Frontier:** Empirical ROC curve demonstrating AUROC $= 0.6777$ and the operating cut. The chart reads `optimal_threshold` from the report; regenerate it after the 2026-10-26 audit so it shows the training-set threshold 0.53.
 - **Panel 3: Subspace Strata Decomposition:** Stacked probability distribution comparing $\mathcal{H}_{\text{flux}}$ vs $\mathcal{H}_{\text{boundary}}$.
 - **Panel 4: Latency & Parameter Economy:** Readouts validating $0.80\,\mu\text{s}$ per transaction and 36 total parameters.
 

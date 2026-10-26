@@ -10,10 +10,10 @@
 
 use serde::{Deserialize, Serialize};
 use std::env;
-use std::fs;
 use std::path::Path;
 use std::time::Instant;
 use t1000::pitt_data::{self, FeatureSet, PittMolecule};
+use t1000::results::{Better, Score};
 use t1000::simd::{apply_cz_kernel, apply_ry_kernel, apply_rz_kernel, measure_single_qubit_z};
 use t1000::zinc_readout_fit::ridge_regression_multi;
 use t1000::zinc_training_common::utc_timestamp_rfc3339;
@@ -23,6 +23,8 @@ const REPORT_PATH: &str = "results/data/pitt_vqc_training_report.json";
 const N_QUBITS: usize = 8;
 const N_LAYERS: usize = 3;
 const DIM: usize = 1 << N_QUBITS; // 256 amplitudes
+/// Index of the dipole magnitude in `PittMolecule::properties`.
+const DIPOLE_IDX: usize = 3;
 
 /// Summary report for a single evaluation model trial.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -34,6 +36,8 @@ pub struct PittModelTrial {
     pub test_mae: f64,
     pub test_r2: f64,
     pub throughput_mols_per_sec: f64,
+    /// The model's input encodes the target itself, so its test error is not a prediction.
+    pub uses_target_as_input: bool,
 }
 
 /// Comprehensive benchmark report for the Pitt VQC Stark training experiment.
@@ -47,7 +51,8 @@ pub struct PittVqcTrainingReport {
     pub qubits: usize,
     pub layers: usize,
     pub trials: Vec<PittModelTrial>,
-    pub stark_advantage_pct: f64,
+    /// Stark-VQC test-MSE reduction over the standard VQC; `None` when Stark-VQC reads the target.
+    pub stark_advantage_pct: Option<f64>,
 }
 
 /// Parameterized 8-qubit variational circuit with optional molecular Stark phase coupling.
@@ -225,7 +230,7 @@ fn main() {
 
     let (target_idx, target_unit) = match target_name {
         "polarizability" | "alpha" => (4, "A^3"),
-        "dipole" | "mu" => (3, "Debye"),
+        "dipole" | "mu" => (DIPOLE_IDX, "Debye"),
         "gap" | "egap" => (2, "eV"),
         "homo" => (0, "eV"),
         "lumo" => (1, "eV"),
@@ -309,6 +314,7 @@ fn main() {
         test_mae: te_mae_c,
         test_r2: te_r2_c,
         throughput_mols_per_sec: tput_c,
+        uses_target_as_input: false,
     });
 
     // ── TRIAL 2: 8-Qubit Standard VQC (Zero Stark Coupling) ─────────────────
@@ -352,6 +358,7 @@ fn main() {
         test_mae: te_mae_std,
         test_r2: te_r2_std,
         throughput_mols_per_sec: tput_std,
+        uses_target_as_input: false,
     });
 
     // ── TRIAL 3: 8-Qubit Molecular Stark-Coupled VQC ────────────────────────
@@ -384,15 +391,21 @@ fn main() {
     let el_stark = t2.elapsed().as_secs_f64();
     let tput_stark = (train_mols.len() + test_mols.len()) as f64 / el_stark;
 
-    let adv_pct = (te_mse_std - te_mse_stark) / te_mse_std * 100.0;
+    // The Stark phases are built from the DFT dipole vector, so for a dipole target they encode
+    // the label.
+    let stark_reads_target = target_idx == DIPOLE_IDX;
+    let adv_pct = (!stark_reads_target).then(|| (te_mse_std - te_mse_stark) / te_mse_std * 100.0);
     println!(
         "  -> Test MSE: {:.4} | MAE: {:.4} {} | R^2: {:.4} ({:.0} mols/s)",
         te_mse_stark, te_mae_stark, target_unit, te_r2_stark, tput_stark
     );
-    println!(
-        "  -> Molecular Stark MSE Improvement: {:.2}% vs Standard VQC",
-        adv_pct
-    );
+    match adv_pct {
+        Some(adv) => println!("  -> Molecular Stark MSE Improvement: {adv:.2}% vs Standard VQC"),
+        None => println!(
+            "  -> [LEAK] Stark-VQC encodes the dipole vector, which is the target; its test error \
+             is not a prediction and no advantage is reported"
+        ),
+    }
 
     trials.push(PittModelTrial {
         name: "Stark-Coupled-VQC-8Q".to_string(),
@@ -402,6 +415,7 @@ fn main() {
         test_mae: te_mae_stark,
         test_r2: te_r2_stark,
         throughput_mols_per_sec: tput_stark,
+        uses_target_as_input: stark_reads_target,
     });
 
     // ── Print Final Sovereign Benchmark Table ─────────────────────────────────
@@ -437,11 +451,17 @@ fn main() {
         stark_advantage_pct: adv_pct,
     };
 
-    if let Some(parent) = Path::new(REPORT_PATH).parent() {
-        let _ = fs::create_dir_all(parent);
-    }
-    if let Ok(json_str) = serde_json::to_string_pretty(&report) {
-        let _ = fs::write(REPORT_PATH, json_str);
-        println!("[RECORD] Telemetry successfully recorded to: {REPORT_PATH}");
+    let settings = format!("target={target_name} train={n_train} test={n_test} layers={N_LAYERS}");
+    let score = Score {
+        metric: "standard_vqc_test_mse",
+        value: te_mse_std,
+        better: Better::Lower,
+        guard: None,
+        settings: &settings,
+    };
+    let json_str = serde_json::to_string_pretty(&report).expect("Serialize report");
+    match t1000::results::write_scored(REPORT_PATH, json_str, &score) {
+        Ok(outcome) => println!("[RECORD] {REPORT_PATH}: {outcome:?}"),
+        Err(e) => eprintln!("[ERROR] Could not write {REPORT_PATH}: {e}"),
     }
 }

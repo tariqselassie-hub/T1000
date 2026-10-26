@@ -1,0 +1,2 @@
+settings train=15000 test=10000 epochs=3 lr=0.05 batch=128 threshold=train-f1
+metric test_auroc 6.776937131986523e-1

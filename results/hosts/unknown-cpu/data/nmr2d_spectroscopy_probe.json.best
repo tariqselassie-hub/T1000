@@ -1,0 +1,2 @@
+settings folds=5 epochs=16 replicas=10 batch=32 depth=5 split=molecule-disjoint
+metric cv_held_out_accuracy_pct 8.2e1

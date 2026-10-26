@@ -1,0 +1,2 @@
+settings target=polarizability train=1000 test=500 lambda=0.01 depth=2 scaling=train-fit
+metric qskrr_test_mse 4.596176939122086e1

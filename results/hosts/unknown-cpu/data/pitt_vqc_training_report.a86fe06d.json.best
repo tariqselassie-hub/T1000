@@ -1,0 +1,2 @@
+settings target=polarizability train=10000 test=2000 layers=3
+metric standard_vqc_test_mse 2.576282040498105e2
