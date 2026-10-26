@@ -447,3 +447,7 @@ path = "src/bin/training/harmonized_cascaded_tree.rs"
 [[bin]]
 name = "bank_fraud_zeno_detector"
 path = "src/bin/training/bank_fraud_zeno_detector.rs"
+
+[[bin]]
+name = "iot_botnet_cascaded_tree"
+path = "src/bin/training/iot_botnet_cascaded_tree.rs"

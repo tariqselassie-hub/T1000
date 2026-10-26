@@ -44,6 +44,7 @@ pub mod holdout_score;
 pub mod hopf_s4;
 pub mod hostinfo;
 pub mod ingest;
+pub mod iot_botnet_data;
 pub mod lattice;
 pub mod layer_fusion;
 pub mod linear_head;

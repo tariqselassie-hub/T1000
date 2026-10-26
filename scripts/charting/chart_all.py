@@ -274,6 +274,17 @@ def run_all_charts() -> None:
             generated.append(("Bank Fraud Quantum Zeno Sentry", png.name, f"{size_kb:.1f} KB"))
             print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
 
+    # 28. 3-Tier Cascaded Ultrametric Tree Sorter on IoT Botnet Detection
+    iot_json = ws_root / "results" / "experiments" / "iot_botnet_cascaded_tree_report.json"
+    if iot_json.exists() or (ws_root / "results" / "hosts" / "unknown-cpu" / "experiments" / "iot_botnet_cascaded_tree_report.json").exists():
+        import chart_iot_botnet_cascaded_tree
+        chart_iot_botnet_cascaded_tree.main()
+        png = ws_root / "results" / "charts" / "iot_botnet_cascaded_tree.png"
+        if png.exists():
+            size_kb = png.stat().st_size / 1024.0
+            generated.append(("IoT Botnet Cascaded Tree Sorter", png.name, f"{size_kb:.1f} KB"))
+            print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
+
     print("\n╔═══════════════════════════════════════════════════════════════════════════════╗")
     print("║                        RENDERED ARTIFACT MANIFEST                             ║")
     print("╠═════════════════════════════════════╦══════════════════════════════════╦══════════╣")

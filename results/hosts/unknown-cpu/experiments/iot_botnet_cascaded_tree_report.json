@@ -1,0 +1,21 @@
+{
+  "timestamp_rfc3339": "2026-10-26T15:30:00Z",
+  "dataset": "BoTNeTIoT-L01 Stratified IoT Botnet Dataset (N-BaIoT)",
+  "architecture": "T-1000 3-Tier Cascaded Ultrametric Tree Sorter",
+  "registers": "H_Device(2Q) (x) H_Family(1Q) (x) H_SubType(1Q) (x) H_Env(6Q)",
+  "n_qubits": 10,
+  "state_dim": 1024,
+  "total_parameters": 34,
+  "total_leaves": 16,
+  "strong_triangle_inequality_holds": true,
+  "triplet_violations": 0,
+  "evaluated_triplets": 4096,
+  "train_samples": 18000,
+  "test_samples": 7000,
+  "training_time_sec": 32.8638578,
+  "inference_per_sample_us": 2.2457142857142856,
+  "test_device_accuracy_pct": 45.24285714285714,
+  "test_family_accuracy_pct": 62.01428571428571,
+  "test_subtype_accuracy_pct": 79.54285714285714,
+  "test_joint_leaf_accuracy_pct": 34.77142857142857
+}
