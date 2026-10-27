@@ -32,7 +32,7 @@ impl Excitation {
     }
 
     /// `out = A ψ`.
-    fn apply_generator(&self, psi: &[f64], out: &mut [f64]) {
+    pub fn apply_generator(&self, psi: &[f64], out: &mut [f64]) {
         out.iter_mut().for_each(|v| *v = 0.0);
         for &(d, e, sign) in &self.pairs {
             out[e as usize] += sign * psi[d as usize];
@@ -42,6 +42,22 @@ impl Excitation {
 
     pub fn pair_count(&self) -> usize {
         self.pairs.len()
+    }
+
+    /// `ψ ← (1 + t T) ψ` for the bare excitation `T` (not `T - T†`). In place is safe: a
+    /// determinant `T` reaches has the `from` orbitals empty, so it is never a source of `T`.
+    pub fn apply_operator(&self, psi: &mut [f64], t: f64) {
+        for &(d, e, sign) in &self.pairs {
+            psi[e as usize] += t * sign * psi[d as usize];
+        }
+    }
+
+    /// `T|det⟩ = sign·|target⟩` for the determinant at sector index `det`, if `T` reaches one.
+    pub fn target_of(&self, det: usize) -> Option<(usize, f64)> {
+        self.pairs
+            .iter()
+            .find(|p| p.0 as usize == det)
+            .map(|&(_, e, sign)| (e as usize, sign))
     }
 }
 

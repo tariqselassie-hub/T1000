@@ -1,0 +1,2 @@
+settings systems=H4,H4rect,H6,N2 adapt_tol=0.001
+metric adapt_max_abs_error_mha 8.451041500960343e1

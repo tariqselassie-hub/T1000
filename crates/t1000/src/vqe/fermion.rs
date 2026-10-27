@@ -37,6 +37,19 @@ impl Sector {
         }
     }
 
+    /// A subspace of a sector given by an explicit determinant list (for example the
+    /// determinants at most doubly excited from Hartree-Fock).
+    pub fn from_dets(n_orb: usize, n_alpha: usize, n_beta: usize, dets: Vec<u32>) -> Self {
+        let index = dets.iter().enumerate().map(|(i, &d)| (d, i)).collect();
+        Sector {
+            n_orb,
+            n_alpha,
+            n_beta,
+            dets,
+            index,
+        }
+    }
+
     pub fn dim(&self) -> usize {
         self.dets.len()
     }

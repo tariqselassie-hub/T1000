@@ -4,9 +4,11 @@
 //! Ab initio molecular VQE: Gaussian integrals, Hartree-Fock, the Jordan-Wigner qubit
 //! Hamiltonian, exact diagonalisation, and a UCCSD variational solver.
 
+pub mod adapt;
 pub mod basis;
 pub mod boys;
 pub mod circuit;
+pub mod classical;
 pub mod driver;
 pub mod fermion;
 pub mod grouping;

@@ -12,7 +12,7 @@ use super::mo::{active_space, hartree_fock_energy, ActiveHamiltonian};
 use super::molecules::Molecule;
 use super::optimize::bfgs;
 use super::pauli::{jordan_wigner, QubitHamiltonian};
-use super::scf::{rhf, RhfResult};
+use super::scf::{rhf_with, RhfResult, ScfOptions};
 use super::uccsd::{energy_and_gradient, uccsd_excitations, Excitation};
 use serde::{Deserialize, Serialize};
 use std::time::Instant;
@@ -29,6 +29,8 @@ pub struct VqeConfig {
     pub active_orbitals: Option<usize>,
     pub max_iterations: usize,
     pub gradient_tolerance: f64,
+    /// MO coefficients to start the SCF from (for example the previous point of a bond scan).
+    pub scf_guess: Option<Vec<f64>>,
 }
 
 impl Default for VqeConfig {
@@ -38,6 +40,7 @@ impl Default for VqeConfig {
             active_orbitals: None,
             max_iterations: 400,
             gradient_tolerance: 1e-6,
+            scf_guess: None,
         }
     }
 }
@@ -65,6 +68,9 @@ pub struct VqeReport {
     pub vqe_error_vs_fci: f64,
     pub within_chemical_accuracy: bool,
     pub scf_iterations: usize,
+    /// SCF convergence strategy used (`diis`, `shift+damp`, ...).
+    #[serde(default)]
+    pub scf_strategy: String,
     pub optimizer_iterations: usize,
     pub energy_evaluations: usize,
     pub converged: bool,
@@ -76,18 +82,23 @@ pub struct VqeReport {
 }
 
 /// SCF and the active-space Hamiltonian of a molecule.
-struct Problem {
-    n_ao: usize,
-    nuclear_repulsion: f64,
-    scf: RhfResult,
-    ham: ActiveHamiltonian,
-    frozen: usize,
+#[derive(Debug)]
+pub struct Problem {
+    pub n_ao: usize,
+    pub nuclear_repulsion: f64,
+    pub scf: RhfResult,
+    pub ham: ActiveHamiltonian,
+    pub frozen: usize,
 }
 
-fn electronic_structure(molecule: &Molecule, cfg: &VqeConfig) -> Result<Problem, String> {
+/// Integrals, Hartree-Fock and the frozen-core active-space Hamiltonian of a molecule.
+pub fn electronic_structure(molecule: &Molecule, cfg: &VqeConfig) -> Result<Problem, String> {
     let basis = sto3g_basis(&molecule.atoms)?;
     let ints = compute_ao_integrals(&basis, &molecule.atoms);
-    let scf = rhf(&ints, molecule.electrons())?;
+    let opts = ScfOptions {
+        guess: cfg.scf_guess.clone(),
+    };
+    let scf = rhf_with(&ints, molecule.electrons(), &opts)?;
     if !scf.converged {
         return Err(format!("{}: SCF did not converge", molecule.formula));
     }
@@ -122,6 +133,8 @@ pub struct SolvedProblem {
     pub theta: Vec<f64>,
     /// Hartree-Fock determinant as a unit vector in the sector.
     pub reference: Vec<f64>,
+    /// Converged MO coefficients, to seed the SCF of a neighbouring geometry.
+    pub scf_coefficients: Vec<f64>,
 }
 
 /// Runs the full pipeline for one molecule.
@@ -185,6 +198,7 @@ pub fn solve_detailed(molecule: &Molecule, cfg: &VqeConfig) -> Result<SolvedProb
         vqe_error_vs_fci: error,
         within_chemical_accuracy: error.abs() < CHEMICAL_ACCURACY,
         scf_iterations: p.scf.iterations,
+        scf_strategy: p.scf.strategy.to_string(),
         optimizer_iterations: result.iterations,
         energy_evaluations: result.evaluations,
         converged: result.converged,
@@ -202,6 +216,7 @@ pub fn solve_detailed(molecule: &Molecule, cfg: &VqeConfig) -> Result<SolvedProb
         excitations,
         theta: result.x,
         reference,
+        scf_coefficients: p.scf.coefficients,
     })
 }
 
