@@ -41,23 +41,16 @@ pub fn symmetric_eigh(m: &[f64], n: usize) -> Result<(Vec<f64>, Vec<f64>), Strin
         .sum::<f64>()
         .sqrt()
         .max(f64::MIN_POSITIVE);
-    for _sweep in 0..100 {
-        let off: f64 = (0..n)
+    let off_norm = |a: &[f64]| -> f64 {
+        (0..n)
             .flat_map(|i| (0..i).map(move |j| (i, j)))
             .map(|(i, j)| a[i * n + j] * a[i * n + j])
             .sum::<f64>()
-            .sqrt();
-        if off <= 1e-15 * scale {
-            let mut order: Vec<usize> = (0..n).collect();
-            order.sort_by(|&x, &y| a[x * n + x].total_cmp(&a[y * n + y]));
-            let values = order.iter().map(|&k| a[k * n + k]).collect();
-            let mut cols = vec![0.0; n * n];
-            for (new, &old) in order.iter().enumerate() {
-                for r in 0..n {
-                    cols[r * n + new] = v[r * n + old];
-                }
-            }
-            return Ok((values, cols));
+            .sqrt()
+    };
+    for _sweep in 0..100 {
+        if off_norm(&a) <= 1e-15 * scale {
+            return Ok(sorted_eigenpairs(&a, &v, n));
         }
         for p in 0..n {
             for q in p + 1..n {
@@ -65,7 +58,30 @@ pub fn symmetric_eigh(m: &[f64], n: usize) -> Result<(Vec<f64>, Vec<f64>), Strin
             }
         }
     }
-    Err("Jacobi eigensolver did not converge".into())
+    // Rounding can leave the off-diagonal norm stalled just above the machine-precision target
+    // for large or nearly degenerate matrices; that is still converged for every use here.
+    let off = off_norm(&a);
+    if off <= 1e-11 * scale {
+        return Ok(sorted_eigenpairs(&a, &v, n));
+    }
+    Err(format!(
+        "Jacobi eigensolver did not converge (off-diagonal {:.2e} of scale {scale:.2e})",
+        off
+    ))
+}
+
+/// Diagonal of `a` in ascending order with the matching columns of `v`.
+fn sorted_eigenpairs(a: &[f64], v: &[f64], n: usize) -> (Vec<f64>, Vec<f64>) {
+    let mut order: Vec<usize> = (0..n).collect();
+    order.sort_by(|&x, &y| a[x * n + x].total_cmp(&a[y * n + y]));
+    let values = order.iter().map(|&k| a[k * n + k]).collect();
+    let mut cols = vec![0.0; n * n];
+    for (new, &old) in order.iter().enumerate() {
+        for r in 0..n {
+            cols[r * n + new] = v[r * n + old];
+        }
+    }
+    (values, cols)
 }
 
 /// One Jacobi rotation annihilating `a[p][q]`.

@@ -85,6 +85,10 @@ name = "vqe_dissociation"
 path = "src/bin/measurements/vqe_dissociation.rs"
 
 [[bin]]
+name = "vqe_strong_correlation"
+path = "src/bin/measurements/vqe_strong_correlation.rs"
+
+[[bin]]
 name = "qpu_scaling"
 path = "src/bin/measurements/qpu_scaling.rs"
 

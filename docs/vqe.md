@@ -18,6 +18,7 @@ cargo run --release -p t1000 --bin vqe_molecules                 # all nine mole
 cargo run --release -p t1000 --bin vqe_molecules LiH,H2O         # a selection
 cargo run --release -p t1000 --bin vqe_molecules CH4 --active 6  # correlate 6 orbitals only
 cargo run --release -p t1000 --bin vqe_dissociation              # H2 and LiH bond-stretch curves
+cargo run --release -p t1000 --bin vqe_strong_correlation        # H4, H6, N2: UCCSD, ADAPT, MP2, CISD, CCSD vs FCI
 ```
 
 ## Modules
@@ -27,12 +28,14 @@ cargo run --release -p t1000 --bin vqe_dissociation              # H2 and LiH bo
 | `boys` | Boys function `F_n(x)` (series, downward recursion; asymptotic form above `x = 35`). |
 | `basis` | Atoms and the STO-3G basis for H-F, with unit-normalised contracted functions. |
 | `integrals` | McMurchie-Davidson overlap, kinetic, nuclear attraction and electron repulsion integrals. |
-| `scf` | Closed-shell restricted Hartree-Fock with Pulay DIIS. |
+| `scf` | Closed-shell restricted Hartree-Fock with Pulay DIIS; `rhf_with` starts from given orbitals and falls back to level-shifted, damped iterations. |
 | `mo` | Molecular-orbital integrals and the frozen-core active-space Hamiltonian. |
 | `pauli` | Jordan-Wigner transform to a real Pauli-term Hamiltonian; term and weight statistics. |
 | `fermion` | The fixed-`(N_α, N_β)` determinant sector and the sparse Hamiltonian in it. |
 | `lanczos` | Ground-state solver: the exact (full CI) reference. |
 | `uccsd` | UCCSD excitations as exact determinant-pair rotations, with analytic gradients. |
+| `adapt` | ADAPT-VQE: grows the ansatz from a pool by the largest energy gradient. |
+| `classical` | MP2, CISD and CCSD baselines in the same active space (CCSD solved exactly in the determinant basis). |
 | `optimize` | BFGS with an Armijo line search. |
 | `driver` | The pipeline and the serialisable `VqeReport` (`solve_detailed` keeps the intermediates). |
 | `circuit` | UCCSD as Pauli rotations, CNOT / one-qubit gate counts, and a qubit-state simulator that checks them. |
@@ -248,10 +251,14 @@ What it says:
 * **Basis and reference.** STO-3G only (H-F), closed-shell restricted Hartree-Fock, at most 16 spatial
   orbitals (32-bit determinants). Open-shell species and larger basis sets need an unrestricted
   reference and more primitives.
-* **SCF at long bond lengths.** Restricted Hartree-Fock with DIIS does not converge for LiH beyond
-  about 3.5 Å (`vqe_dissociation` reports the points it skips).
-* **UCCSD, not FCI.** The ansatz stops at double excitations, so strongly correlated cases will not
-  reach chemical accuracy; the exact reference makes that visible.
+* **SCF at long bond lengths.** Fixed: `vqe_dissociation` seeds each point with the previous point's
+  orbitals (LiH now converges to 5.0 Å), the SCF falls back to level shifting and damping, and a seeded
+  SCF also runs a cold start so it cannot stay on a higher state across a level crossing.
+* **UCCSD, not FCI.** The ansatz stops at double excitations, so strongly correlated cases do not
+  reach chemical accuracy. `vqe_strong_correlation` measures where: UCCSD is inside chemical accuracy at
+  7 of 13 points of the stretched H₄ chain, 4 of 13 for H₆ and 4 of 12 for N₂, while ADAPT-VQE reaches
+  12, 11 and 9 (N₂ with a 1e-4 gradient tolerance). See
+  `docs/findings/vqe_strong_correlation_adapt_vs_uccsd.md`.
 * **Hardware cost.** The Pauli-term counts above are what a QPU would have to measure per energy
   estimate; a circuit-level compilation of the UCCSD exponentials is not included.
 

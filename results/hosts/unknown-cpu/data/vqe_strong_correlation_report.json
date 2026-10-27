@@ -1,0 +1,3424 @@
+{
+  "H4": {
+    "coordinate": "H-H spacing (Å)",
+    "label": "H4 linear chain",
+    "points": [
+      {
+        "adapt": {
+          "cnot": 736,
+          "converged": true,
+          "energy": -1.9601879204664827,
+          "error_mha": 0.005726072826117701,
+          "parameters": 14,
+          "time_ms": 0.4687,
+          "variational": true
+        },
+        "adapt_unique_operators": 14,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.960188890221964,
+          "error_mha": 0.004756317344867256,
+          "parameters": 26,
+          "time_ms": 0.0303,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.09843241545318956,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.9600816105213061,
+          "error_mha": 0.11203601800269247,
+          "parameters": 0,
+          "time_ms": 0.1373,
+          "variational": true
+        },
+        "coordinate": 0.6,
+        "determinants": 36,
+        "fci": -1.9601936465393088,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.9295642500791779,
+          "error_mha": 30.629396460130963,
+          "parameters": 0,
+          "time_ms": 1.5944,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.9515390634561138,
+          "error_mha": 8.654583083195,
+          "parameters": 0,
+          "time_ms": 0.0018,
+          "variational": true
+        },
+        "qubits": 8,
+        "scf_strategy": "diis (10)",
+        "uccsd": {
+          "cnot": 1312,
+          "converged": true,
+          "energy": -1.960187798747123,
+          "error_mha": 0.005847792185820211,
+          "parameters": 26,
+          "time_ms": 0.1425,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 736,
+          "converged": true,
+          "energy": -2.167545296532894,
+          "error_mha": 0.015249737379985362,
+          "parameters": 14,
+          "time_ms": 0.30200000000000005,
+          "variational": true
+        },
+        "adapt_unique_operators": 14,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.167555589546836,
+          "error_mha": 0.0049567234379210845,
+          "parameters": 26,
+          "time_ms": 0.0219,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.14153780241229222,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.1671415461440464,
+          "error_mha": 0.4190001262274201,
+          "parameters": 0,
+          "time_ms": 0.10969999999999999,
+          "variational": true
+        },
+        "coordinate": 0.7999999999999999,
+        "determinants": 36,
+        "fci": -2.167560546270274,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.121386757997993,
+          "error_mha": 46.1737882722808,
+          "parameters": 0,
+          "time_ms": 1.3839,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.151794042621046,
+          "error_mha": 15.766503649227825,
+          "parameters": 0,
+          "time_ms": 0.00009999999999999999,
+          "variational": true
+        },
+        "qubits": 8,
+        "scf_strategy": "diis (12)",
+        "uccsd": {
+          "cnot": 1312,
+          "converged": true,
+          "energy": -2.1675461257910147,
+          "error_mha": 0.014420479259147356,
+          "parameters": 26,
+          "time_ms": 0.1622,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 736,
+          "converged": true,
+          "energy": -2.166302178471168,
+          "error_mha": 0.08527239496514127,
+          "parameters": 14,
+          "time_ms": 0.25970000000000004,
+          "variational": true
+        },
+        "adapt_unique_operators": 14,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.166379522711943,
+          "error_mha": 0.007928154190040004,
+          "parameters": 26,
+          "time_ms": 0.019899999999999998,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.19468116282563966,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.1650318442308203,
+          "error_mha": 1.355606635312867,
+          "parameters": 0,
+          "time_ms": 0.12000000000000001,
+          "variational": true
+        },
+        "coordinate": 1.0,
+        "determinants": 36,
+        "fci": -2.166387450866133,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.0985459391716152,
+          "error_mha": 67.8415116945179,
+          "parameters": 0,
+          "time_ms": 1.405,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.1397440264954044,
+          "error_mha": 26.643424370728752,
+          "parameters": 0,
+          "time_ms": 0.00009999999999999999,
+          "variational": true
+        },
+        "qubits": 8,
+        "scf_strategy": "diis (12)",
+        "uccsd": {
+          "cnot": 1312,
+          "converged": true,
+          "energy": -2.1663079442600606,
+          "error_mha": 0.07950660607258797,
+          "parameters": 26,
+          "time_ms": 0.13210000000000002,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 736,
+          "converged": true,
+          "energy": -2.1022736758364653,
+          "error_mha": 0.3348074213089802,
+          "parameters": 14,
+          "time_ms": 0.2069,
+          "variational": true
+        },
+        "adapt_unique_operators": 14,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.102671144641269,
+          "error_mha": -0.06266138349486639,
+          "parameters": 26,
+          "time_ms": 0.022500000000000003,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.26162616099003144,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.0987269326209015,
+          "error_mha": 3.881550636872788,
+          "parameters": 0,
+          "time_ms": 0.11349999999999999,
+          "variational": true
+        },
+        "coordinate": 1.2,
+        "determinants": 36,
+        "fci": -2.1026084832577743,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.0038674852474747,
+          "error_mha": 98.74099801029956,
+          "parameters": 0,
+          "time_ms": 1.3869,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.059504903846466,
+          "error_mha": 43.10357941130816,
+          "parameters": 0,
+          "time_ms": 0.0003,
+          "variational": true
+        },
+        "qubits": 8,
+        "scf_strategy": "diis (12)",
+        "uccsd": {
+          "cnot": 1312,
+          "converged": true,
+          "energy": -2.1022935724057277,
+          "error_mha": 0.3149108520466015,
+          "parameters": 26,
+          "time_ms": 0.1113,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 736,
+          "converged": true,
+          "energy": -2.0281212964960615,
+          "error_mha": 0.9491995290544786,
+          "parameters": 14,
+          "time_ms": 0.17149999999999999,
+          "variational": true
+        },
+        "adapt_unique_operators": 14,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.0297069691569827,
+          "error_mha": -0.636473131866655,
+          "parameters": 26,
+          "time_ms": 0.18560000000000001,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.3445174341158387,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.0194019021002196,
+          "error_mha": 9.668593924896385,
+          "parameters": 0,
+          "time_ms": 0.1172,
+          "variational": true
+        },
+        "coordinate": 1.4,
+        "determinants": 36,
+        "fci": -2.029070496025116,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.887790306548987,
+          "error_mha": 141.28018947612907,
+          "parameters": 0,
+          "time_ms": 1.3716,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.962606272131904,
+          "error_mha": 66.46422389321205,
+          "parameters": 0,
+          "time_ms": 0.00019999999999999998,
+          "variational": true
+        },
+        "qubits": 8,
+        "scf_strategy": "diis (13)",
+        "uccsd": {
+          "cnot": 1312,
+          "converged": true,
+          "energy": -2.028170454244896,
+          "error_mha": 0.9000417802198513,
+          "parameters": 26,
+          "time_ms": 0.1067,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 704,
+          "converged": true,
+          "energy": -1.9655305138890145,
+          "error_mha": 2.0297985997497214,
+          "parameters": 12,
+          "time_ms": 0.1347,
+          "variational": true
+        },
+        "adapt_unique_operators": 12,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.9705722254750881,
+          "error_mha": -3.0119129863239724,
+          "parameters": 26,
+          "time_ms": 0.0317,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.4416869863014343,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.9473014613323012,
+          "error_mha": 20.258851156462974,
+          "parameters": 0,
+          "time_ms": 0.10890000000000001,
+          "variational": true
+        },
+        "coordinate": 1.6,
+        "determinants": 36,
+        "fci": -1.9675603124887642,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.772203103754297,
+          "error_mha": 195.35720873446726,
+          "parameters": 0,
+          "time_ms": 1.3286,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.8717766457236025,
+          "error_mha": 95.7836667651617,
+          "parameters": 0,
+          "time_ms": 0.00019999999999999998,
+          "variational": true
+        },
+        "qubits": 8,
+        "scf_strategy": "diis (17)",
+        "uccsd": {
+          "cnot": 1312,
+          "converged": true,
+          "energy": -1.96561668812899,
+          "error_mha": 1.943624359774132,
+          "parameters": 26,
+          "time_ms": 0.0996,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 880,
+          "converged": true,
+          "energy": -1.924430640837566,
+          "error_mha": 1.1324274851176597e-11,
+          "parameters": 17,
+          "time_ms": 0.386,
+          "variational": true
+        },
+        "adapt_unique_operators": 14,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.9335382796592118,
+          "error_mha": -9.107638821634456,
+          "parameters": 26,
+          "time_ms": 0.0673,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.5444660934384994,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.8897568586138311,
+          "error_mha": 34.67378222374617,
+          "parameters": 0,
+          "time_ms": 0.1113,
+          "variational": true
+        },
+        "coordinate": 1.7999999999999998,
+        "determinants": 36,
+        "fci": -1.9244306408375773,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.6668671629402723,
+          "error_mha": 257.56347789730506,
+          "parameters": 0,
+          "time_ms": 1.4065,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.7974458400264102,
+          "error_mha": 126.98480081116715,
+          "parameters": 0,
+          "time_ms": 0.00009999999999999999,
+          "variational": true
+        },
+        "qubits": 8,
+        "scf_strategy": "diis (26)",
+        "uccsd": {
+          "cnot": 1312,
+          "converged": true,
+          "energy": -1.9211565281355278,
+          "error_mha": 3.27411270204947,
+          "parameters": 26,
+          "time_ms": 0.1134,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 784,
+          "converged": true,
+          "energy": -1.8974135925278814,
+          "error_mha": 0.3670563007056593,
+          "parameters": 15,
+          "time_ms": 0.2526,
+          "variational": true
+        },
+        "adapt_unique_operators": 14,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.9160860961083672,
+          "error_mha": -18.305447279780118,
+          "parameters": 26,
+          "time_ms": 0.0846,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.6319156907334205,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.8546369811201855,
+          "error_mha": 43.14366770840161,
+          "parameters": 0,
+          "time_ms": 0.1124,
+          "variational": true
+        },
+        "coordinate": 2.0,
+        "determinants": 36,
+        "fci": -1.897780648828587,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.5756164778635717,
+          "error_mha": 322.1641709650154,
+          "parameters": 0,
+          "time_ms": 1.7549,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.7438766303694413,
+          "error_mha": 153.90401845914582,
+          "parameters": 0,
+          "time_ms": 0.00039999999999999996,
+          "variational": true
+        },
+        "qubits": 8,
+        "scf_strategy": "diis (57)",
+        "uccsd": {
+          "cnot": 1312,
+          "converged": true,
+          "energy": -1.8933180363422961,
+          "error_mha": 4.462612486290984,
+          "parameters": 26,
+          "time_ms": 0.1148,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 784,
+          "converged": true,
+          "energy": -1.882382419114153,
+          "error_mha": 0.330221288205923,
+          "parameters": 15,
+          "time_ms": 0.27799999999999997,
+          "variational": true
+        },
+        "adapt_unique_operators": 14,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.9091203229341678,
+          "error_mha": -26.407682531808916,
+          "parameters": 26,
+          "time_ms": 0.1137,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.6874222593902043,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.8478368215542662,
+          "error_mha": 34.875818848092656,
+          "parameters": 0,
+          "time_ms": 0.1327,
+          "variational": true
+        },
+        "coordinate": 2.1999999999999997,
+        "determinants": 36,
+        "fci": -1.8827126404023589,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.4991456259595064,
+          "error_mha": 383.56701444285244,
+          "parameters": 0,
+          "time_ms": 2.8995,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.7118420899400446,
+          "error_mha": 170.87055046231424,
+          "parameters": 0,
+          "time_ms": 0.0006,
+          "variational": true
+        },
+        "qubits": 8,
+        "scf_strategy": "shift+damp (268)",
+        "uccsd": {
+          "cnot": 1312,
+          "converged": true,
+          "energy": -1.8775911199650892,
+          "error_mha": 5.1215204372696554,
+          "parameters": 26,
+          "time_ms": 0.1361,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 832,
+          "converged": true,
+          "energy": -1.8743827713496066,
+          "error_mha": 0.2688142171036745,
+          "parameters": 14,
+          "time_ms": 0.2311,
+          "variational": true
+        },
+        "adapt_unique_operators": 13,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.9052115994594911,
+          "error_mha": -30.560013892780844,
+          "parameters": 26,
+          "time_ms": 0.1176,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.7122709975881296,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.8493460948010016,
+          "error_mha": 25.305490765708647,
+          "parameters": 0,
+          "time_ms": 0.1188,
+          "variational": true
+        },
+        "coordinate": 2.4,
+        "determinants": 36,
+        "fci": -1.8746515855667103,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.4364585408336463,
+          "error_mha": 438.19304473306397,
+          "parameters": 0,
+          "time_ms": 2.8737,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.700019138803306,
+          "error_mha": 174.6324467634044,
+          "parameters": 0,
+          "time_ms": 0.00019999999999999998,
+          "variational": true
+        },
+        "qubits": 8,
+        "scf_strategy": "shift+damp (278)",
+        "uccsd": {
+          "cnot": 1312,
+          "converged": true,
+          "energy": -1.8694983295712582,
+          "error_mha": 5.153255995452133,
+          "parameters": 26,
+          "time_ms": 0.1449,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 672,
+          "converged": true,
+          "energy": -1.8702582257032925,
+          "error_mha": 0.21451388112336822,
+          "parameters": 12,
+          "time_ms": 0.1522,
+          "variational": true
+        },
+        "adapt_unique_operators": 11,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.9010992972566763,
+          "error_mha": -30.62655767226041,
+          "parameters": 26,
+          "time_ms": 0.0911,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.7147316582639589,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.8523750016690068,
+          "error_mha": 18.097737915409027,
+          "parameters": 0,
+          "time_ms": 0.114,
+          "variational": true
+        },
+        "coordinate": 2.6,
+        "determinants": 36,
+        "fci": -1.8704727395844158,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.3858241157344018,
+          "error_mha": 484.6486238500141,
+          "parameters": 0,
+          "time_ms": 2.8214,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.705921769965234,
+          "error_mha": 164.5509696191818,
+          "parameters": 0,
+          "time_ms": 0.00039999999999999996,
+          "variational": true
+        },
+        "qubits": 8,
+        "scf_strategy": "shift+damp (288)",
+        "uccsd": {
+          "cnot": 1312,
+          "converged": true,
+          "energy": -1.8679866491918191,
+          "error_mha": 2.4860903925967293,
+          "parameters": 26,
+          "time_ms": 0.1275,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 416,
+          "converged": true,
+          "energy": -1.867007543605852,
+          "error_mha": 1.3421672997726564,
+          "parameters": 10,
+          "time_ms": 0.1982,
+          "variational": true
+        },
+        "adapt_unique_operators": 8,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.8960243540784623,
+          "error_mha": -27.674643172837634,
+          "parameters": 26,
+          "time_ms": 0.1601,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.7024747310752738,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.8557350237240215,
+          "error_mha": 12.61468718160308,
+          "parameters": 0,
+          "time_ms": 0.11699999999999999,
+          "variational": true
+        },
+        "coordinate": 2.8,
+        "determinants": 36,
+        "fci": -1.8683497109056246,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.3453650781961688,
+          "error_mha": 522.9846327094558,
+          "parameters": 0,
+          "time_ms": 3.0434,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.726486265281222,
+          "error_mha": 141.86344562440257,
+          "parameters": 0,
+          "time_ms": 0.00039999999999999996,
+          "variational": true
+        },
+        "qubits": 8,
+        "scf_strategy": "shift+damp (299)",
+        "uccsd": {
+          "cnot": 1312,
+          "converged": true,
+          "energy": -1.8671202218295182,
+          "error_mha": 1.229489076106427,
+          "parameters": 26,
+          "time_ms": 0.17220000000000002,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 416,
+          "converged": true,
+          "energy": -1.8666610502561998,
+          "error_mha": 0.6303254025963323,
+          "parameters": 10,
+          "time_ms": 0.2187,
+          "variational": true
+        },
+        "adapt_unique_operators": 8,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.8903044064017487,
+          "error_mha": -23.01303074295258,
+          "parameters": 26,
+          "time_ms": 0.2293,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.6814820597950974,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.85888875706127,
+          "error_mha": 8.402618597526113,
+          "parameters": 0,
+          "time_ms": 0.1391,
+          "variational": true
+        },
+        "coordinate": 3.0,
+        "determinants": 36,
+        "fci": -1.867291375658796,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.3133117876201288,
+          "error_mha": 553.9795880386673,
+          "parameters": 0,
+          "time_ms": 3.1287,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.7584151807101325,
+          "error_mha": 108.87619494866362,
+          "parameters": 0,
+          "time_ms": 0.0005,
+          "variational": true
+        },
+        "qubits": 8,
+        "scf_strategy": "shift+damp (309)",
+        "uccsd": {
+          "cnot": 1312,
+          "converged": true,
+          "energy": -1.8667249023975485,
+          "error_mha": 0.5664732612475909,
+          "parameters": 26,
+          "time_ms": 0.1563,
+          "variational": true
+        }
+      }
+    ],
+    "summary": [
+      {
+        "max_abs_error_mha": 553.9795880386673,
+        "method": "HF",
+        "not_converged": 0,
+        "points": 13,
+        "points_within_chemical_accuracy": 0
+      },
+      {
+        "max_abs_error_mha": 174.6324467634044,
+        "method": "MP2",
+        "not_converged": 0,
+        "points": 13,
+        "points_within_chemical_accuracy": 0
+      },
+      {
+        "max_abs_error_mha": 43.14366770840161,
+        "method": "CISD",
+        "not_converged": 0,
+        "points": 13,
+        "points_within_chemical_accuracy": 3
+      },
+      {
+        "max_abs_error_mha": 30.62655767226041,
+        "method": "CCSD",
+        "not_converged": 0,
+        "points": 13,
+        "points_within_chemical_accuracy": 5
+      },
+      {
+        "max_abs_error_mha": 5.153255995452133,
+        "method": "UCCSD",
+        "not_converged": 0,
+        "points": 13,
+        "points_within_chemical_accuracy": 7
+      },
+      {
+        "max_abs_error_mha": 2.0297985997497214,
+        "method": "ADAPT",
+        "not_converged": 0,
+        "points": 13,
+        "points_within_chemical_accuracy": 12
+      }
+    ]
+  },
+  "H4rect": {
+    "coordinate": "side b (Å)",
+    "label": "H4 rectangle, a = 1.0 Å",
+    "points": [
+      {
+        "adapt": {
+          "cnot": 672,
+          "converged": true,
+          "energy": -1.9625693921073448,
+          "error_mha": 0.0001605019046557743,
+          "parameters": 10,
+          "time_ms": 0.1753,
+          "variational": true
+        },
+        "adapt_unique_operators": 10,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.9625589056478903,
+          "error_mha": 0.0106469613592175,
+          "parameters": 26,
+          "time_ms": 0.018600000000000002,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.11513917591761126,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.9619047160032344,
+          "error_mha": 0.664836606015129,
+          "parameters": 0,
+          "time_ms": 0.1009,
+          "variational": true
+        },
+        "coordinate": 0.7,
+        "determinants": 36,
+        "fci": -1.9625695526092495,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.912836388796811,
+          "error_mha": 49.733163812438534,
+          "parameters": 0,
+          "time_ms": 1.3117999999999999,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.944965607806977,
+          "error_mha": 17.60394480227245,
+          "parameters": 0,
+          "time_ms": 0.0003,
+          "variational": true
+        },
+        "qubits": 8,
+        "scf_strategy": "diis (2)",
+        "uccsd": {
+          "cnot": 1312,
+          "converged": true,
+          "energy": -1.9625693921073446,
+          "error_mha": 0.0001605019048778189,
+          "parameters": 26,
+          "time_ms": 0.0893,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 672,
+          "converged": true,
+          "energy": -1.9580830144355315,
+          "error_mha": 0.00007763964138263191,
+          "parameters": 10,
+          "time_ms": 0.1538,
+          "variational": true
+        },
+        "adapt_unique_operators": 10,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.9580742780443154,
+          "error_mha": 0.00881403085739585,
+          "parameters": 26,
+          "time_ms": 0.019700000000000002,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.1452965368476558,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.9571582557339335,
+          "error_mha": 0.924836341239299,
+          "parameters": 0,
+          "time_ms": 0.1041,
+          "variational": true
+        },
+        "coordinate": 0.75,
+        "determinants": 36,
+        "fci": -1.9580830920751728,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.901240374678065,
+          "error_mha": 56.842717397107776,
+          "parameters": 0,
+          "time_ms": 1.3189,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.936812821650039,
+          "error_mha": 21.27027042513374,
+          "parameters": 0,
+          "time_ms": 0.00019999999999999998,
+          "variational": true
+        },
+        "qubits": 8,
+        "scf_strategy": "diis (3)",
+        "uccsd": {
+          "cnot": 1312,
+          "converged": true,
+          "energy": -1.9580830144355337,
+          "error_mha": 0.00007763963916218586,
+          "parameters": 26,
+          "time_ms": 0.13190000000000002,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 672,
+          "converged": true,
+          "energy": -1.9473357035945489,
+          "error_mha": 0.000024989552427356898,
+          "parameters": 10,
+          "time_ms": 0.12990000000000002,
+          "variational": true
+        },
+        "adapt_unique_operators": 10,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.947341726426949,
+          "error_mha": -0.005997842847715873,
+          "parameters": 26,
+          "time_ms": 0.022500000000000003,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.18929204625127735,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.9460420182621008,
+          "error_mha": 1.2937103220005408,
+          "parameters": 0,
+          "time_ms": 0.0869,
+          "variational": true
+        },
+        "coordinate": 0.7999999999999999,
+        "determinants": 36,
+        "fci": -1.9473357285841013,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.8818559159013082,
+          "error_mha": 65.47981268279312,
+          "parameters": 0,
+          "time_ms": 1.2895999999999999,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.92121572755793,
+          "error_mha": 26.12000102617129,
+          "parameters": 0,
+          "time_ms": 0.0003,
+          "variational": true
+        },
+        "qubits": 8,
+        "scf_strategy": "diis (3)",
+        "uccsd": {
+          "cnot": 1312,
+          "converged": true,
+          "energy": -1.947335703594547,
+          "error_mha": 0.000024989554203713737,
+          "parameters": 26,
+          "time_ms": 0.11610000000000001,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 672,
+          "converged": true,
+          "energy": -1.9333063575139737,
+          "error_mha": 0.002044435946757517,
+          "parameters": 10,
+          "time_ms": 0.1297,
+          "variational": true
+        },
+        "adapt_unique_operators": 10,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.9333744689903045,
+          "error_mha": -0.06606704038403244,
+          "parameters": 26,
+          "time_ms": 0.0342,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.25808874350815625,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.931481092363418,
+          "error_mha": 1.827309586502457,
+          "parameters": 0,
+          "time_ms": 0.0856,
+          "variational": true
+        },
+        "coordinate": 0.85,
+        "determinants": 36,
+        "fci": -1.9333084019499205,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.856803565870701,
+          "error_mha": 76.50483607921954,
+          "parameters": 0,
+          "time_ms": 1.2439,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.9003293640173793,
+          "error_mha": 32.9790379325412,
+          "parameters": 0,
+          "time_ms": 0.00019999999999999998,
+          "variational": true
+        },
+        "qubits": 8,
+        "scf_strategy": "diis (3)",
+        "uccsd": {
+          "cnot": 1312,
+          "converged": true,
+          "energy": -1.9333063575139753,
+          "error_mha": 0.0020444359452032046,
+          "parameters": 26,
+          "time_ms": 0.11560000000000001,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 672,
+          "converged": true,
+          "energy": -1.9193708512621637,
+          "error_mha": 0.025161059922007567,
+          "parameters": 10,
+          "time_ms": 0.1365,
+          "variational": true
+        },
+        "adapt_unique_operators": 10,
+        "ccsd": {
+          "cnot": 0,
+          "converged": false,
+          "energy": -1.9207411221399913,
+          "error_mha": -1.3451098179055876,
+          "parameters": 26,
+          "time_ms": 0.379,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.39453399517578625,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.9167869375336057,
+          "error_mha": 2.609074788479937,
+          "parameters": 0,
+          "time_ms": 0.0959,
+          "variational": true
+        },
+        "coordinate": 0.9,
+        "determinants": 36,
+        "fci": -1.9193960123220857,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.8276243173927944,
+          "error_mha": 91.77169492929127,
+          "parameters": 0,
+          "time_ms": 1.2101,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.8757369951674292,
+          "error_mha": 43.659017154656475,
+          "parameters": 0,
+          "time_ms": 0.00019999999999999998,
+          "variational": true
+        },
+        "qubits": 8,
+        "scf_strategy": "diis (3)",
+        "uccsd": {
+          "cnot": 1312,
+          "converged": true,
+          "energy": -1.9193708512621641,
+          "error_mha": 0.025161059921563478,
+          "parameters": 26,
+          "time_ms": 0.12430000000000001,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 672,
+          "converged": true,
+          "energy": -1.9106117911976825,
+          "error_mha": 0.21251732822968883,
+          "parameters": 10,
+          "time_ms": 0.1428,
+          "variational": true
+        },
+        "adapt_unique_operators": 10,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.9119488559762519,
+          "error_mha": -1.1245474503396302,
+          "parameters": 26,
+          "time_ms": 0.335,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.5967467592282096,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.9071489354685751,
+          "error_mha": 3.675373057337117,
+          "parameters": 0,
+          "time_ms": 0.1014,
+          "variational": true
+        },
+        "coordinate": 0.95,
+        "determinants": 36,
+        "fci": -1.9108243085259122,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.795438922687064,
+          "error_mha": 115.38538583884828,
+          "parameters": 0,
+          "time_ms": 1.2526,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.8486107241288323,
+          "error_mha": 62.21358439707991,
+          "parameters": 0,
+          "time_ms": 0.00019999999999999998,
+          "variational": true
+        },
+        "qubits": 8,
+        "scf_strategy": "diis (3)",
+        "uccsd": {
+          "cnot": 1312,
+          "converged": true,
+          "energy": -1.9106117911976823,
+          "error_mha": 0.21251732822991087,
+          "parameters": 26,
+          "time_ms": 0.1197,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 672,
+          "converged": true,
+          "energy": -1.91401701062946,
+          "error_mha": 1.0895443437404229,
+          "parameters": 10,
+          "time_ms": 0.1167,
+          "variational": true
+        },
+        "adapt_unique_operators": 10,
+        "ccsd": {
+          "cnot": 0,
+          "converged": false,
+          "energy": -9132037995576.627,
+          "error_mha": -9132037995574710.0,
+          "parameters": 26,
+          "time_ms": 0.0021,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 117085499976162.42,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.91046937260637,
+          "error_mha": 4.637182366830528,
+          "parameters": 0,
+          "time_ms": 0.0921,
+          "variational": true
+        },
+        "coordinate": 1.0,
+        "determinants": 36,
+        "fci": -1.9151065549732005,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.7610750603677852,
+          "error_mha": 154.03149460541533,
+          "parameters": 0,
+          "time_ms": 1.4063999999999999,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.8198405011985355,
+          "error_mha": 95.26605377466501,
+          "parameters": 0,
+          "time_ms": 0.00039999999999999996,
+          "variational": true
+        },
+        "qubits": 8,
+        "scf_strategy": "diis (3)",
+        "uccsd": {
+          "cnot": 1312,
+          "converged": true,
+          "energy": -1.9140170106294576,
+          "error_mha": 1.0895443437428654,
+          "parameters": 26,
+          "time_ms": 0.0941,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 672,
+          "converged": true,
+          "energy": -1.9342641240525102,
+          "error_mha": 0.28383965911604747,
+          "parameters": 10,
+          "time_ms": 0.1297,
+          "variational": true
+        },
+        "adapt_unique_operators": 10,
+        "ccsd": {
+          "cnot": 0,
+          "converged": false,
+          "energy": -1.818897981474335,
+          "error_mha": 115.6499822372914,
+          "parameters": 26,
+          "time_ms": 0.3467,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 1.0034619363231783,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.9301574445501728,
+          "error_mha": 4.390519161453499,
+          "parameters": 0,
+          "time_ms": 0.08610000000000001,
+          "variational": true
+        },
+        "coordinate": 1.05,
+        "determinants": 36,
+        "fci": -1.9345479637116263,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.8104896693364378,
+          "error_mha": 124.05829437518845,
+          "parameters": 0,
+          "time_ms": 1.2361,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.8673433576591187,
+          "error_mha": 67.20460605250756,
+          "parameters": 0,
+          "time_ms": 0.00009999999999999999,
+          "variational": true
+        },
+        "qubits": 8,
+        "scf_strategy": "diis (2)",
+        "uccsd": {
+          "cnot": 1312,
+          "converged": true,
+          "energy": -1.9342641240525165,
+          "error_mha": 0.2838396591098302,
+          "parameters": 26,
+          "time_ms": 0.09809999999999999,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 672,
+          "converged": true,
+          "energy": -1.9617283671317975,
+          "error_mha": 0.06145503699128696,
+          "parameters": 10,
+          "time_ms": 0.1363,
+          "variational": true
+        },
+        "adapt_unique_operators": 10,
+        "ccsd": {
+          "cnot": 0,
+          "converged": false,
+          "energy": -1.9624293119359006,
+          "error_mha": -0.6394897671118116,
+          "parameters": 26,
+          "time_ms": 0.4043,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.43292268229636494,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.95784774590056,
+          "error_mha": 3.9420762682287336,
+          "parameters": 0,
+          "time_ms": 0.0987,
+          "variational": true
+        },
+        "coordinate": 1.1,
+        "determinants": 36,
+        "fci": -1.9617898221687888,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.8533767942928965,
+          "error_mha": 108.41302787589235,
+          "parameters": 0,
+          "time_ms": 1.3227,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.9085357584616616,
+          "error_mha": 53.254063707127266,
+          "parameters": 0,
+          "time_ms": 0.00019999999999999998,
+          "variational": true
+        },
+        "qubits": 8,
+        "scf_strategy": "diis (3)",
+        "uccsd": {
+          "cnot": 1312,
+          "converged": true,
+          "energy": -1.961728367131798,
+          "error_mha": 0.06145503699084287,
+          "parameters": 26,
+          "time_ms": 0.1181,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 672,
+          "converged": true,
+          "energy": -1.990140454001916,
+          "error_mha": 0.0134839048213653,
+          "parameters": 10,
+          "time_ms": 0.128,
+          "variational": true
+        },
+        "adapt_unique_operators": 10,
+        "ccsd": {
+          "cnot": 0,
+          "converged": false,
+          "energy": -1.99037704689075,
+          "error_mha": -0.22310898401256551,
+          "parameters": 26,
+          "time_ms": 0.3697,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.3290288588657288,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.9865832358719873,
+          "error_mha": 3.570702034750184,
+          "parameters": 0,
+          "time_ms": 0.1002,
+          "variational": true
+        },
+        "coordinate": 1.15,
+        "determinants": 36,
+        "fci": -1.9901539379067374,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.8906489737621461,
+          "error_mha": 99.50496414459131,
+          "parameters": 0,
+          "time_ms": 1.3075,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.9442950055980972,
+          "error_mha": 45.85893230864024,
+          "parameters": 0,
+          "time_ms": 0.00009999999999999999,
+          "variational": true
+        },
+        "qubits": 8,
+        "scf_strategy": "diis (3)",
+        "uccsd": {
+          "cnot": 1312,
+          "converged": true,
+          "energy": -1.9901404540019174,
+          "error_mha": 0.013483904820033032,
+          "parameters": 26,
+          "time_ms": 0.10969999999999999,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 672,
+          "converged": true,
+          "energy": -2.016845857968182,
+          "error_mha": 0.002897868566442696,
+          "parameters": 10,
+          "time_ms": 0.1289,
+          "variational": true
+        },
+        "adapt_unique_operators": 10,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.0169570792612244,
+          "error_mha": -0.10832342447608667,
+          "parameters": 26,
+          "time_ms": 0.0491,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.26871156860568884,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.0135545877228465,
+          "error_mha": 3.2941681139018186,
+          "parameters": 0,
+          "time_ms": 0.0997,
+          "variational": true
+        },
+        "coordinate": 1.2000000000000002,
+        "determinants": 36,
+        "fci": -2.0168487558367483,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.923063799507947,
+          "error_mha": 93.78495632880134,
+          "parameters": 0,
+          "time_ms": 1.3052000000000001,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.975353976776883,
+          "error_mha": 41.49477905986521,
+          "parameters": 0,
+          "time_ms": 0.00019999999999999998,
+          "variational": true
+        },
+        "qubits": 8,
+        "scf_strategy": "diis (3)",
+        "uccsd": {
+          "cnot": 1312,
+          "converged": true,
+          "energy": -2.016845857968178,
+          "error_mha": 0.002897868570439499,
+          "parameters": 26,
+          "time_ms": 0.1081,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 672,
+          "converged": true,
+          "energy": -2.0410049756133146,
+          "error_mha": 0.0005121929733675756,
+          "parameters": 10,
+          "time_ms": 0.1116,
+          "variational": true
+        },
+        "adapt_unique_operators": 10,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.041049013938114,
+          "error_mha": -0.04352613182589948,
+          "parameters": 26,
+          "time_ms": 0.037200000000000004,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.2292518153628284,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.0379201478328612,
+          "error_mha": 3.0853399734267484,
+          "parameters": 0,
+          "time_ms": 0.0982,
+          "variational": true
+        },
+        "coordinate": 1.25,
+        "determinants": 36,
+        "fci": -2.041005487806288,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.9512590834109973,
+          "error_mha": 89.7464043952907,
+          "parameters": 0,
+          "time_ms": 1.2946,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.002331926748856,
+          "error_mha": 38.673561057431804,
+          "parameters": 0,
+          "time_ms": 0.00019999999999999998,
+          "variational": true
+        },
+        "qubits": 8,
+        "scf_strategy": "diis (3)",
+        "uccsd": {
+          "cnot": 1312,
+          "converged": true,
+          "energy": -2.0410049756133146,
+          "error_mha": 0.0005121929733675756,
+          "parameters": 26,
+          "time_ms": 0.1086,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 672,
+          "converged": true,
+          "energy": -2.062476675043105,
+          "error_mha": 0.00003982759322340712,
+          "parameters": 10,
+          "time_ms": 0.10919999999999999,
+          "variational": true
+        },
+        "adapt_unique_operators": 10,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.0624884371265004,
+          "error_mha": -0.011722255802038006,
+          "parameters": 26,
+          "time_ms": 0.016900000000000002,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.20187840798418655,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.059554276286447,
+          "error_mha": 2.922438584251452,
+          "parameters": 0,
+          "time_ms": 0.0857,
+          "variational": true
+        },
+        "coordinate": 1.3,
+        "determinants": 36,
+        "fci": -2.0624767148706984,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.975778798383777,
+          "error_mha": 86.69791648692149,
+          "parameters": 0,
+          "time_ms": 1.2007999999999999,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.025758062274143,
+          "error_mha": 36.718652596555486,
+          "parameters": 0,
+          "time_ms": 0.00019999999999999998,
+          "variational": true
+        },
+        "qubits": 8,
+        "scf_strategy": "diis (3)",
+        "uccsd": {
+          "cnot": 1312,
+          "converged": true,
+          "energy": -2.062476675043105,
+          "error_mha": 0.00003982759322340712,
+          "parameters": 26,
+          "time_ms": 0.0945,
+          "variational": true
+        }
+      }
+    ],
+    "summary": [
+      {
+        "max_abs_error_mha": 154.03149460541533,
+        "method": "HF",
+        "not_converged": 0,
+        "points": 13,
+        "points_within_chemical_accuracy": 0
+      },
+      {
+        "max_abs_error_mha": 95.26605377466501,
+        "method": "MP2",
+        "not_converged": 0,
+        "points": 13,
+        "points_within_chemical_accuracy": 0
+      },
+      {
+        "max_abs_error_mha": 4.637182366830528,
+        "method": "CISD",
+        "not_converged": 0,
+        "points": 13,
+        "points_within_chemical_accuracy": 3
+      },
+      {
+        "max_abs_error_mha": 1.1245474503396302,
+        "method": "CCSD",
+        "not_converged": 5,
+        "points": 13,
+        "points_within_chemical_accuracy": 8
+      },
+      {
+        "max_abs_error_mha": 1.0895443437428654,
+        "method": "UCCSD",
+        "not_converged": 0,
+        "points": 13,
+        "points_within_chemical_accuracy": 13
+      },
+      {
+        "max_abs_error_mha": 1.0895443437404229,
+        "method": "ADAPT",
+        "not_converged": 0,
+        "points": 13,
+        "points_within_chemical_accuracy": 13
+      }
+    ]
+  },
+  "H6": {
+    "coordinate": "H-H spacing (Å)",
+    "label": "H6 linear chain",
+    "points": [
+      {
+        "adapt": {
+          "cnot": 4560,
+          "converged": true,
+          "energy": -2.796293851993158,
+          "error_mha": 0.12538182061705427,
+          "parameters": 59,
+          "time_ms": 94.0236,
+          "variational": true
+        },
+        "adapt_unique_operators": 59,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.7962966715217186,
+          "error_mha": 0.12256229205664937,
+          "parameters": 117,
+          "time_ms": 0.28150000000000003,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.10788211983213089,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.7959184325559905,
+          "error_mha": 0.5008012577847332,
+          "parameters": 0,
+          "time_ms": 1.536,
+          "variational": true
+        },
+        "coordinate": 0.6,
+        "determinants": 400,
+        "fci": -2.796419233813775,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.7489969620428387,
+          "error_mha": 47.4222717709365,
+          "parameters": 0,
+          "time_ms": 11.7089,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.7842130557062656,
+          "error_mha": 12.206178107509569,
+          "parameters": 0,
+          "time_ms": 0.0005,
+          "variational": true
+        },
+        "qubits": 12,
+        "scf_strategy": "diis (7)",
+        "uccsd": {
+          "cnot": 9024,
+          "converged": true,
+          "energy": -2.7962938423896015,
+          "error_mha": 0.12539142417367088,
+          "parameters": 117,
+          "time_ms": 6.1385,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 4560,
+          "converged": true,
+          "energy": -3.2041375996653327,
+          "error_mha": 0.27428385148775547,
+          "parameters": 59,
+          "time_ms": 61.7038,
+          "variational": true
+        },
+        "adapt_unique_operators": 59,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -3.204173737444566,
+          "error_mha": 0.23814607225469686,
+          "parameters": 117,
+          "time_ms": 0.29819999999999997,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.15337869145103564,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -3.202774668434837,
+          "error_mha": 1.6372150819834452,
+          "parameters": 0,
+          "time_ms": 1.5147,
+          "variational": true
+        },
+        "coordinate": 0.7999999999999999,
+        "determinants": 400,
+        "fci": -3.2044118835168205,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -3.1346122597639994,
+          "error_mha": 69.79962375282112,
+          "parameters": 0,
+          "time_ms": 11.313,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -3.182058075245494,
+          "error_mha": 22.353808271326603,
+          "parameters": 0,
+          "time_ms": 0.0007999999999999999,
+          "variational": true
+        },
+        "qubits": 12,
+        "scf_strategy": "diis (7)",
+        "uccsd": {
+          "cnot": 9024,
+          "converged": true,
+          "energy": -3.204142314440639,
+          "error_mha": 0.2695690761815861,
+          "parameters": 117,
+          "time_ms": 7.2326,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 4560,
+          "converged": true,
+          "energy": -3.235433168823783,
+          "error_mha": 0.6331149539282599,
+          "parameters": 59,
+          "time_ms": 44.863,
+          "variational": true
+        },
+        "adapt_unique_operators": 59,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -3.2356770814803757,
+          "error_mha": 0.3892022973355225,
+          "parameters": 117,
+          "time_ms": 1.1527,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.2076120677538271,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -3.2313812830842488,
+          "error_mha": 4.685000693462449,
+          "parameters": 0,
+          "time_ms": 2.0447,
+          "variational": true
+        },
+        "coordinate": 1.0,
+        "determinants": 400,
+        "fci": -3.236066283777711,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -3.135532217790153,
+          "error_mha": 100.53406598755821,
+          "parameters": 0,
+          "time_ms": 11.041,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -3.198137987820525,
+          "error_mha": 37.92829595718628,
+          "parameters": 0,
+          "time_ms": 0.0005,
+          "variational": true
+        },
+        "qubits": 12,
+        "scf_strategy": "diis (7)",
+        "uccsd": {
+          "cnot": 9024,
+          "converged": true,
+          "energy": -3.2354527126892014,
+          "error_mha": 0.61357108850979,
+          "parameters": 117,
+          "time_ms": 5.1313,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 4560,
+          "converged": true,
+          "energy": -3.1502130908778114,
+          "error_mha": 1.5160540231540232,
+          "parameters": 59,
+          "time_ms": 29.4807,
+          "variational": true
+        },
+        "adapt_unique_operators": 59,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -3.1513890605228005,
+          "error_mha": 0.34008437816490655,
+          "parameters": 117,
+          "time_ms": 5.037599999999999,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.27531484996770494,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -3.139498264899572,
+          "error_mha": 12.230880001393274,
+          "parameters": 0,
+          "time_ms": 1.474,
+          "variational": true
+        },
+        "coordinate": 1.2,
+        "determinants": 400,
+        "fci": -3.1517291449009655,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -3.006753470604338,
+          "error_mha": 144.9756742966275,
+          "parameters": 0,
+          "time_ms": 10.945699999999999,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -3.0896971621729663,
+          "error_mha": 62.03198272799915,
+          "parameters": 0,
+          "time_ms": 0.0005,
+          "variational": true
+        },
+        "qubits": 12,
+        "scf_strategy": "diis (8)",
+        "uccsd": {
+          "cnot": 9024,
+          "converged": true,
+          "energy": -3.1502401487871925,
+          "error_mha": 1.4889961137729557,
+          "parameters": 117,
+          "time_ms": 4.5148,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 4560,
+          "converged": true,
+          "energy": -3.0412940333566576,
+          "error_mha": 3.306214561969334,
+          "parameters": 59,
+          "time_ms": 25.5758,
+          "variational": true
+        },
+        "adapt_unique_operators": 59,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -3.0459440031421465,
+          "error_mha": -1.3437552235195938,
+          "parameters": 117,
+          "time_ms": 1.3835,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.3613667863206556,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -3.0162090877248766,
+          "error_mha": 28.39116019375032,
+          "parameters": 0,
+          "time_ms": 1.3703999999999998,
+          "variational": true
+        },
+        "coordinate": 1.4,
+        "determinants": 400,
+        "fci": -3.044600247918627,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.8373157274659166,
+          "error_mha": 207.2845204527103,
+          "parameters": 0,
+          "time_ms": 10.775699999999999,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.947531016770174,
+          "error_mha": 97.06923114845311,
+          "parameters": 0,
+          "time_ms": 0.00039999999999999996,
+          "variational": true
+        },
+        "qubits": 12,
+        "scf_strategy": "diis (8)",
+        "uccsd": {
+          "cnot": 9024,
+          "converged": true,
+          "energy": -3.0411975278870735,
+          "error_mha": 3.4027200315533968,
+          "parameters": 117,
+          "time_ms": 3.5192,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 10576,
+          "converged": true,
+          "energy": -2.9525373337617347,
+          "error_mha": 0.13103421496918344,
+          "parameters": 138,
+          "time_ms": 928.5337999999999,
+          "variational": true
+        },
+        "adapt_unique_operators": 59,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.963457126516971,
+          "error_mha": -10.788758540267285,
+          "parameters": 117,
+          "time_ms": 0.9925999999999999,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.47909024646556037,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.8960312618451267,
+          "error_mha": 56.63710613157713,
+          "parameters": 0,
+          "time_ms": 1.3909,
+          "variational": true
+        },
+        "coordinate": 1.6,
+        "determinants": 400,
+        "fci": -2.952668367976704,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.664983077902444,
+          "error_mha": 287.6852900742599,
+          "parameters": 0,
+          "time_ms": 11.085700000000001,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.8107741412929252,
+          "error_mha": 141.8942266837786,
+          "parameters": 0,
+          "time_ms": 0.0006,
+          "variational": true
+        },
+        "qubits": 12,
+        "scf_strategy": "diis (9)",
+        "uccsd": {
+          "cnot": 9024,
+          "converged": true,
+          "energy": -2.9460872102021387,
+          "error_mha": 6.581157774565138,
+          "parameters": 117,
+          "time_ms": 3.2728,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 12704,
+          "converged": true,
+          "energy": -2.887424364831136,
+          "error_mha": 0.14501571028846527,
+          "parameters": 161,
+          "time_ms": 1494.5314,
+          "variational": true
+        },
+        "adapt_unique_operators": 59,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.9381047103502826,
+          "error_mha": -50.535329808857995,
+          "parameters": 117,
+          "time_ms": 1.7352999999999998,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.6593851746588613,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.791062549879505,
+          "error_mha": 96.50683066191945,
+          "parameters": 0,
+          "time_ms": 1.5175,
+          "variational": true
+        },
+        "coordinate": 1.7999999999999998,
+        "determinants": 400,
+        "fci": -2.8875693805414246,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.5064402789439546,
+          "error_mha": 381.12910159747,
+          "parameters": 0,
+          "time_ms": 12.9251,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.69730094787254,
+          "error_mha": 190.26843266888483,
+          "parameters": 0,
+          "time_ms": 0.0015999999999999999,
+          "variational": true
+        },
+        "qubits": 12,
+        "scf_strategy": "diis (11)",
+        "uccsd": {
+          "cnot": 9024,
+          "converged": true,
+          "energy": -2.877248362659207,
+          "error_mha": 10.321017882217731,
+          "parameters": 117,
+          "time_ms": 3.4936,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 12064,
+          "converged": true,
+          "energy": -2.847077547953479,
+          "error_mha": 0.11459029027571788,
+          "parameters": 159,
+          "time_ms": 1494.0365,
+          "variational": true
+        },
+        "adapt_unique_operators": 59,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.972878018387232,
+          "error_mha": -125.68588014347704,
+          "parameters": 117,
+          "time_ms": 2.6196,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.8254183732519882,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.704231935836129,
+          "error_mha": 142.96020240762576,
+          "parameters": 0,
+          "time_ms": 1.7466000000000002,
+          "variational": true
+        },
+        "coordinate": 2.0,
+        "determinants": 400,
+        "fci": -2.847192138243755,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.3684212860142284,
+          "error_mha": 478.77085222952644,
+          "parameters": 0,
+          "time_ms": 12.1493,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.6147190887939455,
+          "error_mha": 232.47304944980928,
+          "parameters": 0,
+          "time_ms": 0.001,
+          "variational": true
+        },
+        "qubits": 12,
+        "scf_strategy": "diis (13)",
+        "uccsd": {
+          "cnot": 9024,
+          "converged": true,
+          "energy": -2.8338506952681777,
+          "error_mha": 13.341442975577156,
+          "parameters": 117,
+          "time_ms": 4.039,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 11104,
+          "converged": true,
+          "energy": -2.8240756698773013,
+          "error_mha": 0.2659865084013724,
+          "parameters": 142,
+          "time_ms": 1143.8613,
+          "variational": true
+        },
+        "adapt_unique_operators": 59,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -3.008694812806797,
+          "error_mha": -184.35315642109452,
+          "parameters": 117,
+          "time_ms": 3.1938,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.8991273130015178,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.6354477402451173,
+          "error_mha": 188.89391614058536,
+          "parameters": 0,
+          "time_ms": 2.2775,
+          "variational": true
+        },
+        "coordinate": 2.1999999999999997,
+        "determinants": 400,
+        "fci": -2.8243416563857027,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.2524669215112048,
+          "error_mha": 571.8747348744979,
+          "parameters": 0,
+          "time_ms": 16.7024,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.564894248463101,
+          "error_mha": 259.44740792260166,
+          "parameters": 0,
+          "time_ms": 0.0014,
+          "variational": true
+        },
+        "qubits": 12,
+        "scf_strategy": "diis (31)",
+        "uccsd": {
+          "cnot": 9024,
+          "converged": true,
+          "energy": -2.809513482849845,
+          "error_mha": 14.828173535857747,
+          "parameters": 117,
+          "time_ms": 6.043,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 10816,
+          "converged": true,
+          "energy": -2.8117686276245655,
+          "error_mha": 0.350851907811478,
+          "parameters": 145,
+          "time_ms": 2214.6566000000003,
+          "variational": true
+        },
+        "adapt_unique_operators": 59,
+        "ccsd": {
+          "cnot": 0,
+          "converged": false,
+          "energy": -3.1149474913697146,
+          "error_mha": -302.82801183733767,
+          "parameters": 117,
+          "time_ms": 8.5594,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.9652010585049545,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.585917519184319,
+          "error_mha": 226.20196034805807,
+          "parameters": 0,
+          "time_ms": 1.7498,
+          "variational": true
+        },
+        "coordinate": 2.4,
+        "determinants": 400,
+        "fci": -2.812119479532377,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.157319976169184,
+          "error_mha": 654.799503363193,
+          "parameters": 0,
+          "time_ms": 17.1367,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.546187655662295,
+          "error_mha": 265.9318238700821,
+          "parameters": 0,
+          "time_ms": 0.0007,
+          "variational": true
+        },
+        "qubits": 12,
+        "scf_strategy": "diis (75)",
+        "uccsd": {
+          "cnot": 9024,
+          "converged": true,
+          "energy": -2.804805814631585,
+          "error_mha": 7.313664900792105,
+          "parameters": 117,
+          "time_ms": 10.3024,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 5008,
+          "converged": true,
+          "energy": -2.799860230920416,
+          "error_mha": 5.924538622414044,
+          "parameters": 77,
+          "time_ms": 352.65950000000004,
+          "variational": true
+        },
+        "adapt_unique_operators": 47,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -3.1193686172544655,
+          "error_mha": -313.5838477116355,
+          "parameters": 117,
+          "time_ms": 5.8547,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.9507779451403818,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.555761515537944,
+          "error_mha": 250.02325400488613,
+          "parameters": 0,
+          "time_ms": 2.6232,
+          "variational": true
+        },
+        "coordinate": 2.6,
+        "determinants": 400,
+        "fci": -2.80578476954283,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.080475141036366,
+          "error_mha": 725.3096285064639,
+          "parameters": 0,
+          "time_ms": 22.435299999999998,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.5549201695935935,
+          "error_mha": 250.8645999492365,
+          "parameters": 0,
+          "time_ms": 0.0015999999999999999,
+          "variational": true
+        },
+        "qubits": 12,
+        "scf_strategy": "diis (35)",
+        "uccsd": {
+          "cnot": 9024,
+          "converged": true,
+          "energy": -2.8014979949368772,
+          "error_mha": 4.286774605952726,
+          "parameters": 117,
+          "time_ms": 16.6445,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 6528,
+          "converged": true,
+          "energy": -2.801611135210138,
+          "error_mha": 0.9542376830133925,
+          "parameters": 99,
+          "time_ms": 824.1072,
+          "variational": true
+        },
+        "adapt_unique_operators": 44,
+        "ccsd": {
+          "cnot": 0,
+          "converged": false,
+          "energy": -30.54582368612754,
+          "error_mha": -27743.25831323439,
+          "parameters": 117,
+          "time_ms": 4.3003,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 63.88943657051384,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.535493157077047,
+          "error_mha": 267.0722158161043,
+          "parameters": 0,
+          "time_ms": 2.9208,
+          "variational": true
+        },
+        "coordinate": 2.8,
+        "determinants": 400,
+        "fci": -2.8025653728931514,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.019129744267561,
+          "error_mha": 783.4356286255905,
+          "parameters": 0,
+          "time_ms": 17.3337,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.5863182199671915,
+          "error_mha": 216.24715292595997,
+          "parameters": 0,
+          "time_ms": 0.0026,
+          "variational": true
+        },
+        "qubits": 12,
+        "scf_strategy": "diis (26)",
+        "uccsd": {
+          "cnot": 9024,
+          "converged": true,
+          "energy": -2.799945168682753,
+          "error_mha": 2.620204210398658,
+          "parameters": 117,
+          "time_ms": 26.482100000000003,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 4160,
+          "converged": true,
+          "energy": -2.7995413955985,
+          "error_mha": 1.417508942872736,
+          "parameters": 68,
+          "time_ms": 241.549,
+          "variational": true
+        },
+        "adapt_unique_operators": 36,
+        "ccsd": {
+          "cnot": 0,
+          "converged": false,
+          "energy": -15.407995742314931,
+          "error_mha": -12607.036837773558,
+          "parameters": 117,
+          "time_ms": 1.1019999999999999,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 130.69395183858987,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.5203133456888587,
+          "error_mha": 280.64555885251383,
+          "parameters": 0,
+          "time_ms": 2.3339,
+          "variational": true
+        },
+        "coordinate": 3.0,
+        "determinants": 400,
+        "fci": -2.8009589045413725,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -1.9706022480941598,
+          "error_mha": 830.3566564472127,
+          "parameters": 0,
+          "time_ms": 19.4591,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -2.6351332133896173,
+          "error_mha": 165.82569115175528,
+          "parameters": 0,
+          "time_ms": 0.0017000000000000001,
+          "variational": true
+        },
+        "qubits": 12,
+        "scf_strategy": "diis (42)",
+        "uccsd": {
+          "cnot": 9024,
+          "converged": true,
+          "energy": -2.7992720445352997,
+          "error_mha": 1.6868600060728767,
+          "parameters": 117,
+          "time_ms": 17.2154,
+          "variational": true
+        }
+      }
+    ],
+    "summary": [
+      {
+        "max_abs_error_mha": 830.3566564472127,
+        "method": "HF",
+        "not_converged": 0,
+        "points": 13,
+        "points_within_chemical_accuracy": 0
+      },
+      {
+        "max_abs_error_mha": 265.9318238700821,
+        "method": "MP2",
+        "not_converged": 0,
+        "points": 13,
+        "points_within_chemical_accuracy": 0
+      },
+      {
+        "max_abs_error_mha": 280.64555885251383,
+        "method": "CISD",
+        "not_converged": 0,
+        "points": 13,
+        "points_within_chemical_accuracy": 1
+      },
+      {
+        "max_abs_error_mha": 313.5838477116355,
+        "method": "CCSD",
+        "not_converged": 3,
+        "points": 13,
+        "points_within_chemical_accuracy": 5
+      },
+      {
+        "max_abs_error_mha": 14.828173535857747,
+        "method": "UCCSD",
+        "not_converged": 0,
+        "points": 13,
+        "points_within_chemical_accuracy": 4
+      },
+      {
+        "max_abs_error_mha": 5.924538622414044,
+        "method": "ADAPT",
+        "not_converged": 0,
+        "points": 13,
+        "points_within_chemical_accuracy": 11
+      }
+    ]
+  },
+  "N2": {
+    "coordinate": "N-N distance (Å)",
+    "label": "N2 dissociation",
+    "points": [
+      {
+        "adapt": {
+          "cnot": 5296,
+          "converged": true,
+          "energy": -106.7650300078689,
+          "error_mha": 0.9047605482379595,
+          "parameters": 53,
+          "time_ms": 1683.3803,
+          "variational": true
+        },
+        "adapt_unique_operators": 53,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -106.76480363260255,
+          "error_mha": 1.1311358145889017,
+          "parameters": 315,
+          "time_ms": 2.3962,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.07671727379373604,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -106.7629451605344,
+          "error_mha": 2.989607882739165,
+          "parameters": 0,
+          "time_ms": 12.9535,
+          "variational": true
+        },
+        "coordinate": 0.8,
+        "determinants": 3136,
+        "fci": -106.76593476841714,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -106.68080256243638,
+          "error_mha": 85.13220598075577,
+          "parameters": 0,
+          "time_ms": 250.1581,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -106.75680777782567,
+          "error_mha": 9.126990591468598,
+          "parameters": 0,
+          "time_ms": 0.0028,
+          "variational": true
+        },
+        "qubits": 16,
+        "scf_strategy": "diis (6)",
+        "uccsd": {
+          "cnot": 31760,
+          "converged": false,
+          "energy": -106.76502954426756,
+          "error_mha": 0.9052241495766111,
+          "parameters": 315,
+          "time_ms": 295.0122,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 5328,
+          "converged": true,
+          "energy": -107.54733426788869,
+          "error_mha": 1.6323010242729197,
+          "parameters": 53,
+          "time_ms": 1498.9490999999998,
+          "variational": true
+        },
+        "adapt_unique_operators": 53,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -107.5463902228911,
+          "error_mha": 2.5763460218541923,
+          "parameters": 315,
+          "time_ms": 2.9229,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.1132389673849527,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -107.54106464161084,
+          "error_mha": 7.901927302114586,
+          "parameters": 0,
+          "time_ms": 25.914099999999998,
+          "variational": true
+        },
+        "coordinate": 1.0,
+        "determinants": 3136,
+        "fci": -107.54896656891296,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -107.41953251331987,
+          "error_mha": 129.4340555930944,
+          "parameters": 0,
+          "time_ms": 265.834,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -107.54164358979993,
+          "error_mha": 7.3229791130273725,
+          "parameters": 0,
+          "time_ms": 0.004,
+          "variational": true
+        },
+        "qubits": 16,
+        "scf_strategy": "diis (6)",
+        "uccsd": {
+          "cnot": 31760,
+          "converged": true,
+          "energy": -107.54733244181261,
+          "error_mha": 1.634127100345495,
+          "parameters": 315,
+          "time_ms": 374.9162,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 5328,
+          "converged": true,
+          "energy": -107.67430795061051,
+          "error_mha": 2.7774901305122057,
+          "parameters": 53,
+          "time_ms": 599.2511000000001,
+          "variational": true
+        },
+        "adapt_unique_operators": 53,
+        "ccsd": {
+          "cnot": 0,
+          "converged": false,
+          "energy": -107.67118525592456,
+          "error_mha": 5.900184816468368,
+          "parameters": 315,
+          "time_ms": 78.1781,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.16408009950881755,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -107.65806374429279,
+          "error_mha": 19.021696448234593,
+          "parameters": 0,
+          "time_ms": 12.9566,
+          "variational": true
+        },
+        "coordinate": 1.2000000000000002,
+        "determinants": 3136,
+        "fci": -107.67708544074102,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -107.48778397218572,
+          "error_mha": 189.30146855529983,
+          "parameters": 0,
+          "time_ms": 279.3124,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -107.68279053325892,
+          "error_mha": -5.705092517899857,
+          "parameters": 0,
+          "time_ms": 0.0039,
+          "variational": true
+        },
+        "qubits": 16,
+        "scf_strategy": "diis (6)",
+        "uccsd": {
+          "cnot": 31760,
+          "converged": false,
+          "energy": -107.67431617424991,
+          "error_mha": 2.7692664911143083,
+          "parameters": 315,
+          "time_ms": 333.8021,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 11344,
+          "converged": true,
+          "energy": -107.62128829546812,
+          "error_mha": 1.7033442428413537,
+          "parameters": 109,
+          "time_ms": 4170.8363,
+          "variational": true
+        },
+        "adapt_unique_operators": 53,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -107.61146107586602,
+          "error_mha": 11.530563844942776,
+          "parameters": 315,
+          "time_ms": 8.139000000000001,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.23880566492205835,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -107.58309661170392,
+          "error_mha": 39.895028007038036,
+          "parameters": 0,
+          "time_ms": 9.421000000000001,
+          "variational": true
+        },
+        "coordinate": 1.4000000000000001,
+        "determinants": 3136,
+        "fci": -107.62299163971096,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -107.35781548331708,
+          "error_mha": 265.1761563938777,
+          "parameters": 0,
+          "time_ms": 230.5719,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -107.66277519642516,
+          "error_mha": -39.7835567141982,
+          "parameters": 0,
+          "time_ms": 0.0017000000000000001,
+          "variational": true
+        },
+        "qubits": 16,
+        "scf_strategy": "diis (6)",
+        "uccsd": {
+          "cnot": 31760,
+          "converged": true,
+          "energy": -107.61898842547528,
+          "error_mha": 4.00321423568073,
+          "parameters": 315,
+          "time_ms": 81.7739,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 14176,
+          "converged": true,
+          "energy": -107.54110869562928,
+          "error_mha": 0.853182152823706,
+          "parameters": 132,
+          "time_ms": 6821.607,
+          "variational": true
+        },
+        "adapt_unique_operators": 53,
+        "ccsd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -107.52923169720812,
+          "error_mha": 12.730180573981897,
+          "parameters": 315,
+          "time_ms": 72.9616,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 0.36599712223540926,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -107.46942938783812,
+          "error_mha": 72.5324899439812,
+          "parameters": 0,
+          "time_ms": 12.1642,
+          "variational": true
+        },
+        "coordinate": 1.6,
+        "determinants": 3136,
+        "fci": -107.5419618777821,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -107.18484649607575,
+          "error_mha": 357.1153817063504,
+          "parameters": 0,
+          "time_ms": 224.993,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -107.64347792391669,
+          "error_mha": -101.51604613459142,
+          "parameters": 0,
+          "time_ms": 0.0031999999999999997,
+          "variational": true
+        },
+        "qubits": 16,
+        "scf_strategy": "diis (6)",
+        "uccsd": {
+          "cnot": 31760,
+          "converged": false,
+          "energy": -107.53792424582963,
+          "error_mha": 4.037631952471088,
+          "parameters": 315,
+          "time_ms": 195.8271,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 10464,
+          "converged": true,
+          "energy": -107.48240697114186,
+          "error_mha": 0.9763387733983109,
+          "parameters": 100,
+          "time_ms": 2847.4871999999996,
+          "variational": true
+        },
+        "adapt_unique_operators": 53,
+        "ccsd": {
+          "cnot": 0,
+          "converged": false,
+          "energy": -56.27990688732562,
+          "error_mha": 51203.47642258963,
+          "parameters": 315,
+          "time_ms": 14.832400000000002,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 130.22069535845273,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -107.3663793069622,
+          "error_mha": 117.00400295305258,
+          "parameters": 0,
+          "time_ms": 13.7808,
+          "variational": true
+        },
+        "coordinate": 1.8,
+        "determinants": 3136,
+        "fci": -107.48338330991525,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -107.0173269425609,
+          "error_mha": 466.05636735435496,
+          "parameters": 0,
+          "time_ms": 253.69950000000003,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -107.67538769556741,
+          "error_mha": -192.0043856521545,
+          "parameters": 0,
+          "time_ms": 0.003,
+          "variational": true
+        },
+        "qubits": 16,
+        "scf_strategy": "diis (7)",
+        "uccsd": {
+          "cnot": 31760,
+          "converged": true,
+          "energy": -107.47966352090437,
+          "error_mha": 3.719789010887098,
+          "parameters": 315,
+          "time_ms": 87.2339,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 10592,
+          "converged": true,
+          "energy": -107.45450280929221,
+          "error_mha": 0.6131965518960669,
+          "parameters": 102,
+          "time_ms": 3926.737,
+          "variational": true
+        },
+        "adapt_unique_operators": 53,
+        "ccsd": {
+          "cnot": 0,
+          "converged": false,
+          "energy": -60.12310598939627,
+          "error_mha": 47332.010016447835,
+          "parameters": 315,
+          "time_ms": 1.2343,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 281.82591624011866,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -107.3046996018875,
+          "error_mha": 150.41640395659783,
+          "parameters": 0,
+          "time_ms": 14.773,
+          "variational": true
+        },
+        "coordinate": 2.0,
+        "determinants": 3136,
+        "fci": -107.4551160058441,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -106.87150408372395,
+          "error_mha": 583.6119221201557,
+          "parameters": 0,
+          "time_ms": 230.38739999999999,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -107.77256547193257,
+          "error_mha": -317.4494660884619,
+          "parameters": 0,
+          "time_ms": 0.0028,
+          "variational": true
+        },
+        "qubits": 16,
+        "scf_strategy": "diis (6)",
+        "uccsd": {
+          "cnot": 31760,
+          "converged": true,
+          "energy": -107.4482389779109,
+          "error_mha": 6.877027933199997,
+          "parameters": 315,
+          "time_ms": 151.6546,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 13824,
+          "converged": true,
+          "energy": -107.43801888826408,
+          "error_mha": 6.824710560294989,
+          "parameters": 144,
+          "time_ms": 14724.9347,
+          "variational": true
+        },
+        "adapt_unique_operators": 38,
+        "ccsd": {
+          "cnot": 0,
+          "converged": false,
+          "energy": null,
+          "error_mha": null,
+          "parameters": 315,
+          "time_ms": 0.9394,
+          "variational": false
+        },
+        "ccsd_max_amplitude": null,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -107.13827962650102,
+          "error_mha": 306.5639723233602,
+          "parameters": 0,
+          "time_ms": 13.4321,
+          "variational": true
+        },
+        "coordinate": 2.2,
+        "determinants": 3136,
+        "fci": -107.44484359882438,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -106.7950068892231,
+          "error_mha": 649.8367096012743,
+          "parameters": 0,
+          "time_ms": 236.56040000000002,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -107.01868852919753,
+          "error_mha": 426.15506962684435,
+          "parameters": 0,
+          "time_ms": 0.0031999999999999997,
+          "variational": true
+        },
+        "qubits": 16,
+        "scf_strategy": "diis (7)",
+        "uccsd": {
+          "cnot": 31760,
+          "converged": true,
+          "energy": -107.43858992381064,
+          "error_mha": 6.253675013738302,
+          "parameters": 315,
+          "time_ms": 932.9501,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 4688,
+          "converged": true,
+          "energy": -107.36007269076364,
+          "error_mha": 81.22696624553782,
+          "parameters": 53,
+          "time_ms": 625.1455,
+          "variational": true
+        },
+        "adapt_unique_operators": 35,
+        "ccsd": {
+          "cnot": 0,
+          "converged": false,
+          "energy": null,
+          "error_mha": null,
+          "parameters": 315,
+          "time_ms": 0.8756,
+          "variational": false
+        },
+        "ccsd_max_amplitude": null,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -107.12907441565366,
+          "error_mha": 312.2252413555202,
+          "parameters": 0,
+          "time_ms": 14.2349,
+          "variational": true
+        },
+        "coordinate": 2.4000000000000004,
+        "determinants": 3136,
+        "fci": -107.44129965700918,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -106.80544086983429,
+          "error_mha": 635.8587871748966,
+          "parameters": 0,
+          "time_ms": 236.26420000000002,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -107.04139056625255,
+          "error_mha": 399.90909075663694,
+          "parameters": 0,
+          "time_ms": 0.0027,
+          "variational": true
+        },
+        "qubits": 16,
+        "scf_strategy": "diis (6)",
+        "uccsd": {
+          "cnot": 31760,
+          "converged": true,
+          "energy": -107.43818709611212,
+          "error_mha": 3.112560897065464,
+          "parameters": 315,
+          "time_ms": 880.2788,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 5056,
+          "converged": true,
+          "energy": -107.35527204016063,
+          "error_mha": 84.51041500960343,
+          "parameters": 56,
+          "time_ms": 525.4765,
+          "variational": true
+        },
+        "adapt_unique_operators": 36,
+        "ccsd": {
+          "cnot": 0,
+          "converged": false,
+          "energy": -701660719.7580822,
+          "error_mha": -701660612318.2997,
+          "parameters": 315,
+          "time_ms": 0.8743,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 34286946138.6273,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -107.1253489918449,
+          "error_mha": 314.4334633253294,
+          "parameters": 0,
+          "time_ms": 13.6931,
+          "variational": true
+        },
+        "coordinate": 2.6,
+        "determinants": 3136,
+        "fci": -107.43978245517023,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -106.80929707428443,
+          "error_mha": 630.4853808858013,
+          "parameters": 0,
+          "time_ms": 233.76579999999998,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -107.06167467270171,
+          "error_mha": 378.1077824685184,
+          "parameters": 0,
+          "time_ms": 0.0031,
+          "variational": true
+        },
+        "qubits": 16,
+        "scf_strategy": "diis (6)",
+        "uccsd": {
+          "cnot": 31760,
+          "converged": true,
+          "energy": -107.4383466668779,
+          "error_mha": 1.4357882923263787,
+          "parameters": 315,
+          "time_ms": 1121.1725,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 3584,
+          "converged": true,
+          "energy": -107.35633186073845,
+          "error_mha": 82.6261296191575,
+          "parameters": 42,
+          "time_ms": 378.43539999999996,
+          "variational": true
+        },
+        "adapt_unique_operators": 34,
+        "ccsd": {
+          "cnot": 0,
+          "converged": false,
+          "energy": 14801303089.559195,
+          "error_mha": 14801303196998.152,
+          "parameters": 315,
+          "time_ms": 0.7739,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 721647115201.67,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -107.12533108870873,
+          "error_mha": 313.62690164887397,
+          "parameters": 0,
+          "time_ms": 13.4137,
+          "variational": true
+        },
+        "coordinate": 2.8,
+        "determinants": 3136,
+        "fci": -107.43895799035761,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -106.80953101415776,
+          "error_mha": 629.4269761998521,
+          "parameters": 0,
+          "time_ms": 261.0567,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -107.08120924772292,
+          "error_mha": 357.7487426346835,
+          "parameters": 0,
+          "time_ms": 0.0027,
+          "variational": true
+        },
+        "qubits": 16,
+        "scf_strategy": "diis (7)",
+        "uccsd": {
+          "cnot": 31760,
+          "converged": false,
+          "energy": -107.43833311397746,
+          "error_mha": 0.6248763801437462,
+          "parameters": 315,
+          "time_ms": 1271.833,
+          "variational": true
+        }
+      },
+      {
+        "adapt": {
+          "cnot": 3008,
+          "converged": true,
+          "energy": -107.35609550941311,
+          "error_mha": 82.39487866573825,
+          "parameters": 40,
+          "time_ms": 401.91130000000004,
+          "variational": true
+        },
+        "adapt_unique_operators": 31,
+        "ccsd": {
+          "cnot": 0,
+          "converged": false,
+          "energy": -329858812.9110306,
+          "error_mha": -329858705472.5402,
+          "parameters": 315,
+          "time_ms": 0.8465,
+          "variational": false
+        },
+        "ccsd_max_amplitude": 16059522470.176657,
+        "cisd": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -107.12575420190241,
+          "error_mha": 312.73618617643706,
+          "parameters": 0,
+          "time_ms": 12.690399999999999,
+          "variational": true
+        },
+        "coordinate": 3.0,
+        "determinants": 3136,
+        "fci": -107.43849038807885,
+        "hf": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -106.80780626178108,
+          "error_mha": 630.6841262977656,
+          "parameters": 0,
+          "time_ms": 243.634,
+          "variational": true
+        },
+        "mp2": {
+          "cnot": 0,
+          "converged": true,
+          "energy": -107.10086276501461,
+          "error_mha": 337.6276230642361,
+          "parameters": 0,
+          "time_ms": 0.0029000000000000002,
+          "variational": true
+        },
+        "qubits": 16,
+        "scf_strategy": "diis (7)",
+        "uccsd": {
+          "cnot": 31760,
+          "converged": true,
+          "energy": -107.43823320028048,
+          "error_mha": 0.2571877983683635,
+          "parameters": 315,
+          "time_ms": 590.1174,
+          "variational": true
+        }
+      }
+    ],
+    "summary": [
+      {
+        "max_abs_error_mha": 649.8367096012743,
+        "method": "HF",
+        "not_converged": 0,
+        "points": 12,
+        "points_within_chemical_accuracy": 0
+      },
+      {
+        "max_abs_error_mha": 426.15506962684435,
+        "method": "MP2",
+        "not_converged": 0,
+        "points": 12,
+        "points_within_chemical_accuracy": 0
+      },
+      {
+        "max_abs_error_mha": 314.4334633253294,
+        "method": "CISD",
+        "not_converged": 0,
+        "points": 12,
+        "points_within_chemical_accuracy": 0
+      },
+      {
+        "max_abs_error_mha": 12.730180573981897,
+        "method": "CCSD",
+        "not_converged": 8,
+        "points": 12,
+        "points_within_chemical_accuracy": 1
+      },
+      {
+        "max_abs_error_mha": 6.877027933199997,
+        "method": "UCCSD",
+        "not_converged": 4,
+        "points": 12,
+        "points_within_chemical_accuracy": 4
+      },
+      {
+        "max_abs_error_mha": 84.51041500960343,
+        "method": "ADAPT",
+        "not_converged": 0,
+        "points": 12,
+        "points_within_chemical_accuracy": 4
+      }
+    ]
+  },
+  "settings": {
+    "adapt_gradient_norm_tolerance": 0.001,
+    "adapt_max_operators": 250,
+    "adapt_pool": "UCCSD singles and doubles (occupied to virtual), operators may repeat",
+    "basis": "STO-3G",
+    "chemical_accuracy_mha": 1.5939999999999999,
+    "frozen_core": true,
+    "uccsd_starts": "zero and the previous point's angles; lower energy kept"
+  }
+}

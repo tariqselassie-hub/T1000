@@ -70,6 +70,44 @@ pub fn diatomic(
     }
 }
 
+/// A linear chain of `n` hydrogen atoms (n = 2, 4, 6 or 8) spaced `d` ångström along z.
+///
+/// Stretching the chain uniformly drives it from weak to strong correlation: at large `d` every
+/// atom carries one unpaired electron and a single determinant is a poor reference.
+pub fn hydrogen_chain(n: usize, d: f64) -> Molecule {
+    let formula = match n {
+        2 => "H2",
+        4 => "H4",
+        6 => "H6",
+        8 => "H8",
+        _ => panic!("hydrogen_chain supports n = 2, 4, 6, 8"),
+    };
+    let pos: Vec<[f64; 3]> = (0..n).map(|k| [0.0, 0.0, d * k as f64]).collect();
+    Molecule {
+        name: "hydrogen chain",
+        formula,
+        atoms: atoms_at(&vec![1; n], &pos),
+        charge: 0,
+    }
+}
+
+/// Four hydrogens on a rectangle with sides `a` and `b` ångström in the xy plane.
+///
+/// At `a = b` (the square) the two lowest determinants are degenerate by symmetry, the textbook
+/// multireference case; for `a ≠ b` the system is two weakly coupled H₂ molecules.
+pub fn hydrogen_rectangle(a: f64, b: f64) -> Molecule {
+    let (x, y) = (a / 2.0, b / 2.0);
+    Molecule {
+        name: "hydrogen rectangle",
+        formula: "H4",
+        atoms: atoms_at(
+            &[1; 4],
+            &[[-x, -y, 0.0], [x, -y, 0.0], [x, y, 0.0], [-x, y, 0.0]],
+        ),
+        charge: 0,
+    }
+}
+
 /// The nine benchmark molecules at their equilibrium geometries.
 pub fn catalog() -> Vec<Molecule> {
     let r_h2o = 0.9572;

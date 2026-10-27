@@ -8,7 +8,7 @@
 
 use std::fs;
 use std::path::Path;
-use t1000::vqe::driver::{solve, VqeConfig, VqeReport};
+use t1000::vqe::driver::{solve_detailed, VqeConfig, VqeReport};
 use t1000::vqe::molecules::diatomic;
 
 struct Curve {
@@ -35,48 +35,51 @@ fn curves() -> Vec<Curve> {
             label: "LiH",
             formula: "LiH",
             z: [3, 1],
-            bond_lengths: range(1.0, 4.0, 13),
+            bond_lengths: range(1.0, 5.0, 17),
         },
     ]
 }
 
+/// Scans the bond outwards, starting each SCF from the orbitals of the previous point so the
+/// Hartree-Fock solution follows one branch as the HOMO-LUMO gap closes.
 fn scan(curve: &Curve) -> Vec<(f64, VqeReport)> {
-    let cfg = VqeConfig {
-        max_iterations: 600,
-        ..VqeConfig::default()
-    };
-    curve
-        .bond_lengths
-        .iter()
-        .filter_map(|&r| {
-            let molecule = diatomic(curve.label, curve.formula, curve.z, r, 0);
-            match solve(&molecule, &cfg) {
-                Ok(report) => Some((r, report)),
-                Err(e) => {
-                    println!("  r = {r:.3} Å: {e}");
-                    None
-                }
+    let mut guess = None;
+    let mut points = Vec::new();
+    for &r in &curve.bond_lengths {
+        let cfg = VqeConfig {
+            max_iterations: 600,
+            scf_guess: guess.clone(),
+            ..VqeConfig::default()
+        };
+        let molecule = diatomic(curve.label, curve.formula, curve.z, r, 0);
+        match solve_detailed(&molecule, &cfg) {
+            Ok(solved) => {
+                guess = Some(solved.scf_coefficients);
+                points.push((r, solved.report));
             }
-        })
-        .collect()
+            Err(e) => println!("  r = {r:.3} Å: {e}"),
+        }
+    }
+    points
 }
 
 fn print_curve(label: &str, points: &[(f64, VqeReport)]) {
     println!("\n {label}");
     println!(
-        " {:>7} {:>13} {:>13} {:>13} {:>10} {:>10} {:>6}",
-        "R (Å)", "E(HF)", "E(FCI)", "E(VQE)", "HF err mHa", "VQE err mHa", "conv"
+        " {:>7} {:>13} {:>13} {:>13} {:>10} {:>10} {:>6} {:>18}",
+        "R (Å)", "E(HF)", "E(FCI)", "E(VQE)", "HF err mHa", "VQE err mHa", "conv", "SCF"
     );
     for (r, p) in points {
         println!(
-            " {:>7.3} {:>13.6} {:>13.6} {:>13.6} {:>10.2} {:>11.4} {:>6}",
+            " {:>7.3} {:>13.6} {:>13.6} {:>13.6} {:>10.2} {:>11.4} {:>6} {:>18}",
             r,
             p.hf_energy,
             p.fci_energy,
             p.vqe_energy,
             (p.hf_energy - p.fci_energy) * 1e3,
             p.vqe_error_vs_fci * 1e3,
-            p.converged
+            p.converged,
+            format!("{} ({})", p.scf_strategy, p.scf_iterations)
         );
     }
 }
