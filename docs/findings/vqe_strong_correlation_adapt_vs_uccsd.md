@@ -65,7 +65,43 @@ With the default tolerance ADAPT reaches chemical accuracy at only 4 of 12 N₂ 
 1. **The 1e-3 stopping rule is too loose for N₂.** At 1e-4 ADAPT is inside chemical accuracy at 9 of 12 points, with errors of 0.04-0.11 mHa from 1.0 to 2.0 Å.
 2. **At 2.8 and 3.0 Å ADAPT is trapped.** It stops at 82.4-82.6 mHa with 46 operators even at tolerance 1e-4: every operator in the pool has a gradient below 1e-4 at a state 82 mHa above the exact energy. This is a gradient trough of the occupied-to-virtual pool on that Hartree-Fock reference, not an early stop; UCCSD from zero and warm starts reaches 0.26-0.62 mHa at the same points.
 
-The trap depends on the reference. Beyond 2.2 Å the lowest-energy restricted Hartree-Fock solution is a different SCF state from the one obtained by following the orbitals out from equilibrium (its Hartree-Fock energy is lower). In an earlier, unrecorded run that kept the followed state, ADAPT stayed at 0.2-0.7 mHa out to 3.0 Å. The lower-energy SCF state is therefore not automatically the better reference for a correlated method. Remedies that this study does not test: a generalised (all-orbital) pool, qubit-excitation pools, or restarting ADAPT from a different reference when the pool gradient vanishes far above a variational estimate.
+The trap depends on the reference. Beyond 2.2 Å the lowest-energy restricted Hartree-Fock solution is a different SCF state from the one obtained by following the orbitals out from equilibrium (its Hartree-Fock energy is lower). Section 3.4 tests whether the pool or the reference causes it.
+
+### 3.4 Follow-up: pools and references (`vqe_adapt_pools`)
+
+The stretched region rerun with three ADAPT pools and both Hartree-Fock branches, all at the default 1e-3 tolerance (`results/hosts/unknown-cpu/data/vqe_adapt_pools_report.json`):
+
+* **occ-virt:** the original pool (fermionic singles and doubles, occupied to virtual; 315 operators for N₂, 117 for H₆).
+* **GSD:** fermionic generalised singles and doubles between any orbitals on distinct spin orbitals (2,044 for N₂, 570 for H₆).
+* **qubit GSD:** the same excitations as qubit excitations, without Jordan-Wigner parity strings (Yordanov et al., PRA 102, 062612, 2020).
+* **lowest / followed:** the lowest-energy RHF solution of a seeded and a cold start, or the solution reached by following the orbitals out from 1.0 Å (N₂) or 0.8 Å (H₆) only.
+
+Error against FCI in mHa (operators in parentheses):
+
+| N₂ (Å) | E_HF followed - lowest | occ-virt, lowest | GSD, lowest | qubit GSD, lowest | occ-virt, followed | GSD, followed |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1.6 | 0 | 0.85 (132) | 0.06 (172) | 0.09 (196) | 0.85 (132) | 0.06 (172) |
+| 2.0 | 0 | 0.53 (108) | 0.05 (154) | 0.09 (188) | 0.53 (108) | 0.05 (154) |
+| 2.2 | 43 | 6.82 (144) | 0.06 (148) | 0.04 (162) | 0.32 (81) | 0.04 (148) |
+| 2.4 | 149 | 81.23 (53) | 1.05 (94) | 1.07 (99) | 0.25 (85) | 0.02 (140) |
+| 2.6 | 227 | 84.51 (56) | 0.55 (95) | 0.58 (91) | 0.69 (47) | 0.58 (68) |
+| 2.8 | 285 | 82.63 (42) | 0.25 (80) | 0.61 (55) | 0.33 (43) | 0.25 (67) |
+| 3.0 | 328 | 82.39 (40) | 0.25 (52) | 0.26 (63) | 0.19 (39) | 0.21 (71) |
+
+| H₆ (Å) | occ-virt | GSD | qubit GSD |
+| ---: | ---: | ---: | ---: |
+| 1.4 | 3.31 (59) | 0.03 (138) | 0.01 (181) |
+| 1.8 | 0.15 (161) | 0.02 (168) | 0.00 (186) |
+| 2.2 | 0.27 (142) | 0.01 (186) | 0.00 (191) |
+| 2.6 | 5.92 (77) | 0.01 (187) | 0.01 (198) |
+| 3.0 | 1.42 (68) | 1.36 (96) | 1.35 (140) |
+
+(H₆ has a single Hartree-Fock branch along this scan, so its followed columns equal the lowest ones.)
+
+* **The trap needs both the occupied-to-virtual pool and the lowest-energy reference.** Changing either removes it: the generalised pools reach 0.25-1.07 mHa on the same reference, and the original pool reaches 0.19-0.69 mHa from the followed reference, whose Hartree-Fock energy is up to 328 mHa *higher*. A lower SCF energy is not a better reference for this pool.
+* **With a generalised pool ADAPT is inside chemical accuracy at every N₂ and H₆ point tested,** including the two H₆ points the original pool missed (1.4 and 2.6 Å). No run hit the 250-operator cap; all stopped on the gradient criterion.
+* **The price is more operators.** GSD needs 52-187 operators where the original pool needed 40-161, and its naive Jordan-Wigner circuits up to 21,760 CNOTs (N₂ at 1.8 Å) against up to 14,272. Each step also scans a 6.5 times larger pool (N₂: 2,044 against 315 gradients per step).
+* **Qubit excitations reach the same accuracy** with similar operator counts. Their CNOT counts (671-2,712 for N₂) use the dedicated qubit-excitation circuits (2 CNOTs per single, 13 per double) and are not comparable with the naive Jordan-Wigner counts of the fermionic columns: efficient fermionic circuits close much of that gap.
 
 ## 4. Infrastructure fixed on the way (M1)
 
@@ -77,7 +113,7 @@ The trap depends on the reference. Beyond 2.2 Å the lowest-energy restricted Ha
 
 * STO-3G minimal basis and frozen core: the FCI reference is exact only within this active space.
 * Exact state-vector simulation: no shot noise or gate error. The CNOT counts are what a device would have to run.
-* One ADAPT pool (fermionic occupied-to-virtual singles and doubles). The N₂ trap may not occur with other pools.
+* Three ADAPT pools on the stretched N₂ and H₆ points (Section 3.4); the full curves of Section 3 use the occupied-to-virtual pool only. Gate-level circuits for the qubit pool are costed from published formulas, not compiled here.
 * CCSD is solved in the determinant basis, which is exact for these sizes but scales exponentially; it is a reference implementation, not a production CCSD.
 
 ## 6. Reproduce
@@ -85,8 +121,9 @@ The trap depends on the reference. Beyond 2.2 Å the lowest-energy restricted Ha
 ```bash
 cargo run --release -p t1000 --bin vqe_strong_correlation                      # all systems, ADAPT tol 1e-3
 cargo run --release -p t1000 --bin vqe_strong_correlation N2 --adapt-tol 1e-4  # the N2 tolerance study
+cargo run --release -p t1000 --bin vqe_adapt_pools                             # pools and references, N2 and H6
 cargo run --release -p t1000 --bin vqe_dissociation                            # H2 and LiH to 5 Å
-cargo test --release -p t1000 --lib vqe::                                      # 64 unit tests
+cargo test --release -p t1000 --lib vqe::                                      # 67 unit tests
 ```
 
 Add `--record` to save; reports go to `results/hosts/<host>/data/`.

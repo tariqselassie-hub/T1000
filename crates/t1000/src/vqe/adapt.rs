@@ -197,4 +197,20 @@ mod tests {
         assert!((adapt.energy - fci).abs() < (uccsd.value - fci).abs() + 1e-6);
         assert!(adapt.selected.len() <= 2 * pool.len());
     }
+
+    #[test]
+    fn generalized_and_qubit_pools_reach_the_exact_h2_energy() {
+        use super::super::uccsd::generalized_excitations;
+        let (h, sector, reference, fci) = setup(&by_formula("H2").unwrap());
+        let gen = generalized_excitations(&sector);
+        let qubit: Vec<Excitation> = gen.iter().map(Excitation::to_qubit).collect();
+        for pool in [gen, qubit] {
+            let r = adapt_vqe(&h, &pool, &reference, &AdaptConfig::default());
+            assert!(
+                r.converged && (r.energy - fci).abs() < 1e-9,
+                "{:?}",
+                r.steps
+            );
+        }
+    }
 }

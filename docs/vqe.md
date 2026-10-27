@@ -19,6 +19,7 @@ cargo run --release -p t1000 --bin vqe_molecules LiH,H2O         # a selection
 cargo run --release -p t1000 --bin vqe_molecules CH4 --active 6  # correlate 6 orbitals only
 cargo run --release -p t1000 --bin vqe_dissociation              # H2 and LiH bond-stretch curves
 cargo run --release -p t1000 --bin vqe_strong_correlation        # H4, H6, N2: UCCSD, ADAPT, MP2, CISD, CCSD vs FCI
+cargo run --release -p t1000 --bin vqe_adapt_pools               # ADAPT pools and Hartree-Fock references on stretched N2, H6
 ```
 
 ## Modules
@@ -33,8 +34,8 @@ cargo run --release -p t1000 --bin vqe_strong_correlation        # H4, H6, N2: U
 | `pauli` | Jordan-Wigner transform to a real Pauli-term Hamiltonian; term and weight statistics. |
 | `fermion` | The fixed-`(N_α, N_β)` determinant sector and the sparse Hamiltonian in it. |
 | `lanczos` | Ground-state solver: the exact (full CI) reference. |
-| `uccsd` | UCCSD excitations as exact determinant-pair rotations, with analytic gradients. |
-| `adapt` | ADAPT-VQE: grows the ansatz from a pool by the largest energy gradient. |
+| `uccsd` | UCCSD excitations as exact determinant-pair rotations, with analytic gradients; also the generalised (all-orbital) singles and doubles and their qubit-excitation form. |
+| `adapt` | ADAPT-VQE: grows the ansatz from a pool (occupied-to-virtual, generalised, or qubit excitations) by the largest energy gradient. |
 | `classical` | MP2, CISD and CCSD baselines in the same active space (CCSD solved exactly in the determinant basis). |
 | `optimize` | BFGS with an Armijo line search. |
 | `driver` | The pipeline and the serialisable `VqeReport` (`solve_detailed` keeps the intermediates). |
@@ -257,7 +258,8 @@ What it says:
 * **UCCSD, not FCI.** The ansatz stops at double excitations, so strongly correlated cases do not
   reach chemical accuracy. `vqe_strong_correlation` measures where: UCCSD is inside chemical accuracy at
   7 of 13 points of the stretched H₄ chain, 4 of 13 for H₆ and 4 of 12 for N₂, while ADAPT-VQE reaches
-  12, 11 and 9 (N₂ with a 1e-4 gradient tolerance). See
+  12, 11 and 9 (N₂ with a 1e-4 gradient tolerance); with a generalised pool ADAPT is inside chemical
+  accuracy at every stretched N₂ and H₆ point tested (`vqe_adapt_pools`). See
   `docs/findings/vqe_strong_correlation_adapt_vs_uccsd.md`.
 * **Hardware cost.** The Pauli-term counts above are what a QPU would have to measure per energy
   estimate; a circuit-level compilation of the UCCSD exponentials is not included.

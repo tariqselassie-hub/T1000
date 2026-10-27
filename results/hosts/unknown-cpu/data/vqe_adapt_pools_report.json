@@ -1,0 +1,980 @@
+{
+  "H6": {
+    "label": "H6 linear chain (12 qubits)",
+    "points": [
+      {
+        "coordinate": 1.4,
+        "fci": -3.0446002479186314,
+        "hf_followed": -2.837315727465919,
+        "hf_lowest": -2.837315727465919,
+        "pool_sizes": [
+          117,
+          570,
+          570
+        ],
+        "runs": [
+          {
+            "cnot": 4560,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -3.0412940333566576,
+            "error_mha": 3.306214561973775,
+            "final_gradient_norm": 0.0007982584207952112,
+            "operators": 59,
+            "time_ms": 31.3521,
+            "unique_operators": 59,
+            "variant": "occ-virt"
+          },
+          {
+            "cnot": 13472,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -3.0445744431921105,
+            "error_mha": 0.025804726520917143,
+            "final_gradient_norm": 0.000973930266998982,
+            "operators": 138,
+            "time_ms": 502.684,
+            "unique_operators": 121,
+            "variant": "GSD"
+          },
+          {
+            "cnot": 2199,
+            "cnot_model": "qubit-excitation circuits",
+            "converged": true,
+            "energy": -3.044590702174387,
+            "error_mha": 0.009545744244388032,
+            "final_gradient_norm": 0.0008431631764214222,
+            "operators": 181,
+            "time_ms": 1474.6013,
+            "unique_operators": 121,
+            "variant": "qubit GSD"
+          },
+          {
+            "cnot": 4560,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -3.0412940333566576,
+            "error_mha": 3.306214561973775,
+            "final_gradient_norm": 0.0007982584207952112,
+            "operators": 59,
+            "time_ms": 27.355999999999998,
+            "unique_operators": 59,
+            "variant": "occ-virt/fol"
+          },
+          {
+            "cnot": 13472,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -3.0445744431921105,
+            "error_mha": 0.025804726520917143,
+            "final_gradient_norm": 0.000973930266998982,
+            "operators": 138,
+            "time_ms": 491.11830000000003,
+            "unique_operators": 121,
+            "variant": "GSD/fol"
+          }
+        ]
+      },
+      {
+        "coordinate": 1.8,
+        "fci": -2.8875693805414135,
+        "hf_followed": -2.5064402789439564,
+        "hf_lowest": -2.5064402789439564,
+        "pool_sizes": [
+          117,
+          570,
+          570
+        ],
+        "runs": [
+          {
+            "cnot": 12704,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -2.887424364830268,
+            "error_mha": 0.14501571114555745,
+            "final_gradient_norm": 0.0009892070141519292,
+            "operators": 161,
+            "time_ms": 1840.9569000000001,
+            "unique_operators": 59,
+            "variant": "occ-virt"
+          },
+          {
+            "cnot": 15744,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -2.887549321257482,
+            "error_mha": 0.020059283931672667,
+            "final_gradient_norm": 0.0009765446459040877,
+            "operators": 168,
+            "time_ms": 949.6532,
+            "unique_operators": 144,
+            "variant": "GSD"
+          },
+          {
+            "cnot": 2209,
+            "cnot_model": "qubit-excitation circuits",
+            "converged": true,
+            "energy": -2.8875648631034796,
+            "error_mha": 0.004517437933948543,
+            "final_gradient_norm": 0.0008925791081141458,
+            "operators": 186,
+            "time_ms": 1493.133,
+            "unique_operators": 127,
+            "variant": "qubit GSD"
+          },
+          {
+            "cnot": 12704,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -2.887424364830268,
+            "error_mha": 0.14501571114555745,
+            "final_gradient_norm": 0.0009892070141519292,
+            "operators": 161,
+            "time_ms": 2010.7615,
+            "unique_operators": 59,
+            "variant": "occ-virt/fol"
+          },
+          {
+            "cnot": 15744,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -2.887549321257482,
+            "error_mha": 0.020059283931672667,
+            "final_gradient_norm": 0.0009765446459040877,
+            "operators": 168,
+            "time_ms": 911.4289,
+            "unique_operators": 144,
+            "variant": "GSD/fol"
+          }
+        ]
+      },
+      {
+        "coordinate": 2.2,
+        "fci": -2.8243416563857155,
+        "hf_followed": -2.252466921511211,
+        "hf_lowest": -2.252466921511211,
+        "pool_sizes": [
+          117,
+          570,
+          570
+        ],
+        "runs": [
+          {
+            "cnot": 11104,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -2.8240756698175673,
+            "error_mha": 0.2659865681482465,
+            "final_gradient_norm": 0.0009682725414135012,
+            "operators": 142,
+            "time_ms": 1400.0079,
+            "unique_operators": 59,
+            "variant": "occ-virt"
+          },
+          {
+            "cnot": 17312,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -2.824334116525756,
+            "error_mha": 0.007539859959493356,
+            "final_gradient_norm": 0.000979806513932674,
+            "operators": 186,
+            "time_ms": 2366.3669,
+            "unique_operators": 152,
+            "variant": "GSD"
+          },
+          {
+            "cnot": 2285,
+            "cnot_model": "qubit-excitation circuits",
+            "converged": true,
+            "energy": -2.8243368887673466,
+            "error_mha": 0.0047676183689837615,
+            "final_gradient_norm": 0.0008770864091021167,
+            "operators": 191,
+            "time_ms": 2214.0722,
+            "unique_operators": 136,
+            "variant": "qubit GSD"
+          },
+          {
+            "cnot": 11104,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -2.8240756698175673,
+            "error_mha": 0.2659865681482465,
+            "final_gradient_norm": 0.0009682725414135012,
+            "operators": 142,
+            "time_ms": 1379.3481000000002,
+            "unique_operators": 59,
+            "variant": "occ-virt/fol"
+          },
+          {
+            "cnot": 17312,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -2.824334116525756,
+            "error_mha": 0.007539859959493356,
+            "final_gradient_norm": 0.000979806513932674,
+            "operators": 186,
+            "time_ms": 2398.5872,
+            "unique_operators": 152,
+            "variant": "GSD/fol"
+          }
+        ]
+      },
+      {
+        "coordinate": 2.6,
+        "fci": -2.80578476954285,
+        "hf_followed": -2.0804751410363647,
+        "hf_lowest": -2.0804751410363647,
+        "pool_sizes": [
+          117,
+          570,
+          570
+        ],
+        "runs": [
+          {
+            "cnot": 5008,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -2.79986023092727,
+            "error_mha": 5.924538615579955,
+            "final_gradient_norm": 0.0009107462176963897,
+            "operators": 77,
+            "time_ms": 375.61220000000003,
+            "unique_operators": 47,
+            "variant": "occ-virt"
+          },
+          {
+            "cnot": 16944,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -2.805773841359863,
+            "error_mha": 0.010928182986980062,
+            "final_gradient_norm": 0.0008605075248976975,
+            "operators": 187,
+            "time_ms": 3361.6762,
+            "unique_operators": 129,
+            "variant": "GSD"
+          },
+          {
+            "cnot": 2299,
+            "cnot_model": "qubit-excitation circuits",
+            "converged": true,
+            "energy": -2.8057793747996858,
+            "error_mha": 0.005394743164188753,
+            "final_gradient_norm": 0.0008001889765305167,
+            "operators": 198,
+            "time_ms": 3251.5475,
+            "unique_operators": 145,
+            "variant": "qubit GSD"
+          },
+          {
+            "cnot": 5008,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -2.79986023092727,
+            "error_mha": 5.924538615579955,
+            "final_gradient_norm": 0.0009107462176963897,
+            "operators": 77,
+            "time_ms": 353.0675,
+            "unique_operators": 47,
+            "variant": "occ-virt/fol"
+          },
+          {
+            "cnot": 16944,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -2.805773841359863,
+            "error_mha": 0.010928182986980062,
+            "final_gradient_norm": 0.0008605075248976975,
+            "operators": 187,
+            "time_ms": 3360.5249000000003,
+            "unique_operators": 129,
+            "variant": "GSD/fol"
+          }
+        ]
+      },
+      {
+        "coordinate": 3.0,
+        "fci": -2.800958904541361,
+        "hf_followed": -1.9706022480941559,
+        "hf_lowest": -1.9706022480941559,
+        "pool_sizes": [
+          117,
+          570,
+          570
+        ],
+        "runs": [
+          {
+            "cnot": 4160,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -2.799541395600338,
+            "error_mha": 1.4175089410231045,
+            "final_gradient_norm": 0.0009191085412100498,
+            "operators": 68,
+            "time_ms": 205.6808,
+            "unique_operators": 36,
+            "variant": "occ-virt"
+          },
+          {
+            "cnot": 9184,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -2.7996000059427515,
+            "error_mha": 1.3588985986094926,
+            "final_gradient_norm": 0.000820036813571538,
+            "operators": 96,
+            "time_ms": 330.598,
+            "unique_operators": 79,
+            "variant": "GSD"
+          },
+          {
+            "cnot": 1490,
+            "cnot_model": "qubit-excitation circuits",
+            "converged": true,
+            "energy": -2.7996131226593595,
+            "error_mha": 1.3457818820015177,
+            "final_gradient_norm": 0.0008457879872132288,
+            "operators": 140,
+            "time_ms": 1374.6309,
+            "unique_operators": 92,
+            "variant": "qubit GSD"
+          },
+          {
+            "cnot": 4160,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -2.799541395600338,
+            "error_mha": 1.4175089410231045,
+            "final_gradient_norm": 0.0009191085412100498,
+            "operators": 68,
+            "time_ms": 217.0802,
+            "unique_operators": 36,
+            "variant": "occ-virt/fol"
+          },
+          {
+            "cnot": 9184,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -2.7996000059427515,
+            "error_mha": 1.3588985986094926,
+            "final_gradient_norm": 0.000820036813571538,
+            "operators": 96,
+            "time_ms": 343.7311,
+            "unique_operators": 79,
+            "variant": "GSD/fol"
+          }
+        ]
+      }
+    ]
+  },
+  "N2": {
+    "label": "N2 dissociation (16 qubits)",
+    "points": [
+      {
+        "coordinate": 1.6,
+        "fci": -107.54196187778184,
+        "hf_followed": -107.18484649607575,
+        "hf_lowest": -107.18484649607575,
+        "pool_sizes": [
+          315,
+          2044,
+          2044
+        ],
+        "runs": [
+          {
+            "cnot": 14272,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -107.54110851546511,
+            "error_mha": 0.8533623167323867,
+            "final_gradient_norm": 0.000900878287365263,
+            "operators": 132,
+            "time_ms": 6702.0391,
+            "unique_operators": 53,
+            "variant": "occ-virt"
+          },
+          {
+            "cnot": 20224,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -107.54189884167528,
+            "error_mha": 0.06303610656743786,
+            "final_gradient_norm": 0.000956313944648222,
+            "operators": 172,
+            "time_ms": 8813.8299,
+            "unique_operators": 131,
+            "variant": "GSD"
+          },
+          {
+            "cnot": 2504,
+            "cnot_model": "qubit-excitation circuits",
+            "converged": true,
+            "energy": -107.54187383603389,
+            "error_mha": 0.08804174795784547,
+            "final_gradient_norm": 0.0009326880206912858,
+            "operators": 196,
+            "time_ms": 13811.482999999998,
+            "unique_operators": 122,
+            "variant": "qubit GSD"
+          },
+          {
+            "cnot": 14272,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -107.54110851546511,
+            "error_mha": 0.8533623167323867,
+            "final_gradient_norm": 0.000900878287365263,
+            "operators": 132,
+            "time_ms": 7171.221799999999,
+            "unique_operators": 53,
+            "variant": "occ-virt/fol"
+          },
+          {
+            "cnot": 20224,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -107.54189884167528,
+            "error_mha": 0.06303610656743786,
+            "final_gradient_norm": 0.000956313944648222,
+            "operators": 172,
+            "time_ms": 10208.0696,
+            "unique_operators": 131,
+            "variant": "GSD/fol"
+          }
+        ]
+      },
+      {
+        "coordinate": 1.8,
+        "fci": -107.48338330991538,
+        "hf_followed": -107.017326942561,
+        "hf_lowest": -107.017326942561,
+        "pool_sizes": [
+          315,
+          2044,
+          2044
+        ],
+        "runs": [
+          {
+            "cnot": 10464,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -107.482406971142,
+            "error_mha": 0.9763387733841,
+            "final_gradient_norm": 0.0009470109355324262,
+            "operators": 100,
+            "time_ms": 2708.7391,
+            "unique_operators": 53,
+            "variant": "occ-virt"
+          },
+          {
+            "cnot": 21760,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -107.48332961441507,
+            "error_mha": 0.05369550031275594,
+            "final_gradient_norm": 0.0009695976132078242,
+            "operators": 186,
+            "time_ms": 11001.0887,
+            "unique_operators": 125,
+            "variant": "GSD"
+          },
+          {
+            "cnot": 2712,
+            "cnot_model": "qubit-excitation circuits",
+            "converged": true,
+            "energy": -107.48329034326439,
+            "error_mha": 0.092966650996118,
+            "final_gradient_norm": 0.000999307918233431,
+            "operators": 212,
+            "time_ms": 19652.5609,
+            "unique_operators": 136,
+            "variant": "qubit GSD"
+          },
+          {
+            "cnot": 10464,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -107.482406971142,
+            "error_mha": 0.9763387733841,
+            "final_gradient_norm": 0.0009470109355324262,
+            "operators": 100,
+            "time_ms": 2536.4573,
+            "unique_operators": 53,
+            "variant": "occ-virt/fol"
+          },
+          {
+            "cnot": 21760,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -107.48332961441507,
+            "error_mha": 0.05369550031275594,
+            "final_gradient_norm": 0.0009695976132078242,
+            "operators": 186,
+            "time_ms": 10529.2514,
+            "unique_operators": 125,
+            "variant": "GSD/fol"
+          }
+        ]
+      },
+      {
+        "coordinate": 2.0,
+        "fci": -107.4551160058444,
+        "hf_followed": -106.87150408372395,
+        "hf_lowest": -106.87150408372395,
+        "pool_sizes": [
+          315,
+          2044,
+          2044
+        ],
+        "runs": [
+          {
+            "cnot": 11232,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -107.45458105654433,
+            "error_mha": 0.5349493000750272,
+            "final_gradient_norm": 0.0009315696851542117,
+            "operators": 108,
+            "time_ms": 5093.4431,
+            "unique_operators": 53,
+            "variant": "occ-virt"
+          },
+          {
+            "cnot": 18176,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -107.45507032874187,
+            "error_mha": 0.045677102534114056,
+            "final_gradient_norm": 0.000979224421023825,
+            "operators": 154,
+            "time_ms": 8413.910899999999,
+            "unique_operators": 116,
+            "variant": "GSD"
+          },
+          {
+            "cnot": 2378,
+            "cnot_model": "qubit-excitation circuits",
+            "converged": true,
+            "energy": -107.4550288916108,
+            "error_mha": 0.08711423360807657,
+            "final_gradient_norm": 0.0009546876447107122,
+            "operators": 188,
+            "time_ms": 11028.4537,
+            "unique_operators": 137,
+            "variant": "qubit GSD"
+          },
+          {
+            "cnot": 11232,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -107.45458105654433,
+            "error_mha": 0.5349493000750272,
+            "final_gradient_norm": 0.0009315696851542117,
+            "operators": 108,
+            "time_ms": 5065.1022,
+            "unique_operators": 53,
+            "variant": "occ-virt/fol"
+          },
+          {
+            "cnot": 18176,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -107.45507032874187,
+            "error_mha": 0.045677102534114056,
+            "final_gradient_norm": 0.000979224421023825,
+            "operators": 154,
+            "time_ms": 8380.8387,
+            "unique_operators": 116,
+            "variant": "GSD/fol"
+          }
+        ]
+      },
+      {
+        "coordinate": 2.2,
+        "fci": -107.44484359882438,
+        "hf_followed": -106.75183130831734,
+        "hf_lowest": -106.7950068892231,
+        "pool_sizes": [
+          315,
+          2044,
+          2044
+        ],
+        "runs": [
+          {
+            "cnot": 13824,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -107.43801888826408,
+            "error_mha": 6.824710560294989,
+            "final_gradient_norm": 0.0008173924537499035,
+            "operators": 144,
+            "time_ms": 13594.0028,
+            "unique_operators": 38,
+            "variant": "occ-virt"
+          },
+          {
+            "cnot": 17344,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -107.44478839233504,
+            "error_mha": 0.055206489335546394,
+            "final_gradient_norm": 0.0009592147098218796,
+            "operators": 148,
+            "time_ms": 6619.971,
+            "unique_operators": 104,
+            "variant": "GSD"
+          },
+          {
+            "cnot": 2051,
+            "cnot_model": "qubit-excitation circuits",
+            "converged": true,
+            "energy": -107.44479875244731,
+            "error_mha": 0.04484637706525518,
+            "final_gradient_norm": 0.0009755867336600963,
+            "operators": 162,
+            "time_ms": 8641.988,
+            "unique_operators": 112,
+            "variant": "qubit GSD"
+          },
+          {
+            "cnot": 8048,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -107.44452196521773,
+            "error_mha": 0.31618287501089526,
+            "final_gradient_norm": 0.0009489096919477059,
+            "operators": 81,
+            "time_ms": 1791.3399000000002,
+            "unique_operators": 47,
+            "variant": "occ-virt/fol"
+          },
+          {
+            "cnot": 18240,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -107.4447944526143,
+            "error_mha": 0.043695478439076396,
+            "final_gradient_norm": 0.0009649952042955093,
+            "operators": 148,
+            "time_ms": 5946.3308,
+            "unique_operators": 98,
+            "variant": "GSD/fol"
+          }
+        ]
+      },
+      {
+        "coordinate": 2.4,
+        "fci": -107.44129965700913,
+        "hf_followed": -106.65660809375049,
+        "hf_lowest": -106.80544086983424,
+        "pool_sizes": [
+          315,
+          2044,
+          2044
+        ],
+        "runs": [
+          {
+            "cnot": 4688,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -107.36007269076369,
+            "error_mha": 81.22696624543835,
+            "final_gradient_norm": 0.0009105127335745564,
+            "operators": 53,
+            "time_ms": 627.4889999999999,
+            "unique_operators": 35,
+            "variant": "occ-virt"
+          },
+          {
+            "cnot": 10432,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -107.44024808917968,
+            "error_mha": 1.0515678294495956,
+            "final_gradient_norm": 0.0009591459810146016,
+            "operators": 94,
+            "time_ms": 2635.2333,
+            "unique_operators": 80,
+            "variant": "GSD"
+          },
+          {
+            "cnot": 1243,
+            "cnot_model": "qubit-excitation circuits",
+            "converged": true,
+            "energy": -107.44023458401651,
+            "error_mha": 1.0650729926169333,
+            "final_gradient_norm": 0.0009804316405012702,
+            "operators": 99,
+            "time_ms": 3107.3768,
+            "unique_operators": 82,
+            "variant": "qubit GSD"
+          },
+          {
+            "cnot": 8592,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -107.44104279594164,
+            "error_mha": 0.2530792049100228,
+            "final_gradient_norm": 0.0009654216738279494,
+            "operators": 85,
+            "time_ms": 1659.4095,
+            "unique_operators": 45,
+            "variant": "occ-virt/fol"
+          },
+          {
+            "cnot": 16640,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -107.44127521772337,
+            "error_mha": 0.0206574231782497,
+            "final_gradient_norm": 0.0009903275927524407,
+            "operators": 140,
+            "time_ms": 5499.593199999999,
+            "unique_operators": 96,
+            "variant": "GSD/fol"
+          }
+        ]
+      },
+      {
+        "coordinate": 2.6,
+        "fci": -107.43978245517086,
+        "hf_followed": -106.58195537800725,
+        "hf_lowest": -106.80929707428434,
+        "pool_sizes": [
+          315,
+          2044,
+          2044
+        ],
+        "runs": [
+          {
+            "cnot": 5056,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -107.3552720401604,
+            "error_mha": 84.51041501045609,
+            "final_gradient_norm": 0.000771333666296151,
+            "operators": 56,
+            "time_ms": 574.8828,
+            "unique_operators": 36,
+            "variant": "occ-virt"
+          },
+          {
+            "cnot": 10608,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -107.4392297427571,
+            "error_mha": 0.5527124137501005,
+            "final_gradient_norm": 0.000978342957013917,
+            "operators": 95,
+            "time_ms": 2740.9642,
+            "unique_operators": 76,
+            "variant": "GSD"
+          },
+          {
+            "cnot": 1161,
+            "cnot_model": "qubit-excitation circuits",
+            "converged": true,
+            "energy": -107.43920316979487,
+            "error_mha": 0.5792853759913896,
+            "final_gradient_norm": 0.0009596852615753597,
+            "operators": 91,
+            "time_ms": 2376.103,
+            "unique_operators": 73,
+            "variant": "qubit GSD"
+          },
+          {
+            "cnot": 4816,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -107.43909495105392,
+            "error_mha": 0.6851284889677345,
+            "final_gradient_norm": 0.0007584791738095301,
+            "operators": 47,
+            "time_ms": 322.6616,
+            "unique_operators": 31,
+            "variant": "occ-virt/fol"
+          },
+          {
+            "cnot": 8096,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -107.43919890013274,
+            "error_mha": 0.5811794101475698,
+            "final_gradient_norm": 0.0009537771023398439,
+            "operators": 68,
+            "time_ms": 960.6426,
+            "unique_operators": 57,
+            "variant": "GSD/fol"
+          }
+        ]
+      },
+      {
+        "coordinate": 2.8,
+        "fci": -107.43895799035683,
+        "hf_followed": -106.52411521805003,
+        "hf_lowest": -106.80953101415766,
+        "pool_sizes": [
+          315,
+          2044,
+          2044
+        ],
+        "runs": [
+          {
+            "cnot": 3584,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -107.35633186092807,
+            "error_mha": 82.62612942876046,
+            "final_gradient_norm": 0.0009471984272569479,
+            "operators": 42,
+            "time_ms": 448.77470000000005,
+            "unique_operators": 34,
+            "variant": "occ-virt"
+          },
+          {
+            "cnot": 8384,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -107.4387110661619,
+            "error_mha": 0.24692419492566842,
+            "final_gradient_norm": 0.0008990783351511386,
+            "operators": 80,
+            "time_ms": 2320.6641,
+            "unique_operators": 67,
+            "variant": "GSD"
+          },
+          {
+            "cnot": 671,
+            "cnot_model": "qubit-excitation circuits",
+            "converged": true,
+            "energy": -107.43834983001808,
+            "error_mha": 0.6081603387428913,
+            "final_gradient_norm": 0.000958030545887237,
+            "operators": 55,
+            "time_ms": 1103.1246999999998,
+            "unique_operators": 46,
+            "variant": "qubit GSD"
+          },
+          {
+            "cnot": 4272,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -107.4386273209768,
+            "error_mha": 0.32923660155859125,
+            "final_gradient_norm": 0.0008208830055192297,
+            "operators": 43,
+            "time_ms": 269.68370000000004,
+            "unique_operators": 29,
+            "variant": "occ-virt/fol"
+          },
+          {
+            "cnot": 7984,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -107.43870286062328,
+            "error_mha": 0.25369695508459245,
+            "final_gradient_norm": 0.0009593993338170764,
+            "operators": 67,
+            "time_ms": 1246.753,
+            "unique_operators": 58,
+            "variant": "GSD/fol"
+          }
+        ]
+      },
+      {
+        "coordinate": 3.0,
+        "fci": -107.43849038807869,
+        "hf_followed": -106.47984266834068,
+        "hf_lowest": -106.80780626178102,
+        "pool_sizes": [
+          315,
+          2044,
+          2044
+        ],
+        "runs": [
+          {
+            "cnot": 3008,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -107.35609550943404,
+            "error_mha": 82.39487864464934,
+            "final_gradient_norm": 0.0008692878162080648,
+            "operators": 40,
+            "time_ms": 431.6927,
+            "unique_operators": 31,
+            "variant": "occ-virt"
+          },
+          {
+            "cnot": 4704,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -107.43823699073134,
+            "error_mha": 0.25339734735041475,
+            "final_gradient_norm": 0.0008786627303089484,
+            "operators": 52,
+            "time_ms": 592.8681,
+            "unique_operators": 44,
+            "variant": "GSD"
+          },
+          {
+            "cnot": 764,
+            "cnot_model": "qubit-excitation circuits",
+            "converged": true,
+            "energy": -107.438235187968,
+            "error_mha": 0.25520011068635995,
+            "final_gradient_norm": 0.0005118926441609806,
+            "operators": 63,
+            "time_ms": 1313.3364000000001,
+            "unique_operators": 49,
+            "variant": "qubit GSD"
+          },
+          {
+            "cnot": 4016,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -107.43830345513713,
+            "error_mha": 0.1860743535075926,
+            "final_gradient_norm": 0.0009344209072761054,
+            "operators": 39,
+            "time_ms": 233.6234,
+            "unique_operators": 27,
+            "variant": "occ-virt/fol"
+          },
+          {
+            "cnot": 8656,
+            "cnot_model": "naive JW",
+            "converged": true,
+            "energy": -107.4382820770683,
+            "error_mha": 0.20745242234454508,
+            "final_gradient_norm": 0.000923354631595046,
+            "operators": 71,
+            "time_ms": 1416.9365,
+            "unique_operators": 58,
+            "variant": "GSD/fol"
+          }
+        ]
+      }
+    ]
+  },
+  "settings": {
+    "adapt_gradient_norm_tolerance": 0.001,
+    "adapt_max_operators": 250,
+    "basis": "STO-3G",
+    "cnot_models": {
+      "naive JW": "2(w-1) CNOTs per weight-w Pauli rotation of the fermionic excitation",
+      "qubit-excitation circuits": "2 per single, 13 per double (Yordanov et al. 2020)"
+    },
+    "frozen_core": true,
+    "pools": {
+      "GSD": "fermionic generalised singles and doubles on distinct spin orbitals",
+      "occ-virt": "fermionic singles and doubles from occupied to virtual orbitals",
+      "qubit GSD": "the GSD excitations as qubit excitations (no parity strings)"
+    },
+    "references": {
+      "followed": "RHF reached from the previous point's orbitals only",
+      "lowest": "lowest converged RHF of a seeded and a cold start (as in vqe_strong_correlation)"
+    }
+  }
+}
