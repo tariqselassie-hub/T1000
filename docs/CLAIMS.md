@@ -39,6 +39,7 @@ runs; the root `results/` files come from the reference host.
 | 28 | Coulomb eigenspectrum 14,352.5 mol/s; QM9 ingestion 4,056.4 mol/s | `data/molecular_eigensystem_report.json` |
 | 29 | Ab initio VQE: H₂ FCI energy -1.13727; CH₄ error 0.1853 mHa; BeH₂ (largest) 0.3681 mHa | `hosts/unknown-cpu/data/vqe_molecules_report.json` `fci_energy`, `vqe_error_vs_fci` (full table in `docs/vqe.md`) |
 | 29 | Strong correlation: points within chemical accuracy, ADAPT 12/13 (H₄ chain), 11/13 (H₆), 9/12 (N₂, tol 1e-4); UCCSD 7/13, 4/13; CCSD 5/13, 5/13; ADAPT trapped at 82 mHa on N₂ beyond 2.8 Å | `hosts/unknown-cpu/data/vqe_strong_correlation_report.json` `<system>.summary`; N₂ at tol 1e-4 in `vqe_strong_correlation_report.84aad6c6.json` |
+| 29 | ADAPT pools on stretched N₂ (2.4-3.0 Å): occupied-to-virtual pool 81-85 mHa from the lowest RHF; generalised pool 0.25-1.05 mHa, qubit GSD 0.26-1.07 mHa; occupied-to-virtual from the followed RHF 0.19-0.69 mHa | `hosts/unknown-cpu/data/vqe_adapt_pools_report.json` `N2.points[].runs[].error_mha` |
 | 29 | Noisy VQE: naive UCCSD CNOT counts 1,376 (LiH) and 36,480 (CH₄) | `hosts/unknown-cpu/data/vqe_noise_report.json` `resources[*].cnot` (full table in `docs/vqe.md`) |
 | M158 | Szegedy walk sink probability 0.7351 | `data/directed_heptal_quantum_walk_report.json` |
 | 4 | Noisy-RCS fidelity gain +5,147 % (14Q) and +13,543 % (16Q) | `rcs_physical_noise_chaos.json` `depth_sweep[*].fidelity_gain_pct` (see context below) |

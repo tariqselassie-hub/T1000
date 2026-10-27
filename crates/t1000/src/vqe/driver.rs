@@ -31,6 +31,8 @@ pub struct VqeConfig {
     pub gradient_tolerance: f64,
     /// MO coefficients to start the SCF from (for example the previous point of a bond scan).
     pub scf_guess: Option<Vec<f64>>,
+    /// Follow the SCF branch reached from `scf_guess` instead of the lowest one found.
+    pub scf_seed_only: bool,
 }
 
 impl Default for VqeConfig {
@@ -41,6 +43,7 @@ impl Default for VqeConfig {
             max_iterations: 400,
             gradient_tolerance: 1e-6,
             scf_guess: None,
+            scf_seed_only: false,
         }
     }
 }
@@ -97,6 +100,7 @@ pub fn electronic_structure(molecule: &Molecule, cfg: &VqeConfig) -> Result<Prob
     let ints = compute_ao_integrals(&basis, &molecule.atoms);
     let opts = ScfOptions {
         guess: cfg.scf_guess.clone(),
+        seed_only: cfg.scf_seed_only,
     };
     let scf = rhf_with(&ints, molecule.electrons(), &opts)?;
     if !scf.converged {

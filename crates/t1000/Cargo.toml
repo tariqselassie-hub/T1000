@@ -89,6 +89,10 @@ name = "vqe_strong_correlation"
 path = "src/bin/measurements/vqe_strong_correlation.rs"
 
 [[bin]]
+name = "vqe_adapt_pools"
+path = "src/bin/measurements/vqe_adapt_pools.rs"
+
+[[bin]]
 name = "qpu_scaling"
 path = "src/bin/measurements/qpu_scaling.rs"
 

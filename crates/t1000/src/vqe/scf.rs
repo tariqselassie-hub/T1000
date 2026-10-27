@@ -128,6 +128,9 @@ pub struct ScfOptions {
     /// MO coefficients (`n_ao × n_ao`, row-major) to start from, typically the converged orbitals
     /// of a nearby geometry. `None` starts from the core-Hamiltonian guess.
     pub guess: Option<Vec<f64>>,
+    /// Keep the solution reached from `guess` even if a cold start finds a lower SCF state, to
+    /// follow one Hartree-Fock branch along a scan.
+    pub seed_only: bool,
 }
 
 /// One convergence strategy: a virtual-orbital level shift, density damping, and the iteration
@@ -196,6 +199,9 @@ pub fn rhf_with(
     // higher-energy SCF state (the H₄ square is the classic case), so the cold start is always
     // tried as well and the lower converged energy is kept.
     let seeded = staged(ints, &x, n_occ, density(guess, n, n_occ))?;
+    if opts.seed_only {
+        return Ok(seeded);
+    }
     let fresh = staged(ints, &x, n_occ, cold)?;
     Ok(match (seeded.converged, fresh.converged) {
         (true, true) if fresh.energy < seeded.energy - 1e-8 => fresh,
@@ -379,11 +385,26 @@ mod tests {
         // The same state is reached by following the bond out from equilibrium.
         let mut guess = rhf(&lih(1.6), 4).unwrap().coefficients;
         for d in [2.0, 2.5, 3.0, 3.5, 4.0] {
-            guess = rhf_with(&lih(d), 4, &ScfOptions { guess: Some(guess) })
-                .unwrap()
-                .coefficients;
+            guess = rhf_with(
+                &lih(d),
+                4,
+                &ScfOptions {
+                    guess: Some(guess),
+                    ..ScfOptions::default()
+                },
+            )
+            .unwrap()
+            .coefficients;
         }
-        let followed = rhf_with(&lih(4.0), 4, &ScfOptions { guess: Some(guess) }).unwrap();
+        let followed = rhf_with(
+            &lih(4.0),
+            4,
+            &ScfOptions {
+                guess: Some(guess),
+                ..ScfOptions::default()
+            },
+        )
+        .unwrap();
         assert!(followed.converged && followed.iterations <= 4);
         assert!(
             (r.energy - followed.energy).abs() < 1e-7,
@@ -412,7 +433,28 @@ mod tests {
         let ints = rect(1.2);
         let x = inverse_sqrt(&ints.s, ints.n).unwrap();
         let trapped = staged(&ints, &x, 2, density(&seed, ints.n, 2)).unwrap();
-        let chosen = rhf_with(&ints, 4, &ScfOptions { guess: Some(seed) }).unwrap();
+        let kept = rhf_with(
+            &ints,
+            4,
+            &ScfOptions {
+                guess: Some(seed.clone()),
+                seed_only: true,
+            },
+        )
+        .unwrap();
+        assert!(
+            (kept.energy - trapped.energy).abs() < 1e-10,
+            "seed_only follows the seeded branch"
+        );
+        let chosen = rhf_with(
+            &ints,
+            4,
+            &ScfOptions {
+                guess: Some(seed),
+                ..ScfOptions::default()
+            },
+        )
+        .unwrap();
         let cold = rhf(&ints, 4).unwrap();
         assert!(chosen.converged && cold.converged);
         assert!((chosen.energy - cold.energy).abs() < 1e-8);

@@ -59,6 +59,23 @@ impl Excitation {
             .find(|p| p.0 as usize == det)
             .map(|&(_, e, sign)| (e as usize, sign))
     }
+
+    /// True for a two-electron excitation.
+    pub fn is_double(&self) -> bool {
+        self.from.len() == 2
+    }
+
+    /// The qubit excitation on the same spin orbitals: the same determinant pairs with every
+    /// sign `+1`, i.e. the Jordan-Wigner parity strings dropped (Yordanov et al., PRA 102,
+    /// 062612, 2020). Still particle- and spin-conserving, but not a fermionic operator.
+    pub fn to_qubit(&self) -> Excitation {
+        Excitation {
+            label: format!("Q{}", self.label),
+            from: self.from.clone(),
+            to: self.to.clone(),
+            pairs: self.pairs.iter().map(|&(d, e, _)| (d, e, 1.0)).collect(),
+        }
+    }
 }
 
 /// Applies the string `ops` (rightmost first) of `(create?, spin orbital)` to a determinant.
@@ -145,6 +162,64 @@ pub fn uccsd_excitations(sector: &Sector) -> Vec<Excitation> {
                             &[spin_orbital(a, s), spin_orbital(b, s)],
                         ));
                     }
+                }
+            }
+        }
+    }
+    out
+}
+
+/// Generalised singles and doubles: spin-conserving excitations between any orbitals, not only
+/// from occupied to virtual. Each generator `T - T†` appears once (the reverse excitation is the
+/// same rotation with the opposite angle); doubles act on four distinct spin orbitals, and
+/// operators that cannot act inside the sector are dropped.
+pub fn generalized_excitations(sector: &Sector) -> Vec<Excitation> {
+    let m = sector.n_orb;
+    let so = |p: usize, s: usize| 2 * p + s;
+    let mut out = Vec::new();
+    let mut keep = |e: Excitation| {
+        if e.pair_count() > 0 {
+            out.push(e);
+        }
+    };
+    for s in 0..2 {
+        for p in 0..m {
+            for q in p + 1..m {
+                let label = format!("GS {p}->{q} ({})", if s == 0 { "a" } else { "b" });
+                keep(excitation(sector, label, &[so(p, s)], &[so(q, s)]));
+            }
+        }
+    }
+    // Mixed spin: (p_α, q_β) -> (r_α, t_β) with p ≠ r and q ≠ t, each unordered pair of pairs once.
+    let pairs_ab: Vec<(usize, usize)> = (0..m).flat_map(|p| (0..m).map(move |q| (p, q))).collect();
+    for (u, &(p, q)) in pairs_ab.iter().enumerate() {
+        for &(r, t) in &pairs_ab[u + 1..] {
+            if p != r && q != t {
+                let label = format!("GD ab {p}{q}->{r}{t}");
+                keep(excitation(
+                    sector,
+                    label,
+                    &[so(p, 0), so(q, 1)],
+                    &[so(r, 0), so(t, 1)],
+                ));
+            }
+        }
+    }
+    // Same spin: (p<q) -> (r<t) on four distinct orbitals, each unordered pair of pairs once.
+    let pairs_ss: Vec<(usize, usize)> = (0..m)
+        .flat_map(|p| (p + 1..m).map(move |q| (p, q)))
+        .collect();
+    for s in 0..2 {
+        for (u, &(p, q)) in pairs_ss.iter().enumerate() {
+            for &(r, t) in &pairs_ss[u + 1..] {
+                if p != r && p != t && q != r && q != t {
+                    let label = format!("GD {} {p}{q}->{r}{t}", if s == 0 { "aa" } else { "bb" });
+                    keep(excitation(
+                        sector,
+                        label,
+                        &[so(p, s), so(q, s)],
+                        &[so(r, s), so(t, s)],
+                    ));
                 }
             }
         }
@@ -264,5 +339,42 @@ mod tests {
                 / 2e-6;
             assert!((g[k] - fd).abs() < 1e-7, "k={k}: {} vs {fd}", g[k]);
         }
+    }
+
+    #[test]
+    fn generalized_pool_contains_the_uccsd_pool() {
+        // H₂: one single per spin, and the two mixed-spin doubles on four distinct spin orbitals.
+        assert_eq!(generalized_excitations(&Sector::new(2, 1, 1)).len(), 4);
+        let sector = Sector::new(4, 2, 2);
+        let gen = generalized_excitations(&sector);
+        for e in uccsd_excitations(&sector) {
+            assert!(
+                gen.iter().any(|g| g.from == e.from && g.to == e.to),
+                "{} missing from the generalised pool",
+                e.label
+            );
+        }
+        assert!(gen.len() > uccsd_excitations(&sector).len());
+    }
+
+    #[test]
+    fn qubit_excitations_drop_only_the_signs_and_stay_orthogonal() {
+        let sector = Sector::new(4, 2, 2);
+        let mut reference = vec![0.0; sector.dim()];
+        reference[sector.hartree_fock()] = 1.0;
+        let gen = generalized_excitations(&sector);
+        let q: Vec<Excitation> = gen.iter().map(Excitation::to_qubit).collect();
+        let theta: Vec<f64> = (0..q.len())
+            .map(|k| 0.05 * ((k % 7) as f64 - 3.0))
+            .collect();
+        let psi = prepare_state(&q, &reference, &theta);
+        assert!((dot(&psi, &psi) - 1.0).abs() < 1e-12);
+        // Same determinant pairs, some fermionic signs negative, all qubit signs positive.
+        assert!(gen
+            .iter()
+            .zip(&q)
+            .all(|(f, b)| f.pair_count() == b.pair_count()));
+        assert!(gen.iter().any(|f| f.pairs.iter().any(|p| p.2 < 0.0)));
+        assert!(q.iter().all(|b| b.pairs.iter().all(|p| p.2 == 1.0)));
     }
 }
