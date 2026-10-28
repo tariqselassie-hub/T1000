@@ -56,3 +56,9 @@ quantum-contest/**/*.npz
 quantum-contest/**/*.fcidump
 quantum-contest/**/submission.zip
 
+# Titanic Contest local data, folds, and transient logs
+titanic-contest/**/*.csv
+titanic-contest/**/*.log
+titanic-contest/**/vqc_folds/
+titanic-contest/**/vqc_final/
+
