@@ -1,16 +1,19 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 // Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
 
-//! Trains the variational quantum circuit on the Titanic cross-validation folds.
+//! Trains a variational quantum circuit on cross-validation folds stored as CSV files.
 //!
 //! ```text
-//! titanic_vqc --dir titanic/vqc_folds [--qubits 8] [--depth 3] [--epochs 30] [--lr 0.05]
+//! csv_fold_vqc --dir <folds> [--qubits 8] [--depth 3] [--epochs 30] [--lr 0.05] [--seed 11]
 //! ```
 //!
-//! For every `fold_k_train.csv` it trains a fresh circuit (angle encoding, hardware-efficient
-//! Ry/Rz + CZ ring, mean-Z readout, exact parameter shift, full-batch Adam) and writes the
-//! readout of every row of `fold_k_eval.csv` to `fold_k_pred.csv`. The scoring against the classical
-//! models is done by `titanic/vqc_compare.py`, on the same folds and the same features.
+//! `<folds>` holds `fold_0_train.csv`, `fold_0_eval.csv`, `fold_1_train.csv`, ... Each file has a
+//! header row and then one row per sample: `--qubits` feature columns (angles, typically scaled to
+//! `[0, pi]`) followed by a label of `+1` or `-1`. For every fold the binary trains a fresh circuit
+//! (angle encoding, hardware-efficient Ry/Rz + CZ ring, mean-Z readout, exact parameter shift,
+//! full-batch Adam) and writes the readout of every `fold_k_eval.csv` row to `fold_k_pred.csv` in
+//! the same folder. Scoring the predictions is left to the caller (for example the Titanic
+//! project's `vqc_compare.py`).
 
 use rayon::prelude::*;
 use std::fs;
@@ -42,14 +45,15 @@ fn main() {
             .and_then(|i| args.get(i + 1).cloned())
             .unwrap_or_else(|| default.to_string())
     };
-    let default_dir = if Path::new("titanic-contest/data/vqc_folds").exists() {
-        "titanic-contest/data/vqc_folds"
-    } else if Path::new("titanic-contest/vqc_folds").exists() {
-        "titanic-contest/vqc_folds"
-    } else {
-        "titanic/vqc_folds"
+    let Some(dir) = args
+        .iter()
+        .position(|a| a == "--dir")
+        .and_then(|i| args.get(i + 1))
+        .map(PathBuf::from)
+    else {
+        eprintln!("usage: csv_fold_vqc --dir <folds> [--qubits 8] [--depth 3] [--epochs 30] [--lr 0.05] [--seed 11]");
+        std::process::exit(2);
     };
-    let dir = PathBuf::from(get("--dir", default_dir));
     let n_qubits: usize = get("--qubits", "8").parse().expect("--qubits");
     let depth: usize = get("--depth", "3").parse().expect("--depth");
     let epochs: usize = get("--epochs", "30").parse().expect("--epochs");
