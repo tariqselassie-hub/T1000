@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 //! Oracle tests for the SMILES tokenizer, parser and featurizer.
 //!
 //! Expected values are hand-derived molecular formulas and structural counts for known

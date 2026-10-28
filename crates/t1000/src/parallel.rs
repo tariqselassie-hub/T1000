@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 //! Multithreaded statevector kernels.
 //!
 //! Work runs on a dedicated rayon pool whose size comes from `GUDDALM_QNN_THREADS` (read once,

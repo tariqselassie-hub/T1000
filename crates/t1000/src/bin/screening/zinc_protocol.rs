@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 //! Builds the shared ZINC evaluation protocol and scores the classical baselines under it.
 //!
 //! Pool: the 12,000 molecules in `zinc_train_10k.csv` + `zinc_test_2k.csv` (no overlap).

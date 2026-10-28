@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
+# Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 """Cross-check headline README numbers against the committed result files (see docs/CLAIMS.md).
 
 Run from anywhere:  python scripts/check_claims.py

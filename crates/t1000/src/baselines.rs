@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 //! Classical regression baselines for judging QNN property-prediction results.
 //!
 //! Every ZINC experiment should be read against these: if a QNN readout does not beat ridge

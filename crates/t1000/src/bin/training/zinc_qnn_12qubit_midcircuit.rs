@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 //! GuddaNetworks 12-Qubit QNN: Mid-Circuit Feed-Forward Engine
 //!
 //! MECHANISM #2: Non-destructive mid-circuit measurement of Qubit 8 expectation ⟨Z_8⟩_L1

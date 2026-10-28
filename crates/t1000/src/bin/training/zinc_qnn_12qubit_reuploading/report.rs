@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 use super::phases::{Angles, Audit, Throughput};
 use super::*;
 use serde::{Deserialize, Serialize};
@@ -278,7 +281,7 @@ fn save_checkpoint(circuit: &Circuit, (scales, alphas): Angles, dru: &Fit, uni: 
     }
     let ckpt_json = serde_json::to_string_pretty(&checkpoint).expect("Serialize checkpoint");
     t1000::results::write(&path, ckpt_json).expect("Write checkpoint");
-    println!("  [✓] Saved Re-Uploading Checkpoint: {}", path.display());
+    println!("  [ok] Saved Re-Uploading Checkpoint: {}", path.display());
 }
 
 fn build_report(
@@ -419,7 +422,7 @@ pub fn persist(
     let report_json = serde_json::to_string_pretty(&report).expect("Serialize report");
     t1000::results::write(&report_save_path, report_json).expect("Write report");
     println!(
-        "  [✓] Saved Machine-Readable Report: {}",
+        "  [ok] Saved Machine-Readable Report: {}",
         report_save_path.display()
     );
     println!("\n{RULE}");

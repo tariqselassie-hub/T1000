@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 //! Reproducibility guarantees: default and seeded constructors must be deterministic.
 
 use t1000::*;

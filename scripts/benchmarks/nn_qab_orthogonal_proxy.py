@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
+# Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 # Nearest-neighbor RCS on QrackAceBackend, validated AT SCALE by a K-patch
 # (K = 2, 3, 4, ...) proxy whose cuts are ORTHOGONAL to ACE's own patch seams.
 #

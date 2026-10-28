@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 //! Pure SMILES String Exploration and Molecular Quantum Latent Space.
 //!
 //! Solidifies Job #2: Pure SMILES string exploration.

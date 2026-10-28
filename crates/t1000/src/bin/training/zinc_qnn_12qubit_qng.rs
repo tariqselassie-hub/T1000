@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 //! GuddaNetworks 12-Qubit QNN: Quantum Natural Gradient Engine (Mechanism #4)
 //!
 //! MECHANISM #4: Quantum Natural Gradient (QNG) Optimization on Fubini-Study Manifold

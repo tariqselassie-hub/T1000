@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 //! Molecular features computed from SMILES with the tested parser in [`crate::smiles`]:
 //! descriptor vectors and ECFP-style (Morgan) count fingerprints.
 //!

@@ -51,11 +51,7 @@ fn print_header() {
 }
 
 fn print_row(r: &VqeReport) {
-    let mark = if r.within_chemical_accuracy {
-        "✓"
-    } else {
-        "✗"
-    };
+    let mark = if r.within_chemical_accuracy { "+" } else { "-" };
     println!(
         " {:<5} {:>3} {:>3} {:>6} {:>5} {:>13.6} {:>13.6} {:>13.6} {:>8.4}{} {:>6.2} {:>8.0}",
         r.formula,

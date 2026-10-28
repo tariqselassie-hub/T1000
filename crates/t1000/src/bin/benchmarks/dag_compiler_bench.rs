@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 //! DAG-Based Compiler Benchmark: Chaotic Circuit Execution & Cache Footprint Optimization.
 //! Demonstrates how the DAG dependency tracker automatically groups independent operations
 //! and fuses single-qubit gates, eliminating cache thrashing on arbitrary quantum layers.

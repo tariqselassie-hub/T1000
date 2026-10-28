@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 //! Adjoint differentiation for `CircuitAnsatz` expectation values.
 //!
 //! For `E(theta) = <psi(theta)| O |psi(theta)>` with `psi = U_M ... U_1 |input>` and

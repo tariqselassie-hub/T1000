@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 //! Tiled kernels for large statevectors.
 //!
 //! Three code paths, all verified amplitude-by-amplitude against the reference simulator in

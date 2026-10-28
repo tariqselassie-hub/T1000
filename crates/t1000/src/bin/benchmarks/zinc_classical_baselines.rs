@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 //! Classical baselines for the ZINC (logP, QED, SAS) benchmark.
 //!
 //! Fits a mean predictor, linear ridge and quadratic ridge on the same 19 raw features and

@@ -51,7 +51,7 @@ def main():
     for t in trials:
         name = t["name"]
         losses = t["epoch_losses"]
-        c = colors.get(name, "#38bdf8")
+        c = colors.get(name, "#10b981")
         m = markers.get(name, "o")
         ax1.plot(epochs, losses, color=c, marker=m, linewidth=2.2, label=f"{name} (Final: {losses[-1]:.3f})")
     ax1.set_xlabel("Training Epoch", color="#f8fafc", fontsize=11, fontweight="bold")

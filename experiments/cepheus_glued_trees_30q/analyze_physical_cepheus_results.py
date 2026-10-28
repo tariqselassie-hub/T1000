@@ -123,7 +123,7 @@ def analyze():
 
     with open(RESULTS_JSON, "w", encoding="utf-8") as f:
         json.dump(results_payload, f, indent=2)
-    print(f"\n✓ Saved Analyzed Hardware Results: {RESULTS_JSON.name}")
+    print(f"\n[ok] Saved Analyzed Hardware Results: {RESULTS_JSON.name}")
 
 
 if __name__ == "__main__":

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 //! Porter-Thomas Statistics & Exact Haar-Random Calibration Engine
 //!
 //! Provides mathematically exact cross-entropy benchmarking (XEB), finite-dimensional

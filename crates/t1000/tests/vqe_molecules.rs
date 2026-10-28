@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 //! End-to-end checks of the ab initio VQE against known physics.
 
 use t1000::vqe::driver::{solve, VqeConfig};

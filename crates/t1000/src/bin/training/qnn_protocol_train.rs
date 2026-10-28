@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 //! Configurable QNN training under the ZINC evaluation protocol.
 //!
 //! Uses the stored splits written by `zinc_protocol` (run it first) and one model definition
