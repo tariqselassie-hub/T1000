@@ -274,6 +274,18 @@
 * **Physical Waveguide Loss & Tolerances:** Propagation loss presets for Silicon-on-Insulator (SOI, $1.8\text{ dB/cm}$) and Thin-Film Lithium Niobate (TFLN, $0.25\text{ dB/cm}$) with directional coupler fabrication split tolerances.
 * **Sovereign Engine & Web REST Integration:** Unified into [`T1000Engine`](crates/t1000/src/engine.rs) facade and exposed via `/api/photonic/simulate` in [`web/serve.py`](web/serve.py).
 
+### 31. Consolidated Quantum & Co-Processor Backends (`t1000::backend`)
+* **Consolidated `BackendKind` Registry:** Centralized enum routing across five execution targets:
+  * `CpuAvx2Fp64`: Double-precision AVX2+FMA CPU statevector simulation (pure software, default under `Precision::Exact`).
+  * `IGpuFp32`: Single-precision OpenCL iGPU hardware accelerator (~$10^{-7}$ relative error, automatic threshold $N \ge 16$).
+  * `Fpga1000Qpu`: Physical Artix-7 Basys 3 FPGA co-processor on `COM6` (fixed-point Q8.24/Q2.23, 128-gate microcode burst, 80-bit expectation).
+  * `QpuModelFixedPoint`: Bit-exact deterministic software emulation of the 1000_QPU fixed-point integer datapath.
+  * `PhotonicMesh`: 16-mode linear optical unitary compiler and multi-photon Fock / Boson Sampling simulator.
+* **Microcode On-Chip Burst Speedup ($9.2\times$):** 128-gate on-chip microcode BRAM eliminates serial UART framing overhead ($120.0\ \mu\text{s}/\text{gate}$ baseline $\to 13.1\ \mu\text{s}/\text{gate}$ burst at 4 qubits).
+* **Decoupled Architecture:** Clean separation of concerns between high-level molecular ab initio solvers (`t1000::chemistry`) and low-level quantum circuit execution backends (`t1000::backend`, `t1000::qpu`).
+* **Master Facade Integration:** Native routing in [`T1000Engine`](crates/t1000/src/engine.rs) via `list_backends()` and `execute_on_backend()`.
+
+
 ## System Startup & Execution Guide
 
 > **Where results go.** Benchmark and training binaries write to a git-ignored scratch

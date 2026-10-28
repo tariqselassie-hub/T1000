@@ -265,3 +265,39 @@ Interoperability   (Compile-Mitigate) (PT + Coherence)  (Master API)      (FPGA 
 * `test_molecular_phase_shift_power_conservation`: Phase modulation via $V_\pi$ voltage flips field amplitude to $-1.0$ while conserving optical power.
 * `test_grand_loop_molecular_consistency`: End-to-end integration across OpenSMILES featurizer, SOH Pockels modulation, and Szegedy walk unitarity.
 
+---
+
+## 11. Consolidated BackendKind & Heterogeneous Co-Processor Architecture (COMPLETED)
+
+### Architectural Domain Decoupling
+To maintain mathematical purity and eliminate bloat across quantum physics and computational chemistry:
+1. **Application Domain (`t1000::chemistry`, `t1000::molfeatures`):** Treats molecular electronic structure, OpenSMILES parsing, and STO-3G Gaussian integrals as an ab initio compiler layer that produces standard Pauli Hamiltonians ($H = \sum c_j P_j$) and parameterized ansatzes (UCCSD, ADAPT-VQE).
+2. **Substrate Domain (`t1000::backend`, `t1000::qpu`):** Pure quantum execution backends that evaluate circuits and expectation values $\langle \psi | P | \psi \rangle$, remaining completely agnostic to whether a circuit represents a chemical bond, a random circuit sampling benchmark, or a quantum walk.
+
+### Unified `BackendKind` Registry (`crates/t1000/src/backend.rs`)
+Consolidates all software and hardware targets into a single typed enum:
+* **`CpuAvx2Fp64`:** Exact FP64 AVX2+FMA CPU statevector simulation (pure software). Default target under `Precision::Exact`.
+* **`IGpuFp32`:** OpenCL iGPU accelerator with automatic threshold switching ($N \ge 16$ qubits) under `Precision::Fast`.
+* **`Fpga1000Qpu`:** Physical Artix-7 Basys 3 FPGA co-processor on `COM6` (fixed-point Q8.24/Q2.23, 128-gate microcode burst, 80-bit expectation).
+* **`QpuModelFixedPoint`:** Bit-exact deterministic software emulation of the 1000_QPU fixed-point integer datapath.
+* **`PhotonicMesh`:** 16-mode linear optical unitary compiler and multi-photon Fock / Boson Sampling simulator.
+
+### High-Speed Microcode Burst Execution ($9.2\times$ Speedup)
+* **The UART Floor:** Single-gate sequential frames (`OP_GATE` `0x06`, 36 bytes) require $120.0\ \mu\text{s}$ at 3 Mbaud, leaving the 100 MHz Artix-7 fabric idle 99.8% of the time.
+* **On-Chip Cache (`OP_LOAD_CIRCUIT` `0x08` & `OP_RUN_BURST` `0x09`):** Buffers up to 128 gates directly in Block RAM, executing at full fabric clock speed ($13.1\ \mu\text{s}/\text{gate}$ at 4 qubits).
+* **Hardware Accumulator (`OP_RUN_BURST_EXPECT` `0x0A`):** Measures 80-bit $\langle Z_{\text{mask}} \rangle$ expectations inside the DSP pipeline without transferring statevectors across the serial bus.
+
+### Facade & Manifest Integration (`T1000Engine`)
+* Added `T1000Engine::available_backends() -> Vec<BackendKind>`.
+* Added `engine.list_backends() -> Vec<BackendKind>`.
+* Added `engine.execute_on_backend(&CompiledCircuit, &mut QuantumState, BackendPolicy) -> BackendExecutionReport`.
+* Manifest report `SystemManifestReport` dynamically advertises `available_backends`.
+
+### Verification Matrix
+* `test_backend_kind_metadata_and_parsing`: Validates string tags (`"cpu"`, `"gpu"`, `"fpga"`, `"qpu_model"`, `"photonic"`), hardware status flags, and max qubit bounds.
+* `test_fixed_point_policy_routing`: Confirms `Precision::FixedPoint` routes to `QpuModelFixedPoint`.
+* `test_fpga_and_photonic_forcing`: Confirms explicit backend pinning overrides defaults.
+* `test_qpu_model_execution_routing`: Confirms bit-exact QPU model execution.
+* `test_master_engine_consolidated_backends`: End-to-end master facade verification across all 5 backends.
+
+

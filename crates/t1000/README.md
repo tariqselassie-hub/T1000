@@ -52,6 +52,9 @@
 | **[`molfeatures`](src/molfeatures.rs)** | Native OpenSMILES parser with 19 structural descriptors mapped to parameterized rotation angles $R_y(x_i)$. |
 | **[`pitt_data`](src/pitt_data.rs)** | High-throughput Pitt Quantum Repository (106k molecules, PM7) ingestion, 3D Cartesian dipole vector decomposition $(\mu_x, \mu_y, \mu_z)$, and non-Abelian Stark rotation angle generator. |
 | **[`q_krr`](src/q_krr.rs)** | Quantum Kernel Ridge Regression (Q-KRR) computing exact parameter-free state fidelity kernels $k(x_i, x_j) = |\langle \psi(x_i)|\psi(x_j)\rangle|^2$ and parallel Rayon Cholesky linear solves bypassing barren plateaus. |
+| **[`backend`](src/backend.rs)** | Consolidated backend execution engine (`BackendKind`) routing across CPU AVX2 FP64, OpenCL iGPU FP32, Artix-7 1000_QPU on `COM6`, fixed-point QPU model, and photonic meshes. |
+| **[`qpu`](src/qpu/)** | 14-qubit fixed-point statevector co-processor specification: bit-exact model (`model.rs`), Q8.24/Q2.23 arithmetic (`fixed.rs`), UCCSD gate compiler (`compile.rs`), and protocol (`protocol.rs`). |
+
 
 ---
 

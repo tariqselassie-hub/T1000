@@ -62,3 +62,6 @@ titanic-contest/**/*.log
 titanic-contest/**/vqc_folds/
 titanic-contest/**/vqc_final/
 
+
+# IDE and local configurations
+.claude/
