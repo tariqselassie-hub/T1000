@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 //! **Experimental.** Planar tensor-network backend (PEPS-style sites, SVD gate truncation,
 //! belief-propagation gauging, boundary contraction).
 //!

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 use std::time::Instant;
 use t1000::zinc_data::{self, ZincMolecule};
 use t1000::zinc_holdout_eval::{print_zero_shot, target_columns};

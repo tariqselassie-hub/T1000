@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 //! GuddaNetworks QNN: Whole-Library 250k ZINC Molecular Property Screening & Manifold Engine
 //!
 //! Evaluates all 249,455 drug molecules from the ZINC database using the 72-gate fused 98-parameter QNN.

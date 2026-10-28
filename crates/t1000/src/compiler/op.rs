@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 //! Quantum Circuit Operation primitives and 2x2 complex unitary algebra.
 //! Supports gate commutativity analysis, qubit dependency footprinting,
 //! and single-qubit gate fusion for cache minimization.

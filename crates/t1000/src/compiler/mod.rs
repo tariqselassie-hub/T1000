@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 //! DAG-Based Dependency Tracker and Quantum Circuit Compiler.
 //!
 //! Provides automatic grouping of independent operations, causal dependency analysis,

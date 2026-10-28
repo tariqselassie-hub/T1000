@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 //! Reference-oracle tests for the statevector core.
 //!
 //! Every SIMD / tiled kernel, observable, encoder, ansatz forward path and the circuit

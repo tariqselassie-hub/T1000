@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 //! Gate Fusion and Algebraic Simplification Optimizer.
 //! Collapses chains of single-qubit operations into compound 2x2 unitaries,
 //! reducing statevector memory bandwidth and cache evictions.

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 //! GuddaNetworks 12-Qubit QNN: 2-Body Entanglement Correlator Engine
 //!
 //! MECHANISM #1: Extracts all 66 Ising correlators ⟨Z_i Z_j⟩ alongside the 12 single-qubit
@@ -231,9 +234,9 @@ fn verify_fused_zz(circuit: &Frozen, test_samples: &[ZincMolecule]) -> (f64, boo
         n_verify,
         max_zz_error,
         if zz_verified {
-            "CONFIRMED ✓"
+            "CONFIRMED"
         } else {
-            "DEVIATION DETECTED ✗"
+            "DEVIATION DETECTED"
         }
     );
     println!("{RULE}\n");

@@ -36,7 +36,7 @@ client_id = os.getenv("OPENQUANTUM_CLIENT_ID")
 client_secret = os.getenv("OPENQUANTUM_CLIENT_SECRET")
 
 if not client_id or not client_secret:
-    print("❌ ERROR: OPENQUANTUM_CLIENT_ID or OPENQUANTUM_CLIENT_SECRET missing in .env")
+    print("[error] ERROR: OPENQUANTUM_CLIENT_ID or OPENQUANTUM_CLIENT_SECRET missing in .env")
     sys.exit(1)
 
 from openquantum_sdk.auth import ClientCredentials, ClientCredentialsAuth
@@ -77,7 +77,7 @@ def dispatch_job(circuit_path: Path, shots: int = 100):
     print(f"• Available Spark Credits  : {balance.spark_credits}")
 
     if balance.spark_credits < 1:
-        print("❌ ERROR: Insufficient Spark credits for hardware execution.")
+        print("[error] ERROR: Insufficient Spark credits for hardware execution.")
         sys.exit(1)
 
     with open(circuit_path, "r", encoding="utf-8") as f:
@@ -90,7 +90,7 @@ def dispatch_job(circuit_path: Path, shots: int = 100):
     # 1. Upload Input Circuit
     print("\n[1/3] Uploading OpenQASM 2.0 Circuit Payload...")
     upload_id = scheduler.upload_job_input(file_content=qasm_content.encode("utf-8"))
-    print(f"✓ Upload Endpoint ID       : {upload_id}")
+    print(f"[ok] Upload Endpoint ID       : {upload_id}")
 
     # 2. Prepare Job & Retrieve Price Quote
     print("\n[2/3] Preparing Job and Quoting on Cepheus QPU Queue...")
@@ -124,7 +124,7 @@ def dispatch_job(circuit_path: Path, shots: int = 100):
         plan.queue_priorities[0],
     )
     cost = plan.price + queue.price_increase
-    print(f"✓ Quoted Hardware Cost     : {cost} Spark Credit ({plan.name} / {queue.name})")
+    print(f"[ok] Quoted Hardware Cost     : {cost} Spark Credit ({plan.name} / {queue.name})")
 
     # 3. Create & Dispatch Job to Physical Hardware
     print("\n[3/3] Creating and Submitting Job to Physical Cepheus-1-108Q Queue...")
@@ -138,7 +138,7 @@ def dispatch_job(circuit_path: Path, shots: int = 100):
     job_status = str(job.status).upper()
 
     print("══════════════════════════════════════════════════════════════════════════════")
-    print(f"✓ REAL PHYSICAL JOB DISPATCHED TO CEPHEUS-1-108Q!")
+    print(f"[ok] REAL PHYSICAL JOB DISPATCHED TO CEPHEUS-1-108Q!")
     print(f"• Job ID                   : {job_id}")
     print(f"• Hardware Queue Status    : {job_status}")
     print("══════════════════════════════════════════════════════════════════════════════")
@@ -169,7 +169,7 @@ def dispatch_job(circuit_path: Path, shots: int = 100):
 def poll_job(job_id: str = None, timeout_sec: int = 300):
     if not job_id:
         if not MANIFEST_PATH.exists():
-            print(f"❌ Manifest not found: {MANIFEST_PATH}")
+            print(f"[error] Manifest not found: {MANIFEST_PATH}")
             return
         with open(MANIFEST_PATH, "r", encoding="utf-8") as f:
             manifest = json.load(f)
@@ -187,11 +187,11 @@ def poll_job(job_id: str = None, timeout_sec: int = 300):
         print(f"• Status [{datetime.now().strftime('%H:%M:%S')}] : {job.status.upper()}")
 
         if status == "completed":
-            print("\n🎉 EXECUTION COMPLETED ON RIGETTI CEPHEUS-1-108Q!")
+            print("\nEXECUTION COMPLETED ON RIGETTI CEPHEUS-1-108Q!")
             download_and_process_results(job)
             break
         elif status in ["failed", "cancelled"]:
-            print(f"❌ Execution terminated with status: {status.upper()}")
+            print(f"[error] Execution terminated with status: {status.upper()}")
             break
 
         if time.time() - t_start > timeout_sec:
@@ -263,7 +263,7 @@ def download_and_process_results(job):
 
     with open(RESULTS_PATH, "w", encoding="utf-8") as f:
         json.dump(results_payload, f, indent=2)
-    print(f"✓ Results Serialized       : {RESULTS_PATH.name}")
+    print(f"[ok] Results Serialized       : {RESULTS_PATH.name}")
 
 
 if __name__ == "__main__":

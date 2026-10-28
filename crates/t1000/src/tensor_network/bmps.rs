@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 use super::linalg::ComplexMatrix;
 use super::state::{LatticeTopology, PlanarTensorNetwork};
 use num_complex::Complex64;

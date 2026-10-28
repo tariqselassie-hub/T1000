@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 use super::*;
 use t1000::zinc_holdout_eval::{holdout_metrics, print_ledger, target_columns};
 

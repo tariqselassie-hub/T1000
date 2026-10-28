@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 //! GuddaNetworks 12-Qubit QNN: Data Re-Uploading Engine (Mechanism #3)
 //!
 //! MECHANISM #3: Inter-layer classical feature re-encoding between Layer 0 and Layer 1:

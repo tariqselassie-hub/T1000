@@ -327,12 +327,12 @@ fn main() {
         let _ = fs::create_dir_all(parent);
     }
     fs::write(web_data_path, &json_text).expect("Failed to write web data");
-    println!("\n[✓] Telemetry written to: {}", web_data_path.display());
+    println!("\n[ok] Telemetry written to: {}", web_data_path.display());
 
     let results_data_path = Path::new("results/data/hopf_s4_entanglement_report.json");
     if let Some(parent) = results_data_path.parent() {
         let _ = fs::create_dir_all(parent);
     }
     fs::write(results_data_path, &json_text).expect("Failed to write results data");
-    println!("[✓] Telemetry written to: {}", results_data_path.display());
+    println!("[ok] Telemetry written to: {}", results_data_path.display());
 }

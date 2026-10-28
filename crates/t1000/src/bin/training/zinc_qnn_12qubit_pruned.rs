@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 //! GuddaNetworks 12-Qubit Hybrid Variational QNN: Pruned Canonical Kernel Verification
 //!
 //! Demonstrates and verifies exact mathematical equivalence between:

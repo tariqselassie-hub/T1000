@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 use crate::adjoint::adjoint_gradient;
 use crate::ansatz::CircuitAnsatz;
 use crate::feature_map::DataEncodingLayer;

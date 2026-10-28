@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 //! One configurable hybrid QNN for molecular property prediction, trained under the
 //! evaluation protocol ([`crate::protocol`]).
 //!

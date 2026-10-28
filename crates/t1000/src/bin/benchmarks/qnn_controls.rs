@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 //! Does the trained circuit add anything? Circuit controls and capacity-matched classical
 //! models for the best QNN configuration, under the ZINC evaluation protocol.
 //!

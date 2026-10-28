@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
 //! Directed Acyclic Graph (DAG) Dependency Tracker for Quantum Circuits.
 //! Models read/write qubit hazards, causal dependency edges,
 //! and topological critical path analysis.
