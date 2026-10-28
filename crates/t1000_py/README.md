@@ -25,12 +25,46 @@ report = t1000.vqe_solve("LiH")                                # report["fci_ene
 t1000.vqe_solve(atoms=[(1, (0, 0, 0)), (1, (0, 0, 0.74))])     # any geometry, in angstrom
 ```
 
+### Stateful simulator
+
+```python
+s = t1000.State(2).h(0).cx(0, 1)              # gates chain; also .apply([("RY", 0, 0.3), ...])
+s.expectation("Z0 Z1")                        # Pauli strings like "X0 Z1 Y3"
+s.counts(1000, seed=1)                        # {"00": 497, "11": 503}, reproducible per seed
+s.probabilities(p1=1e-3, p2=1e-2, readout=(0.02, 0.05))   # noisy readout distribution
+s.expectation("Z0 Z1", p1=1e-3, p2=1e-2)      # = fidelity * ideal value
+```
+
+Noise is applied at readout: `p1`/`p2` are depolarizing error rates per one- and two-qubit gate
+applied so far (global depolarizing, fidelity `(1-p1)^n1 (1-p2)^n2`), and `readout=(p01, p10)`
+flips each measured bit independently (`t1000::device_noise`).
+
+### Chemistry
+
+```python
+H = t1000.hamiltonian("LiH")                  # Jordan-Wigner terms [(coeff, "Z0 Z2"), ...]
+t1000.State(H["n_qubits"], basis_state=H["hf_state"]).energy(H)   # = H["hf_energy"]
+t1000.classical_baselines("N2")               # hf, mp2, cisd, ccsd, fci in one active space
+t1000.adapt_vqe(atoms=t1000.chain(1, 6, 1.4), pool="qubit-gsd")   # energy, error_mha, cnot, ...
+t1000.diatomic_scan(1, 1, [0.6, 1.0, 1.5, 2.5])                   # bond scan, SCF followed
+t1000.vqe_scan([t1000.chain(1, 4, d) for d in (0.8, 1.2, 1.6)])   # any list of geometries
+```
+
+ADAPT pools: `occ-virt` (UCCSD singles and doubles), `gsd` (generalized), `qubit-gsd` (GSD as
+qubit excitations, costed at 2 CNOTs per single and 13 per double; the fermionic pools use the
+naive Jordan-Wigner count). Qubit `2p + s` is spatial orbital `p` with spin `s`.
+
 Gates: `H X Y Z S T`, `RX RY RZ` (angle in radians), `CX`/`CNOT`, `CZ`, `SWAP`, `CP`
 (controlled phase, with an angle). Registers up to 26 qubits.
 
 `VqcClassifier` is the same model as the `csv_fold_vqc` binary (`t1000::vqc_classifier`): on a
 Titanic fold the two agree to the 9 decimals the binary prints. `vqe_solve` gives energies
-identical to the `vqe_molecules` report.
+identical to the `vqe_molecules` report, and `classical_baselines`/`adapt_vqe` reproduce the
+recorded `vqe_strong_correlation` (H4) and `vqe_adapt_pools` (H6) points to 1e-8 hartree, with
+the same CNOT counts (`tests/test_t1000.py`).
+
+From the T1000 checkout, `uv sync --extra engine` builds the wheel from this crate into the
+project's `.venv`.
 
 ## Install a built wheel
 

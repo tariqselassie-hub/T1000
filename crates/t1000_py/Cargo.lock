@@ -517,6 +517,8 @@ dependencies = [
  "num-complex",
  "numpy",
  "pyo3",
+ "rand",
+ "rand_chacha",
  "serde_json",
  "t1000",
 ]
