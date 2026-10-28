@@ -8,9 +8,21 @@
 //! * `qm9`: the MoleculeNet `qm9.csv` (see `data/qm9/README.md`), shuffled with a fixed seed and
 //!   split; any three of the nine properties of [`PROPERTIES`] can be chosen.
 
+pub mod bank_fraud;
+pub mod harmonized;
+pub mod iot_botnet;
+pub mod pitt;
+pub mod qm9;
+
+pub use bank_fraud as bank_fraud_data;
+pub use harmonized as harmonized_data;
+pub use iot_botnet as iot_botnet_data;
+pub use pitt as pitt_data;
+pub use qm9 as qm9_data;
+
 use crate::baselines::ZINC_TARGETS;
-use crate::pitt_data::{self, PittMolecule, PROPERTIES as PITT_PROPERTIES};
-use crate::qm9_data::{self, FeatureSet, Qm9Molecule, PROPERTIES};
+use self::pitt::{PittMolecule, PROPERTIES as PITT_PROPERTIES};
+use self::qm9::{FeatureSet, Qm9Molecule, PROPERTIES};
 use crate::zinc_data;
 
 const ZINC_TRAIN_CSV: &str = "tests/benchmarks/zinc_molecular/outputs/zinc_train_10k.csv";
