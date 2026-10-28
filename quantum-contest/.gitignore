@@ -1,9 +1,0 @@
-# Quantum Contest Local Artifacts Ignore
-*.kmb
-*.so
-*.npz
-*.fcidump
-*.zip
-__pycache__/
-*.pyc
-.virtual_documents/
