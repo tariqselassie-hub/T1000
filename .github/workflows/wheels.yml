@@ -1,0 +1,81 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
+# Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
+# Builds the t1000 Python wheel (crates/t1000_py) for Windows and Linux (manylinux, which the
+# Kaggle notebook image can install) and tests each wheel on two Python versions. The wheels are
+# abi3, so one file per platform covers Python 3.9 and later. Download them from the run's
+# artifacts.
+
+name: Python wheels
+
+on:
+  push:
+    branches: [ master ]
+    paths: [ 'crates/**', 'Cargo.toml', '.github/workflows/wheels.yml' ]
+  pull_request:
+    branches: [ master ]
+    paths: [ 'crates/**', 'Cargo.toml', '.github/workflows/wheels.yml' ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build wheel (${{ matrix.platform }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux-x86_64
+            manylinux: auto
+          - os: windows-latest
+            platform: windows-x86_64
+            manylinux: ''
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Build
+        uses: PyO3/maturin-action@v1
+        with:
+          working-directory: crates/t1000_py
+          command: build
+          args: --release --out dist
+          manylinux: ${{ matrix.manylinux }}
+      - uses: actions/upload-artifact@v7
+        with:
+          name: wheel-${{ matrix.platform }}
+          path: crates/t1000_py/dist/*.whl
+          if-no-files-found: error
+
+  test:
+    name: Test wheel (${{ matrix.platform }}, Python ${{ matrix.python }})
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest ]
+        python: [ '3.11', '3.13' ]
+        include:
+          - os: ubuntu-latest
+            platform: linux-x86_64
+          - os: windows-latest
+            platform: windows-x86_64
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/download-artifact@v8
+        with:
+          name: wheel-${{ matrix.platform }}
+          path: dist
+      - name: Install the wheel
+        shell: bash
+        run: python -m pip install dist/*.whl pytest
+      - name: Run the Python tests against the installed wheel
+        shell: bash
+        # Run from outside the source tree so the installed package, not python/, is imported.
+        run: cd "$RUNNER_TEMP" && python -m pytest "$GITHUB_WORKSPACE/crates/t1000_py/tests" -q -p no:cacheprovider

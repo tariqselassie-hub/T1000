@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
+# Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
+[build-system]
+requires = ["maturin>=1.7,<2"]
+build-backend = "maturin"
+
+[project]
+name = "t1000"
+version = "0.1.0"
+description = "Python bindings for the T-1000 quantum simulation engine (VQC classifier, circuit simulation, ab initio VQE)"
+authors = [{ name = "Terrence A. Jones SR" }]
+license = "MIT OR Apache-2.0"
+requires-python = ">=3.9"
+dependencies = ["numpy>=1.21"]
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[project.urls]
+Repository = "https://github.com/tariqselassie-hub/T1000"
+
+[tool.maturin]
+python-source = "python"
+module-name = "t1000._t1000"
+features = ["extension-module"]
