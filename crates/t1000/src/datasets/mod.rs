@@ -1,12 +1,18 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 // Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
 
-//! The molecular data sets of the feature-map studies behind one interface: descriptors plus
-//! three regression targets, split into training and held-out molecules.
+//! # Multi-Domain Dataset Loaders & Adapters (`t1000::datasets`)
 //!
-//! * `zinc`: the 10,000 / 2,000 featurised ZINC CSVs (logP, QED, SAS).
-//! * `qm9`: the MoleculeNet `qm9.csv` (see `data/qm9/README.md`), shuffled with a fixed seed and
-//!   split; any three of the nine properties of [`PROPERTIES`] can be chosen.
+//! Unified interface for featurized datasets across quantum chemistry, financial fraud graphs,
+//! network botnet telemetry, and supply chain logistics:
+//!
+//! | Module | Dataset Domain | Description |
+//! | :--- | :--- | :--- |
+//! | [`qm9`] | Molecular Quantum | MoleculeNet 134k organic molecules with STO-3G quantum properties. |
+//! | [`pitt`] | Molecular Quantum | Pitt Quantum Repository (106k molecules, PM7) with 3D dipole vectors. |
+//! | [`bank_fraud`] | Graph Cyber Defense | Transaction graph telemetry with synthetic fraud injection labels. |
+//! | [`iot_botnet`] | Network Security | IoT network traffic features with multi-label attack taxonomy. |
+//! | [`harmonized`] | Logistics / Trade | Harmonized tariff code logistics and sector classification. |
 
 pub mod bank_fraud;
 pub mod harmonized;
