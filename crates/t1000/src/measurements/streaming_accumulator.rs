@@ -43,7 +43,39 @@ pub struct TrajectoryPoint {
     pub coherence_flux: f64,
 }
 
+/// Bounded variance multiplier signature across longitudinal and transverse projection axes.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct VarianceMultipliers {
+    /// S_I: Longitudinal-to-transverse variance ratio
+    pub s_1: f64,
+    /// S_II: Equator axis variance ratio (Var(X) / Var(Y))
+    pub s_2: f64,
+    /// S_III: Phase flux variance ratio relative to uniform circular distribution
+    pub s_3: f64,
+}
+
 impl TrajectoryPoint {
+    /// Evaluates the bounded variance multipliers ($S_I, S_{II}, S_{III}$) across projection axes.
+    pub fn variance_multipliers(&self) -> VarianceMultipliers {
+        let n = self.z_expectations.len();
+        if n == 0 {
+            return VarianceMultipliers { s_1: 1.0, s_2: 1.0, s_3: 1.0 };
+        }
+        let var_z: f64 = self.z_expectations.iter().map(|&z| 1.0 - z * z).sum::<f64>() / (n as f64);
+        let var_x: f64 = self.x_expectations.iter().map(|&x| 1.0 - x * x).sum::<f64>() / (n as f64);
+        let var_y: f64 = self.y_expectations.iter().map(|&y| 1.0 - y * y).sum::<f64>() / (n as f64);
+
+        let s_1 = if var_x > 1e-12 { var_z / var_x } else { 1.0 };
+        let s_2 = if var_y > 1e-12 { var_x / var_y } else { 1.0 };
+
+        let mean_phi = self.phase_flux.iter().sum::<f64>() / (n as f64);
+        let var_phi = self.phase_flux.iter().map(|&phi| (phi - mean_phi).powi(2)).sum::<f64>() / (n as f64);
+        let unif_var = std::f64::consts::PI.powi(2) / 3.0;
+        let s_3 = if var_phi > 1e-12 { var_phi / unif_var } else { 1.0 };
+
+        VarianceMultipliers { s_1, s_2, s_3 }
+    }
+
     /// Calculates Euclidean trajectory distance to another point in $(Z, X)$ expectation space.
     pub fn distance(&self, other: &Self) -> f64 {
         let n = self.z_expectations.len().min(other.z_expectations.len());
@@ -324,4 +356,25 @@ mod tests {
         let drift = acc.total_drift();
         assert!(drift > 0.0);
     }
+
+    #[test]
+    fn test_variance_multipliers_bounded() {
+        let mut s = QuantumState::ground(4);
+        let mut acc = StreamingExpectationAccumulator::new(2);
+        // Ground state |00>
+        let pt0 = acc.stream_step(&s, "init");
+        let vm0 = pt0.variance_multipliers();
+        assert!(vm0.s_1.is_finite());
+        assert!(vm0.s_2.is_finite());
+        assert!(vm0.s_3.is_finite());
+
+        // Superposition with distinct axis polarizations
+        s.real[0] = 0.8;
+        s.real[1] = 0.6;
+        let pt1 = acc.stream_step(&s, "superpos");
+        let vm1 = pt1.variance_multipliers();
+        assert!(vm1.s_1 > 0.0);
+        assert!(vm1.s_2 > 0.0);
+    }
 }
+

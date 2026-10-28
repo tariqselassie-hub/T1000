@@ -32,6 +32,7 @@ struct ContinuousDynamicsReport {
     initial_mean_z: f64,
     final_mean_z: f64,
     final_coherence_flux: f64,
+    variance_multipliers: t1000::measurements::VarianceMultipliers,
     pauli_frame_gates_tracked: usize,
     pauli_frame_errors_injected: usize,
     pauli_frame_weight: usize,
@@ -95,7 +96,9 @@ fn main() {
     println!("  ├─ Trajectory Drift: {:.6}", drift);
     println!("  ├─ Initial Polarization <Z>: {:.4}", init_pt.mean_z);
     println!("  ├─ Final Polarization <Z>: {:.4}", final_pt.mean_z);
-    println!("  └─ Final Coherence Flux: {:.4}", final_pt.coherence_flux);
+    println!("  ├─ Final Coherence Flux: {:.4}", final_pt.coherence_flux);
+    let vm = final_pt.variance_multipliers();
+    println!("  └─ Bounded Variance Multipliers: S_I = {:.4}x, S_II = {:.4}x, S_III = {:.4}x", vm.s_1, vm.s_2, vm.s_3);
 
     // =========================================================================
     // 2. Embedded Pauli Frame Co-Tracker (SQUID Principle)
@@ -209,6 +212,7 @@ fn main() {
         initial_mean_z: init_pt.mean_z,
         final_mean_z: final_pt.mean_z,
         final_coherence_flux: final_pt.coherence_flux,
+        variance_multipliers: vm,
         pauli_frame_gates_tracked: gates_tracked,
         pauli_frame_errors_injected: 3,
         pauli_frame_weight: weight,
