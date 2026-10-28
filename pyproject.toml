@@ -17,6 +17,8 @@ dependencies = [
 [project.optional-dependencies]
 # The compiled engine as a Python package, built from crates/t1000_py (needs a Rust toolchain).
 engine = ["t1000"]
+# Feature extraction and classical baselines (scripts/data/extract_birds_features.py and others).
+ml = ["torch>=2.14", "torchvision>=0.29", "scikit-learn>=1.9"]
 
 [tool.uv.sources]
 t1000 = { path = "crates/t1000_py" }
