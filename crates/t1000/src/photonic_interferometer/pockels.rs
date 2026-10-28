@@ -85,3 +85,4 @@ impl MolecularPockelsModulator {
         std::f64::consts::PI * (voltage / self.v_pi())
     }
 }
+

@@ -325,3 +325,4 @@ mod tests {
         assert!(probs[6] > 0.0, "Sink node must receive quantum wavepacket");
     }
 }
+

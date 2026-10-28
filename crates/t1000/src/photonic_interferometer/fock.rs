@@ -143,21 +143,18 @@ pub fn matrix_permanent(mat: &[Vec<Complex64>]) -> Complex64 {
     for mask in 0..n_sub {
         let mut sign_prod = 1.0f64;
         delta[0] = 1.0;
-        for i in 1..n {
+        for (i, d) in delta.iter_mut().enumerate().skip(1) {
             if (mask & (1 << (i - 1))) != 0 {
-                delta[i] = -1.0;
+                *d = -1.0;
                 sign_prod = -sign_prod;
             } else {
-                delta[i] = 1.0;
+                *d = 1.0;
             }
         }
 
         let mut col_prod = Complex64::new(1.0, 0.0);
         for j in 0..n {
-            let mut col_sum = Complex64::new(0.0, 0.0);
-            for i in 0..n {
-                col_sum += mat[i][j] * delta[i];
-            }
+            let col_sum: Complex64 = mat.iter().enumerate().map(|(i, row)| row[j] * delta[i]).sum();
             col_prod *= col_sum;
         }
 
@@ -285,3 +282,4 @@ impl HongOuMandelExperiment {
         }
     }
 }
+

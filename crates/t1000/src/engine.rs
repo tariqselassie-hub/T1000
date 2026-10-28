@@ -25,6 +25,9 @@ use crate::smiles::{
     SmilesError, SmilesExplorer, SmilesFeatures, SmilesFeaturizer, SmilesPropertyProfile,
 };
 use crate::state::QuantumState;
+use crate::photonic_interferometer::{
+    FockState, HongOuMandelExperiment, PhotonicInterferometer, WaveguideLossModel,
+};
 use crate::telemetry::QuantumTelemetryReport;
 use crate::zipper::{BlochZipperEngine, ZipperConfig, ZipperExecutionReport};
 
@@ -57,6 +60,25 @@ pub struct SystemManifestReport {
     pub avx_vnni_accelerated: bool,
     pub igpu_bridge_available: bool,
     pub igpu_device_name: Option<String>,
+    pub photonic_modes: usize,
+    pub photonic_couplers: usize,
+    pub multi_photon_fock: bool,
+    pub vqe_adapt_solver: bool,
+}
+
+/// Execution telemetry from native photonic interferometer mesh simulation.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PhotonicMeshReport {
+    pub input_mode: usize,
+    pub steps: usize,
+    pub total_power_in: f64,
+    pub total_power_out: f64,
+    pub hub_power: f64,
+    pub output_modes_re: Vec<f64>,
+    pub output_modes_im: Vec<f64>,
+    pub unitarity_error: f64,
+    pub n_couplers: usize,
+    pub loss_model: WaveguideLossModel,
 }
 
 /// Master engine facade coordinating all T-1000 quantum simulation and screening pipelines.
@@ -270,6 +292,89 @@ impl T1000Engine {
         engine.stress_test_shots(shots)
     }
 
+    // =========================================================================
+    // 8. Native Photonic Interferometer & Multi-Photon Quantum Optics
+    // =========================================================================
+
+    /// Simulates classical/single-photon optical propagation through the 16-mode dyadic beamsplitter mesh.
+    pub fn simulate_photonic_mesh(
+        &self,
+        input_mode: usize,
+        steps: usize,
+        phase_mod: Option<(usize, f64)>,
+        loss: Option<WaveguideLossModel>,
+    ) -> PhotonicMeshReport {
+        let mut interferometer = if let Some(l) = loss {
+            PhotonicInterferometer::with_loss_model(l)
+        } else {
+            PhotonicInterferometer::new()
+        };
+        interferometer.inject_mode(input_mode, 1.0, 0.0);
+        let p_in = interferometer.total_power();
+
+        if let Some((mode, phi)) = phase_mod {
+            interferometer.apply_phase_shift(mode, phi);
+        }
+
+        for _ in 0..steps.max(1) {
+            interferometer.step();
+        }
+
+        let p_out = interferometer.total_power();
+        let p_hub = interferometer.hub_power();
+        let u_err = interferometer.unitarity_error();
+        let n_couplers = interferometer.couplers.len();
+
+        PhotonicMeshReport {
+            input_mode,
+            steps: steps.max(1),
+            total_power_in: p_in,
+            total_power_out: p_out,
+            hub_power: p_hub,
+            output_modes_re: interferometer.field_re.to_vec(),
+            output_modes_im: interferometer.field_im.to_vec(),
+            unitarity_error: u_err,
+            n_couplers,
+            loss_model: interferometer.loss_model,
+        }
+    }
+
+    /// Simulates Hong-Ou-Mandel (HOM) two-photon quantum interference through a directional coupler.
+    pub fn simulate_photonic_hom(&self, loss: Option<WaveguideLossModel>) -> HongOuMandelExperiment {
+        let coupler = if let Some(l) = loss {
+            l.imbalanced_coupler()
+        } else {
+            let inv_sqrt2 = 1.0 / 2.0f64.sqrt();
+            [
+                [inv_sqrt2, inv_sqrt2],
+                [inv_sqrt2, -inv_sqrt2],
+            ]
+        };
+        HongOuMandelExperiment::simulate_2x2(coupler)
+    }
+
+    /// Simulates multi-photon Boson Sampling through the 16-mode linear optical unitary.
+    pub fn simulate_photonic_boson_sampling(
+        &self,
+        in_state: &FockState,
+    ) -> Vec<(FockState, f64)> {
+        let interferometer = PhotonicInterferometer::new();
+        interferometer.sample_boson_distribution(in_state)
+    }
+
+    // =========================================================================
+    // 9. Ab Initio Variational Quantum Eigensolver (VQE)
+    // =========================================================================
+
+    /// Executes an ab initio molecular VQE calculation with UCCSD/ADAPT ansatz.
+    pub fn run_vqe(
+        &self,
+        mol: &crate::vqe::molecules::Molecule,
+        config: &crate::vqe::driver::VqeConfig,
+    ) -> Result<crate::vqe::driver::VqeReport, String> {
+        crate::vqe::driver::solve(mol, config)
+    }
+
     /// Returns the system manifest and active capability profile.
     pub fn system_manifest(&self) -> SystemManifestReport {
         let igpu = crate::gpu::IGpuBridge::default();
@@ -293,6 +398,10 @@ impl T1000Engine {
             avx_vnni_accelerated: vnni_active,
             igpu_bridge_available: igpu_avail,
             igpu_device_name: igpu_device,
+            photonic_modes: 16,
+            photonic_couplers: 10,
+            multi_photon_fock: true,
+            vqe_adapt_solver: true,
         }
     }
 }
@@ -382,5 +491,28 @@ mod tests {
             assert!(manifest.igpu_bridge_available);
             assert!(manifest.igpu_device_name.is_some());
         }
+    }
+
+    #[test]
+    fn test_master_engine_photonic_and_vqe() {
+        let engine = T1000Engine::new();
+        let mesh_report = engine.simulate_photonic_mesh(0, 1, None, None);
+        assert_eq!(mesh_report.input_mode, 0);
+        assert!((mesh_report.total_power_out - 1.0).abs() < 1e-12);
+        assert!(mesh_report.unitarity_error < 1e-14);
+
+        let hom = engine.simulate_photonic_hom(None);
+        assert!(hom.coincidence_prob < 1e-14);
+        assert_eq!(hom.visibility, 1.0);
+
+        let in_fock = FockState::two_photon(16, 0, 1);
+        let dist = engine.simulate_photonic_boson_sampling(&in_fock);
+        assert_eq!(dist.len(), 136);
+
+        let h2 = crate::vqe::molecules::by_formula("H2").expect("H2 in catalog");
+        let vqe_conf = crate::vqe::driver::VqeConfig::default();
+        let vqe_rep = engine.run_vqe(&h2, &vqe_conf).expect("VQE solve failed");
+        assert!(vqe_rep.converged);
+        assert!(vqe_rep.within_chemical_accuracy);
     }
 }
