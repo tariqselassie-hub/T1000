@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: "If you utilize the T-1000 quantum neural network or simulation engine in academic or industrial research, please cite it as below."
+authors:
+  - family-names: "Jones"
+    given-names: "Terrence A."
+    name-particle: "SR"
+title: "T-1000: Quantum Neural Network & Mimetic Simulation Engine"
+version: 0.1.0
+date-released: 2026-10-28
+url: "https://github.com/tariqselassie-hub/T1000"
+repository-code: "https://github.com/tariqselassie-hub/T1000"
+keywords:
+  - "quantum computing"
+  - "quantum neural networks"
+  - "variational quantum circuits"
+  - "simd avx2"
+  - "quantum error correction"
+  - "pauli frame tracking"
+  - "opensmiles"
+  - "rust"
+license: "MIT OR Apache-2.0"

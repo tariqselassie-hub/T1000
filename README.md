@@ -1,8 +1,33 @@
-# T-1000: Quantum Neural Network & Mimetic Circuit Simulator
+<p align="center">
+  <img src="assets/t1000_logo.jpg" alt="T-1000 Quantum Neural Network & Mimetic Simulation Engine" width="440" style="max-width: 100%; border-radius: 12px; box-shadow: 0 4px 24px rgba(0, 230, 118, 0.25);">
+</p>
 
-[![Rust](https://img.shields.io/badge/rust-2021_edition-orange.svg)](https://www.rust-lang.org)
-[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](#license)
-[![Build Status](https://img.shields.io/badge/status-active%20development-brightgreen.svg)](#)
+<h1 align="center">T-1000</h1>
+<h3 align="center">Quantum Neural Network & Mimetic Simulation Engine</h3>
+
+<p align="center">
+  <em>High-performance AVX2+FMA simulation, arbitrary circuit DAG scheduling, SQUID-inspired Pauli frame sidecar tracking, and molecular latent space exploration in pure Rust.</em>
+</p>
+
+<p align="center">
+  <a href="https://www.rust-lang.org"><img src="https://img.shields.io/badge/rust-2021_edition-orange.svg?style=flat-square&logo=rust" alt="Rust 2021"></a>
+  <a href="#license--attribution"><img src="https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg?style=flat-square" alt="License"></a>
+  <a href="#"><img src="https://img.shields.io/badge/tests-455%20passed-00e676.svg?style=flat-square" alt="Tests"></a>
+  <a href="#"><img src="https://img.shields.io/badge/SIMD-AVX2%20%2B%20FMA%20(256--bit)-ffd700.svg?style=flat-square" alt="SIMD"></a>
+  <a href="#"><img src="https://img.shields.io/badge/architecture-Deen%20OS%20Balanced%20Heptal-0f172a.svg?style=flat-square" alt="Architecture"></a>
+  <a href="https://github.com/tariqselassie-hub/T1000"><img src="https://img.shields.io/badge/status-production--grade-00e676.svg?style=flat-square" alt="Status"></a>
+</p>
+
+<p align="center">
+  <code>quantum-computing</code> &bull;
+  <code>quantum-neural-networks</code> &bull;
+  <code>variational-quantum-circuits</code> &bull;
+  <code>simd-avx2</code> &bull;
+  <code>quantum-error-correction</code> &bull;
+  <code>pauli-frame-tracking</code> &bull;
+  <code>opensmiles</code> &bull;
+  <code>high-performance-rust</code>
+</p>
 
 > *"Like the liquid metal assassin, T-1000 adapts and mimics any quantum device or classical architecture. Feed it parameters; it handles the rest."*
 
@@ -11,6 +36,27 @@
 ---
 
 > Where each headline number comes from, and how to regenerate it: [`docs/CLAIMS.md`](docs/CLAIMS.md) (`python scripts/check_claims.py`).
+
+---
+
+## Quick Start
+
+```bash
+# 1. Clone repository
+git clone https://github.com/tariqselassie-hub/T1000.git
+cd T1000
+
+# 2. Run the test suite (all 455 tests pass in < 2s)
+cargo test --workspace
+
+# 3. Launch the Deen Toolchain CLI (Asynchronous Sidecar vs Sync Benchmark)
+cargo run --release -p t1000 --bin deen_toolchain -- bench-sidecar 100000
+
+# 4. Run the Continuous State Dynamics & SQUID Sidecar Benchmark
+cargo run --release -p t1000 --bin continuous_dynamics_bench
+```
+
+---
 
 ## Architecture Overview
 
@@ -597,14 +643,14 @@ cargo check --workspace
 
 # Batch generate all 39 publication-grade 300 DPI scientific charts in one command
 python scripts/charting/chart_all.py
-`
+```
 
 ---
 
 ### System 11: Continuous State Dynamics, Pauli Sidecar & MBU Wire Recycling
 Weak non-destructive expectation streaming, SQUID-inspired symplectic Pauli frame tracking (16,384x speedup, concurrent lock-free sidecar thread), and deterministic measurement-based uncomputation (MBU) with LIFO hot-cache wire recycling (128x memory compression).
 
-`ash
+```bash
 # Run Continuous Dynamics Benchmark (Streaming Expectation, Pauli Sidecar & MBU)
 cargo run --release -p t1000 --bin continuous_dynamics_bench -- --record
 
@@ -613,9 +659,9 @@ cargo run --release -p t1000 --bin deen_qubit_sidecar_bench -- --record
 
 # Run Deen Toolchain CLI Suite (Sidecar Dispatch Benchmark & Noise Sweeps)
 cargo run --release -p t1000 --bin deen_toolchain -- bench-sidecar 100000 --record
-`
+```
 
-* **Continuous State Dynamics & Intrinsic Phase Chaining Architecture:** [docs/cohesion_architecture.md#12-continuous-state-dynamics--intrinsic-phase-chaining-architecture-completed](docs/cohesion_architecture.md#12-continuous-state-dynamics--intrinsic-phase-chaining-architecture-completed).``
+* **Continuous State Dynamics & Intrinsic Phase Chaining Architecture:** [docs/cohesion_architecture.md#12-continuous-state-dynamics--intrinsic-phase-chaining-architecture-completed](docs/cohesion_architecture.md#12-continuous-state-dynamics--intrinsic-phase-chaining-architecture-completed).
 
 * **Universal Fault-Tolerant Quantum Neural Networks: Eastin-Knill Bypass via Magic State Distillation (Monograph M156):** [`docs/findings/universal_ft_qnn_magic_state_w7_injection.md`](docs/findings/universal_ft_qnn_magic_state_w7_injection.md).
 * **36-Qubit Virtual Cut-Bridge & Heterogeneous Co-Processor Pipeline (Monograph M155):** [`docs/findings/virtual_36q_cut_bridge_igpu.md`](docs/findings/virtual_36q_cut_bridge_igpu.md).
@@ -650,18 +696,18 @@ cargo run --release -p t1000 --bin deen_toolchain -- bench-sidecar 100000 --reco
 
 ---
 
-## Architecture Governance
+## Contributing & Community Governance
 
-Autonomous agents and contributors must follow the sovereign engineering, visual palette, and dual-licensing governance defined in [AGENTS.md](AGENTS.md).
+We actively welcome quantum computing researchers, Rust performance engineers, and machine learning architects to collaborate.
 
----
+- **Contribution Guidelines:** Detailed engineering bounds, LoC limits, and PR workflow are documented in [CONTRIBUTING.md](CONTRIBUTING.md).
+- **Architecture Governance:** Autonomous agents and human contributors must follow sovereign specifications in [AGENTS.md](AGENTS.md).
+- **Security Policy:** To report vulnerabilities responsibly, review [SECURITY.md](SECURITY.md).
+- **Citation:** To cite this software in scientific publications, see [CITATION.cff](CITATION.cff).
 
-## Contributing & Development Roadmap
-
-We are actively welcoming quantum computing researchers, Rust performance engineers, and machine learning architects to collaborate:
-
+### Active Roadmap
 - [ ] **AVX-512 & ARM NEON Kernels:** Expanding SIMD kernels beyond AVX2 for Apple Silicon (M-series) and modern server CPUs.
-- [ ] **GPU Backend:** WGPU / CUDA kernels for scaling beyond 26 qubits.
+- [ ] **GPU Backend:** WGPU / Vulkan compute kernels for scaling beyond 26 qubits dense.
 - [ ] **Graph Neural Network (GNN) Hybridization:** Fusing T-1000 latent molecular embeddings with classical GNN message passing.
 
 Feel free to open issues, submit pull requests, or share benchmark results on different architectures!
