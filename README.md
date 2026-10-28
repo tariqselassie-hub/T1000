@@ -266,6 +266,14 @@
 * **Noise study (`vqe_noise`):** UCCSD compiled to Pauli rotations (64 to 36,480 CNOTs, naive), depolarising/readout/shot noise, shot budgets (4.9e4 to 2.6e8 for 1.59 mHa) and SPSA on sampled energies; gate error rather than shot noise is the limit.
 * Validated against the Szabo & Ostlund H₂ tables, published STO-3G Hartree-Fock energies, and an independent determinant-basis Hamiltonian. Detailed documentation: [`docs/vqe.md`](docs/vqe.md).
 
+### 30. Native Photonic Interferometer & Multi-Photon Quantum Optics (`t1000::photonic_interferometer`)
+* **16-Mode Beamsplitter Mesh:** Directed 7-node graph transition matrix compiled into a native 16-mode unitary scattering matrix $U_{16} = S_{16} C_{16}$ using exclusively 10 balanced 50:50 directional couplers ($H_2, H_4$), eliminating analog phase drift.
+* **Silicon-Organic Hybrid (SOH) Pockels Modulator:** Sub-0.5V electro-optic switching voltage ($V_\pi \approx 0.463\text{ V}$) utilizing ultra-high hyperpolarizability organic chromophore (Pitt #1 Lead) in nanoscale slot waveguides.
+* **Multi-Photon Fock State Quantum Simulation & Glynn Permanent:** Exact complex matrix permanent evaluation via Glynn's algorithm ($O(N 2^N)$), calculating multi-photon transition amplitudes $\langle s | U | r \rangle$ across $\binom{M+N-1}{N}$ Hilbert space.
+* **Hong-Ou-Mandel (HOM) Quantum Interference:** Verified $100\%$ visibility two-photon bunching ($P(|1,1\rangle) = 0$, $P(|2,0\rangle) = 0.5$, $P(|0,2\rangle) = 0.5$, $V = 1.0$).
+* **Physical Waveguide Loss & Tolerances:** Propagation loss presets for Silicon-on-Insulator (SOI, $1.8\text{ dB/cm}$) and Thin-Film Lithium Niobate (TFLN, $0.25\text{ dB/cm}$) with directional coupler fabrication split tolerances.
+* **Sovereign Engine & Web REST Integration:** Unified into [`T1000Engine`](crates/t1000/src/engine.rs) facade and exposed via `/api/photonic/simulate` in [`web/serve.py`](web/serve.py).
+
 ## System Startup & Execution Guide
 
 > **Where results go.** Benchmark and training binaries write to a git-ignored scratch

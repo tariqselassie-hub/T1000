@@ -231,3 +231,37 @@ Interoperability   (Compile-Mitigate) (PT + Coherence)  (Master API)      (FPGA 
 * `test_rx_and_ry_synthesis`: Verified $R_x$ and $R_y$ operator distance bounds.
 * `test_circuit_lowering_to_clifford_t`: End-to-end lowering from VQC `CircuitOp` stream into discrete tokens.
 
+---
+
+## 10. Native Photonic Interferometer & Multi-Photon Quantum Optics Engine (COMPLETED)
+
+### Architectural Achievements
+1. **Submodule Namespace Refactoring (`t1000::photonic_interferometer`):**
+   * Partitioned into domain submodules strictly adhering to $\le 800$ LoC architectural ceiling:
+     * `mesh.rs`: Synthesizes 16-mode unitary transition matrix $U_{16} = S_{16} C_{16}$ using 10 balanced 50:50 directional couplers ($H_2, H_4$).
+     * `pockels.rs`: Silicon-Organic Hybrid (SOH) slot modulator with sub-0.5V half-wave switching voltage ($V_\pi \approx 0.463\text{ V}$) utilizing Pitt #1 Lead chromophore.
+     * `loss.rs`: Physical optical non-idealities: Beer-Lambert power attenuation, coupler insertion losses, and split imbalance ($50:50 \pm \epsilon$).
+     * `fock.rs`: Multi-photon Fock state representations, Glynn matrix permanent, and Hong-Ou-Mandel quantum interference.
+     * `mod.rs`: Master photonic facade orchestrating classical fields and multi-photon state evolution.
+
+2. **Quantum Multi-Photon Simulation & Glynn Matrix Permanent:**
+   * Exact evaluation of complex matrix permanents in $O(N 2^N)$ via Glynn's formula:
+     $$\text{perm}(A) = \frac{1}{2^{N-1}} \sum_{\delta \in \{-1, +1\}^N, \delta_1 = 1} \left( \prod_{k=1}^N \delta_k \right) \prod_{j=1}^N \left( \sum_{i=1}^N \delta_i A_{i, j} \right)$$
+   * Computes transition amplitudes $\langle s | U | r \rangle = \text{perm}(U_{s, r}) / \sqrt{\prod s_i! \prod r_j!}$ across $\binom{M+N-1}{N}$ Hilbert space.
+   * Hong-Ou-Mandel (HOM) interference: verified complete destructive cancellation of coincidence $P(|1, 1\rangle) = 0$ with 100% visibility ($V = 1.0$).
+
+3. **Master Engine Facade & REST Telemetry Integration (`T1000Engine` & `web/serve.py`):**
+   * Added `engine.simulate_photonic_mesh()`, `engine.simulate_photonic_hom()`, and `engine.simulate_photonic_boson_sampling()`.
+   * Added `engine.run_vqe()` orchestrating ab initio UCCSD/ADAPT-VQE chemistry calculations.
+   * Updated `SystemManifestReport` with active photonic modes (16), couplers (10), multi-photon Fock (true), and VQE solver (true).
+   * Exposed endpoint `POST /api/photonic/simulate` in `web/serve.py`.
+
+### Verification Matrix (`crates/t1000/src/photonic_interferometer/mod.rs`)
+* `test_photonic_unitarity_machine_precision`: Matrix unitarity error $\| U^T U - I \| < 10^{-14}$.
+* `test_optical_power_conservation`: Power strictly conserved across multi-step propagation ($|P - 1.0| < 10^{-14}$).
+* `test_hong_ou_mandel_two_photon_bunching`: Zero coincidence ($P(|1, 1\rangle) < 10^{-14}$), symmetric bunching ($P(|2, 0\rangle) = 0.5$, $P(|0, 2\rangle) = 0.5$), and 100% visibility.
+* `test_waveguide_loss_attenuation`: Waveguide attenuation matches Beer-Lambert exponential decay.
+* `test_boson_sampling_two_photon_distribution`: 2-photon distribution over 136 basis states satisfies $\sum P_s = 1.000000000$.
+* `test_molecular_phase_shift_power_conservation`: Phase modulation via $V_\pi$ voltage flips field amplitude to $-1.0$ while conserving optical power.
+* `test_grand_loop_molecular_consistency`: End-to-end integration across OpenSMILES featurizer, SOH Pockels modulation, and Szegedy walk unitarity.
+
