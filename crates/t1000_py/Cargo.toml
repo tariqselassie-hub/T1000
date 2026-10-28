@@ -1,0 +1,46 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
+# Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
+# Python bindings for the T-1000 engine, built into a wheel by maturin (see pyproject.toml).
+# This crate is outside the root workspace: a PyO3 extension module only links inside maturin's
+# build, so `cargo test --workspace` must not try to link it. The lints mirror the workspace's.
+
+[package]
+name = "t1000_py"
+version = "0.1.0"
+edition = "2021"
+authors = ["Terrence A. Jones SR"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/tariqselassie-hub/T1000"
+description = "Python bindings for the T-1000 quantum simulation engine"
+publish = false
+
+[lib]
+name = "_t1000"
+crate-type = ["cdylib"]
+
+[dependencies]
+t1000 = { path = "../t1000" }
+num-complex = "0.4"
+numpy = "0.30"
+pyo3 = { version = "0.30", features = ["abi3-py39"] }
+serde_json = "1"
+
+[features]
+# maturin turns this on (pyproject.toml); plain `cargo build` links against libpython instead.
+extension-module = ["pyo3/extension-module"]
+
+[lints.rust]
+unsafe_code = "allow"
+missing_debug_implementations = "warn"
+
+[lints.clippy]
+correctness = { level = "deny", priority = -1 }
+erasing_op = "deny"
+approx_constant = "deny"
+redundant_clone = "warn"
+unnecessary_wraps = "warn"
+manual_clamp = "warn"
+manual_div_ceil = "warn"
+
+[workspace]

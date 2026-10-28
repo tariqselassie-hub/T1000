@@ -4,6 +4,8 @@ members = [
     "crates/t1000",
     "crates/t1000_conway",
 ]
+# Python bindings: built by maturin, kept out of `cargo test --workspace` (see its Cargo.toml).
+exclude = ["crates/t1000_py"]
 resolver = "2"
 
 [workspace.package]

@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
+# Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
+# Build output of this out-of-workspace crate and of maturin.
+target/
+dist/
+*.whl
+# `maturin develop` places the compiled module next to the Python sources.
+python/t1000/*.pyd
+python/t1000/*.so
+__pycache__/
+.pytest_cache/

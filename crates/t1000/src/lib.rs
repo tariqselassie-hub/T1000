@@ -78,6 +78,7 @@ pub use trees::directed_heptal_walk;
 pub use trees::glued_tree_valve;
 pub use trees::glued_trees;
 pub use trees::ultrametric_tree;
+pub mod vqc_classifier;
 pub mod vqe;
 pub mod zinc;
 pub use zinc::*;
