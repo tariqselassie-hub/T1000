@@ -64,6 +64,7 @@ pub struct SystemManifestReport {
     pub photonic_couplers: usize,
     pub multi_photon_fock: bool,
     pub vqe_adapt_solver: bool,
+    pub available_backends: Vec<crate::backend::BackendKind>,
 }
 
 /// Execution telemetry from native photonic interferometer mesh simulation.
@@ -402,7 +403,35 @@ impl T1000Engine {
             photonic_couplers: 10,
             multi_photon_fock: true,
             vqe_adapt_solver: true,
+            available_backends: Self::available_backends(),
         }
+    }
+
+    /// Returns the complete registry of supported quantum and co-processor execution backends.
+    pub fn available_backends() -> Vec<crate::backend::BackendKind> {
+        vec![
+            crate::backend::BackendKind::CpuAvx2Fp64,
+            crate::backend::BackendKind::IGpuFp32,
+            crate::backend::BackendKind::Fpga1000Qpu,
+            crate::backend::BackendKind::QpuModelFixedPoint,
+            crate::backend::BackendKind::PhotonicMesh,
+        ]
+    }
+
+    /// Returns the list of consolidated backends via instance facade.
+    pub fn list_backends(&self) -> Vec<crate::backend::BackendKind> {
+        Self::available_backends()
+    }
+
+    /// Executes a compiled quantum circuit on a chosen backend via the selector engine.
+    pub fn execute_on_backend(
+        &self,
+        circuit: &crate::compiler::CompiledCircuit,
+        state: &mut QuantumState,
+        policy: crate::backend::BackendPolicy,
+    ) -> crate::backend::BackendExecutionReport {
+        let selector = crate::backend::BackendSelector::new(policy);
+        selector.execute(circuit, state)
     }
 }
 
@@ -514,5 +543,42 @@ mod tests {
         let vqe_rep = engine.run_vqe(&h2, &vqe_conf).expect("VQE solve failed");
         assert!(vqe_rep.converged);
         assert!(vqe_rep.within_chemical_accuracy);
+    }
+
+    #[test]
+    fn test_master_engine_consolidated_backends() {
+        let engine = T1000Engine::new();
+        let backends = engine.list_backends();
+        assert_eq!(backends.len(), 5);
+        assert!(backends.contains(&crate::backend::BackendKind::CpuAvx2Fp64));
+        assert!(backends.contains(&crate::backend::BackendKind::IGpuFp32));
+        assert!(backends.contains(&crate::backend::BackendKind::Fpga1000Qpu));
+        assert!(backends.contains(&crate::backend::BackendKind::QpuModelFixedPoint));
+        assert!(backends.contains(&crate::backend::BackendKind::PhotonicMesh));
+
+        let manifest = engine.system_manifest();
+        assert_eq!(manifest.available_backends.len(), 5);
+
+        let mut b = CircuitBuilder::new(3);
+        b.h(0).cnot(0, 1).cz(1, 2);
+        let c = b.compile();
+        let mut s = QuantumState::ground(1 << 3);
+
+        let rep_exact = engine.execute_on_backend(
+            &c,
+            &mut s,
+            crate::backend::BackendPolicy::default(),
+        );
+        assert_eq!(rep_exact.used, crate::backend::BackendKind::CpuAvx2Fp64);
+
+        let rep_fixed = engine.execute_on_backend(
+            &c,
+            &mut s,
+            crate::backend::BackendPolicy {
+                precision: crate::backend::Precision::FixedPoint,
+                ..crate::backend::BackendPolicy::default()
+            },
+        );
+        assert_eq!(rep_fixed.used, crate::backend::BackendKind::QpuModelFixedPoint);
     }
 }
