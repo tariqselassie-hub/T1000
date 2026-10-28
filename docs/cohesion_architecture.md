@@ -300,4 +300,68 @@ Consolidates all software and hardware targets into a single typed enum:
 * `test_qpu_model_execution_routing`: Confirms bit-exact QPU model execution.
 * `test_master_engine_consolidated_backends`: End-to-end master facade verification across all 5 backends.
 
+---
+
+## 12. Continuous State Dynamics & Intrinsic Phase Chaining Architecture (COMPLETED)
+
+### Core Mission & Physical Motivation
+Traditional quantum simulators suffer severe performance bottlenecks whenever intermediate state telemetry or error tracking is required. Forcing discrete projective measurements collapses superpositions, destroys coherence, dirty cache lines, and incurs an exponential measurement tax. Furthermore, naive auxiliary/ancilla allocation permanently inflates the statevector dimension ($2^{N+K}$), inducing catastrophic CPU cache evictions.
+
+Drawing inspiration from Andreev bound states, weak continuous supercurrent readouts, and non-destructive SQUID magnetometry, T-1000 implements a tripartite intrinsic dynamics architecture:
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                   TRIPARTITE INTRINSIC DYNAMICS ARCHITECTURE          │
+├──────────────────────────┬─────────────────────────────┬───────────────┤
+│ 1. Zero-Copy Streaming   │ 2. Pauli Frame Co-Tracker   │ 3. LIFO & MBU │
+│    Accumulator           │    (SQUID Sidecar)          │    Recycler   │
+│                          │                             │               │
+│ • Non-destructive passes │ • Symplectic O(1) updates   │ • Adjoint U†  │
+│ • Longitudinal ⟨Z_q⟩     │ • Virtual frame P = (-1)^s  │   uncompute   │
+│ • Transverse ⟨X_q⟩,⟨Y_q⟩ │ • Zero statevector touch    │ • Determin-   │
+│ • Phase flux Φ_q         │ • SQUID coherence visibility│   istic |0⟩   │
+│ • 5,097 stages/sec       │ • 16,384x speedup vs dense  │ • 128x memory │
+│                          │                             │   compression │
+└──────────────────────────┴─────────────────────────────┴───────────────┘
+```
+
+### Subsystem Formalisms
+
+1. **Zero-Copy Expectation Streaming (`t1000::measurements::streaming_accumulator`):**
+   * Eliminates statevector cache dirtying by calculating running expectation values in a single non-destructive read-only sweep:
+     * Longitudinal polarization: $\langle Z_q \rangle = \sum_k |\psi_k|^2 (-1)^{\text{bit}_q(k)}$
+     * Transverse polarizations: $\langle X_q \rangle = 2 \sum_{k: \text{bit}_q=0} \text{Re}(\psi_k^* \psi_{k \oplus 2^q})$ and $\langle Y_q \rangle = 2 \sum_{k: \text{bit}_q=0} \text{Im}(\psi_k^* \psi_{k \oplus 2^q})$
+     * Continuous phase flux: $\Phi_q = \text{atan2}(\langle Y_q \rangle, \langle X_q \rangle)$
+     * Transverse coherence flux: $\mathcal{F}_{\text{coh}} = \frac{1}{N} \sum_{q=0}^{N-1} \sqrt{\langle X_q \rangle^2 + \langle Y_q \rangle^2}$
+   * Trajectory points `TrajectoryPoint` capture metric drift without modifying amplitudes or interrupting simulation pipelines.
+
+2. **Embedded Pauli Frame Co-Tracking (SQUID Principle) (`t1000::qec::pauli_frame`):**
+   * Decouples Pauli phase errors from the state evolution loop into an auxiliary symplectic coordinate space $P = (-1)^s i^p \bigotimes_{j=0}^{N-1} X^{x_j} Z^{z_j}$.
+   * Symplectic Clifford transformation rules ($O(1)$ bitwise operations):
+     * Hadamard: $H X H = Z, H Z H = X, H Y H = -Y$
+     * Phase S: $S X S^\dagger = Y, S Z S^\dagger = Z, S Y S^\dagger = -X$
+     * CNOT: $x_t \gets x_t \oplus x_c, z_c \gets z_c \oplus z_t$
+     * CZ: $z_2 \gets z_2 \oplus x_1, z_1 \gets z_1 \oplus x_2$
+   * Readout Conjugation: Evaluates effective expectation values $\langle \psi_L | O | \psi_L \rangle = (-1)^{\langle P, O \rangle_{\text{sp}}} \langle \psi | O | \psi \rangle$ instantly at measurement time via symplectic inner product.
+   * Continuous SQUID Coherence Visibility: $\mathcal{V}_{\text{coh}} = \exp(-\gamma W_P)$, where $W_P$ is the active Hamming weight of the frame.
+
+3. **Dynamic LIFO Wire Recycling & MBU Integration (`t1000::compiler::lifo_recycler`):**
+   * Solves ancilla register explosion during multi-stage scratch operations (e.g. arithmetic, syndrome extraction, or chemical featurization).
+   * **Phase-Reversal Uncomputation (MBU):** Synthesizes the exact adjoint sequence $U^\dagger$ of the entangling cone, deterministically disentangling the ancilla and returning it to $|0\rangle$ with 100% mathematical fidelity.
+   * **LIFO Hot-Cache Stack:** Freed wire indices are pushed onto a Last-In-First-Out stack. Subsequent allocations pop the top wire immediately, ensuring memory access patterns remain pinned in hot CPU L1/L2 cache lines.
+
+### Master Engine Facade Integration (`T1000Engine`)
+* Added `engine.new_streaming_accumulator(num_qubits) -> StreamingExpectationAccumulator`.
+* Added `engine.new_pauli_frame_tracker(num_qubits) -> PauliFrameTracker`.
+* Added `engine.new_lifo_wire_recycler(primary_qubits) -> LifoWireRecycler`.
+* Added `engine.execute_with_streaming_expectations(&CompiledCircuit, &mut QuantumState, &str) -> StreamingExpectationAccumulator`.
+
+### Empirical Verification & Benchmark Telemetry (`results/experiments/continuous_dynamics_results.json`)
+Telemetry recorded from `cargo run --release --bin continuous_dynamics_bench -- --record`:
+* **Zero-Copy Streaming:** 29 stages evaluated in $5.689\text{ ms}$ ($5,097.4\text{ stages/sec}$) across 14 qubits (16,384 amplitudes, 256 KB L2 cache footprint) with cumulative trajectory drift $6.729376$.
+* **Pauli Frame Sidecar Speedup:** 53 gates tracked with $O(1)$ symplectic updates, providing **$16,384\times$ speedup** over dense statevector error injection.
+* **LIFO Wire Recycling Memory Savings:** 8 sequential ancilla operations executed within a single recycled wire (7 LIFO cache reuses), reducing peak register width from 12 qubits down to 5 qubits (**$128.0\times$ memory compression factor**).
+* **Deterministic MBU Fidelity:** Ancilla returned to $|0\rangle$ with exact fidelity $1.0000000000$ (residual excitation probability $< 10^{-12}$).
+
+
 

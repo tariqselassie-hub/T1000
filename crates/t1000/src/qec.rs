@@ -18,12 +18,14 @@ pub mod heptal_qudit;
 pub mod lattice_surgery;
 pub mod magic_distillation;
 pub mod magic_w7_injection;
+pub mod pauli_frame;
 pub mod vnni;
 
 pub use heptal_qudit::*;
 pub use lattice_surgery::*;
 pub use magic_distillation::*;
 pub use magic_w7_injection::*;
+pub use pauli_frame::*;
 
 /// Supported quantum error correction code families.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

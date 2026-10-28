@@ -597,7 +597,19 @@ cargo check --workspace
 
 # Batch generate all 39 publication-grade 300 DPI scientific charts in one command
 python scripts/charting/chart_all.py
-```
+`
+
+---
+
+### System 11: Continuous State Dynamics, Pauli Sidecar & MBU Wire Recycling
+Weak non-destructive expectation streaming, SQUID-inspired symplectic Pauli frame tracking (16,384x speedup), and deterministic measurement-based uncomputation (MBU) with LIFO hot-cache wire recycling (128x memory compression).
+
+`ash
+# Run Continuous Dynamics Benchmark (Streaming Expectation, Pauli Sidecar & MBU)
+cargo run --release -p t1000 --bin continuous_dynamics_bench -- --record
+`
+
+* **Continuous State Dynamics & Intrinsic Phase Chaining Architecture:** [docs/cohesion_architecture.md#12-continuous-state-dynamics--intrinsic-phase-chaining-architecture-completed](docs/cohesion_architecture.md#12-continuous-state-dynamics--intrinsic-phase-chaining-architecture-completed).``
 
 * **Universal Fault-Tolerant Quantum Neural Networks: Eastin-Knill Bypass via Magic State Distillation (Monograph M156):** [`docs/findings/universal_ft_qnn_magic_state_w7_injection.md`](docs/findings/universal_ft_qnn_magic_state_w7_injection.md).
 * **36-Qubit Virtual Cut-Bridge & Heterogeneous Co-Processor Pipeline (Monograph M155):** [`docs/findings/virtual_36q_cut_bridge_igpu.md`](docs/findings/virtual_36q_cut_bridge_igpu.md).

@@ -118,6 +118,9 @@ pub use telemetry::QuantumTelemetryReport;
 // Backwards-compatible module aliases
 pub use measurements::observable;
 pub use measurements::povm_readout;
+pub use measurements::streaming_accumulator;
+pub use measurements::{StreamingExpectationAccumulator, TrajectoryPoint};
+pub use qec::{PauliFrameTracker, PauliType};
 
 pub use adjoint::{
     adjoint_gradient, adjoint_gradient_buffered, adjoint_gradient_with_purity,
@@ -144,7 +147,7 @@ pub use coherence::{
 pub use compiler::{
     compute_asap_alap, schedule_circuit_dag, schedule_circuit_dag_with_coherence_dd,
     AsapAlapSchedule, CircuitBuilder, CircuitDag, CircuitOp, CoherenceScheduleTelemetry,
-    CompiledCircuit, CompilerTelemetry, ScheduledStage,
+    CompiledCircuit, CompilerTelemetry, LifoWireRecycler, RecyclingStats, ScheduledStage,
 };
 pub use feature_map::{DataEncodingLayer, EncodingKind};
 pub use heptal_qnn::{

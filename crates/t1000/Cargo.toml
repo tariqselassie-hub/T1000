@@ -370,6 +370,10 @@ path = "src/bin/benchmarks/full_qnn_suite_bench.rs"
 name = "qec_fault_tolerance_bench"
 path = "src/bin/benchmarks/qec_fault_tolerance_bench.rs"
 
+[[bin]]
+name = "continuous_dynamics_bench"
+path = "src/bin/benchmarks/continuous_dynamics_bench.rs"
+
 
 
 

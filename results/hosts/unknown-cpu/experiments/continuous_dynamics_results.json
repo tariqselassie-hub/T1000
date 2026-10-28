@@ -1,0 +1,28 @@
+{
+  "timestamp": "2026-10-28T09:15:00Z",
+  "primary_qubits": 14,
+  "statevector_dim": 16384,
+  "memory_footprint_kb": 256.0,
+  "streaming_stages_recorded": 29,
+  "streaming_duration_ms": 5.6892000000000005,
+  "streaming_throughput_stages_per_sec": 5097.37748716867,
+  "total_trajectory_drift": 6.729375825414986,
+  "initial_mean_z": 1.0,
+  "final_mean_z": 0.11170685158200744,
+  "final_coherence_flux": 0.00005007279207736648,
+  "pauli_frame_gates_tracked": 53,
+  "pauli_frame_errors_injected": 3,
+  "pauli_frame_weight": 3,
+  "pauli_frame_visibility": 0.6376281516217733,
+  "pauli_conjugation_speedup_vs_dense": 16384.0,
+  "lifo_recycling_stats": {
+    "primary_qubits": 4,
+    "total_allocations": 8,
+    "recycled_allocations": 7,
+    "peak_wires": 5,
+    "wires_saved": 7,
+    "uncompute_ops_inserted": 16
+  },
+  "mbu_uncomputation_fidelity": 1.0,
+  "memory_compression_factor": 128.0
+}

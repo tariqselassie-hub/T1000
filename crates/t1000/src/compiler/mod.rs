@@ -7,6 +7,7 @@ pub mod dag;
 pub mod executor;
 pub mod fusion;
 pub(crate) mod layered;
+pub mod lifo_recycler;
 pub mod op;
 mod permute;
 pub mod scheduler;
@@ -18,6 +19,7 @@ pub use executor::{
     apply_unitary2x2_op, CompiledCircuit, CompilerTelemetry,
 };
 pub use fusion::{optimize_dag_fusion, FusionStats};
+pub use lifo_recycler::{LifoWireRecycler, RecyclingStats};
 pub use op::{CircuitOp, Unitary2x2};
 pub use scheduler::{
     compute_asap_alap, schedule_circuit_dag, schedule_circuit_dag_with_coherence_dd,

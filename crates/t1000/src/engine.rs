@@ -19,8 +19,10 @@ use crate::canonical::{
 use crate::chemistry::{MolecularQuantumReport, Period12Molecule, Period12MoleculeMetadata};
 use crate::clifford_t::{synthesize_and_profile, CliffordTSynthesisReport};
 use crate::coherence::NoiseChannelParams;
-use crate::compiler::CircuitBuilder;
+use crate::compiler::{CircuitBuilder, LifoWireRecycler};
 use crate::heptal_wave::{HeptalZipperConfig, HeptalZipperEngine, HeptalZipperReport};
+use crate::measurements::StreamingExpectationAccumulator;
+use crate::qec::PauliFrameTracker;
 use crate::smiles::{
     SmilesError, SmilesExplorer, SmilesFeatures, SmilesFeaturizer, SmilesPropertyProfile,
 };
@@ -433,6 +435,42 @@ impl T1000Engine {
         let selector = crate::backend::BackendSelector::new(policy);
         selector.execute(circuit, state)
     }
+
+    /// Creates a non-destructive zero-copy streaming expectation accumulator.
+    pub fn new_streaming_accumulator(&self, num_qubits: usize) -> StreamingExpectationAccumulator {
+        StreamingExpectationAccumulator::new(num_qubits)
+    }
+
+    /// Creates a sidecar Pauli frame co-tracker for weak continuous frame updates.
+    pub fn new_pauli_frame_tracker(&self, num_qubits: usize) -> PauliFrameTracker {
+        PauliFrameTracker::new(num_qubits)
+    }
+
+    /// Creates a dynamic LIFO wire recycler and MBU uncomputation engine.
+    pub fn new_lifo_wire_recycler(&self, primary_qubits: usize) -> LifoWireRecycler {
+        LifoWireRecycler::new(primary_qubits)
+    }
+
+    /// Executes a compiled circuit stage-by-stage while streaming continuous non-destructive
+    /// expectation coordinates without projective collapse.
+    pub fn execute_with_streaming_expectations(
+        &self,
+        circuit: &crate::compiler::CompiledCircuit,
+        state: &mut QuantumState,
+        tag_prefix: &str,
+    ) -> StreamingExpectationAccumulator {
+        let mut accumulator = StreamingExpectationAccumulator::new(circuit.num_qubits);
+        accumulator.stream_step(state, format!("{}_init", tag_prefix));
+
+        for (idx, stage) in circuit.stages.iter().enumerate() {
+            for op in &stage.ops {
+                crate::compiler::CompiledCircuit::execute_op(state, op);
+            }
+            accumulator.stream_step(state, format!("{}_stage_{}", tag_prefix, idx));
+        }
+
+        accumulator
+    }
 }
 
 #[cfg(test)]
@@ -580,5 +618,39 @@ mod tests {
             },
         );
         assert_eq!(rep_fixed.used, crate::backend::BackendKind::QpuModelFixedPoint);
+    }
+
+    #[test]
+    fn test_continuous_state_dynamics_pipeline() {
+        let engine = T1000Engine::new();
+
+        // 1. LIFO Wire Recycler & MBU
+        let mut recycler = engine.new_lifo_wire_recycler(2);
+        let ancilla = recycler.acquire_ancilla();
+        assert_eq!(ancilla, 2);
+
+        let mut builder = CircuitBuilder::new(3);
+        builder.h(0).cnot(0, ancilla);
+        recycler.record_ancilla_gate(
+            ancilla,
+            crate::compiler::CircuitOp::CNOT { control: 0, target: ancilla },
+        );
+        let uncompute = recycler.release_and_uncompute(ancilla);
+        for op in uncompute {
+            builder.dag.add_op(op);
+        }
+
+        // 2. Pauli Frame Tracker
+        let mut frame = engine.new_pauli_frame_tracker(3);
+        frame.track_hadamard(0);
+        assert_eq!(frame.gates_tracked(), 1);
+
+        // 3. Streaming Expectation Evolution
+        let compiled = builder.compile();
+        let mut state = QuantumState::ground(8);
+        let stream = engine.execute_with_streaming_expectations(&compiled, &mut state, "test_flow");
+
+        assert!(stream.history().len() >= 2);
+        assert!(stream.total_drift() >= 0.0);
     }
 }
