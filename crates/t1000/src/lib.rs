@@ -114,8 +114,9 @@ pub use simd_bloch::{
     compute_all_bloch_vectors, compute_bloch_restoring_weights, compute_qubit_bloch, BlochVector,
 };
 pub use telemetry::{
-    CoherenceTelemetry, DiagnosticMetrics, DiagnosticTelemetryEvent, ExecutionTelemetry,
-    OptimizationTelemetry, QuantumTelemetryReport, StreamingTelemetry, TelemetryStatus,
+    ingest_and_evaluate_telemetry, CoherenceTelemetry, DiagnosticMetrics, DiagnosticTelemetryEvent,
+    ExecutionMetrics, ExecutionTelemetry, Metrics, OptimizationMetrics, OptimizationTelemetry,
+    QuantumTelemetryReport, StreamingMetrics, StreamingTelemetry, TelemetryError, TelemetryPayload,
 };
 
 // Backwards-compatible module aliases

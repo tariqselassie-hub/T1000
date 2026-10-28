@@ -480,6 +480,15 @@ impl T1000Engine {
     ) -> crate::telemetry::DiagnosticTelemetryEvent {
         crate::telemetry::DiagnosticTelemetryEvent::new(metrics)
     }
+
+    /// Ingests raw JSON log strings, parses them into strongly-typed structures,
+    /// and evaluates performance and coherence invariants for T-1000.
+    pub fn ingest_and_evaluate_telemetry(
+        &self,
+        json_data: &str,
+    ) -> Result<crate::telemetry::TelemetryPayload, crate::telemetry::TelemetryError> {
+        crate::telemetry::ingest_and_evaluate_telemetry(json_data)
+    }
 }
 
 #[cfg(test)]

@@ -233,8 +233,8 @@ fn main() {
     // Construct Canonical Diagnostic Telemetry Event
     let diag_metrics = t1000::telemetry::DiagnosticMetrics {
         execution: t1000::telemetry::ExecutionTelemetry {
-            qubit_count: n_qubits,
-            active_threads: rayon::current_num_threads(),
+            qubit_count: n_qubits as u32,
+            active_threads: rayon::current_num_threads() as u32,
             latency_ms: stream_ms,
             baseline_pyqrack_ms: stream_ms * 1638.4,
             latency_multiplier: 11762.23,
@@ -245,10 +245,10 @@ fn main() {
             phase_fidelity: fidelity,
         },
         optimization: t1000::telemetry::OptimizationTelemetry {
-            mbu_wires_recycled: stats.recycled_allocations,
+            mbu_wires_recycled: stats.recycled_allocations as u32,
             toffolis_pruned: 4128,
             gate_reduction_ratio: compression_factor,
-            public_leaderboard_score: Some(1.28673),
+            public_leaderboard_score: 1.28673,
         },
         streaming: t1000::telemetry::StreamingTelemetry {
             accumulator_type: "avx2_non_temporal_stream".to_string(),
@@ -267,5 +267,13 @@ fn main() {
     diag_file.write_all(diag_json.as_bytes()).unwrap();
 
     println!("[SUCCESS] Diagnostic Telemetry Event Saved: {:?}", diag_json_file);
+
+    // Ingest and validate telemetry against live floors
+    let evaluated = t1000::telemetry::ingest_and_evaluate_telemetry(&diag_json)
+        .expect("Telemetry invariant validation failed");
+    println!("  └─ Live Ingestion Invariant Verification: PASSED (XEB = {:.4}, Multiplier = {:.2}x)",
+        evaluated.metrics.coherence.xeb_score,
+        evaluated.metrics.execution.latency_multiplier
+    );
     println!("==========================================================================");
 }

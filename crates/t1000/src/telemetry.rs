@@ -9,10 +9,12 @@
 //! - Circuit compiler telemetry (DAG fusion, stage count, cache pass reduction).
 //! - Hardware and timing latency metrics.
 
-use crate::coherence::{compute_coherence_metrics, CoherenceMetrics};
+use crate::coherence::{compute_coherence_metrics, CoherenceMetrics as StateCoherenceMetrics};
 use crate::compiler::CompilerTelemetry;
 use crate::state::QuantumState;
 use serde::{Deserialize, Serialize};
+use std::error::Error;
+use std::fmt;
 use t1000_core::porter_thomas::{verify_porter_thomas, PorterThomasReport};
 
 /// Comprehensive unified telemetry report for quantum states and circuit evolutions.
@@ -23,7 +25,7 @@ pub struct QuantumTelemetryReport {
     /// Number of physical qubits
     pub n_qubits: usize,
     /// Coherence and purity diagnostics
-    pub coherence: CoherenceMetrics,
+    pub coherence: StateCoherenceMetrics,
     /// Porter-Thomas chaos and XEB metrics (if evaluated)
     pub porter_thomas: Option<PorterThomasReport>,
     /// Circuit compiler optimizations (if derived from compiled circuit)
@@ -155,83 +157,82 @@ impl QuantumTelemetryReport {
 
 /// Execution timing and acceleration telemetry.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct ExecutionTelemetry {
-    pub qubit_count: usize,
-    pub active_threads: usize,
+pub struct ExecutionMetrics {
+    pub qubit_count: u32,
+    pub active_threads: u32,
     pub latency_ms: f64,
     pub baseline_pyqrack_ms: f64,
     pub latency_multiplier: f64,
 }
 
+pub type ExecutionTelemetry = ExecutionMetrics;
+
 /// Quantum state coherence and chaos verification telemetry.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct CoherenceTelemetry {
+pub struct CoherenceMetrics {
     pub xeb_score: f64,
     pub hog_probability: f64,
     pub phase_fidelity: f64,
 }
 
+pub type CoherenceTelemetry = CoherenceMetrics;
+
 /// Circuit optimization and wire recycling telemetry.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct OptimizationTelemetry {
-    pub mbu_wires_recycled: usize,
-    pub toffolis_pruned: usize,
+pub struct OptimizationMetrics {
+    pub mbu_wires_recycled: u32,
+    pub toffolis_pruned: u32,
     pub gate_reduction_ratio: f64,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub public_leaderboard_score: Option<f64>,
+    pub public_leaderboard_score: f64,
 }
+
+pub type OptimizationTelemetry = OptimizationMetrics;
 
 /// Continuous expectation streaming telemetry.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct StreamingTelemetry {
+pub struct StreamingMetrics {
     pub accumulator_type: String,
     pub buffer_cache_hit_rate: f64,
     pub pauli_frame_drift: f64,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub variance_multipliers: Option<crate::measurements::VarianceMultipliers>,
 }
 
+pub type StreamingTelemetry = StreamingMetrics;
+
 /// Composite diagnostic metrics container.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct DiagnosticMetrics {
-    pub execution: ExecutionTelemetry,
-    pub coherence: CoherenceTelemetry,
-    pub optimization: OptimizationTelemetry,
-    pub streaming: StreamingTelemetry,
+pub struct Metrics {
+    pub execution: ExecutionMetrics,
+    pub coherence: CoherenceMetrics,
+    pub optimization: OptimizationMetrics,
+    pub streaming: StreamingMetrics,
 }
 
-/// System operational and coherence verification lock status.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum TelemetryStatus {
-    /// Strictly adheres to XEB >= 0.999 and HOG >= 0.975 floors
-    NominalLocked,
-    /// XEB or HOG below floor but above critical dephasing threshold
-    CoherenceDegraded,
-    /// State has suffered destructive collapse or severe dephasing
-    DephasingBreached,
-}
+pub type DiagnosticMetrics = Metrics;
 
-/// Standardized structured diagnostic log event for real-time telemetry streaming.
+/// Strongly-typed telemetry payload log structure for T-1000 diagnostic streams.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct DiagnosticTelemetryEvent {
+pub struct TelemetryPayload {
     pub timestamp: String,
     pub engine: String,
     pub mode: String,
     pub architecture: String,
-    pub metrics: DiagnosticMetrics,
-    pub status: TelemetryStatus,
+    pub metrics: Metrics,
+    pub status: String,
 }
 
-impl DiagnosticTelemetryEvent {
+pub type DiagnosticTelemetryEvent = TelemetryPayload;
+
+impl TelemetryPayload {
     /// Constructs a standardized diagnostic log event and evaluates coherence lock status.
-    pub fn new(metrics: DiagnosticMetrics) -> Self {
+    pub fn new(metrics: Metrics) -> Self {
         let status = if metrics.coherence.xeb_score >= 0.999 && metrics.coherence.hog_probability >= 0.975 {
-            TelemetryStatus::NominalLocked
+            "nominal_locked".to_string()
         } else if metrics.coherence.xeb_score >= 0.95 && metrics.coherence.hog_probability >= 0.85 {
-            TelemetryStatus::CoherenceDegraded
+            "coherence_degraded".to_string()
         } else {
-            TelemetryStatus::DephasingBreached
+            "dephasing_breached".to_string()
         };
 
         Self {
@@ -262,10 +263,62 @@ impl DiagnosticTelemetryEvent {
         out.push_str(&format!("│ XEB Score / HOG Floor        │ {:>8.4} / {:>10.4} │\n", self.metrics.coherence.xeb_score, self.metrics.coherence.hog_probability));
         out.push_str(&format!("│ MBU Recycled / Pruned Gates  │ {:>6} Wires / {:>6} Gates │\n", self.metrics.optimization.mbu_wires_recycled, self.metrics.optimization.toffolis_pruned));
         out.push_str(&format!("│ Gate Reduction Ratio         │ {:>28.2}x │\n", self.metrics.optimization.gate_reduction_ratio));
-        out.push_str(&format!("│ Coherence Lock Status        │ {:>29?} │\n", self.status));
+        out.push_str(&format!("│ Coherence Lock Status        │ {:>29} │\n", self.status));
         out.push_str("└──────────────────────────────┴───────────────────────────────┘\n");
         out
     }
+}
+
+/// Evaluation errors encountered during telemetry ingestion and invariant verification.
+#[derive(Debug)]
+pub enum TelemetryError {
+    JsonParseError(serde_json::Error),
+    XebThresholdViolation(f64),
+    LatencyMultiplierLow(f64),
+}
+
+impl fmt::Display for TelemetryError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            TelemetryError::JsonParseError(e) => write!(f, "JSON parse error: {}", e),
+            TelemetryError::XebThresholdViolation(xeb) => {
+                write!(f, "XEB score {:.4} breached safety floor (requires >= 0.999)", xeb)
+            }
+            TelemetryError::LatencyMultiplierLow(m) => {
+                write!(f, "Latency multiplier {:.2}x below target threshold", m)
+            }
+        }
+    }
+}
+
+impl Error for TelemetryError {}
+
+/// Ingests raw JSON log strings, parses them into strongly-typed structures,
+/// and evaluates performance and coherence invariants for T-1000.
+pub fn ingest_and_evaluate_telemetry(json_data: &str) -> Result<TelemetryPayload, TelemetryError> {
+    // 1. Zero-copy / fast string parsing via serde_json
+    let payload: TelemetryPayload = serde_json::from_str(json_data)
+        .map_err(TelemetryError::JsonParseError)?;
+
+    // 2. Evaluate Coherence Floor (XEB >= 0.999)
+    let xeb = payload.metrics.coherence.xeb_score;
+    if xeb < 0.999 {
+        return Err(TelemetryError::XebThresholdViolation(xeb));
+    }
+
+    // 3. Evaluate Execution Latency Multiplier against baseline
+    let multiplier = payload.metrics.execution.latency_multiplier;
+    if multiplier < 1000.0 {
+        return Err(TelemetryError::LatencyMultiplierLow(multiplier));
+    }
+
+    // 4. Log successful validation match
+    println!(
+        "[T-1000 ENGINE] Telemetry validated successfully. Mode: {}, XEB: {:.4}, Multiplier: {:.2}x",
+        payload.mode, xeb, multiplier
+    );
+
+    Ok(payload)
 }
 
 #[cfg(test)]
@@ -315,7 +368,7 @@ mod tests {
                 mbu_wires_recycled: 217,
                 toffolis_pruned: 4128,
                 gate_reduction_ratio: 14.85,
-                public_leaderboard_score: Some(1.28673),
+                public_leaderboard_score: 1.28673,
             },
             streaming: StreamingTelemetry {
                 accumulator_type: "avx2_non_temporal_stream".to_string(),
@@ -326,7 +379,7 @@ mod tests {
         };
 
         let event = DiagnosticTelemetryEvent::new(metrics);
-        assert_eq!(event.status, TelemetryStatus::NominalLocked);
+        assert_eq!(event.status, "nominal_locked");
         assert_eq!(event.metrics.execution.qubit_count, 26);
         assert_eq!(event.metrics.optimization.toffolis_pruned, 4128);
 
@@ -337,5 +390,26 @@ mod tests {
         let ascii = event.render_ascii();
         assert!(ascii.contains("T-1000 DIAGNOSTIC TELEMETRY EVENT"));
         assert!(ascii.contains("11762.23x"));
+
+        // Test Ingestion and Evaluation Pipeline
+        let ingested = ingest_and_evaluate_telemetry(&json).expect("Ingest and evaluate failed");
+        assert_eq!(ingested.metrics.coherence.xeb_score, 0.9992);
+        assert_eq!(ingested.metrics.execution.latency_multiplier, 11762.23);
+
+        // Test XEB violation detection
+        let bad_xeb_json = json.replace("0.9992", "0.9850");
+        let err = ingest_and_evaluate_telemetry(&bad_xeb_json).unwrap_err();
+        match err {
+            TelemetryError::XebThresholdViolation(xeb) => assert_eq!(xeb, 0.9850),
+            _ => panic!("Expected XebThresholdViolation"),
+        }
+
+        // Test Latency multiplier violation detection
+        let bad_mult_json = json.replace("11762.23", "850.0");
+        let err = ingest_and_evaluate_telemetry(&bad_mult_json).unwrap_err();
+        match err {
+            TelemetryError::LatencyMultiplierLow(m) => assert_eq!(m, 850.0),
+            _ => panic!("Expected LatencyMultiplierLow"),
+        }
     }
 }
