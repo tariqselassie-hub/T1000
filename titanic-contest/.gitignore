@@ -1,9 +1,0 @@
-# Titanic Contest Local Artifacts & Datasets Ignore
-data/*.csv
-data/vqc_folds/
-data/vqc_final/
-*.csv
-*.log
-__pycache__/
-*.pyc
-.virtual_documents/

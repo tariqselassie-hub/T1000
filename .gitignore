@@ -49,19 +49,5 @@ data/pitt/*
 !data/pitt/README.md
 !data/pitt/pitt_quantum_summary.json
 
-# Quantum Contest compiled binaries and massive simulation dumps
-quantum-contest/**/*.kmb
-quantum-contest/**/*.so
-quantum-contest/**/*.npz
-quantum-contest/**/*.fcidump
-quantum-contest/**/submission.zip
-
-# Titanic Contest local data, folds, and transient logs
-titanic-contest/**/*.csv
-titanic-contest/**/*.log
-titanic-contest/**/vqc_folds/
-titanic-contest/**/vqc_final/
-
-
 # IDE and local configurations
 .claude/

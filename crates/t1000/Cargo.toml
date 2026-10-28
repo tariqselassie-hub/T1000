@@ -203,8 +203,8 @@ name = "qnn_protocol_train"
 path = "src/bin/training/qnn_protocol_train.rs"
 
 [[bin]]
-name = "titanic_vqc"
-path = "src/bin/training/titanic_vqc.rs"
+name = "csv_fold_vqc"
+path = "src/bin/training/csv_fold_vqc.rs"
 
 [[bin]]
 name = "qnn_train"
