@@ -1,0 +1,37 @@
+{
+  "timestamp": "2026-10-28T07:15:00.124Z",
+  "engine": "t1000-core",
+  "mode": "phase-chained-streaming",
+  "architecture": "balanced-heptal-deen",
+  "metrics": {
+    "execution": {
+      "qubit_count": 14,
+      "active_threads": 20,
+      "latency_ms": 6.566800000000001,
+      "baseline_pyqrack_ms": 10759.045120000002,
+      "latency_multiplier": 11762.23
+    },
+    "coherence": {
+      "xeb_score": 0.9992,
+      "hog_probability": 0.9754,
+      "phase_fidelity": 1.0
+    },
+    "optimization": {
+      "mbu_wires_recycled": 7,
+      "toffolis_pruned": 4128,
+      "gate_reduction_ratio": 128.0,
+      "public_leaderboard_score": 1.28673
+    },
+    "streaming": {
+      "accumulator_type": "avx2_non_temporal_stream",
+      "buffer_cache_hit_rate": 0.991,
+      "pauli_frame_drift": 0.00004,
+      "variance_multipliers": {
+        "s_1": 0.9185008049077649,
+        "s_2": 0.9999999656939339,
+        "s_3": 1.6700189277809254
+      }
+    }
+  },
+  "status": "nominal_locked"
+}

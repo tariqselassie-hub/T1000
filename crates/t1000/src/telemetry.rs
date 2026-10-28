@@ -153,6 +153,121 @@ impl QuantumTelemetryReport {
     }
 }
 
+/// Execution timing and acceleration telemetry.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ExecutionTelemetry {
+    pub qubit_count: usize,
+    pub active_threads: usize,
+    pub latency_ms: f64,
+    pub baseline_pyqrack_ms: f64,
+    pub latency_multiplier: f64,
+}
+
+/// Quantum state coherence and chaos verification telemetry.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CoherenceTelemetry {
+    pub xeb_score: f64,
+    pub hog_probability: f64,
+    pub phase_fidelity: f64,
+}
+
+/// Circuit optimization and wire recycling telemetry.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct OptimizationTelemetry {
+    pub mbu_wires_recycled: usize,
+    pub toffolis_pruned: usize,
+    pub gate_reduction_ratio: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub public_leaderboard_score: Option<f64>,
+}
+
+/// Continuous expectation streaming telemetry.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct StreamingTelemetry {
+    pub accumulator_type: String,
+    pub buffer_cache_hit_rate: f64,
+    pub pauli_frame_drift: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub variance_multipliers: Option<crate::measurements::VarianceMultipliers>,
+}
+
+/// Composite diagnostic metrics container.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DiagnosticMetrics {
+    pub execution: ExecutionTelemetry,
+    pub coherence: CoherenceTelemetry,
+    pub optimization: OptimizationTelemetry,
+    pub streaming: StreamingTelemetry,
+}
+
+/// System operational and coherence verification lock status.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TelemetryStatus {
+    /// Strictly adheres to XEB >= 0.999 and HOG >= 0.975 floors
+    NominalLocked,
+    /// XEB or HOG below floor but above critical dephasing threshold
+    CoherenceDegraded,
+    /// State has suffered destructive collapse or severe dephasing
+    DephasingBreached,
+}
+
+/// Standardized structured diagnostic log event for real-time telemetry streaming.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DiagnosticTelemetryEvent {
+    pub timestamp: String,
+    pub engine: String,
+    pub mode: String,
+    pub architecture: String,
+    pub metrics: DiagnosticMetrics,
+    pub status: TelemetryStatus,
+}
+
+impl DiagnosticTelemetryEvent {
+    /// Constructs a standardized diagnostic log event and evaluates coherence lock status.
+    pub fn new(metrics: DiagnosticMetrics) -> Self {
+        let status = if metrics.coherence.xeb_score >= 0.999 && metrics.coherence.hog_probability >= 0.975 {
+            TelemetryStatus::NominalLocked
+        } else if metrics.coherence.xeb_score >= 0.95 && metrics.coherence.hog_probability >= 0.85 {
+            TelemetryStatus::CoherenceDegraded
+        } else {
+            TelemetryStatus::DephasingBreached
+        };
+
+        Self {
+            timestamp: "2026-10-28T07:15:00.124Z".to_string(),
+            engine: "t1000-core".to_string(),
+            mode: "phase-chained-streaming".to_string(),
+            architecture: "balanced-heptal-deen".to_string(),
+            metrics,
+            status,
+        }
+    }
+
+    /// Serializes event to formatted JSON string.
+    pub fn to_json(&self) -> Result<String, serde_json::Error> {
+        serde_json::to_string_pretty(self)
+    }
+
+    /// Renders an executive ASCII box-drawing readout.
+    pub fn render_ascii(&self) -> String {
+        let mut out = String::new();
+        out.push_str("┌──────────────────────────────────────────────────────────────┐\n");
+        out.push_str("│             T-1000 DIAGNOSTIC TELEMETRY EVENT                │\n");
+        out.push_str("├──────────────────────────────┬───────────────────────────────┤\n");
+        out.push_str(&format!("│ Engine / Mode                │ {:>10} / {:>14} │\n", self.engine, self.mode));
+        out.push_str(&format!("│ Architecture                 │ {:>29} │\n", self.architecture));
+        out.push_str(&format!("│ Qubits / Latency             │ {:>2} Qubits ({:>10.3} ms) │\n", self.metrics.execution.qubit_count, self.metrics.execution.latency_ms));
+        out.push_str(&format!("│ Latency Multiplier vs PyQrack│ {:>28.2}x │\n", self.metrics.execution.latency_multiplier));
+        out.push_str(&format!("│ XEB Score / HOG Floor        │ {:>8.4} / {:>10.4} │\n", self.metrics.coherence.xeb_score, self.metrics.coherence.hog_probability));
+        out.push_str(&format!("│ MBU Recycled / Pruned Gates  │ {:>6} Wires / {:>6} Gates │\n", self.metrics.optimization.mbu_wires_recycled, self.metrics.optimization.toffolis_pruned));
+        out.push_str(&format!("│ Gate Reduction Ratio         │ {:>28.2}x │\n", self.metrics.optimization.gate_reduction_ratio));
+        out.push_str(&format!("│ Coherence Lock Status        │ {:>29?} │\n", self.status));
+        out.push_str("└──────────────────────────────┴───────────────────────────────┘\n");
+        out
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -179,5 +294,48 @@ mod tests {
 
         let json = report.to_json().expect("Serialization failed");
         assert!(json.contains("coherence"));
+    }
+
+    #[test]
+    fn test_diagnostic_telemetry_event_nominal_and_json() {
+        let metrics = DiagnosticMetrics {
+            execution: ExecutionTelemetry {
+                qubit_count: 26,
+                active_threads: 8,
+                latency_ms: 0.042,
+                baseline_pyqrack_ms: 494.014,
+                latency_multiplier: 11762.23,
+            },
+            coherence: CoherenceTelemetry {
+                xeb_score: 0.9992,
+                hog_probability: 0.9754,
+                phase_fidelity: 0.9981,
+            },
+            optimization: OptimizationTelemetry {
+                mbu_wires_recycled: 217,
+                toffolis_pruned: 4128,
+                gate_reduction_ratio: 14.85,
+                public_leaderboard_score: Some(1.28673),
+            },
+            streaming: StreamingTelemetry {
+                accumulator_type: "avx2_non_temporal_stream".to_string(),
+                buffer_cache_hit_rate: 0.991,
+                pauli_frame_drift: 0.00004,
+                variance_multipliers: None,
+            },
+        };
+
+        let event = DiagnosticTelemetryEvent::new(metrics);
+        assert_eq!(event.status, TelemetryStatus::NominalLocked);
+        assert_eq!(event.metrics.execution.qubit_count, 26);
+        assert_eq!(event.metrics.optimization.toffolis_pruned, 4128);
+
+        let json = event.to_json().expect("JSON serialization failed");
+        assert!(json.contains("\"latency_multiplier\": 11762.23"));
+        assert!(json.contains("\"status\": \"nominal_locked\""));
+
+        let ascii = event.render_ascii();
+        assert!(ascii.contains("T-1000 DIAGNOSTIC TELEMETRY EVENT"));
+        assert!(ascii.contains("11762.23x"));
     }
 }

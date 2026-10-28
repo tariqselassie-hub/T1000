@@ -471,6 +471,15 @@ impl T1000Engine {
 
         accumulator
     }
+
+    /// Emits a structured diagnostic log event evaluating execution, coherence, optimization,
+    /// and streaming metrics against mathematical integrity floors.
+    pub fn emit_diagnostic_event(
+        &self,
+        metrics: crate::telemetry::DiagnosticMetrics,
+    ) -> crate::telemetry::DiagnosticTelemetryEvent {
+        crate::telemetry::DiagnosticTelemetryEvent::new(metrics)
+    }
 }
 
 #[cfg(test)]

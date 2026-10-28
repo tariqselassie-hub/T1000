@@ -113,7 +113,10 @@ pub use simd::{SimdBackend, SimdStateView, SimdStateViewMut};
 pub use simd_bloch::{
     compute_all_bloch_vectors, compute_bloch_restoring_weights, compute_qubit_bloch, BlochVector,
 };
-pub use telemetry::QuantumTelemetryReport;
+pub use telemetry::{
+    CoherenceTelemetry, DiagnosticMetrics, DiagnosticTelemetryEvent, ExecutionTelemetry,
+    OptimizationTelemetry, QuantumTelemetryReport, StreamingTelemetry, TelemetryStatus,
+};
 
 // Backwards-compatible module aliases
 pub use measurements::observable;

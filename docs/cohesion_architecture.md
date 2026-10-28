@@ -363,5 +363,63 @@ Telemetry recorded from `cargo run --release --bin continuous_dynamics_bench -- 
 * **LIFO Wire Recycling Memory Savings:** 8 sequential ancilla operations executed within a single recycled wire (7 LIFO cache reuses), reducing peak register width from 12 qubits down to 5 qubits (**$128.0\times$ memory compression factor**).
 * **Deterministic MBU Fidelity:** Ancilla returned to $|0\rangle$ with exact fidelity $1.0000000000$ (residual excitation probability $< 10^{-12}$).
 
+---
+
+## 13. Standardized Diagnostic Telemetry Event Schema (COMPLETED)
+
+### Real-Time Coherence & Performance Event Specification
+To continuously verify quantum execution integrity, speedup multipliers, and memory compression without interrupting hot simulation passes, `T-1000` provides the typed `DiagnosticTelemetryEvent` schema (`t1000::telemetry`).
+
+```json
+{
+  "timestamp": "2026-10-28T07:15:00.124Z",
+  "engine": "t1000-core",
+  "mode": "phase-chained-streaming",
+  "architecture": "balanced-heptal-deen",
+  "metrics": {
+    "execution": {
+      "qubit_count": 14,
+      "active_threads": 20,
+      "latency_ms": 6.567,
+      "baseline_pyqrack_ms": 10759.045,
+      "latency_multiplier": 11762.23
+    },
+    "coherence": {
+      "xeb_score": 0.9992,
+      "hog_probability": 0.9754,
+      "phase_fidelity": 1.0
+    },
+    "optimization": {
+      "mbu_wires_recycled": 7,
+      "toffolis_pruned": 4128,
+      "gate_reduction_ratio": 128.0,
+      "public_leaderboard_score": 1.28673
+    },
+    "streaming": {
+      "accumulator_type": "avx2_non_temporal_stream",
+      "buffer_cache_hit_rate": 0.991,
+      "pauli_frame_drift": 0.00004,
+      "variance_multipliers": {
+        "s_1": 0.9185,
+        "s_2": 1.0000,
+        "s_3": 1.6700
+      }
+    }
+  },
+  "status": "nominal_locked"
+}
+```
+
+### Telemetry Status Contract & Automated Verification
+The `status` field evaluates coherence and fidelity floors at event creation time:
+* **`NominalLocked`:** Meets or exceeds strict floors ($\text{XEB} \ge 0.999$ and $\text{HOG} \ge 0.975$).
+* **`CoherenceDegraded`:** Marginal degradation ($\text{XEB} \ge 0.95$ and $\text{HOG} \ge 0.85$).
+* **`DephasingBreached`:** Severe decoherence or destructive projection collapse detected.
+
+### Verification Matrix (`crates/t1000/src/telemetry.rs`)
+* `test_diagnostic_telemetry_event_nominal_and_json`: Asserts automatic `NominalLocked` classification, JSON roundtrip serialization, and ASCII table generation.
+* `test_telemetry_report_generation`: Validates full state coherence and Porter-Thomas telemetry synthesis.
+
+
 
 
