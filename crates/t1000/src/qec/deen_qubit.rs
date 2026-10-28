@@ -9,7 +9,9 @@
 //! decoupling syndrome popcount and phase-drift evaluation from the primary quantum execution thread.
 
 use crate::qec::{PauliFrameBatch, PauliFrameTrackerSidecar};
+use serde::{Deserialize, Serialize};
 use std::sync::atomic::Ordering;
+use std::time::Instant;
 
 /// Core deen_qubit simulation engine with an attached asynchronous Pauli frame sidecar.
 #[derive(Debug)]
@@ -91,6 +93,112 @@ impl DeenQubitEngine {
     }
 }
 
+/// Synchronous reference implementation for inline Pauli error tracing.
+#[inline(always)]
+pub fn process_pauli_frame_sync(x_masks: &[u64], z_masks: &[u64]) -> u64 {
+    let mut drift_sum = 0u64;
+    for (&x, &z) in x_masks.iter().zip(z_masks.iter()) {
+        drift_sum = drift_sum.wrapping_add((x ^ z).count_ones() as u64);
+    }
+    drift_sum
+}
+
+/// Telemetry metrics comparing synchronous inline tracing against asynchronous sidecar dispatch.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PauliTrackingBenchmarkResult {
+    pub iterations: usize,
+    pub qubit_count: usize,
+    pub sync_duration_ms: f64,
+    pub sync_ns_per_op: f64,
+    pub sync_checksum: u64,
+    pub async_dispatch_duration_ms: f64,
+    pub async_ns_per_op: f64,
+    pub sidecar_frames_processed: u64,
+    pub speedup_dispatch_vs_sync: f64,
+}
+
+/// Benchmarks the overhead of asynchronous Pauli frame sidecar channel dispatch
+/// against synchronous inline popcount evaluation across high-volume iteration streams.
+pub fn benchmark_pauli_tracking_overhead(iterations: usize) -> PauliTrackingBenchmarkResult {
+    println!(
+        "[BENCHMARK] Starting Pauli Frame tracking comparison over {} iterations...",
+        iterations
+    );
+
+    let qubit_count = 256;
+    let dummy_x = vec![0xAAAAAAAAAAAAAAAA_u64; 4];
+    let dummy_z = vec![0x5555555555555555_u64; 4];
+
+    // ==========================================
+    // 1. Benchmark Synchronous Inline Tracing
+    // ==========================================
+    let start_sync = Instant::now();
+    let mut sync_checksum = 0u64;
+    for _ in 0..iterations {
+        sync_checksum = sync_checksum.wrapping_add(process_pauli_frame_sync(&dummy_x, &dummy_z));
+    }
+    let duration_sync = start_sync.elapsed();
+    let sync_ns_per_op = duration_sync.as_nanos() as f64 / iterations as f64;
+    println!(
+        "   -> Synchronous Tracing:    {:?} total ({:.2} ns/op) [Checksum: {}]",
+        duration_sync, sync_ns_per_op, sync_checksum
+    );
+
+    // ==========================================
+    // 2. Benchmark Asynchronous Sidecar Dispatch
+    // ==========================================
+    let sidecar = PauliFrameTrackerSidecar::new(qubit_count);
+    let start_async = Instant::now();
+
+    for i in 0..iterations {
+        let batch = PauliFrameBatch {
+            batch_id: i as u64,
+            qubit_count,
+            x_stabilizers: dummy_x.clone(),
+            z_stabilizers: dummy_z.clone(),
+            error_probability: 0.001,
+        };
+        // Measure the non-blocking channel send overhead
+        sidecar.submit_batch(batch).expect("Channel open");
+    }
+
+    let duration_async = start_async.elapsed();
+    let async_ns_per_op = duration_async.as_nanos() as f64 / iterations as f64;
+
+    // Allow background worker a brief moment to drain the queue for clean metrics
+    std::thread::sleep(std::time::Duration::from_millis(50));
+
+    println!(
+        "   -> Asynchronous Sidecar:   {:?} total ({:.2} ns/op dispatch overhead)",
+        duration_async, async_ns_per_op
+    );
+
+    let metrics = sidecar.get_metrics();
+    let processed = metrics.frames_processed.load(Ordering::Relaxed);
+    println!(
+        "   -> Sidecar Worker Stats:   {} frames successfully processed in background.",
+        processed
+    );
+
+    let speedup = if async_ns_per_op > 0.0 {
+        sync_ns_per_op / async_ns_per_op
+    } else {
+        1.0
+    };
+
+    PauliTrackingBenchmarkResult {
+        iterations,
+        qubit_count,
+        sync_duration_ms: duration_sync.as_secs_f64() * 1000.0,
+        sync_ns_per_op,
+        sync_checksum,
+        async_dispatch_duration_ms: duration_async.as_secs_f64() * 1000.0,
+        async_ns_per_op,
+        sidecar_frames_processed: processed,
+        speedup_dispatch_vs_sync: speedup,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -119,4 +227,14 @@ mod tests {
         // 10 batches * 2 = 20 drift
         assert_eq!(drift, 20);
     }
+
+    #[test]
+    fn test_benchmark_pauli_tracking_overhead() {
+        let res = benchmark_pauli_tracking_overhead(500);
+        assert_eq!(res.iterations, 500);
+        assert_eq!(res.qubit_count, 256);
+        assert!(res.sync_checksum > 0);
+        assert!(res.sidecar_frames_processed >= 450); // almost all or all processed
+    }
 }
+

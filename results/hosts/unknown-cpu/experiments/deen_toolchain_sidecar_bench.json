@@ -1,0 +1,11 @@
+{
+  "iterations": 100000,
+  "qubit_count": 256,
+  "sync_duration_ms": 0.005,
+  "sync_ns_per_op": 0.05,
+  "sync_checksum": 25600000,
+  "async_dispatch_duration_ms": 7.4959,
+  "async_ns_per_op": 74.959,
+  "sidecar_frames_processed": 100000,
+  "speedup_dispatch_vs_sync": 0.0006670313104497125
+}

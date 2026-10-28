@@ -125,8 +125,9 @@ pub use measurements::povm_readout;
 pub use measurements::streaming_accumulator;
 pub use measurements::{StreamingExpectationAccumulator, TrajectoryPoint, VarianceMultipliers};
 pub use qec::{
-    DeenQubitEngine, FrameTrackerMetrics, PauliFrameBatch, PauliFrameTracker,
-    PauliFrameTrackerSidecar, PauliType,
+    benchmark_pauli_tracking_overhead, process_pauli_frame_sync, DeenQubitEngine,
+    FrameTrackerMetrics, PauliFrameBatch, PauliFrameTracker, PauliFrameTrackerSidecar,
+    PauliTrackingBenchmarkResult, PauliType,
 };
 
 pub use adjoint::{
