@@ -14,6 +14,7 @@
 use crate::state::QuantumState;
 use serde::{Deserialize, Serialize};
 
+pub mod deen_qubit;
 pub mod heptal_qudit;
 pub mod lattice_surgery;
 pub mod magic_distillation;
@@ -21,6 +22,7 @@ pub mod magic_w7_injection;
 pub mod pauli_frame;
 pub mod vnni;
 
+pub use deen_qubit::*;
 pub use heptal_qudit::*;
 pub use lattice_surgery::*;
 pub use magic_distillation::*;

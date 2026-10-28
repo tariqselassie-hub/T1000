@@ -607,6 +607,9 @@ Weak non-destructive expectation streaming, SQUID-inspired symplectic Pauli fram
 `ash
 # Run Continuous Dynamics Benchmark (Streaming Expectation, Pauli Sidecar & MBU)
 cargo run --release -p t1000 --bin continuous_dynamics_bench -- --record
+
+# Run DeenQubit + Asynchronous Pauli Frame Sidecar Pipeline
+cargo run --release -p t1000 --bin deen_qubit_sidecar_bench -- --record
 `
 
 * **Continuous State Dynamics & Intrinsic Phase Chaining Architecture:** [docs/cohesion_architecture.md#12-continuous-state-dynamics--intrinsic-phase-chaining-architecture-completed](docs/cohesion_architecture.md#12-continuous-state-dynamics--intrinsic-phase-chaining-architecture-completed).``

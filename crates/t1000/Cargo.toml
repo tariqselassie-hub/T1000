@@ -468,3 +468,7 @@ path = "src/bin/training/bank_fraud_zeno_detector.rs"
 [[bin]]
 name = "iot_botnet_cascaded_tree"
 path = "src/bin/training/iot_botnet_cascaded_tree.rs"
+
+[[bin]]
+name = "deen_qubit_sidecar_bench"
+path = "src/bin/measurements/deen_qubit_sidecar_bench.rs"
