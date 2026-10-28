@@ -16,7 +16,7 @@ use serde::Serialize;
 use t1000::compiler::{CircuitBuilder, CircuitOp, RecyclingStats};
 use t1000::engine::T1000Engine;
 use t1000::measurements::PauliObservable;
-use t1000::qec::PauliErrorKind;
+use t1000::qec::{PauliErrorKind, PauliFrameBatch};
 use t1000::state::QuantumState;
 
 #[derive(Debug, Serialize)]
@@ -136,7 +136,22 @@ fn main() {
     println!("  ├─ Active Frame Weight (Non-Zero Paulis): {}", weight);
     println!("  ├─ SQUID Coherence Visibility: {:.4}", visibility);
     println!("  ├─ Conjugated <Z_2> Readout: {:.4} (raw: {:.4})", conjugated_z2, raw_z2);
-    println!("  └─ Symplectic Sidecar Speedup vs Dense: {:.0}x", speedup);
+    println!("  ├─ Symplectic Sidecar Speedup vs Dense: {:.0}x", speedup);
+
+    // Concurrently verify asynchronous Pauli Frame Tracker Sidecar thread
+    let sidecar = engine.new_pauli_frame_sidecar(n_qubits);
+    let batch = PauliFrameBatch::new(
+        1,
+        n_qubits,
+        vec![0x1010, 0x0104],
+        vec![0x0010, 0x1104],
+        0.0004,
+    );
+    let _ = sidecar.submit_batch(batch);
+    std::thread::sleep(std::time::Duration::from_millis(5));
+    let sidecar_processed = sidecar.frames_processed();
+    let sidecar_drift = sidecar.cumulative_drift();
+    println!("  └─ Concurrent Sidecar Thread: {} batch processed (cumulative drift: {})", sidecar_processed, sidecar_drift);
 
     // =========================================================================
     // 3. Dynamic LIFO Wire Recycling & MBU Integration

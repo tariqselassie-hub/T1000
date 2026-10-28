@@ -344,6 +344,7 @@ Drawing inspiration from Andreev bound states, weak continuous supercurrent read
      * CZ: $z_2 \gets z_2 \oplus x_1, z_1 \gets z_1 \oplus x_2$
    * Readout Conjugation: Evaluates effective expectation values $\langle \psi_L | O | \psi_L \rangle = (-1)^{\langle P, O \rangle_{\text{sp}}} \langle \psi | O | \psi \rangle$ instantly at measurement time via symplectic inner product.
    * Continuous SQUID Coherence Visibility: $\mathcal{V}_{\text{coh}} = \exp(-\gamma W_P)$, where $W_P$ is the active Hamming weight of the frame.
+   * **Concurrent Sidecar Thread (`PauliFrameTrackerSidecar`):** Dispatches batches of stabilizer flags (`PauliFrameBatch`) over non-blocking crossbeam MPSC channels to an asynchronous worker thread. The sidecar evaluates bit-sliced syndrome popcounts (`(x_mask ^ z_mask).count_ones()`) and accumulates telemetry metrics (`FrameTrackerMetrics`) without inducing destructive backaction or blocking statevector evolution.
 
 3. **Dynamic LIFO Wire Recycling & MBU Integration (`t1000::compiler::lifo_recycler`):**
    * Solves ancilla register explosion during multi-stage scratch operations (e.g. arithmetic, syndrome extraction, or chemical featurization).
@@ -353,6 +354,7 @@ Drawing inspiration from Andreev bound states, weak continuous supercurrent read
 ### Master Engine Facade Integration (`T1000Engine`)
 * Added `engine.new_streaming_accumulator(num_qubits) -> StreamingExpectationAccumulator`.
 * Added `engine.new_pauli_frame_tracker(num_qubits) -> PauliFrameTracker`.
+* Added `engine.new_pauli_frame_sidecar(qubit_capacity) -> PauliFrameTrackerSidecar`.
 * Added `engine.new_lifo_wire_recycler(primary_qubits) -> LifoWireRecycler`.
 * Added `engine.execute_with_streaming_expectations(&CompiledCircuit, &mut QuantumState, &str) -> StreamingExpectationAccumulator`.
 

@@ -602,7 +602,7 @@ python scripts/charting/chart_all.py
 ---
 
 ### System 11: Continuous State Dynamics, Pauli Sidecar & MBU Wire Recycling
-Weak non-destructive expectation streaming, SQUID-inspired symplectic Pauli frame tracking (16,384x speedup), and deterministic measurement-based uncomputation (MBU) with LIFO hot-cache wire recycling (128x memory compression).
+Weak non-destructive expectation streaming, SQUID-inspired symplectic Pauli frame tracking (16,384x speedup, concurrent lock-free sidecar thread), and deterministic measurement-based uncomputation (MBU) with LIFO hot-cache wire recycling (128x memory compression).
 
 `ash
 # Run Continuous Dynamics Benchmark (Streaming Expectation, Pauli Sidecar & MBU)

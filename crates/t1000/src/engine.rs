@@ -22,7 +22,7 @@ use crate::coherence::NoiseChannelParams;
 use crate::compiler::{CircuitBuilder, LifoWireRecycler};
 use crate::heptal_wave::{HeptalZipperConfig, HeptalZipperEngine, HeptalZipperReport};
 use crate::measurements::StreamingExpectationAccumulator;
-use crate::qec::PauliFrameTracker;
+use crate::qec::{PauliFrameTracker, PauliFrameTrackerSidecar};
 use crate::smiles::{
     SmilesError, SmilesExplorer, SmilesFeatures, SmilesFeaturizer, SmilesPropertyProfile,
 };
@@ -444,6 +444,11 @@ impl T1000Engine {
     /// Creates a sidecar Pauli frame co-tracker for weak continuous frame updates.
     pub fn new_pauli_frame_tracker(&self, num_qubits: usize) -> PauliFrameTracker {
         PauliFrameTracker::new(num_qubits)
+    }
+
+    /// Spawns a concurrent Pauli frame tracker sidecar thread for asynchronous error processing.
+    pub fn new_pauli_frame_sidecar(&self, qubit_capacity: usize) -> PauliFrameTrackerSidecar {
+        PauliFrameTrackerSidecar::new(qubit_capacity)
     }
 
     /// Creates a dynamic LIFO wire recycler and MBU uncomputation engine.

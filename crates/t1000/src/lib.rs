@@ -124,7 +124,9 @@ pub use measurements::observable;
 pub use measurements::povm_readout;
 pub use measurements::streaming_accumulator;
 pub use measurements::{StreamingExpectationAccumulator, TrajectoryPoint, VarianceMultipliers};
-pub use qec::{PauliFrameTracker, PauliType};
+pub use qec::{
+    FrameTrackerMetrics, PauliFrameBatch, PauliFrameTracker, PauliFrameTrackerSidecar, PauliType,
+};
 
 pub use adjoint::{
     adjoint_gradient, adjoint_gradient_buffered, adjoint_gradient_with_purity,

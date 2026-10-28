@@ -18,7 +18,12 @@
 use crate::compiler::CircuitOp;
 use crate::measurements::PauliObservable;
 use crate::qec::PauliErrorKind;
+use crossbeam_channel::{unbounded, Receiver, Sender};
 use serde::{Deserialize, Serialize};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::Arc;
+use std::thread::{self, JoinHandle};
+use std::time::Duration;
 
 /// Elementary Pauli operator on a single physical qubit site.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -332,6 +337,169 @@ impl crate::compiler::Unitary2x2 {
     }
 }
 
+/// Represents a batch of Pauli error correction frames tracked during simulation runs.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PauliFrameBatch {
+    pub batch_id: u64,
+    pub qubit_count: usize,
+    pub x_stabilizers: Vec<u64>, // Bit-sliced X stabilizer flags
+    pub z_stabilizers: Vec<u64>, // Bit-sliced Z stabilizer flags
+    pub error_probability: f64,
+}
+
+impl PauliFrameBatch {
+    /// Creates a new bit-sliced Pauli frame batch.
+    pub fn new(
+        batch_id: u64,
+        qubit_count: usize,
+        x_stabilizers: Vec<u64>,
+        z_stabilizers: Vec<u64>,
+        error_probability: f64,
+    ) -> Self {
+        Self {
+            batch_id,
+            qubit_count,
+            x_stabilizers,
+            z_stabilizers,
+            error_probability,
+        }
+    }
+}
+
+/// Telemetry metrics emitted by the sidecar thread.
+#[derive(Debug, Default, Clone)]
+pub struct FrameTrackerMetrics {
+    pub frames_processed: Arc<AtomicU64>,
+    pub cumulative_drift: Arc<AtomicU64>, // Fixed-point representation of phase drift
+    pub drop_count: Arc<AtomicU64>,
+}
+
+impl FrameTrackerMetrics {
+    /// Total frames processed by the sidecar worker.
+    pub fn frames_processed(&self) -> u64 {
+        self.frames_processed.load(Ordering::Relaxed)
+    }
+
+    /// Cumulative syndrome error drift.
+    pub fn cumulative_drift(&self) -> u64 {
+        self.cumulative_drift.load(Ordering::Relaxed)
+    }
+
+    /// Dropped frame count.
+    pub fn drop_count(&self) -> u64 {
+        self.drop_count.load(Ordering::Relaxed)
+    }
+}
+
+/// Concurrent, low-latency sidecar thread decoupling error tracking and phase-drift corrections
+/// from the primary statevector execution loop.
+pub struct PauliFrameTrackerSidecar {
+    sender: Sender<PauliFrameBatch>,
+    worker_handle: Option<JoinHandle<()>>,
+    running: Arc<AtomicBool>,
+    metrics: FrameTrackerMetrics,
+}
+
+impl std::fmt::Debug for PauliFrameTrackerSidecar {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PauliFrameTrackerSidecar")
+            .field("running", &self.running.load(Ordering::Relaxed))
+            .field("metrics", &self.metrics)
+            .finish()
+    }
+}
+
+impl PauliFrameTrackerSidecar {
+    /// Spawns the concurrent sidecar thread for asynchronous Pauli frame tracking.
+    pub fn new(qubit_capacity: usize) -> Self {
+        let (sender, receiver): (Sender<PauliFrameBatch>, Receiver<PauliFrameBatch>) = unbounded();
+        let running = Arc::new(AtomicBool::new(true));
+        let running_clone = Arc::clone(&running);
+
+        let metrics = FrameTrackerMetrics::default();
+        let frames_processed_metric = Arc::clone(&metrics.frames_processed);
+        let cumulative_drift_metric = Arc::clone(&metrics.cumulative_drift);
+
+        let worker_handle = thread::spawn(move || {
+            Self::tracker_loop(
+                receiver,
+                running_clone,
+                frames_processed_metric,
+                cumulative_drift_metric,
+                qubit_capacity,
+            );
+        });
+
+        Self {
+            sender,
+            worker_handle: Some(worker_handle),
+            running,
+            metrics,
+        }
+    }
+
+    /// Push a new batch of frames into the non-blocking channel for the sidecar thread.
+    pub fn submit_batch(&self, batch: PauliFrameBatch) -> Result<(), &'static str> {
+        self.sender.send(batch).map_err(|_| "Tracker channel closed")
+    }
+
+    /// Internal high-performance worker loop running concurrently.
+    fn tracker_loop(
+        receiver: Receiver<PauliFrameBatch>,
+        running: Arc<AtomicBool>,
+        frames_processed: Arc<AtomicU64>,
+        cumulative_drift: Arc<AtomicU64>,
+        _qubit_capacity: usize,
+    ) {
+        let mut _local_batch_counter = 0u64;
+
+        while running.load(Ordering::Relaxed) || !receiver.is_empty() {
+            match receiver.recv_timeout(Duration::from_millis(2)) {
+                Ok(batch) => {
+                    let mut drift_sum = 0u64;
+                    for (&x_mask, &z_mask) in batch.x_stabilizers.iter().zip(&batch.z_stabilizers) {
+                        let weight = (x_mask ^ z_mask).count_ones() as u64;
+                        drift_sum = drift_sum.wrapping_add(weight);
+                    }
+
+                    frames_processed.fetch_add(1, Ordering::Relaxed);
+                    cumulative_drift.fetch_add(drift_sum, Ordering::Relaxed);
+                    _local_batch_counter += 1;
+                }
+                Err(_) => {
+                    if !running.load(Ordering::Relaxed) {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    /// Access the shared thread metrics.
+    pub fn get_metrics(&self) -> &FrameTrackerMetrics {
+        &self.metrics
+    }
+
+    /// Number of batches processed so far.
+    pub fn frames_processed(&self) -> u64 {
+        self.metrics.frames_processed()
+    }
+
+    /// Total cumulative drift evaluated by the sidecar.
+    pub fn cumulative_drift(&self) -> u64 {
+        self.metrics.cumulative_drift()
+    }
+}
+
+impl Drop for PauliFrameTrackerSidecar {
+    fn drop(&mut self) {
+        self.running.store(false, Ordering::Release);
+        if let Some(handle) = self.worker_handle.take() {
+            let _ = handle.join();
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -402,5 +570,41 @@ mod tests {
         let clean = PauliFrameTracker::new(3);
         assert!((clean.coherence_visibility(0.2) - 1.0).abs() < 1e-12);
         assert!(frame.coherence_visibility(0.2) < 1.0);
+    }
+
+    #[test]
+    fn test_pauli_frame_sidecar_concurrent_tracking() {
+        let sidecar = PauliFrameTrackerSidecar::new(64);
+
+        let batch1 = PauliFrameBatch::new(
+            1,
+            64,
+            vec![0b1010, 0b1100],
+            vec![0b0010, 0b1000],
+            0.001,
+        );
+        let batch2 = PauliFrameBatch::new(
+            2,
+            64,
+            vec![0b1111],
+            vec![0b0000],
+            0.002,
+        );
+
+        assert!(sidecar.submit_batch(batch1).is_ok());
+        assert!(sidecar.submit_batch(batch2).is_ok());
+
+        // Wait briefly for worker processing
+        std::thread::sleep(Duration::from_millis(30));
+
+        let metrics = sidecar.get_metrics();
+        assert_eq!(metrics.frames_processed(), 2);
+        // batch1: (0b1010 ^ 0b0010).count_ones() = 1000 -> 1
+        //         (0b1100 ^ 0b1000).count_ones() = 0100 -> 1 -> sum = 2
+        // batch2: (0b1111 ^ 0b0000).count_ones() = 4 -> sum = 4
+        // total drift = 6
+        assert_eq!(metrics.cumulative_drift(), 6);
+        assert_eq!(sidecar.frames_processed(), 2);
+        assert_eq!(sidecar.cumulative_drift(), 6);
     }
 }
