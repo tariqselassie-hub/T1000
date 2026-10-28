@@ -70,10 +70,27 @@ python -m pytest tests                                             # after insta
 The crate is outside the root Cargo workspace on purpose: a PyO3 extension module only links
 inside maturin's build, so `cargo test --workspace` leaves it alone.
 
-## Performance note
+## Performance
 
-The portable wheel targets baseline x86-64. Kernels that pick AVX2, FMA, AVX-512 or AVX-VNNI at
-run time (most of the engine) still use them. The few code paths gated at compile time on
-`target_feature = "avx2"` take their scalar fallback in this build; a wheel built with
-`RUSTFLAGS="-C target-cpu=x86-64-v3"` would enable them for AVX2 machines, including Kaggle's
-CPUs, at the cost of not running on older processors.
+The wheel targets baseline x86-64 so it installs on any 64-bit machine, and still runs the AVX2,
+FMA and AVX-512 kernels: the engine checks the CPU at run time (`is_x86_feature_detected!`) and
+picks them whenever they are present. The two compile-time `target_feature = "avx2"` switches in
+`simd/` only skip that check; they do not change which kernel runs.
+
+Alternatives measured on the reference host (Core Ultra 7 265, medians of 5 to 21 runs, 2026-10-28):
+
+| Workload | Portable wheel | `target-cpu=x86-64-v3` | Portable + fat LTO, 1 codegen unit |
+| :--- | ---: | ---: | ---: |
+| VQC fit, 712 rows x 8 qubits, 30 epochs | 81 ms | 86 ms | 82-86 ms |
+| VQC decision_function, 20,000 rows | 18 ms | 18 ms | 19 ms |
+| run_circuit, 20 qubits, 300 gates | 89-91 ms | 85 ms | 88 ms |
+| run_circuit, 23 qubits, 60 gates | 282 ms | 270 ms | 280 ms |
+| run_circuit, 24 qubits, 60 gates | 517 ms | 498 ms | 515 ms |
+| vqe_solve H2O (12 qubits) | 14.9 ms | 15.1 ms | 13.9 ms |
+| vqe_solve CH4 (16 qubits) | 332-339 ms | 331 ms | 326 ms |
+
+An AVX2-only build gains about 4 % on the largest circuits and nothing elsewhere, and would stop
+the wheel from installing on older CPUs (pip cannot choose wheels by CPU level). LTO trades a
+few percent between workloads and only shrinks the wheel (490 KB to 462 KB). The default
+portable build is therefore kept. The three builds agree to about 1e-12: circuits and VQE are
+bit-identical, VQC outputs differ in the last bits from different instruction selection.
