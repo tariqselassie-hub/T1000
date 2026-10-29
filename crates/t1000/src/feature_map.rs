@@ -71,8 +71,8 @@ impl DataEncodingLayer {
 
         QuantumState {
             dim: self.dim,
-            real,
-            imag,
+            real: real.into(),
+            imag: imag.into(),
         }
     }
 
@@ -90,8 +90,8 @@ impl DataEncodingLayer {
 
         QuantumState {
             dim: self.dim,
-            real,
-            imag,
+            real: real.into(),
+            imag: imag.into(),
         }
     }
 

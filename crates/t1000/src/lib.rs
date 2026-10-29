@@ -14,6 +14,8 @@
 //!    evaluating exact Tsirelson CHSH witnesses ($S \approx 2.828427$) in CPU L3 cache with
 //!    concurrent Intel Arc OpenCL iGPU syndrome offload (`scripts/qec/heterogeneous_bridge_pipeline.py`).
 
+pub mod aligned_buffer;
+pub use aligned_buffer::{AlignedBuffer, CACHE_LINE_ALIGN};
 pub mod adjoint;
 pub mod adjoint_fusion;
 pub mod ansatz;

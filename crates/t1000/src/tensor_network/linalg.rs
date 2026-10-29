@@ -60,14 +60,26 @@ impl ComplexMatrix {
         );
         let mut out = Self::new(self.rows, other.cols);
         for r in 0..self.rows {
+            let out_offset = r * other.cols;
             for k in 0..self.cols {
                 let a = self[(r, k)];
                 if a.norm_sqr() < 1e-28 {
                     continue;
                 }
-                for c in 0..other.cols {
-                    out[(r, c)] += a * other[(k, c)];
+                let other_offset = k * other.cols;
+                let out_row = &mut out.data[out_offset..out_offset + other.cols];
+                let other_row = &other.data[other_offset..other_offset + other.cols];
+
+                #[cfg(target_arch = "x86_64")]
+                {
+                    if is_x86_feature_detected!("avx2") {
+                        unsafe {
+                            matmul_row_avx2(out_row, a, other_row);
+                        }
+                        continue;
+                    }
                 }
+                matmul_row_scalar(out_row, a, other_row);
             }
         }
         out
@@ -90,6 +102,68 @@ impl std::ops::IndexMut<(usize, usize)> for ComplexMatrix {
     #[inline(always)]
     fn index_mut(&mut self, index: (usize, usize)) -> &mut Self::Output {
         &mut self.data[index.0 * self.cols + index.1]
+    }
+}
+
+
+#[inline(always)]
+fn matmul_row_scalar(out_row: &mut [Complex64], a: Complex64, other_row: &[Complex64]) {
+    for (o, b) in out_row.iter_mut().zip(other_row.iter()) {
+        *o += a * b;
+    }
+}
+
+/// AVX2-vectorized row multiply-accumulate for Complex64 slices.
+///
+/// Each 256-bit AVX2 register packs 2 `Complex64` values (4 x f64).
+/// Unrolled by 2 to process 4 `Complex64` values (64 bytes = 1 cache line) per step.
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
+unsafe fn matmul_row_avx2(out_row: &mut [Complex64], a: Complex64, other_row: &[Complex64]) {
+    use std::arch::x86_64::*;
+
+    let n = out_row.len();
+    let va_re = _mm256_set1_pd(a.re);
+    let va_im = _mm256_set1_pd(a.im);
+
+    let mut c = 0;
+    let out_ptr = out_row.as_mut_ptr() as *mut f64;
+    let other_ptr = other_row.as_ptr() as *const f64;
+
+    // Process 4 Complex64 elements (64 bytes, 1 cache line) per iteration
+    while c + 4 <= n {
+        let b0 = _mm256_loadu_pd(other_ptr.add(c * 2));
+        let b1 = _mm256_loadu_pd(other_ptr.add(c * 2 + 4));
+
+        let b0_swap = _mm256_permute_pd(b0, 0b0101);
+        let b1_swap = _mm256_permute_pd(b1, 0b0101);
+
+        let prod0 = _mm256_addsub_pd(_mm256_mul_pd(va_re, b0), _mm256_mul_pd(va_im, b0_swap));
+        let prod1 = _mm256_addsub_pd(_mm256_mul_pd(va_re, b1), _mm256_mul_pd(va_im, b1_swap));
+
+        let out0 = _mm256_loadu_pd(out_ptr.add(c * 2));
+        let out1 = _mm256_loadu_pd(out_ptr.add(c * 2 + 4));
+
+        _mm256_storeu_pd(out_ptr.add(c * 2), _mm256_add_pd(out0, prod0));
+        _mm256_storeu_pd(out_ptr.add(c * 2 + 4), _mm256_add_pd(out1, prod1));
+
+        c += 4;
+    }
+
+    // Leftover 2 Complex64 elements (32 bytes)
+    while c + 2 <= n {
+        let b0 = _mm256_loadu_pd(other_ptr.add(c * 2));
+        let b0_swap = _mm256_permute_pd(b0, 0b0101);
+        let prod0 = _mm256_addsub_pd(_mm256_mul_pd(va_re, b0), _mm256_mul_pd(va_im, b0_swap));
+        let out0 = _mm256_loadu_pd(out_ptr.add(c * 2));
+        _mm256_storeu_pd(out_ptr.add(c * 2), _mm256_add_pd(out0, prod0));
+        c += 2;
+    }
+
+    // Scalar leftovers
+    while c < n {
+        *out_row.get_unchecked_mut(c) += a * *other_row.get_unchecked(c);
+        c += 1;
     }
 }
 
@@ -389,4 +463,55 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn test_matmul_avx2_vs_scalar_agreement() {
+        // Test rectangular and square dimensions (including non-multiples of 4)
+        for &(rows, inner, cols) in &[(2, 2, 2), (3, 5, 7), (8, 8, 8), (17, 13, 19)] {
+            let mut a = ComplexMatrix::new(rows, inner);
+            let mut b = ComplexMatrix::new(inner, cols);
+
+            for r in 0..rows {
+                for k in 0..inner {
+                    a[(r, k)] = Complex64::new(
+                        ((r * 13 + k * 7 + 1) as f64).sin(),
+                        ((r * 5 + k * 11 + 3) as f64).cos(),
+                    );
+                }
+            }
+
+            for k in 0..inner {
+                for c in 0..cols {
+                    b[(k, c)] = Complex64::new(
+                        ((k * 17 + c * 3 + 2) as f64).cos(),
+                        ((k * 9 + c * 15 + 5) as f64).sin(),
+                    );
+                }
+            }
+
+            let c_actual = a.matmul(&b);
+
+            // Reference scalar calculation
+            let mut c_expected = ComplexMatrix::new(rows, cols);
+            for r in 0..rows {
+                for k in 0..inner {
+                    let av = a[(r, k)];
+                    for c in 0..cols {
+                        c_expected[(r, c)] += av * b[(k, c)];
+                    }
+                }
+            }
+
+            for r in 0..rows {
+                for c in 0..cols {
+                    let diff = (c_actual[(r, c)] - c_expected[(r, c)]).norm();
+                    assert!(
+                        diff < 1e-12,
+                        "Mismatch at dim ({rows}x{inner}x{cols}) at ({r}, {c}): diff {diff}"
+                    );
+                }
+            }
+        }
+    }
 }
+

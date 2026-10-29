@@ -4,6 +4,7 @@
 use num_complex::Complex64;
 use serde::{Deserialize, Serialize};
 use std::f64::consts::PI;
+use crate::aligned_buffer::AlignedBuffer;
 use t1000_core::QubitRegister;
 
 /// Panics unless `dim` is a power of two >= 2 (i.e. a whole number of qubits).
@@ -19,11 +20,11 @@ fn assert_valid_dim(dim: usize) {
 /// High-dimensional Hilbert space state vector.
 /// Structure-of-Arrays (SOA) memory layout enabling contiguous 256-bit AVX2 vectorization.
 /// Dimension is always a power of two (n qubits => 2^n amplitudes).
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct QuantumState {
     pub dim: usize,
-    pub real: Vec<f64>,
-    pub imag: Vec<f64>,
+    pub real: AlignedBuffer,
+    pub imag: AlignedBuffer,
 }
 
 impl QuantumState {
@@ -34,8 +35,8 @@ impl QuantumState {
         let base_amp = 1.0 / (dim as f64).sqrt();
         Self {
             dim,
-            real: vec![base_amp; dim],
-            imag: vec![0.0; dim],
+            real: AlignedBuffer::new(dim, base_amp),
+            imag: AlignedBuffer::zeroed(dim),
         }
     }
 
@@ -44,8 +45,8 @@ impl QuantumState {
         assert_valid_dim(dim);
         Self {
             dim,
-            real: vec![0.0; dim],
-            imag: vec![0.0; dim],
+            real: AlignedBuffer::zeroed(dim),
+            imag: AlignedBuffer::zeroed(dim),
         }
     }
 
@@ -53,12 +54,12 @@ impl QuantumState {
     /// Real amplitude of index 0 is 1.0; all others are 0.0.
     pub fn ground(dim: usize) -> Self {
         assert_valid_dim(dim);
-        let mut real = vec![0.0; dim];
+        let mut real = AlignedBuffer::zeroed(dim);
         real[0] = 1.0;
         Self {
             dim,
             real,
-            imag: vec![0.0; dim],
+            imag: AlignedBuffer::zeroed(dim),
         }
     }
 
@@ -66,13 +67,31 @@ impl QuantumState {
     pub fn from_amplitudes(dim: usize, amps: &[(f64, f64)]) -> Self {
         assert_valid_dim(dim);
         assert_eq!(dim, amps.len());
-        let mut real = Vec::with_capacity(dim);
-        let mut imag = Vec::with_capacity(dim);
-        for &(r, i) in amps {
-            real.push(r);
-            imag.push(i);
+        let mut real = AlignedBuffer::zeroed(dim);
+        let mut imag = AlignedBuffer::zeroed(dim);
+        for (idx, &(r, i)) in amps.iter().enumerate() {
+            real[idx] = r;
+            imag[idx] = i;
         }
         Self { dim, real, imag }
+    }
+
+    /// Construct state from vectors of real and imaginary amplitudes.
+    pub fn from_vecs(dim: usize, real: Vec<f64>, imag: Vec<f64>) -> Self {
+        assert_valid_dim(dim);
+        assert_eq!(dim, real.len());
+        assert_eq!(dim, imag.len());
+        Self {
+            dim,
+            real: AlignedBuffer::from(real),
+            imag: AlignedBuffer::from(imag),
+        }
+    }
+
+    /// Returns `true` if both real and imaginary amplitude buffers are 64-byte aligned.
+    #[inline(always)]
+    pub fn is_aligned_64(&self) -> bool {
+        self.real.is_aligned_64() && self.imag.is_aligned_64()
     }
 
     #[inline(always)]
@@ -117,11 +136,11 @@ impl QuantumState {
 
     pub fn from_register(reg: &QubitRegister) -> Self {
         assert_valid_dim(reg.basis);
-        let mut real = Vec::with_capacity(reg.basis);
-        let mut imag = Vec::with_capacity(reg.basis);
-        for a in &reg.amplitudes {
-            real.push(a.re);
-            imag.push(a.im);
+        let mut real = AlignedBuffer::zeroed(reg.basis);
+        let mut imag = AlignedBuffer::zeroed(reg.basis);
+        for (idx, a) in reg.amplitudes.iter().enumerate() {
+            real[idx] = a.re;
+            imag[idx] = a.im;
         }
         Self {
             dim: reg.basis,
@@ -143,11 +162,11 @@ impl QuantumState {
     pub fn from_complex_slice(slice: &[Complex64]) -> Self {
         let dim = slice.len();
         assert_valid_dim(dim);
-        let mut real = Vec::with_capacity(dim);
-        let mut imag = Vec::with_capacity(dim);
-        for c in slice {
-            real.push(c.re);
-            imag.push(c.im);
+        let mut real = AlignedBuffer::zeroed(dim);
+        let mut imag = AlignedBuffer::zeroed(dim);
+        for (idx, c) in slice.iter().enumerate() {
+            real[idx] = c.re;
+            imag[idx] = c.im;
         }
         Self { dim, real, imag }
     }
@@ -244,8 +263,8 @@ impl QuantumState {
     /// Circular permutation (directional temporal flow)
     pub fn permute(&self, shift: usize) -> Self {
         let k = shift % self.dim;
-        let mut r_new = vec![0.0; self.dim];
-        let mut i_new = vec![0.0; self.dim];
+        let mut r_new = AlignedBuffer::zeroed(self.dim);
+        let mut i_new = AlignedBuffer::zeroed(self.dim);
         for i in 0..self.dim {
             let target = (i + k) % self.dim;
             r_new[target] = self.real[i];
@@ -261,14 +280,14 @@ impl QuantumState {
     /// Elementwise complex multiplication (FHRR phasor binding)
     pub fn bind(&self, other: &Self) -> Self {
         assert_eq!(self.dim, other.dim);
-        let mut r_new = Vec::with_capacity(self.dim);
-        let mut i_new = Vec::with_capacity(self.dim);
+        let mut r_new = AlignedBuffer::zeroed(self.dim);
+        let mut i_new = AlignedBuffer::zeroed(self.dim);
         for i in 0..self.dim {
             let (r1, im1) = (self.real[i], self.imag[i]);
             let (r2, im2) = (other.real[i], other.imag[i]);
             // (r1 + i im1) * (r2 + i im2) = (r1*r2 - im1*im2) + i (r1*im2 + im1*r2)
-            r_new.push(r1 * r2 - im1 * im2);
-            i_new.push(r1 * im2 + im1 * r2);
+            r_new[i] = r1 * r2 - im1 * im2;
+            i_new[i] = r1 * im2 + im1 * r2;
         }
         let mut res = Self {
             dim: self.dim,
@@ -322,15 +341,15 @@ impl QuantumFeatureMap {
 
     /// Deterministically hash a token string to an angle vector and create normalized state.
     pub fn encode_token(&self, token: &str) -> QuantumState {
-        let mut real = Vec::with_capacity(self.dim);
-        let mut imag = Vec::with_capacity(self.dim);
+        let mut real = AlignedBuffer::zeroed(self.dim);
+        let mut imag = AlignedBuffer::zeroed(self.dim);
         let base_mag = 1.0 / (self.dim as f64).sqrt();
 
         for k in 0..self.dim {
             let phase = self.hash_token_phase(token, k);
             let (s, c) = phase.sin_cos();
-            real.push(base_mag * c);
-            imag.push(base_mag * s);
+            real[k] = base_mag * c;
+            imag[k] = base_mag * s;
         }
 
         QuantumState {
@@ -408,6 +427,22 @@ impl From<&QuantumState> for QubitRegister {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_quantum_state_64_byte_alignment() {
+        for n in [1, 2, 3, 4, 10, 16] {
+            let dim = 1 << n;
+            let state = QuantumState::new(dim);
+            assert!(state.is_aligned_64());
+            assert_eq!((state.real.as_ptr() as usize) % 64, 0);
+            assert_eq!((state.imag.as_ptr() as usize) % 64, 0);
+
+            let ground = QuantumState::ground(dim);
+            assert!(ground.is_aligned_64());
+            let zero = QuantumState::zero(dim);
+            assert!(zero.is_aligned_64());
+        }
+    }
 
     #[test]
     fn test_quantum_state_register_roundtrip() {
