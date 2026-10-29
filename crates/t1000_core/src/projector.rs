@@ -30,29 +30,31 @@ pub fn collapse_with_seed(
     if proj.basis.is_empty() {
         return None;
     }
-    let weights: Vec<f64> = proj
+    let total: f64 = proj
         .basis
         .iter()
         .map(|&i| {
             let idx = i.min(reg.basis.saturating_sub(1));
             reg.probability(idx)
         })
-        .collect();
-    let total: f64 = weights.iter().sum();
+        .sum();
     if total < 1e-12 {
         return None;
     }
     let mut rng = ChaCha8Rng::seed_from_u64(seed);
     let mut r = rng.gen::<f64>() * total;
-    for (idx, w) in weights.iter().enumerate() {
-        r -= w;
+    let mut last_prob = 0.0;
+    for &i in &proj.basis {
+        let idx = i.min(reg.basis.saturating_sub(1));
+        let p = reg.probability(idx);
+        last_prob = p;
+        r -= p;
         if r <= 0.0 {
-            let outcome = proj.basis[idx];
-            return Some((outcome, *w / total));
+            return Some((i, p / total));
         }
     }
-    let last = proj.basis.len() - 1;
-    Some((proj.basis[last], weights[last] / total))
+    let last = *proj.basis.last().unwrap();
+    Some((last, last_prob / total))
 }
 
 /// Sample all projector outcomes with probabilities.

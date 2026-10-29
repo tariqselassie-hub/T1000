@@ -173,13 +173,19 @@ impl QuantumState {
 
     /// Traces out subsystem B using `t1000_core::PartialTrace`, returning the reduced density matrix of subsystem A.
     pub fn partial_trace_b(&self, dim_a: usize, dim_b: usize) -> Vec<Complex64> {
+        let mut out = vec![Complex64::default(); dim_a * dim_a];
+        self.partial_trace_b_into(dim_a, dim_b, &mut out);
+        out
+    }
+
+    /// Zero-allocation partial trace directly from SoA buffers into a pre-allocated density matrix buffer.
+    pub fn partial_trace_b_into(&self, dim_a: usize, dim_b: usize, out_rho_a: &mut [Complex64]) {
         assert_eq!(
             self.dim,
             dim_a * dim_b,
             "State dimension must equal dim_a * dim_b"
         );
-        let complex_state = self.to_complex_vec();
-        t1000_core::PartialTrace::trace_out_b(&complex_state, dim_a, dim_b)
+        t1000_core::PartialTrace::trace_out_b_soa_into(&self.real, &self.imag, dim_a, dim_b, out_rho_a);
     }
 
     /// Applies a `t1000_core::DecoherenceChannel` to this state in-place.

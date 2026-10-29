@@ -91,7 +91,7 @@ pub fn apply_ry(real: &mut [f64], imag: &mut [f64], qubit: usize, theta: f64) {
     crate::simd::assert_qubit(qubit, n_qubits);
     let dim = real.len();
     if !use_parallel(dim) {
-        crate::tiled_butterfly::tiled_apply_ry(real, imag, qubit, theta);
+        crate::simd::apply_ry_kernel(real, imag, qubit, theta);
         return;
     }
 
