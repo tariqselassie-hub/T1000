@@ -27,6 +27,7 @@
 use crate::ansatz::{entangling_pairs, CircuitAnsatz};
 use crate::observable::PauliObservable;
 use crate::state::QuantumState;
+use rayon::prelude::*;
 
 /// Expectations of each observable at `weights` and the gradient of their weighted sum.
 #[derive(Debug, Clone, PartialEq)]
@@ -68,6 +69,88 @@ impl AdjointWorkspace {
         self.lambda.real.fill(0.0);
         self.lambda.imag.fill(0.0);
     }
+}
+
+/// Pre-allocated workspaces for a mini-batch of adjoint gradient computations.
+/// One `AdjointWorkspace` per sample; gradients are accumulated into a shared buffer
+/// by [`adjoint_gradient_batch`].
+#[derive(Debug)]
+pub struct BatchAdjointWorkspace {
+    pub workspaces: Vec<AdjointWorkspace>,
+}
+
+impl BatchAdjointWorkspace {
+    /// Allocates `batch_size` workspaces for dimension `dim` and `n_qubits`.
+    pub fn new(dim: usize, n_qubits: usize, batch_size: usize) -> Self {
+        Self {
+            workspaces: (0..batch_size)
+                .map(|_| AdjointWorkspace::new(dim, n_qubits))
+                .collect(),
+        }
+    }
+
+    /// Returns the workspace for batch position `idx`.
+    pub fn workspace(&mut self, idx: usize) -> &mut AdjointWorkspace {
+        &mut self.workspaces[idx]
+    }
+}
+
+/// Computes adjoint gradients for a mini-batch of inputs in parallel.
+///
+/// Each input is processed with its own pre-allocated workspace (no per-sample allocation
+/// inside the loop). Per-sample gradients are summed into `grad_out`, which is zeroed on entry.
+/// `coefficients_fn` maps expectations to coefficients and is called once per input.
+///
+/// Returns one [`AdjointResult`] per input (expectations + per-sample gradient) in batch order,
+/// plus the accumulated gradient in `grad_out`.
+pub fn adjoint_gradient_batch(
+    ansatz: &CircuitAnsatz,
+    inputs: &[&QuantumState],
+    weights: &[f64],
+    observables: &[PauliObservable],
+    coefficients_fn: &(dyn Fn(&[f64]) -> Vec<f64> + Send + Sync),
+    ws: &mut BatchAdjointWorkspace,
+    grad_out: &mut [f64],
+) -> Vec<AdjointResult> {
+    let param_count = ansatz.param_count();
+    assert_eq!(grad_out.len(), param_count, "grad_out length must equal parameter count");
+    assert_eq!(
+        ws.workspaces.len(),
+        inputs.len(),
+        "batch workspace count must match input count"
+    );
+
+    // Zero the accumulated gradient.
+    for g in grad_out.iter_mut() {
+        *g = 0.0;
+    }
+
+    // Forward + backward for every sample in parallel; each thread owns one workspace.
+    let results: Vec<AdjointResult> = inputs
+        .par_iter()
+        .zip(ws.workspaces.par_iter_mut())
+        .map(|(input, workspace)| {
+            adjoint_gradient_with_purity_buffered(
+                ansatz,
+                input,
+                weights,
+                observables,
+                coefficients_fn,
+                0.0,
+                0.75,
+                workspace,
+            )
+        })
+        .collect();
+
+    // Accumulate per-sample gradients into the shared buffer.
+    for result in &results {
+        for (g_out, &g_res) in grad_out.iter_mut().zip(&result.gradient) {
+            *g_out += g_res;
+        }
+    }
+
+    results
 }
 
 /// Computes adjoint gradients into a pre-allocated reusable `AdjointWorkspace`.

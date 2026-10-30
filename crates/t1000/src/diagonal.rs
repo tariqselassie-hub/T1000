@@ -107,29 +107,22 @@ impl DiagonalPlan {
             .filter(|&&(hm, _)| h & hm != 0)
             .fold(0usize, |acc, &(_, lm)| acc ^ lm);
 
-        #[cfg(all(
-            target_arch = "x86_64",
-            target_feature = "avx2",
-            target_feature = "fma"
-        ))]
-        unsafe {
-            self.apply_block_avx2(fr, fi, cross_mask, re, im);
-        }
-        #[cfg(not(all(
-            target_arch = "x86_64",
-            target_feature = "avx2",
-            target_feature = "fma"
-        )))]
-        {
-            #[cfg(target_arch = "x86_64")]
-            if is_x86_feature_detected!("avx2") && is_x86_feature_detected!("fma") {
-                unsafe {
-                    self.apply_block_avx2(fr, fi, cross_mask, re, im);
-                    return;
-                }
+        // Runtime-dispatched kernels: AVX-512F first (16 amplitudes/iter), then AVX2+FMA (8/iter),
+        // then scalar fallback. Works on any x86_64 build regardless of compile-time target features.
+        #[cfg(target_arch = "x86_64")]
+        if is_x86_feature_detected!("avx512f") {
+            unsafe {
+                self.apply_block_avx512(fr, fi, cross_mask, re, im);
             }
-            self.apply_block_scalar(fr, fi, cross_mask, re, im);
+            return;
         }
+        if is_x86_feature_detected!("avx2") && is_x86_feature_detected!("fma") {
+            unsafe {
+                self.apply_block_avx2(fr, fi, cross_mask, re, im);
+            }
+            return;
+        }
+        self.apply_block_scalar(fr, fi, cross_mask, re, im);
     }
 
     #[inline(always)]
@@ -298,6 +291,166 @@ impl DiagonalPlan {
             } else {
                 1.0
             };
+            let (tr, ti) = (self.lo_re[j], self.lo_im[j]);
+            let (dr, di) = (flip * (tr * fr - ti * fi), flip * (tr * fi + ti * fr));
+            let (ar, ai) = (re[j], im[j]);
+            re[j] = ar * dr - ai * di;
+            im[j] = ar * di + ai * dr;
+            j += 1;
+        }
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    #[target_feature(enable = "avx512f")]
+    unsafe fn apply_block_avx512(
+        &self,
+        fr: f64,
+        fi: f64,
+        cross_mask: usize,
+        re: &mut [f64],
+        im: &mut [f64],
+    ) {
+        let len = re.len();
+        let fr_vec = _mm512_set1_pd(fr);
+        let fi_vec = _mm512_set1_pd(fi);
+
+        let mut j = 0;
+        if cross_mask == 0 {
+            while j + 16 <= len {
+                let tr0 = _mm512_loadu_pd(self.lo_re.as_ptr().add(j));
+                let tr1 = _mm512_loadu_pd(self.lo_re.as_ptr().add(j + 8));
+                let ti0 = _mm512_loadu_pd(self.lo_im.as_ptr().add(j));
+                let ti1 = _mm512_loadu_pd(self.lo_im.as_ptr().add(j + 8));
+
+                let dr0 = _mm512_fmsub_pd(tr0, fr_vec, _mm512_mul_pd(ti0, fi_vec));
+                let di0 = _mm512_fmadd_pd(tr0, fi_vec, _mm512_mul_pd(ti0, fr_vec));
+                let dr1 = _mm512_fmsub_pd(tr1, fr_vec, _mm512_mul_pd(ti1, fi_vec));
+                let di1 = _mm512_fmadd_pd(tr1, fi_vec, _mm512_mul_pd(ti1, fr_vec));
+
+                let ar0 = _mm512_loadu_pd(re.as_ptr().add(j));
+                let ai0 = _mm512_loadu_pd(im.as_ptr().add(j));
+                let ar1 = _mm512_loadu_pd(re.as_ptr().add(j + 8));
+                let ai1 = _mm512_loadu_pd(im.as_ptr().add(j + 8));
+
+                let new_r0 = _mm512_fmsub_pd(ar0, dr0, _mm512_mul_pd(ai0, di0));
+                let new_i0 = _mm512_fmadd_pd(ar0, di0, _mm512_mul_pd(ai0, dr0));
+                let new_r1 = _mm512_fmsub_pd(ar1, dr1, _mm512_mul_pd(ai1, di1));
+                let new_i1 = _mm512_fmadd_pd(ar1, di1, _mm512_mul_pd(ai1, dr1));
+
+                _mm512_storeu_pd(re.as_mut_ptr().add(j), new_r0);
+                _mm512_storeu_pd(im.as_mut_ptr().add(j), new_i0);
+                _mm512_storeu_pd(re.as_mut_ptr().add(j + 8), new_r1);
+                _mm512_storeu_pd(im.as_mut_ptr().add(j + 8), new_i1);
+
+                j += 16;
+            }
+        } else {
+            let mut flips = [1.0f64; 256];
+            let n_flips = len.min(256);
+            for k in 0..n_flips {
+                if (k & cross_mask).count_ones() & 1 == 1 {
+                    flips[k] = -1.0;
+                }
+            }
+
+            while j + 16 <= len {
+                let flip0 = _mm512_loadu_pd(flips.as_ptr().add(j));
+                let flip1 = _mm512_loadu_pd(flips.as_ptr().add(j + 8));
+
+                let tr0 = _mm512_loadu_pd(self.lo_re.as_ptr().add(j));
+                let tr1 = _mm512_loadu_pd(self.lo_re.as_ptr().add(j + 8));
+                let ti0 = _mm512_loadu_pd(self.lo_im.as_ptr().add(j));
+                let ti1 = _mm512_loadu_pd(self.lo_im.as_ptr().add(j + 8));
+
+                let dr0 = _mm512_mul_pd(
+                    flip0,
+                    _mm512_fmsub_pd(tr0, fr_vec, _mm512_mul_pd(ti0, fi_vec)),
+                );
+                let di0 = _mm512_mul_pd(
+                    flip0,
+                    _mm512_fmadd_pd(tr0, fi_vec, _mm512_mul_pd(ti0, fr_vec)),
+                );
+                let dr1 = _mm512_mul_pd(
+                    flip1,
+                    _mm512_fmsub_pd(tr1, fr_vec, _mm512_mul_pd(ti1, fi_vec)),
+                );
+                let di1 = _mm512_mul_pd(
+                    flip1,
+                    _mm512_fmadd_pd(tr1, fi_vec, _mm512_mul_pd(ti1, fr_vec)),
+                );
+
+                let ar0 = _mm512_loadu_pd(re.as_ptr().add(j));
+                let ai0 = _mm512_loadu_pd(im.as_ptr().add(j));
+                let ar1 = _mm512_loadu_pd(re.as_ptr().add(j + 8));
+                let ai1 = _mm512_loadu_pd(im.as_ptr().add(j + 8));
+
+                let new_r0 = _mm512_fmsub_pd(ar0, dr0, _mm512_mul_pd(ai0, di0));
+                let new_i0 = _mm512_fmadd_pd(ar0, di0, _mm512_mul_pd(ai0, dr0));
+                let new_r1 = _mm512_fmsub_pd(ar1, dr1, _mm512_mul_pd(ai1, di1));
+                let new_i1 = _mm512_fmadd_pd(ar1, di1, _mm512_mul_pd(ai1, dr1));
+
+                _mm512_storeu_pd(re.as_mut_ptr().add(j), new_r0);
+                _mm512_storeu_pd(im.as_mut_ptr().add(j), new_i0);
+                _mm512_storeu_pd(re.as_mut_ptr().add(j + 8), new_r1);
+                _mm512_storeu_pd(im.as_mut_ptr().add(j + 8), new_i1);
+
+                j += 16;
+            }
+        }
+
+        // Tail: remaining 0-15 amplitudes. Use AVX2 for 8-wide chunks if available,
+        // then 4-wide, then scalar.
+        #[cfg(all(target_arch = "x86_64", target_feature = "avx2", target_feature = "fma"))]
+        if j + 8 <= len && is_x86_feature_detected!("avx2") && is_x86_feature_detected!("fma") {
+            let tr0 = _mm256_loadu_pd(self.lo_re.as_ptr().add(j));
+            let ti0 = _mm256_loadu_pd(self.lo_im.as_ptr().add(j));
+            let fr_vec256 = _mm256_set1_pd(fr);
+            let fi_vec256 = _mm256_set1_pd(fi);
+
+            let dr0 = _mm256_fmsub_pd(tr0, fr_vec256, _mm256_mul_pd(ti0, fi_vec256));
+            let di0 = _mm256_fmadd_pd(tr0, fi_vec256, _mm256_mul_pd(ti0, fr_vec256));
+
+            let ar0 = _mm256_loadu_pd(re.as_ptr().add(j));
+            let ai0 = _mm256_loadu_pd(im.as_ptr().add(j));
+
+            if cross_mask == 0 {
+                let new_r = _mm256_fmsub_pd(ar0, dr0, _mm256_mul_pd(ai0, di0));
+                let new_i = _mm256_fmadd_pd(ar0, di0, _mm256_mul_pd(ai0, dr0));
+                _mm256_storeu_pd(re.as_mut_ptr().add(j), new_r);
+                _mm256_storeu_pd(im.as_mut_ptr().add(j), new_i);
+            } else {
+                let flip = _mm256_set1_pd(
+                    if (j & cross_mask).count_ones() & 1 == 1 { -1.0 } else { 1.0 },
+                );
+                let dr0 = _mm256_mul_pd(flip, dr0);
+                let di0 = _mm256_mul_pd(flip, di0);
+                let new_r = _mm256_fmsub_pd(ar0, dr0, _mm256_mul_pd(ai0, di0));
+                let new_i = _mm256_fmadd_pd(ar0, di0, _mm256_mul_pd(ai0, dr0));
+                _mm256_storeu_pd(re.as_mut_ptr().add(j), new_r);
+                _mm256_storeu_pd(im.as_mut_ptr().add(j), new_i);
+            }
+            j += 8;
+        }
+
+        while j + 4 <= len {
+            let tr = _mm256_loadu_pd(self.lo_re.as_ptr().add(j));
+            let ti = _mm256_loadu_pd(self.lo_im.as_ptr().add(j));
+            let dr = _mm256_fmsub_pd(tr, _mm256_set1_pd(fr), _mm256_mul_pd(ti, _mm256_set1_pd(fi)));
+            let di = _mm256_fmadd_pd(tr, _mm256_set1_pd(fi), _mm256_mul_pd(ti, _mm256_set1_pd(fr)));
+            let ar = _mm256_loadu_pd(re.as_ptr().add(j));
+            let ai = _mm256_loadu_pd(im.as_ptr().add(j));
+            let flip = if (j & cross_mask).count_ones() & 1 == 1 { -1.0 } else { 1.0 };
+            let dr = _mm256_mul_pd(_mm256_set1_pd(flip), dr);
+            let di = _mm256_mul_pd(_mm256_set1_pd(flip), di);
+            let new_r = _mm256_fmsub_pd(ar, dr, _mm256_mul_pd(ai, di));
+            let new_i = _mm256_fmadd_pd(ar, di, _mm256_mul_pd(ai, dr));
+            _mm256_storeu_pd(re.as_mut_ptr().add(j), new_r);
+            _mm256_storeu_pd(im.as_mut_ptr().add(j), new_i);
+            j += 4;
+        }
+
+        while j < len {
+            let flip = if (j & cross_mask).count_ones() & 1 == 1 { -1.0 } else { 1.0 };
             let (tr, ti) = (self.lo_re[j], self.lo_im[j]);
             let (dr, di) = (flip * (tr * fr - ti * fi), flip * (tr * fi + ti * fr));
             let (ar, ai) = (re[j], im[j]);
