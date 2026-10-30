@@ -220,125 +220,24 @@ impl PauliObservable {
 
     /// Compute exact quantum expectation value:
     /// `<O> = <psi | O | psi>`
+    ///
+    /// Every variant dispatches to a single-pass AVX2+FMA kernel in
+    /// [`crate::simd::pauli`] (with a scalar fallback), instead of a scalar loop over the
+    /// statevector. `LinearZ` folds the weighted single-qubit Z reductions directly.
     pub fn expectation_value(&self, state: &QuantumState) -> f64 {
-        let n_qubits = (state.dim as f64).log2().round() as usize;
-
+        let (real, imag) = (&state.real[..], &state.imag[..]);
         match self {
-            PauliObservable::Z(qubit_idx) => {
-                assert!(*qubit_idx < n_qubits, "Qubit index out of bounds");
-                let mask = 1 << qubit_idx;
-                let mut exp = 0.0;
-                for idx in 0..state.dim {
-                    let prob =
-                        state.real[idx] * state.real[idx] + state.imag[idx] * state.imag[idx];
-                    let sign = if (idx & mask) == 0 { 1.0 } else { -1.0 };
-                    exp += sign * prob;
-                }
-                exp
-            }
-            PauliObservable::ZZ(q1, q2) => {
-                assert!(
-                    *q1 < n_qubits && *q2 < n_qubits,
-                    "Qubit index out of bounds"
-                );
-                let mask1 = 1 << q1;
-                let mask2 = 1 << q2;
-                let mut exp = 0.0;
-                for idx in 0..state.dim {
-                    let prob =
-                        state.real[idx] * state.real[idx] + state.imag[idx] * state.imag[idx];
-                    let b1 = (idx & mask1) != 0;
-                    let b2 = (idx & mask2) != 0;
-                    let sign = if b1 == b2 { 1.0 } else { -1.0 };
-                    exp += sign * prob;
-                }
-                exp
-            }
-            PauliObservable::X(qubit_idx) => {
-                assert!(*qubit_idx < n_qubits, "Qubit index out of bounds");
-                let flip_mask = 1 << qubit_idx;
-                let mut exp = 0.0;
-                for idx in 0..state.dim {
-                    let partner = idx ^ flip_mask;
-                    if idx < partner {
-                        let r1 = state.real[idx];
-                        let i1 = state.imag[idx];
-                        let r2 = state.real[partner];
-                        let i2 = state.imag[partner];
-                        let real_cross = r1 * r2 + i1 * i2;
-                        exp += 2.0 * real_cross;
-                    }
-                }
-                exp
-            }
-            PauliObservable::XX(q1, q2) => {
-                assert!(
-                    *q1 < n_qubits && *q2 < n_qubits,
-                    "Qubit index out of bounds"
-                );
-                let mask = (1usize << *q1) | (1usize << *q2);
-                let mut exp = 0.0;
-                for idx in 0..state.dim {
-                    let partner = idx ^ mask;
-                    if idx < partner {
-                        let r1 = state.real[idx];
-                        let i1 = state.imag[idx];
-                        let r2 = state.real[partner];
-                        let i2 = state.imag[partner];
-                        exp += 2.0 * (r1 * r2 + i1 * i2);
-                    }
-                }
-                exp
-            }
-            PauliObservable::YY(q1, q2) => {
-                assert!(
-                    *q1 < n_qubits && *q2 < n_qubits,
-                    "Qubit index out of bounds"
-                );
-                let mask = (1usize << *q1) | (1usize << *q2);
-                let mut exp = 0.0;
-                for idx in 0..state.dim {
-                    let partner = idx ^ mask;
-                    if idx < partner {
-                        let bit_a = (idx >> *q1) & 1;
-                        let bit_b = (idx >> *q2) & 1;
-                        let sign = if bit_a == bit_b { -1.0 } else { 1.0 };
-                        let r1 = state.real[idx];
-                        let i1 = state.imag[idx];
-                        let r2 = state.real[partner];
-                        let i2 = state.imag[partner];
-                        exp += 2.0 * sign * (r1 * r2 + i1 * i2);
-                    }
-                }
-                exp
-            }
-            PauliObservable::AllZ => {
-                let mut exp = 0.0;
-                for idx in 0..state.dim {
-                    let prob =
-                        state.real[idx] * state.real[idx] + state.imag[idx] * state.imag[idx];
-                    let sign = if idx.count_ones() % 2 == 0 { 1.0 } else { -1.0 };
-                    exp += sign * prob;
-                }
-                exp
-            }
+            PauliObservable::Z(q) => crate::simd::measure_single_qubit_z(real, imag, *q),
+            PauliObservable::ZZ(q1, q2) => crate::simd::measure_zz_pair(real, imag, *q1, *q2),
+            PauliObservable::X(q) => crate::simd::measure_single_qubit_x(real, imag, *q),
+            PauliObservable::XX(q1, q2) => crate::simd::measure_xx_pair(real, imag, *q1, *q2),
+            PauliObservable::YY(q1, q2) => crate::simd::measure_yy_pair(real, imag, *q1, *q2),
+            PauliObservable::AllZ => crate::simd::measure_all_z_parity(real, imag),
             PauliObservable::LinearZ(weights) => weights
                 .iter()
-                .map(|&(q, w)| w * PauliObservable::Z(q).expectation_value(state))
+                .map(|&(q, w)| w * crate::simd::measure_single_qubit_z(real, imag, q))
                 .sum(),
-            PauliObservable::GlobalMeanZ => {
-                let mut exp = 0.0;
-                let inv_n = 1.0 / (n_qubits as f64);
-                for idx in 0..state.dim {
-                    let prob =
-                        state.real[idx] * state.real[idx] + state.imag[idx] * state.imag[idx];
-                    let ones = idx.count_ones() as usize;
-                    let zeros = n_qubits.saturating_sub(ones);
-                    let net_z = (zeros as f64 - ones as f64) * inv_n;
-                    exp += net_z * prob;
-                }
-                exp
-            }
+            PauliObservable::GlobalMeanZ => crate::simd::measure_global_mean_z(real, imag),
         }
     }
 }

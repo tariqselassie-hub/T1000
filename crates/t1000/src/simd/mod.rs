@@ -22,6 +22,7 @@ pub mod guards;
 mod lowq;
 pub mod measurements;
 pub mod model;
+pub mod pauli;
 pub mod rotations;
 pub(crate) mod unitary;
 
@@ -39,6 +40,10 @@ pub use measurements::{
     measure_fused_ry_z_readout, measure_single_qubit_z, measure_zz_correlators,
 };
 pub use model::{SimdBackend, SimdStateView, SimdStateViewMut};
+pub use pauli::{
+    measure_all_z_parity, measure_global_mean_z, measure_single_qubit_x, measure_xx_pair,
+    measure_yy_pair, measure_zz_pair,
+};
 pub use rotations::{apply_cz_kernel, apply_ry_kernel, apply_rz_kernel};
 
 #[cfg(test)]
