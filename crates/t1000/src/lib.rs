@@ -57,6 +57,7 @@ pub mod protocol;
 pub mod q_krr;
 pub mod qec;
 pub mod qgnn;
+pub mod qng;
 pub mod qpu;
 pub mod qssm;
 pub mod quaternion;
@@ -134,9 +135,10 @@ pub use qec::{
 };
 
 pub use adjoint::{
-    adjoint_gradient, adjoint_gradient_buffered, adjoint_gradient_with_purity,
-    adjoint_gradient_with_purity_buffered, inject_bloch_purity_costate, AdjointResult,
-    AdjointWorkspace,
+    adjoint_gradient, adjoint_gradient_buffered, adjoint_gradient_encoded_into,
+    adjoint_gradient_into, adjoint_gradient_with_purity, adjoint_gradient_with_purity_buffered,
+    inject_bloch_purity_costate, AdjointOutput, AdjointResult, AdjointWorkspace,
+    BatchAdjointWorkspace,
 };
 pub use ansatz::{
     eval_36q_bipartite_bridge, eval_36q_bipartite_midcircuit, eval_cut_bridge_general, AncillaRole,
@@ -201,6 +203,7 @@ pub use qec::{
     detect_and_recover, encode_logical_state, extract_syndrome, inject_pauli_error, PauliErrorKind,
     QecCodeKind, QecRecoveryResult, SyndromeReport,
 };
+pub use qng::{quantum_fisher_information, QngStepInfo, QuantumNaturalGradient};
 pub use qssm::{
     planckian_ssm_discretization, QssmConfig, QssmForwardReport, QuantumStateSpaceAutoencoder,
 };

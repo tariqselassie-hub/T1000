@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 // Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
 
-use crate::adjoint::adjoint_gradient;
+use crate::adjoint::{
+    adjoint_gradient, adjoint_gradient_encoded_into, adjoint_gradient_into, AdjointOutput,
+    AdjointWorkspace,
+};
 use crate::ansatz::CircuitAnsatz;
 use crate::feature_map::DataEncodingLayer;
 use crate::observable::PauliObservable;
@@ -186,6 +189,56 @@ impl ParameterShiftEngine {
         let pred = res.expectations[0];
         let error = pred - y_target;
         (pred, 0.5 * error * error, res.gradient)
+    }
+
+    /// Fused forward + adjoint loss gradient on an already prepared input state.
+    ///
+    /// The state is copied into `ws` and the sweep writes the expectations and gradient back
+    /// into the same workspace, so repeated calls allocate nothing.
+    /// Returns (prediction, loss, borrowed gradient).
+    pub fn compute_loss_gradients_for_state_into<'a>(
+        &self,
+        state: &QuantumState,
+        y_target: f64,
+        weights: &[f64],
+        ws: &'a mut AdjointWorkspace,
+    ) -> (f64, f64, AdjointOutput<'a>) {
+        let out = adjoint_gradient_into(
+            &self.ansatz,
+            state,
+            weights,
+            std::slice::from_ref(&self.observable),
+            |e| vec![e[0] - y_target],
+            ws,
+        );
+        let pred = out.expectations[0];
+        let error = pred - y_target;
+        (pred, 0.5 * error * error, out)
+    }
+
+    /// Fused encoding + forward + adjoint loss gradient into a reusable workspace.
+    ///
+    /// The encoded input state is written straight into `ws`, so no intermediate statevector is
+    /// allocated or copied, and the expectations/gradient buffers are reused across calls.
+    /// Returns (prediction, loss, borrowed gradient).
+    pub fn compute_loss_gradients_into<'a>(
+        &self,
+        x: &[f64],
+        y_target: f64,
+        weights: &[f64],
+        ws: &'a mut AdjointWorkspace,
+    ) -> (f64, f64, AdjointOutput<'a>) {
+        let out = adjoint_gradient_encoded_into(
+            &self.ansatz,
+            |state| self.encoding.encode_into(x, state),
+            weights,
+            std::slice::from_ref(&self.observable),
+            |e| vec![e[0] - y_target],
+            ws,
+        );
+        let pred = out.expectations[0];
+        let error = pred - y_target;
+        (pred, 0.5 * error * error, out)
     }
 
     /// Forward pass evaluating multiple observables simultaneously on an evolved quantum state.
@@ -497,5 +550,36 @@ mod tests {
         let vqc_delta = (vqc[0] - vqc_before[0]).abs();
         let head_delta = (head[0] - head_before[0]).abs();
         assert!(vqc_delta > head_delta);
+    }
+
+    #[test]
+    fn fused_loss_gradient_into_matches_allocating_path() {
+        let encoding = DataEncodingLayer::new(3, crate::feature_map::EncodingKind::Angle);
+        let ansatz = CircuitAnsatz::new(3, 2);
+        let engine = ParameterShiftEngine::new(encoding, ansatz, PauliObservable::GlobalMeanZ);
+        let weights: Vec<f64> = (0..engine.ansatz.param_count())
+            .map(|i| (i as f64 * 0.41 + 0.3).sin())
+            .collect();
+        let mut ws = AdjointWorkspace::new(engine.ansatz.dim, engine.ansatz.n_qubits);
+        let x = [0.3, -1.1, 0.8];
+
+        let (pred_ref, loss_ref, grad_ref) = engine.compute_loss_gradients(&x, 1.0, &weights);
+        let (pred, loss, out) = engine.compute_loss_gradients_into(&x, 1.0, &weights, &mut ws);
+
+        assert!((pred - pred_ref).abs() < 1e-12);
+        assert!((loss - loss_ref).abs() < 1e-12);
+        assert_eq!(out.gradient.len(), weights.len());
+        for (a, b) in grad_ref.iter().zip(out.gradient) {
+            assert!((a - b).abs() < 1e-12, "gradient mismatch");
+        }
+
+        // Reusing the workspace on a second row keeps matching the allocating path.
+        let x2 = [-0.6, 0.9, 1.4];
+        let (_, loss2_ref, grad2_ref) = engine.compute_loss_gradients(&x2, -1.0, &weights);
+        let (_, loss2, out2) = engine.compute_loss_gradients_into(&x2, -1.0, &weights, &mut ws);
+        assert!((loss2 - loss2_ref).abs() < 1e-12);
+        for (a, b) in grad2_ref.iter().zip(out2.gradient) {
+            assert!((a - b).abs() < 1e-12, "reused gradient mismatch");
+        }
     }
 }

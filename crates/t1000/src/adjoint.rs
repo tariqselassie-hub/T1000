@@ -43,13 +43,35 @@ pub struct AdjointResult {
 ///
 /// Taking the coefficients as a function of the expectations lets loss gradients (for example
 /// `c_k = (pred_k - target_k) / K` for mean squared error) be computed in a single pass.
+/// Observations and gradient written into an [`AdjointWorkspace`] by the fused drivers.
+///
+/// Borrowing the workspace buffers instead of returning fresh `Vec`s keeps the per-sample
+/// training loop allocation-free.
+#[derive(Debug, Clone, Copy)]
+pub struct AdjointOutput<'a> {
+    /// `<O_k>` for each observable, in input order.
+    pub expectations: &'a [f64],
+    /// `d/dtheta sum_k c_k <O_k>`, one entry per ansatz weight.
+    pub gradient: &'a [f64],
+}
+
 /// Pre-allocated reusable scratch workspace for zero-allocation adjoint gradient computation.
+///
+/// Besides the two statevectors it owns the per-layer angle, pair and gradient buffers, so a
+/// training loop can call [`adjoint_gradient_into`] or [`adjoint_gradient_encoded_into`] on every
+/// sample without allocating after construction.
 #[derive(Debug, Clone)]
 pub struct AdjointWorkspace {
     pub phi: QuantumState,
     pub lambda: QuantumState,
     pub rz_grad: Vec<f64>,
     pub ry_grad: Vec<f64>,
+    pub expectations: Vec<f64>,
+    pub gradient: Vec<f64>,
+    theta_rz: Vec<f64>,
+    neg_rz: Vec<f64>,
+    theta_ry: Vec<f64>,
+    pairs: Vec<(usize, usize)>,
 }
 
 impl AdjointWorkspace {
@@ -60,6 +82,12 @@ impl AdjointWorkspace {
             lambda: QuantumState::zero(dim),
             rz_grad: vec![0.0; n_qubits],
             ry_grad: vec![0.0; n_qubits],
+            expectations: Vec::new(),
+            gradient: Vec::new(),
+            theta_rz: vec![0.0; n_qubits],
+            neg_rz: vec![0.0; n_qubits],
+            theta_ry: vec![0.0; n_qubits],
+            pairs: Vec::new(),
         }
     }
 
@@ -113,7 +141,11 @@ pub fn adjoint_gradient_batch(
     grad_out: &mut [f64],
 ) -> Vec<AdjointResult> {
     let param_count = ansatz.param_count();
-    assert_eq!(grad_out.len(), param_count, "grad_out length must equal parameter count");
+    assert_eq!(
+        grad_out.len(),
+        param_count,
+        "grad_out length must equal parameter count"
+    );
     assert_eq!(
         ws.workspaces.len(),
         inputs.len(),
@@ -153,6 +185,44 @@ pub fn adjoint_gradient_batch(
     results
 }
 
+/// Fused forward + adjoint sweep on a borrowed input state.
+///
+/// Copies `input` into the workspace, runs the ansatz forward once, then walks the circuit
+/// backwards reading every gradient. Expectations and gradient are written into `ws` and
+/// returned as borrowed slices, so no allocation happens after the workspace is built.
+pub fn adjoint_gradient_into<'a>(
+    ansatz: &CircuitAnsatz,
+    input: &QuantumState,
+    weights: &[f64],
+    observables: &[PauliObservable],
+    coefficients: impl FnOnce(&[f64]) -> Vec<f64>,
+    ws: &'a mut AdjointWorkspace,
+) -> AdjointOutput<'a> {
+    assert_eq!(
+        input.dim, ansatz.dim,
+        "input dimension does not match the ansatz"
+    );
+    ws.phi.copy_from(input);
+    sweep_with_purity(ansatz, weights, observables, coefficients, 0.0, 0.75, ws)
+}
+
+/// Fused encoding + forward + adjoint sweep.
+///
+/// `encode` writes the input state straight into the workspace, so no intermediate encoded
+/// statevector is allocated or copied. Everything else matches [`adjoint_gradient_into`].
+pub fn adjoint_gradient_encoded_into<'a>(
+    ansatz: &CircuitAnsatz,
+    encode: impl FnOnce(&mut QuantumState),
+    weights: &[f64],
+    observables: &[PauliObservable],
+    coefficients: impl FnOnce(&[f64]) -> Vec<f64>,
+    ws: &'a mut AdjointWorkspace,
+) -> AdjointOutput<'a> {
+    assert_eq!(ws.phi.dim, ansatz.dim, "workspace phi dimension mismatch");
+    encode(&mut ws.phi);
+    sweep_with_purity(ansatz, weights, observables, coefficients, 0.0, 0.75, ws)
+}
+
 /// Computes adjoint gradients into a pre-allocated reusable `AdjointWorkspace`.
 /// Eliminates all heap allocations and GC pressure during inner mini-batch training loops.
 pub fn adjoint_gradient_buffered(
@@ -163,16 +233,11 @@ pub fn adjoint_gradient_buffered(
     coefficients: impl FnOnce(&[f64]) -> Vec<f64>,
     ws: &mut AdjointWorkspace,
 ) -> AdjointResult {
-    adjoint_gradient_with_purity_buffered(
-        ansatz,
-        input,
-        weights,
-        observables,
-        coefficients,
-        0.0,
-        0.75,
-        ws,
-    )
+    let out = adjoint_gradient_into(ansatz, input, weights, observables, coefficients, ws);
+    AdjointResult {
+        expectations: out.expectations.to_vec(),
+        gradient: out.gradient.to_vec(),
+    }
 }
 
 /// Taking the coefficients as a function of the expectations lets loss gradients (for example
@@ -222,11 +287,37 @@ pub fn adjoint_gradient_with_purity_buffered(
     r_min: f64,
     ws: &mut AdjointWorkspace,
 ) -> AdjointResult {
-    let n = ansatz.n_qubits;
     assert_eq!(
         input.dim, ansatz.dim,
         "input dimension does not match the ansatz"
     );
+    ws.phi.copy_from(input);
+    let out = sweep_with_purity(
+        ansatz,
+        weights,
+        observables,
+        coefficients,
+        lambda_bloch,
+        r_min,
+        ws,
+    );
+    AdjointResult {
+        expectations: out.expectations.to_vec(),
+        gradient: out.gradient.to_vec(),
+    }
+}
+
+/// Forward + backward sweep over a workspace whose `phi` already holds the encoded input.
+fn sweep_with_purity<'a>(
+    ansatz: &CircuitAnsatz,
+    weights: &[f64],
+    observables: &[PauliObservable],
+    coefficients: impl FnOnce(&[f64]) -> Vec<f64>,
+    lambda_bloch: f64,
+    r_min: f64,
+    ws: &'a mut AdjointWorkspace,
+) -> AdjointOutput<'a> {
+    let n = ansatz.n_qubits;
     assert_eq!(
         weights.len(),
         ansatz.param_count(),
@@ -238,22 +329,20 @@ pub fn adjoint_gradient_with_purity_buffered(
         "workspace lambda dimension mismatch"
     );
 
-    // Forward pass via in-place copy.
-    ws.phi.copy_from(input);
+    // Forward pass in place: `phi` is the only state the caller had to prepare.
     ansatz.forward_in_place(&mut ws.phi, weights);
 
-    let expectations: Vec<f64> = observables
-        .iter()
-        .map(|o| o.expectation_value(&ws.phi))
-        .collect();
-    let coeffs = coefficients(&expectations);
+    ws.expectations.clear();
+    ws.expectations
+        .extend(observables.iter().map(|o| o.expectation_value(&ws.phi)));
+    let coeffs = coefficients(&ws.expectations);
     assert_eq!(
         coeffs.len(),
         observables.len(),
         "one coefficient per observable"
     );
 
-    // Zero-allocation lambda accumulation: lambda = sum_k c_k O_k |psi>
+    // Zero-allocation lambda accumulation: lambda = sum_k c_k O_k |psi>.
     ws.reset_lambda();
     for (obs, &c) in observables.iter().zip(&coeffs) {
         if c != 0.0 {
@@ -265,43 +354,49 @@ pub fn adjoint_gradient_with_purity_buffered(
         inject_bloch_purity_costate(&mut ws.lambda, &ws.phi, n, lambda_bloch, r_min);
     }
 
-    let mut gradient = vec![0.0; weights.len()];
+    ws.gradient.clear();
+    ws.gradient.resize(weights.len(), 0.0);
+
     for layer in (0..ansatz.depth).rev() {
         let base = layer * 2 * n;
-        let theta_rz: Vec<f64> = (0..n).map(|q| weights[base + 2 * q + 1]).collect();
-        let pairs: Vec<(usize, usize)> = entangling_pairs(n, layer).collect();
+
+        ws.theta_rz.clear();
+        ws.theta_rz
+            .extend((0..n).map(|q| weights[base + 2 * q + 1]));
+
+        ws.pairs.clear();
+        ws.pairs.extend(entangling_pairs(n, layer));
 
         // Rz gradients: Im <lambda| Z_q |phi> for every qubit, in one pass.
         crate::adjoint_fusion::rz_grad_all(&ws.phi, &ws.lambda, &mut ws.rz_grad);
         for q in 0..n {
-            gradient[base + 2 * q + 1] = ws.rz_grad[q];
+            ws.gradient[base + 2 * q + 1] = ws.rz_grad[q];
         }
 
         // Undo the diagonal block (Rz(-theta) and the same CZs) on both states.
-        let neg_rz: Vec<f64> = theta_rz.iter().map(|t| -t).collect();
+        ws.neg_rz.clear();
+        ws.neg_rz.extend(ws.theta_rz.iter().map(|t| -t));
         for s in [&mut ws.phi, &mut ws.lambda] {
-            crate::diagonal::apply_rz_cz_layer(&mut s.real, &mut s.imag, &neg_rz, &pairs);
+            crate::diagonal::apply_rz_cz_layer(&mut s.real, &mut s.imag, &ws.neg_rz, &ws.pairs);
         }
 
         // Ry gradients Im <lambda| Y_q |phi>, fused with undoing the Ry gates on both states.
-        let mut theta_ry = [0.0f64; crate::layer_fusion::MAX_LAYER_QUBITS];
-        for (q, t) in theta_ry.iter_mut().enumerate().take(n) {
-            *t = weights[base + 2 * q];
-        }
+        ws.theta_ry.clear();
+        ws.theta_ry.extend((0..n).map(|q| weights[base + 2 * q]));
         crate::adjoint_fusion::ry_grad_and_undo(
             &mut ws.phi,
             &mut ws.lambda,
-            &theta_ry[..n],
+            &ws.theta_ry,
             &mut ws.ry_grad,
         );
         for q in 0..n {
-            gradient[base + 2 * q] = ws.ry_grad[q];
+            ws.gradient[base + 2 * q] = ws.ry_grad[q];
         }
     }
 
-    AdjointResult {
-        expectations,
-        gradient,
+    AdjointOutput {
+        expectations: &ws.expectations,
+        gradient: &ws.gradient,
     }
 }
 
@@ -604,6 +699,62 @@ mod tests {
             for (g1, g2) in res_std.gradient.iter().zip(&res_buf.gradient) {
                 assert!((g1 - g2).abs() < 1e-12, "gradient mismatch at n={n_qubits}");
             }
+        }
+    }
+
+    #[test]
+    fn fused_encoded_driver_matches_allocating_path_and_reuses_workspace() {
+        use crate::feature_map::{DataEncodingLayer, EncodingKind};
+
+        let n_qubits = 3;
+        let ansatz = CircuitAnsatz::new(n_qubits, 2);
+        let encoding = DataEncodingLayer::new(n_qubits, EncodingKind::Angle);
+        let weights: Vec<f64> = (0..ansatz.param_count())
+            .map(|i| (i as f64 * 0.53).cos())
+            .collect();
+        let obs = vec![
+            PauliObservable::GlobalMeanZ,
+            PauliObservable::Z(n_qubits - 1),
+        ];
+        let mut ws = AdjointWorkspace::new(ansatz.dim, n_qubits);
+
+        let rows = [vec![0.2, -0.7, 1.1], vec![-1.3, 0.4, 2.2]];
+        for x in &rows {
+            let expected = adjoint_gradient(&ansatz, &encoding.encode(x), &weights, &obs, |e| {
+                vec![e[0] - 0.25, 0.5 * e[1]]
+            });
+
+            let out = adjoint_gradient_encoded_into(
+                &ansatz,
+                |state| encoding.encode_into(x, state),
+                &weights,
+                &obs,
+                |e| vec![e[0] - 0.25, 0.5 * e[1]],
+                &mut ws,
+            );
+            assert_eq!(out.expectations.len(), obs.len());
+            assert_eq!(out.gradient.len(), weights.len());
+            for (a, b) in expected.expectations.iter().zip(out.expectations) {
+                assert!((a - b).abs() < 1e-12, "expectation mismatch");
+            }
+            for (a, b) in expected.gradient.iter().zip(out.gradient) {
+                assert!((a - b).abs() < 1e-12, "gradient mismatch");
+            }
+        }
+
+        // The same workspace, reused on a prepared state, still agrees with the allocating path.
+        let prepared = encoding.encode(&rows[0]);
+        let expected = adjoint_gradient(&ansatz, &prepared, &weights, &obs, |_| vec![1.0, 1.0]);
+        let out = adjoint_gradient_into(
+            &ansatz,
+            &prepared,
+            &weights,
+            &obs,
+            |_| vec![1.0, 1.0],
+            &mut ws,
+        );
+        for (a, b) in expected.gradient.iter().zip(out.gradient) {
+            assert!((a - b).abs() < 1e-12, "reused-workspace gradient mismatch");
         }
     }
 }
