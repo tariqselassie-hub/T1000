@@ -16,6 +16,12 @@
 
 use serde::{Deserialize, Serialize};
 
+pub mod noise;
+pub mod transpiler;
+
+pub use noise::{ChipNoiseReport, ChipNoiseSimulator};
+pub use transpiler::{ChipTranspiler, TranspileReport, TranspiledCircuit};
+
 /// Fundamental quantum computing physical technology modality.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum HardwareModality {

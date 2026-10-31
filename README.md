@@ -49,7 +49,9 @@ cd T1000
 # 2. Run the test suite (all 455 tests pass in < 2s)
 cargo test --workspace
 
-# 3. Launch the Deen Toolchain CLI (Asynchronous Sidecar vs Sync Benchmark)
+# 3. Launch the Deen Toolchain CLI (Chip Calibration Audit, Transpilation & Sidecar Bench)
+cargo run --release -p t1000 --bin deen_toolchain -- chip-audit all
+cargo run --release -p t1000 --bin deen_toolchain -- transpile nighthawk-r2 4 2
 cargo run --release -p t1000 --bin deen_toolchain -- bench-sidecar 100000
 
 # 4. Run the Continuous State Dynamics & SQUID Sidecar Benchmark
