@@ -49,3 +49,4 @@ Unlike planar superconducting transmon lattices (such as Google Willow 105Q, IBM
 * `quantinuum_h2_telemetry.json`: Raw physical telemetry and distance sweep fidelities.
 * `quantinuum_h2_hardware_spec.json`: Machine-readable hardware specifications and error profile.
 * `runner.py`: Unified pipeline orchestrator.
+
