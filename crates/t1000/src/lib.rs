@@ -19,6 +19,8 @@ pub use aligned_buffer::{AlignedBuffer, CACHE_LINE_ALIGN};
 pub mod adjoint;
 pub mod adjoint_fusion;
 pub mod ansatz;
+pub mod architecture;
+pub use architecture::{ChipErrorProfile, HardwareModality, NativeGateKind, QuantumChip};
 pub mod backend;
 pub mod baselines;
 pub mod calibration;
