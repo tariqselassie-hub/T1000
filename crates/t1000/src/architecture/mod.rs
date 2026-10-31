@@ -128,6 +128,8 @@ pub enum QuantumChip {
     IbmNighthawkR2,
     /// Rigetti Cepheus-1-108Q: 108-qubit modular processor (twelve 3x3 square chiplets).
     RigettiCepheus108Q,
+    /// Google Willow 105Q: 105-qubit planar transmon processor (182 tunable couplers, surface-code threshold).
+    GoogleWillow105Q,
     /// Belenos Photonic: 16-mode triangular/rectangular Mach-Zehnder interferometer mesh.
     BelenosPhotonic16M,
     /// Emerald Neutral Atom: 256-atom optical tweezer lattice with Rydberg blockade.
@@ -141,6 +143,7 @@ impl QuantumChip {
     pub const ALL: &'static [QuantumChip] = &[
         Self::IbmNighthawkR2,
         Self::RigettiCepheus108Q,
+        Self::GoogleWillow105Q,
         Self::BelenosPhotonic16M,
         Self::EmeraldNeutralAtom256,
         Self::T1000QpuArtix7,
@@ -149,7 +152,9 @@ impl QuantumChip {
     /// Returns the underlying physical technology modality.
     pub const fn modality(&self) -> HardwareModality {
         match self {
-            Self::IbmNighthawkR2 | Self::RigettiCepheus108Q => HardwareModality::SuperconductingTransmon,
+            Self::IbmNighthawkR2 | Self::RigettiCepheus108Q | Self::GoogleWillow105Q => {
+                HardwareModality::SuperconductingTransmon
+            }
             Self::BelenosPhotonic16M => HardwareModality::PhotonicLinearOptics,
             Self::EmeraldNeutralAtom256 => HardwareModality::NeutralAtomRydberg,
             Self::T1000QpuArtix7 => HardwareModality::FpgaSiliconEmulation,
@@ -161,6 +166,7 @@ impl QuantumChip {
         match self {
             Self::IbmNighthawkR2 => "IBM Quantum Nighthawk R2 (120Q Monolithic)",
             Self::RigettiCepheus108Q => "Rigetti Cepheus-1-108Q (Modular 12x Chiplets)",
+            Self::GoogleWillow105Q => "Google Willow 105Q (Surface-Code Threshold Planar Grid)",
             Self::BelenosPhotonic16M => "Belenos-16M Integrated Linear Photonic Mesh",
             Self::EmeraldNeutralAtom256 => "Emerald-256 Optical Tweezer Rydberg Array",
             Self::T1000QpuArtix7 => "T-1000 QPU Artix-7 Fixed-Point Co-Processor",
@@ -172,6 +178,7 @@ impl QuantumChip {
         match self {
             Self::IbmNighthawkR2 => "nighthawk-r2",
             Self::RigettiCepheus108Q => "cepheus-108q",
+            Self::GoogleWillow105Q => "willow-105q",
             Self::BelenosPhotonic16M => "belenos-16m",
             Self::EmeraldNeutralAtom256 => "emerald-256",
             Self::T1000QpuArtix7 => "t1000-qpu",
@@ -183,6 +190,7 @@ impl QuantumChip {
         match self {
             Self::IbmNighthawkR2 => 120,
             Self::RigettiCepheus108Q => 108,
+            Self::GoogleWillow105Q => 105,
             Self::BelenosPhotonic16M => 16,
             Self::EmeraldNeutralAtom256 => 256,
             Self::T1000QpuArtix7 => 14,
@@ -194,6 +202,7 @@ impl QuantumChip {
         match self {
             Self::IbmNighthawkR2 => 218,
             Self::RigettiCepheus108Q => 177, // (12 chiplets x 12 intra) + 33 inter-chiplet seams
+            Self::GoogleWillow105Q => 182,   // 11x10 grid with 5 defect / boundary sites removed
             Self::BelenosPhotonic16M => 120, // Fully interconnected Clements/Reck interferometer mesh
             Self::EmeraldNeutralAtom256 => 256 * 255 / 2, // Dynamically reconfigurable Rydberg blockades
             Self::T1000QpuArtix7 => 13, // Linear 14-qubit nearest-neighbor systolic bus
@@ -212,6 +221,13 @@ impl QuantumChip {
             ],
             Self::RigettiCepheus108Q => &[
                 NativeGateKind::Rz,
+                NativeGateKind::X,
+                NativeGateKind::Cz,
+                NativeGateKind::Xy,
+            ],
+            Self::GoogleWillow105Q => &[
+                NativeGateKind::Rz,
+                NativeGateKind::SqrtX,
                 NativeGateKind::X,
                 NativeGateKind::Cz,
                 NativeGateKind::Xy,
@@ -257,6 +273,16 @@ impl QuantumChip {
                 two_qubit_duration_ns: 90.0,
                 inter_chiplet_seam_factor: 2.125,  // Seam error rises to ~1.7% across chiplet boundaries
             },
+            Self::GoogleWillow105Q => ChipErrorProfile {
+                single_qubit_error: 0.00035,       // 0.035% 1Q error
+                two_qubit_error: 0.0014,           // 0.14% 2Q CZ error (surface-code threshold)
+                readout_error: 0.0067,             // 0.67% readout error
+                t1_micros: 98.0,                   // 98.0 us T1
+                t2_micros: 85.0,                   // 85.0 us T2*
+                single_qubit_duration_ns: 25.0,    // 25 ns single-qubit microwave pulse
+                two_qubit_duration_ns: 20.0,       // 20 ns fast tunable coupler CZ
+                inter_chiplet_seam_factor: 1.0,    // Monolithic silicon wafer
+            },
             Self::BelenosPhotonic16M => ChipErrorProfile {
                 single_qubit_error: 0.00005,       // High optical phase stability
                 two_qubit_error: 0.0040,           // Beamsplitter insertion loss
@@ -296,6 +322,7 @@ impl QuantumChip {
         match norm.as_str() {
             "nighthawk-r2" | "nighthawk" | "ibm-nighthawk" => Some(Self::IbmNighthawkR2),
             "cepheus-108q" | "cepheus" | "rigetti-cepheus" => Some(Self::RigettiCepheus108Q),
+            "willow-105q" | "willow" | "google-willow" => Some(Self::GoogleWillow105Q),
             "belenos-16m" | "belenos" | "photonic-16m" => Some(Self::BelenosPhotonic16M),
             "emerald-256" | "emerald" | "rydberg-256" => Some(Self::EmeraldNeutralAtom256),
             "t1000-qpu" | "artix7" | "fpga-qpu" => Some(Self::T1000QpuArtix7),
@@ -326,6 +353,41 @@ impl QuantumChip {
                         }
                         if r + 1 < 12 {
                             edges.push((u, u + 9));
+                        }
+                    }
+                }
+                crate::routing::Topology::new(self.slug(), self.capacity(), &edges)
+            }
+            Self::GoogleWillow105Q => {
+                // 11x10 planar square grid with 5 boundary/defect nodes removed:
+                // {(1, 2), (1, 3), (9, 2), (9, 3), (5, 0)} -> 105 qubits, 182 couplers
+                let rows = 11;
+                let cols = 10;
+                let is_removed = |r: usize, c: usize| -> bool {
+                    matches!((r, c), (1, 2) | (1, 3) | (9, 2) | (9, 3) | (5, 0))
+                };
+                let mut nodes = Vec::with_capacity(105);
+                let mut grid_to_node = vec![vec![None; cols]; rows];
+                for r in 0..rows {
+                    for c in 0..cols {
+                        if !is_removed(r, c) {
+                            let idx = nodes.len();
+                            nodes.push((r, c));
+                            grid_to_node[r][c] = Some(idx);
+                        }
+                    }
+                }
+                let mut edges = Vec::with_capacity(182);
+                for &(r, c) in &nodes {
+                    let u = grid_to_node[r][c].expect("valid node");
+                    if r + 1 < rows {
+                        if let Some(v) = grid_to_node[r + 1][c] {
+                            edges.push((u, v));
+                        }
+                    }
+                    if c + 1 < cols {
+                        if let Some(v) = grid_to_node[r][c + 1] {
+                            edges.push((u, v));
                         }
                     }
                 }
@@ -393,6 +455,10 @@ mod tests {
             HardwareModality::SuperconductingTransmon
         );
         assert_eq!(
+            QuantumChip::GoogleWillow105Q.modality(),
+            HardwareModality::SuperconductingTransmon
+        );
+        assert_eq!(
             QuantumChip::BelenosPhotonic16M.modality(),
             HardwareModality::PhotonicLinearOptics
         );
@@ -415,6 +481,10 @@ mod tests {
         let nighthawk_topo = QuantumChip::IbmNighthawkR2.build_routing_topology();
         assert_eq!(nighthawk_topo.n, 120);
         assert_eq!(nighthawk_topo.edges().len(), 218);
+
+        let willow_topo = QuantumChip::GoogleWillow105Q.build_routing_topology();
+        assert_eq!(willow_topo.n, 105);
+        assert_eq!(willow_topo.edges().len(), 182);
 
         let artix_topo = QuantumChip::T1000QpuArtix7.build_routing_topology();
         assert_eq!(artix_topo.n, 14);
