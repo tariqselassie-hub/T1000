@@ -284,6 +284,24 @@ def run_all_charts() -> None:
             generated.append(("IoT Botnet Cascaded Tree Sorter", png.name, f"{size_kb:.1f} KB"))
             print(f" [+] Rendered: {png.name} ({size_kb:.1f} KB)")
 
+    # 29. Rigetti Cepheus-1-108Q Modular Plaquette Benchmark
+    cepheus_json = ws_root / "results" / "data" / "cepheus_108q_telemetry.json"
+    if cepheus_json.exists():
+        import chart_cepheus_108q
+        png = chart_cepheus_108q.chart_cepheus_108q()
+        if png and png.exists():
+            size_kb = png.stat().st_size / 1024.0
+            generated.append(("Cepheus-108Q Plaquette Showdown", png.name, f"{size_kb:.1f} KB"))
+
+    # 30. Google Willow 105Q Surface-Code Threshold Benchmark
+    willow_json = ws_root / "results" / "data" / "willow_105q_telemetry.json"
+    if willow_json.exists():
+        import chart_willow_105q
+        png = chart_willow_105q.chart_willow_105q()
+        if png and png.exists():
+            size_kb = png.stat().st_size / 1024.0
+            generated.append(("Willow-105Q Threshold Showdown", png.name, f"{size_kb:.1f} KB"))
+
     print("\n╔═══════════════════════════════════════════════════════════════════════════════╗")
     print("║                        RENDERED ARTIFACT MANIFEST                             ║")
     print("╠═════════════════════════════════════╦══════════════════════════════════╦══════════╣")

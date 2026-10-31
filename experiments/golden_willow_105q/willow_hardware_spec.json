@@ -1,0 +1,43 @@
+{
+  "processor": "Google Willow 105Q",
+  "organization": "Google Quantum AI",
+  "architecture_type": "Superconducting Transmon with Tunable Planar Couplers",
+  "fabrication": "Monolithic Silicon Substrate, Dual-Layer Vacuum Gap",
+  "qubit_count": 105,
+  "lattice_bounding_box": [11, 10],
+  "removed_defect_boundary_sites": [
+    [1, 2],
+    [1, 3],
+    [9, 2],
+    [9, 3],
+    [5, 0]
+  ],
+  "coupler_count": 182,
+  "average_connectivity": 3.4667,
+  "elementary_2x2_plaquettes": 76,
+  "native_gate_set": [
+    "Virtual Rz",
+    "SqrtX (SX, 25 ns)",
+    "X (pi-pulse, 25 ns)",
+    "Fast CZ (Tunable Coupler, 20 ns)",
+    "Parametric XY (iSWAP)"
+  ],
+  "calibrations": {
+    "single_qubit_error": 0.00035,
+    "rcs_two_qubit_cz_error": 0.0014,
+    "qec_two_qubit_cz_error": 0.0033,
+    "readout_error": 0.0067,
+    "t1_relaxation_us": 98.0,
+    "t2_star_dephasing_us": 85.0,
+    "single_qubit_duration_ns": 25.0,
+    "two_qubit_cz_duration_ns": 20.0,
+    "inter_chiplet_seam_factor": 1.0
+  },
+  "surface_code_properties": {
+    "fault_tolerance_threshold": 0.0057,
+    "rcs_below_threshold_ratio": 0.2456,
+    "qec_below_threshold_ratio": 0.5789,
+    "distance_support": [3, 5, 7]
+  }
+}
+

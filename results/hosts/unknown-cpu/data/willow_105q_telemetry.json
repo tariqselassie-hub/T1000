@@ -11,7 +11,7 @@
   "mean_fid_swap_qec": 0.978178918742832,
   "mean_fid_teleport_qec": 0.9868582288738377,
   "overall_mean_keep": 0.9953507230644179,
-  "execution_time_us": 1298.8,
+  "execution_time_us": 1393.0,
   "plaquettes": [
     {
       "plaquette_id": 0,
