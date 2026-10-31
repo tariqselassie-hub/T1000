@@ -86,6 +86,8 @@ pub enum NativeGateKind {
     RydbergBlockade,
     /// Variable beamsplitter / Mach-Zehnder interferometer phase shifter.
     BeamSplitter,
+    /// Mølmer-Sørensen entangling phase interaction (ZZ / XX).
+    MolmerSorensen,
 }
 
 /// Comprehensive physical error profile and coherence calibration budget.
@@ -130,6 +132,8 @@ pub enum QuantumChip {
     RigettiCepheus108Q,
     /// Google Willow 105Q: 105-qubit planar transmon processor (182 tunable couplers, surface-code threshold).
     GoogleWillow105Q,
+    /// Quantinuum H2-1: 56-qubit all-to-all QCCD trapped-ion processor with racetrack shuttling.
+    QuantinuumH2_1,
     /// Belenos Photonic: 16-mode triangular/rectangular Mach-Zehnder interferometer mesh.
     BelenosPhotonic16M,
     /// Emerald Neutral Atom: 256-atom optical tweezer lattice with Rydberg blockade.
@@ -144,6 +148,7 @@ impl QuantumChip {
         Self::IbmNighthawkR2,
         Self::RigettiCepheus108Q,
         Self::GoogleWillow105Q,
+        Self::QuantinuumH2_1,
         Self::BelenosPhotonic16M,
         Self::EmeraldNeutralAtom256,
         Self::T1000QpuArtix7,
@@ -155,6 +160,7 @@ impl QuantumChip {
             Self::IbmNighthawkR2 | Self::RigettiCepheus108Q | Self::GoogleWillow105Q => {
                 HardwareModality::SuperconductingTransmon
             }
+            Self::QuantinuumH2_1 => HardwareModality::TrappedIonShuttled,
             Self::BelenosPhotonic16M => HardwareModality::PhotonicLinearOptics,
             Self::EmeraldNeutralAtom256 => HardwareModality::NeutralAtomRydberg,
             Self::T1000QpuArtix7 => HardwareModality::FpgaSiliconEmulation,
@@ -167,6 +173,7 @@ impl QuantumChip {
             Self::IbmNighthawkR2 => "IBM Quantum Nighthawk R2 (120Q Monolithic)",
             Self::RigettiCepheus108Q => "Rigetti Cepheus-1-108Q (Modular 12x Chiplets)",
             Self::GoogleWillow105Q => "Google Willow 105Q (Surface-Code Threshold Planar Grid)",
+            Self::QuantinuumH2_1 => "Quantinuum H2-1 (56Q Racetrack QCCD Trapped-Ion)",
             Self::BelenosPhotonic16M => "Belenos-16M Integrated Linear Photonic Mesh",
             Self::EmeraldNeutralAtom256 => "Emerald-256 Optical Tweezer Rydberg Array",
             Self::T1000QpuArtix7 => "T-1000 QPU Artix-7 Fixed-Point Co-Processor",
@@ -179,6 +186,7 @@ impl QuantumChip {
             Self::IbmNighthawkR2 => "nighthawk-r2",
             Self::RigettiCepheus108Q => "cepheus-108q",
             Self::GoogleWillow105Q => "willow-105q",
+            Self::QuantinuumH2_1 => "quantinuum-h2",
             Self::BelenosPhotonic16M => "belenos-16m",
             Self::EmeraldNeutralAtom256 => "emerald-256",
             Self::T1000QpuArtix7 => "t1000-qpu",
@@ -191,6 +199,7 @@ impl QuantumChip {
             Self::IbmNighthawkR2 => 120,
             Self::RigettiCepheus108Q => 108,
             Self::GoogleWillow105Q => 105,
+            Self::QuantinuumH2_1 => 56,
             Self::BelenosPhotonic16M => 16,
             Self::EmeraldNeutralAtom256 => 256,
             Self::T1000QpuArtix7 => 14,
@@ -203,6 +212,7 @@ impl QuantumChip {
             Self::IbmNighthawkR2 => 218,
             Self::RigettiCepheus108Q => 177, // (12 chiplets x 12 intra) + 33 inter-chiplet seams
             Self::GoogleWillow105Q => 182,   // 11x10 grid with 5 defect / boundary sites removed
+            Self::QuantinuumH2_1 => 56 * 55 / 2, // 1540 all-to-all shuttling pairs
             Self::BelenosPhotonic16M => 120, // Fully interconnected Clements/Reck interferometer mesh
             Self::EmeraldNeutralAtom256 => 256 * 255 / 2, // Dynamically reconfigurable Rydberg blockades
             Self::T1000QpuArtix7 => 13, // Linear 14-qubit nearest-neighbor systolic bus
@@ -231,6 +241,13 @@ impl QuantumChip {
                 NativeGateKind::X,
                 NativeGateKind::Cz,
                 NativeGateKind::Xy,
+            ],
+            Self::QuantinuumH2_1 => &[
+                NativeGateKind::Rz,
+                NativeGateKind::Ry,
+                NativeGateKind::X,
+                NativeGateKind::MolmerSorensen,
+                NativeGateKind::Cnot,
             ],
             Self::BelenosPhotonic16M => &[
                 NativeGateKind::Rz,
@@ -283,6 +300,16 @@ impl QuantumChip {
                 two_qubit_duration_ns: 20.0,       // 20 ns fast tunable coupler CZ
                 inter_chiplet_seam_factor: 1.0,    // Monolithic silicon wafer
             },
+            Self::QuantinuumH2_1 => ChipErrorProfile {
+                single_qubit_error: 0.00002,       // 0.002% 1Q error (2e-5)
+                two_qubit_error: 0.0018,           // 0.18% 2Q Mølmer-Sørensen error (99.82% fidelity)
+                readout_error: 0.0020,             // 0.20% SPAM readout error
+                t1_micros: 100_000_000.0,          // 100 second hyperfine state lifetime
+                t2_micros: 3_000_000.0,            // 3.0 second dephasing lifetime
+                single_qubit_duration_ns: 10_000.0, // 10 us laser pulse width
+                two_qubit_duration_ns: 150_000.0,  // 150 us Mølmer-Sørensen entangling gate
+                inter_chiplet_seam_factor: 1.0,    // Monolithic surface-electrode trap
+            },
             Self::BelenosPhotonic16M => ChipErrorProfile {
                 single_qubit_error: 0.00005,       // High optical phase stability
                 two_qubit_error: 0.0040,           // Beamsplitter insertion loss
@@ -323,6 +350,7 @@ impl QuantumChip {
             "nighthawk-r2" | "nighthawk" | "ibm-nighthawk" => Some(Self::IbmNighthawkR2),
             "cepheus-108q" | "cepheus" | "rigetti-cepheus" => Some(Self::RigettiCepheus108Q),
             "willow-105q" | "willow" | "google-willow" => Some(Self::GoogleWillow105Q),
+            "quantinuum-h2" | "quantinuum-h2-1" | "quantinuum" | "h2-1" | "h2" => Some(Self::QuantinuumH2_1),
             "belenos-16m" | "belenos" | "photonic-16m" => Some(Self::BelenosPhotonic16M),
             "emerald-256" | "emerald" | "rydberg-256" => Some(Self::EmeraldNeutralAtom256),
             "t1000-qpu" | "artix7" | "fpga-qpu" => Some(Self::T1000QpuArtix7),
@@ -393,6 +421,7 @@ impl QuantumChip {
                 }
                 crate::routing::Topology::new(self.slug(), self.capacity(), &edges)
             }
+            Self::QuantinuumH2_1 => crate::routing::Topology::all_to_all(56),
             Self::BelenosPhotonic16M => crate::routing::Topology::all_to_all(16),
             Self::EmeraldNeutralAtom256 => {
                 // Nearest-neighbor 16x16 square grid proxy for optical tweezer lattice
@@ -459,6 +488,10 @@ mod tests {
             HardwareModality::SuperconductingTransmon
         );
         assert_eq!(
+            QuantumChip::QuantinuumH2_1.modality(),
+            HardwareModality::TrappedIonShuttled
+        );
+        assert_eq!(
             QuantumChip::BelenosPhotonic16M.modality(),
             HardwareModality::PhotonicLinearOptics
         );
@@ -485,6 +518,10 @@ mod tests {
         let willow_topo = QuantumChip::GoogleWillow105Q.build_routing_topology();
         assert_eq!(willow_topo.n, 105);
         assert_eq!(willow_topo.edges().len(), 182);
+
+        let h2_topo = QuantumChip::QuantinuumH2_1.build_routing_topology();
+        assert_eq!(h2_topo.n, 56);
+        assert_eq!(h2_topo.edges().len(), 56 * 55 / 2);
 
         let artix_topo = QuantumChip::T1000QpuArtix7.build_routing_topology();
         assert_eq!(artix_topo.n, 14);

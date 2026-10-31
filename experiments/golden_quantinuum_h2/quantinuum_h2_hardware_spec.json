@@ -1,0 +1,37 @@
+{
+  "processor": "Quantinuum System Model H2-1",
+  "organization": "Quantinuum",
+  "architecture_type": "Quantum Charge-Coupled Device (QCCD) Trapped-Ion",
+  "geometry": "Monolithic Linear Racetrack Surface Electrode Trap",
+  "qubit_species": "171Yb+ (Ytterbium-171 clock states)",
+  "cooling_species": "138Ba+ (Barium-138 sympathetic cooling)",
+  "qubit_count": 56,
+  "connectivity": "Dynamic All-to-All via Ion Shuttling (Complete Graph K56)",
+  "coupler_count": 1540,
+  "interaction_zones": 4,
+  "parallel_2q_operations": 4,
+  "native_gate_set": [
+    "Virtual Rz",
+    "Arbitrary single-qubit Raman/microwave U1q (Rx, Ry)",
+    "X (pi-pulse)",
+    "Mølmer-Sørensen ZZ(theta) entangling phase gate",
+    "Fully-entangling CNOT"
+  ],
+  "calibrations": {
+    "single_qubit_infidelity": 0.00002,
+    "two_qubit_ms_infidelity": 0.0018,
+    "spam_readout_error": 0.0020,
+    "t1_relaxation_seconds": 100.0,
+    "t2_star_dephasing_seconds": 3.0,
+    "single_qubit_gate_duration_us": 10.0,
+    "two_qubit_ms_duration_us": 150.0,
+    "shuttling_junction_latency_us": 250.0,
+    "inter_chiplet_seam_factor": 1.0
+  },
+  "advantages": [
+    "Zero SWAP overhead across arbitrary graph distances",
+    "Hyperfine state coherence spanning seconds to minutes",
+    "High two-qubit gate fidelity (99.82% - 99.94%)",
+    "Direct execution of non-local chemical Hamiltonian terms"
+  ]
+}

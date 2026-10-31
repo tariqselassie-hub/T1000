@@ -356,6 +356,10 @@ name = "willow_105q_bench"
 path = "src/bin/benchmarks/willow_105q_bench.rs"
 
 [[bin]]
+name = "quantinuum_h2_bench"
+path = "src/bin/benchmarks/quantinuum_h2_bench.rs"
+
+[[bin]]
 name = "cepheus_glued_trees_bench"
 path = "src/bin/benchmarks/cepheus_glued_trees_bench.rs"
 

@@ -1,0 +1,115 @@
+{
+  "timestamp": "2026-10-30T22:15:00Z",
+  "processor": "Quantinuum H2-1 (56Q Racetrack QCCD Trapped-Ion)",
+  "qubit_capacity": 56,
+  "total_couplers": 1540,
+  "interaction_zones": 4,
+  "single_qubit_error": 0.00002,
+  "two_qubit_ms_error": 0.0018,
+  "readout_error": 0.002,
+  "t1_relaxation_us": 100000000.0,
+  "t2_dephasing_us": 3000000.0,
+  "mean_direct_bell_fidelity": 0.9963910505898668,
+  "execution_time_us": 377.70000000000005,
+  "distance_sweep": [
+    {
+      "distance_hops": 1,
+      "quantinuum_h2_fidelity": 0.9963910505898668,
+      "willow_105q_fidelity": 0.9972026133333336,
+      "nighthawk_r2_fidelity": 0.9876512533333336,
+      "cepheus_108q_fidelity": 0.9840853333333336,
+      "h2_swaps_required": 0,
+      "planar_swaps_required": 0
+    },
+    {
+      "distance_hops": 2,
+      "quantinuum_h2_fidelity": 0.9963910505898668,
+      "willow_105q_fidelity": 0.9926298568555836,
+      "nighthawk_r2_fidelity": 0.9675909041637434,
+      "cepheus_108q_fidelity": 0.9580037458116408,
+      "h2_swaps_required": 0,
+      "planar_swaps_required": 1
+    },
+    {
+      "distance_hops": 3,
+      "quantinuum_h2_fidelity": 0.9963910505898668,
+      "willow_105q_fidelity": 0.9880850848915809,
+      "nighthawk_r2_fidelity": 0.9480760941049287,
+      "cepheus_108q_fidelity": 0.9328488205957632,
+      "h2_swaps_required": 0,
+      "planar_swaps_required": 2
+    },
+    {
+      "distance_hops": 4,
+      "quantinuum_h2_fidelity": 0.9963910505898668,
+      "willow_105q_fidelity": 0.9835681261807272,
+      "nighthawk_r2_fidelity": 0.9290919872774703,
+      "cepheus_108q_fidelity": 0.9085876339601682,
+      "h2_swaps_required": 0,
+      "planar_swaps_required": 3
+    },
+    {
+      "distance_hops": 5,
+      "quantinuum_h2_fidelity": 0.9963910505898668,
+      "willow_105q_fidelity": 0.9790788105105109,
+      "nighthawk_r2_fidelity": 0.9106241512621479,
+      "cepheus_108q_fidelity": 0.8851884319384642,
+      "h2_swaps_required": 0,
+      "planar_swaps_required": 4
+    },
+    {
+      "distance_hops": 6,
+      "quantinuum_h2_fidelity": 0.9963910505898668,
+      "willow_105q_fidelity": 0.974616968710093,
+      "nighthawk_r2_fidelity": 0.8926585461278822,
+      "cepheus_108q_fidelity": 0.8626205887625983,
+      "h2_swaps_required": 0,
+      "planar_swaps_required": 5
+    },
+    {
+      "distance_hops": 8,
+      "quantinuum_h2_fidelity": 0.9963910505898668,
+      "willow_105q_fidelity": 0.9657750352054469,
+      "nighthawk_r2_fidelity": 0.8581797674671304,
+      "cepheus_108q_fidelity": 0.8198618777869904,
+      "h2_swaps_required": 0,
+      "planar_swaps_required": 7
+    },
+    {
+      "distance_hops": 10,
+      "quantinuum_h2_fidelity": 0.9963910505898668,
+      "willow_105q_fidelity": 0.9570409928922532,
+      "nighthawk_r2_fidelity": 0.825550783203574,
+      "cepheus_108q_fidelity": 0.7800875708582473,
+      "h2_swaps_required": 0,
+      "planar_swaps_required": 9
+    },
+    {
+      "distance_hops": 12,
+      "quantinuum_h2_fidelity": 0.9963910505898668,
+      "willow_105q_fidelity": 0.9484135252587795,
+      "nighthawk_r2_fidelity": 0.7946723514427838,
+      "cepheus_108q_fidelity": 0.7430893673210931,
+      "h2_swaps_required": 0,
+      "planar_swaps_required": 11
+    },
+    {
+      "distance_hops": 15,
+      "quantinuum_h2_fidelity": 0.9963910505898668,
+      "willow_105q_fidelity": 0.9356693109487322,
+      "nighthawk_r2_fidelity": 0.7514329303785894,
+      "cepheus_108q_fidelity": 0.6923771256678354,
+      "h2_swaps_required": 0,
+      "planar_swaps_required": 14
+    },
+    {
+      "distance_hops": 20,
+      "quantinuum_h2_fidelity": 0.9963910505898668,
+      "willow_105q_fidelity": 0.914943629440386,
+      "nighthawk_r2_fidelity": 0.6868597715540352,
+      "cepheus_108q_fidelity": 0.6191796074321994,
+      "h2_swaps_required": 0,
+      "planar_swaps_required": 19
+    }
+  ]
+}

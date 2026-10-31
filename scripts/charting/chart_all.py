@@ -302,6 +302,15 @@ def run_all_charts() -> None:
             size_kb = png.stat().st_size / 1024.0
             generated.append(("Willow-105Q Threshold Showdown", png.name, f"{size_kb:.1f} KB"))
 
+    # 31. Quantinuum H2-1 Trapped-Ion All-to-All Benchmark
+    h2_json = ws_root / "results" / "data" / "quantinuum_h2_telemetry.json"
+    if h2_json.exists():
+        import chart_quantinuum_h2
+        png = chart_quantinuum_h2.chart_quantinuum_h2()
+        if png and png.exists():
+            size_kb = png.stat().st_size / 1024.0
+            generated.append(("Quantinuum H2-1 Trapped-Ion", png.name, f"{size_kb:.1f} KB"))
+
     print("\n╔═══════════════════════════════════════════════════════════════════════════════╗")
     print("║                        RENDERED ARTIFACT MANIFEST                             ║")
     print("╠═════════════════════════════════════╦══════════════════════════════════╦══════════╣")
