@@ -341,6 +341,25 @@ impl QuantumChip {
     }
 }
 
+impl std::fmt::Display for HardwareModality {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.name())
+    }
+}
+
+impl std::fmt::Display for QuantumChip {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.slug())
+    }
+}
+
+impl std::str::FromStr for QuantumChip {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Self::from_slug(s).ok_or_else(|| format!("Unknown quantum chip slug: '{s}'"))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -400,5 +419,17 @@ mod tests {
         let artix_topo = QuantumChip::T1000QpuArtix7.build_routing_topology();
         assert_eq!(artix_topo.n, 14);
         assert_eq!(artix_topo.edges().len(), 13);
+    }
+
+    #[test]
+    fn test_display_and_from_str() {
+        for &chip in QuantumChip::ALL {
+            let s = chip.to_string();
+            assert_eq!(s, chip.slug());
+            let parsed: QuantumChip = s.parse().expect("parse ok");
+            assert_eq!(parsed, chip);
+        }
+        let mod_str = HardwareModality::SuperconductingTransmon.to_string();
+        assert_eq!(mod_str, "Superconducting Transmon");
     }
 }
