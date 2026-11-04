@@ -24,6 +24,7 @@ This document defines the sovereign technical specifications, architectural stan
 | **Multithreading** | Rayon 1.x | Task-stealing threadpool across non-overlapping wire blocks and statevector chunks. |
 | **Circuit Compilation** | Dependency DAG (`CircuitDag`) | Wire-order gate commutation analysis, greedy stage grouping, and single-pass fused diagonal streaming sweeps ($R_z$, $CZ$). |
 | **Quantum Mathematics** | `t1000_core` | POVM generalized measurements, partial trace, Hamiltonian time-evolution, Kolmogorov-Smirnov statistics. |
+| **Holographic Wormhole** | `t1000::wormhole` | Traversable ER=EPR simulation, ANEC negative-energy shockwaves, and OTOC operator size winding. |
 | **Chemical Featurizer** | `t1000::molfeatures` | OpenSMILES parser with 19 structural descriptors mapped to parameterized rotation angles $R_y(x_i)$. |
 
 ---

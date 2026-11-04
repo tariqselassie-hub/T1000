@@ -91,6 +91,11 @@ pub mod vqe;
 pub mod zinc;
 pub use zinc::*;
 pub mod zipper;
+pub mod wormhole;
+pub use wormhole::{
+    bell_fidelity, HolographicWormholeEngine, ScramblerType, WormholeConfig, WormholeFidelityPoint,
+    WormholeSweepReport, WormholeWireMap,
+};
 
 pub use cascaded_tree_valve::{
     simulate_cascaded_classical_walk, simulate_cascaded_quantum_walk, CascadedBenchmarkResult,
