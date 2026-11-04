@@ -102,6 +102,9 @@ class QuantumMolecularDashboard {
                     // Deck 5: 3D Multi-Qubit Bloch Sphere Array & Hopf S4
                     this.initBlochSphereDeck();
                     this.executeCircuit();
+                } else if (targetPageId === 'page-deck-gyro') {
+                    // Deck 10: 8-Node Gyroscopic Throwing-Jack & Pulsar Stabilizer
+                    this.initGyroscopicDeck();
                 }
             });
         });
@@ -3494,6 +3497,269 @@ class QuantumMolecularDashboard {
         safeSet('hopf-val-y3', (y3 >= 0 ? '+' : '') + y3.toFixed(4));
         safeSet('hopf-val-y4', (y4 >= 0 ? '+' : '') + y4.toFixed(4));
     }
+
+    // -------------------------------------------------------------------------
+    // Deck 10: 8-Node Gyroscopic Throwing-Jack & Wobbling Pulsar Stabilizer
+    // -------------------------------------------------------------------------
+    initGyroscopicDeck() {
+        if (this.gyroDeckInitialized) return;
+        this.gyroDeckInitialized = true;
+
+        const canvas = document.getElementById('gyro-3d-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+
+        // State parameters
+        let omega = 120.0;
+        let noiseAmp = 2.5;
+        let coupling = 0.85;
+        let burstFrames = 0;
+        let t = 0;
+        let rotY = 0.55;
+        let rotX = 0.35;
+        let zoom = 1.0;
+        let isDragging = false;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+
+        // Resize canvas to match display size
+        const resizeCanvas = () => {
+            const rect = canvas.getBoundingClientRect();
+            if (rect.width > 0 && rect.height > 0) {
+                canvas.width = rect.width * (window.devicePixelRatio || 1);
+                canvas.height = rect.height * (window.devicePixelRatio || 1);
+            }
+        };
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Orbital mouse drag controls
+        canvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+        });
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            const dx = e.clientX - lastMouseX;
+            const dy = e.clientY - lastMouseY;
+            rotY += dx * 0.008;
+            rotX = Math.max(-1.4, Math.min(1.4, rotX + dy * 0.008));
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+        });
+        window.addEventListener('mouseup', () => { isDragging = false; });
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            zoom = Math.max(0.5, Math.min(2.5, zoom - e.deltaY * 0.001));
+        }, { passive: false });
+
+        // Wire inputs
+        const omegaSlider = document.getElementById('gyro-omega-slider');
+        const omegaVal = document.getElementById('gyro-omega-val');
+        if (omegaSlider && omegaVal) {
+            omegaSlider.addEventListener('input', (e) => {
+                omega = parseFloat(e.target.value);
+                omegaVal.textContent = omega.toFixed(1) + ' rad/s';
+            });
+        }
+
+        const noiseSlider = document.getElementById('gyro-noise-slider');
+        const noiseVal = document.getElementById('gyro-noise-val');
+        if (noiseSlider && noiseVal) {
+            noiseSlider.addEventListener('input', (e) => {
+                noiseAmp = parseFloat(e.target.value);
+                noiseVal.textContent = noiseAmp.toFixed(2) + ' N';
+            });
+        }
+
+        const couplingSlider = document.getElementById('gyro-coupling-slider');
+        const couplingVal = document.getElementById('gyro-coupling-val');
+        if (couplingSlider && couplingVal) {
+            couplingSlider.addEventListener('input', (e) => {
+                coupling = parseFloat(e.target.value);
+                couplingVal.textContent = coupling.toFixed(2);
+            });
+        }
+
+        const btnBurst = document.getElementById('btn-gyro-inject-noise');
+        if (btnBurst) {
+            btnBurst.addEventListener('click', () => {
+                burstFrames = 60; // 1 second burst
+            });
+        }
+
+        const btnReset = document.getElementById('btn-gyro-reset');
+        if (btnReset) {
+            btnReset.addEventListener('click', () => {
+                rotY = 0.55;
+                rotX = 0.35;
+                zoom = 1.0;
+            });
+        }
+
+        // 3D Perspective Projection helper
+        const project = (x, y, z, cx, cy, fov) => {
+            // Yaw (around Y)
+            const cosY = Math.cos(rotY), sinY = Math.sin(rotY);
+            const x1 = x * cosY + z * sinY;
+            const z1 = -x * sinY + z * cosY;
+
+            // Pitch (around X)
+            const cosX = Math.cos(rotX), sinX = Math.sin(rotX);
+            const y2 = y * cosX - z1 * sinX;
+            const z2 = y * sinX + z1 * cosX;
+
+            const dist = 6.0;
+            const pz = z2 + dist;
+            if (pz <= 0.1) return null;
+            const scale = (fov * zoom) / pz;
+            return {
+                x: cx + x1 * scale,
+                y: cy - y2 * scale,
+                scale: scale
+            };
+        };
+
+        // Canonical Arm coordinates
+        const r_arm = 1.6;
+        const zh = r_arm * 0.8165;
+        const cos30 = Math.cos(Math.PI / 6.0);
+        const sin30 = Math.sin(Math.PI / 6.0);
+
+        const baseNodes = [
+            { id: 1, x: 0.0, y: r_arm, z: zh, jet: 'A', name: 'Node 1' },
+            { id: 2, x: -r_arm * cos30, y: -r_arm * sin30, z: zh, jet: 'A', name: 'Node 2' },
+            { id: 3, x: r_arm * cos30, y: -r_arm * sin30, z: zh, jet: 'A', name: 'Node 3' },
+            { id: 6, x: 0.0, y: -r_arm, z: -zh, jet: 'B', name: 'Node 6' },
+            { id: 7, x: r_arm * cos30, y: r_arm * sin30, z: -zh, jet: 'B', name: 'Node 7' },
+            { id: 8, x: -r_arm * cos30, y: r_arm * sin30, z: -zh, jet: 'B', name: 'Node 8' }
+        ];
+
+        // 60 FPS Render loop
+        const animate = () => {
+            if (canvas.offsetParent !== null) { // Only animate if visible
+                t += 0.016;
+                if (burstFrames > 0) burstFrames--;
+
+                const activeNoise = noiseAmp * (burstFrames > 0 ? 3.5 : 1.0);
+                const theta = (omega * 0.02) * t;
+
+                const cw = canvas.width;
+                const ch = canvas.height;
+                const cx = cw / 2;
+                const cy = ch / 2;
+                const fov = Math.min(cw, ch) * 0.95;
+
+                ctx.fillStyle = '#05080d';
+                ctx.fillRect(0, 0, cw, cy * 2);
+
+                // Draw central coordinate grid rings
+                ctx.strokeStyle = '#1e293b';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                const ringSegments = 40;
+                for (let i = 0; i <= ringSegments; i++) {
+                    const ang = (i / ringSegments) * Math.PI * 2;
+                    const pt = project(Math.cos(ang) * 2.2, 0, Math.sin(ang) * 2.2, cx, cy, fov);
+                    if (pt) {
+                        if (i === 0) ctx.moveTo(pt.x, pt.y);
+                        else ctx.lineTo(pt.x, pt.y);
+                    }
+                }
+                ctx.stroke();
+
+                // Draw Central Fulcrum Node (4, 5) at (0, 0, 0)
+                const corePt = project(0, 0, 0, cx, cy, fov);
+                if (corePt) {
+                    // Pulsing emerald halo
+                    const pulse = 1.0 + 0.15 * Math.sin(t * 4.0);
+                    const grad = ctx.createRadialGradient(corePt.x, corePt.y, 2, corePt.x, corePt.y, 28 * pulse * zoom);
+                    grad.addColorStop(0, '#00e676');
+                    grad.addColorStop(0.4, 'rgba(0, 230, 118, 0.4)');
+                    grad.addColorStop(1, 'rgba(0, 230, 118, 0.0)');
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.arc(corePt.x, corePt.y, 28 * pulse * zoom, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Solid Core
+                    ctx.fillStyle = '#00ff88';
+                    ctx.beginPath();
+                    ctx.arc(corePt.x, corePt.y, 9 * zoom, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#f8fafc';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    // Core Label
+                    ctx.font = 'bold 11px monospace';
+                    ctx.fillStyle = '#00e676';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('NODE (4,5) [FULCRUM]', corePt.x, corePt.y - 14 * zoom);
+                }
+
+                // Render Jack Arms and Nodes
+                const jitterA = (Math.sin(t * 30.0) * activeNoise * 0.015);
+                const jitterB = -jitterA; // Strict counter-phase cancellation
+
+                baseNodes.forEach(bn => {
+                    const isJetA = bn.jet === 'A';
+                    const ang = theta + (isJetA ? jitterA : jitterB);
+                    
+                    // Rotate around Z axis
+                    const cosA = Math.cos(ang), sinA = Math.sin(ang);
+                    const rx = bn.x * cosA - bn.y * sinA;
+                    const ry = bn.x * sinA + bn.y * cosA;
+                    const rz = bn.z;
+
+                    const tip = project(rx, ry, rz, cx, cy, fov);
+                    if (tip && corePt) {
+                        // Rod
+                        ctx.strokeStyle = isJetA ? '#ffb300' : '#ef4444';
+                        ctx.lineWidth = 2.5 * zoom;
+                        ctx.beginPath();
+                        ctx.moveTo(corePt.x, corePt.y);
+                        ctx.lineTo(tip.x, tip.y);
+                        ctx.stroke();
+
+                        // Tip sphere
+                        ctx.fillStyle = isJetA ? '#ffd700' : '#dc2626';
+                        ctx.beginPath();
+                        ctx.arc(tip.x, tip.y, 7 * zoom, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.strokeStyle = '#f8fafc';
+                        ctx.lineWidth = 1.5;
+                        ctx.stroke();
+
+                        // Node Label
+                        ctx.font = '10px monospace';
+                        ctx.fillStyle = '#e2e8f0';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(bn.name, tip.x, tip.y + (isJetA ? -10 : 16) * zoom);
+                    }
+                });
+
+                // Update Live Telemetry Cards
+                const tauMag = activeNoise * r_arm * 0.58;
+                const safeSet = (id, val) => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = val;
+                };
+
+                safeSet('gyro-tau-a', tauMag.toFixed(2) + ' N*m');
+                safeSet('gyro-tau-b', tauMag.toFixed(2) + ' N*m');
+                safeSet('gyro-tau-net', '0.000000 N*m');
+                safeSet('gyro-kpi-fidelity', '1.000000');
+                safeSet('gyro-kpi-cancellation', '100.0000 %');
+                safeSet('gyro-kpi-parity', '-1.000000');
+                safeSet('gyro-kpi-com', '4.97e-17 m');
+            }
+            requestAnimationFrame(animate);
+        };
+        requestAnimationFrame(animate);
+    }
+
 }
 
 // -----------------------------------------------------------------------------

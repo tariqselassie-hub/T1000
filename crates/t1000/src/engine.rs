@@ -69,6 +69,7 @@ pub struct SystemManifestReport {
     pub holographic_wormhole: bool,
     pub cosmological_simulator: bool,
     pub water_pes_engine: bool,
+    pub gyroscopic_stabilizer_engine: bool,
     pub available_backends: Vec<crate::backend::BackendKind>,
 }
 
@@ -411,6 +412,7 @@ impl T1000Engine {
             holographic_wormhole: true,
             cosmological_simulator: true,
             water_pes_engine: true,
+            gyroscopic_stabilizer_engine: true,
             available_backends: Self::available_backends(),
         }
     }
@@ -573,6 +575,20 @@ impl T1000Engine {
     ) -> Result<crate::water_pes::WaterPesReport, String> {
         let engine = crate::water_pes::WaterPesEngine::new(config);
         engine.compute_manifold()
+    }
+
+    // =========================================================================
+    // 13. 8-Node Gyroscopic Throwing-Jack & Wobbling Pulsar Stabilizer Engine
+    // =========================================================================
+
+    /// Simulates 8-node throwing-jack gyroscopic mechanics, mirrored precessional
+    /// torque cancellation, and decoherence-free quantum phase-locking.
+    pub fn simulate_gyroscopic_stabilizer(
+        &self,
+        config: crate::gyroscopic::GyroscopicConfig,
+    ) -> crate::gyroscopic::GyroscopicReport {
+        let engine = crate::gyroscopic::GyroscopicStabilizerEngine::new();
+        engine.simulate(&config)
     }
 }
 

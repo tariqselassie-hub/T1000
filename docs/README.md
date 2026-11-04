@@ -19,8 +19,9 @@ docs/
 ├── zinc_quantum_screening.md                 # ZINC 250k whole-library VQC screening & Pareto drug mining
 ├── bloch_zipper_mps_specification.md         # 1D Matrix Product State (MPS) linear Bloch-zipper theory
 ├── mimac_quantum_cliff_analysis.md           # Molecular activity cliffs & chemical latent space dispersion
-└── findings/                                 # Sovereign Empirical Research Registry (Monographs M123–M172)
+└── findings/                                 # Sovereign Empirical Research Registry (Monographs M123–M173)
     ├── README.md                             # Monograph index table & verification criteria
+    ├── gyroscopic_torque_cancellation_and_throwing_jack_stabilizer.md  # M173: Gyroscopic Jack & Pulsar Stabilizer
     ├── h2o_2d_pes_linearization_and_vibrational_dynamics.md            # M172: Water 2D PES & Inversion Barrier
     ├── universe_cosmology_and_spacetime_emergence.md                   # M171: Quantum Cosmology & Bogoliubov Pairs
     ├── quantinuum_h2_trapped_ion_all_to_all.md                         # M170: Trapped-Ion All-to-All Architecture
@@ -67,8 +68,9 @@ docs/
 
 ## 3. Sovereign Research Monographs (`docs/findings/`)
 
-The `findings/` directory contains 46 lab notes documenting experiments on the T-1000 engine. They are not peer-reviewed; `docs/CLAIMS.md` records which numbers were re-run and corrected. All monographs are dual-housed with the Deen OS Sovereign System Archive:
+The `findings/` directory contains 47 lab notes documenting experiments on the T-1000 engine. They are not peer-reviewed; `docs/CLAIMS.md` records which numbers were re-run and corrected. All monographs are dual-housed with the Deen OS Sovereign System Archive:
 
+* **M173:** 8-Node Gyroscopic Throwing-Jack & Wobbling Pulsar Stabilizer ([`gyroscopic_torque_cancellation_and_throwing_jack_stabilizer.md`](findings/gyroscopic_torque_cancellation_and_throwing_jack_stabilizer.md))
 * **M172:** Water ($\text{H}_2\text{O}$) Ab-Initio STO-3G 2D PES, Planar $180^\circ$ Linearization Barrier & Wilson GF Vibrations ([`h2o_2d_pes_linearization_and_vibrational_dynamics.md`](findings/h2o_2d_pes_linearization_and_vibrational_dynamics.md))
 * **M171:** Quantum Universe Emergence, Bogoliubov Vacuum Particle Creation & Cosmological Horizon Entanglement ([`universe_cosmology_and_spacetime_emergence.md`](findings/universe_cosmology_and_spacetime_emergence.md))
 * **M170:** Quantinuum H2-1 56-Qubit Trapped-Ion Architecture & Zero-SWAP Distance Scaling ([`quantinuum_h2_trapped_ion_all_to_all.md`](findings/quantinuum_h2_trapped_ion_all_to_all.md))

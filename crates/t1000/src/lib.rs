@@ -111,6 +111,11 @@ pub use water_pes::{
     WaterPesEngine, WaterPesGrid, WaterPesPoint, WaterPesReport, WaterVibrationalReport,
     DEFAULT_R_EQUILIBRIUM, DEFAULT_THETA_EQUILIBRIUM,
 };
+pub mod gyroscopic;
+pub use gyroscopic::{
+    GyroMechanicsEngine, GyroscopicConfig, GyroscopicReport, GyroscopicStabilizerEngine,
+    JackNode, JackTopology, MechanicsStep, QuantumLockEngine, QuantumLockStep, Vector3D,
+};
 
 pub use cascaded_tree_valve::{
     simulate_cascaded_classical_walk, simulate_cascaded_quantum_walk, CascadedBenchmarkResult,
