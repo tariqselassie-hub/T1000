@@ -395,6 +395,10 @@ path = "src/bin/benchmarks/holographic_qec_bench.rs"
 name = "universe_cosmology_bench"
 path = "src/bin/benchmarks/universe_cosmology_bench.rs"
 
+[[bin]]
+name = "water_pes_bench"
+path = "src/bin/benchmarks/water_pes_bench.rs"
+
 
 
 

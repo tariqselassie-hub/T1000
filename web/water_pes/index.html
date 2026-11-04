@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
+<!-- Copyright (c) 2026 Terrence A. Jones SR. All rights reserved. -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>T-1000 // Water (H2O) 2D Energy &amp; Linearization Barrier Engine</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Top Sovereign Reticle Header -->
+    <header class="water-header">
+        <div class="brand-section">
+            <div class="brand-title">T-1000 <span>//</span> WATER PES</div>
+            <span class="badge-sovereign">2D ENERGY &amp; LINEARIZATION BARRIER</span>
+        </div>
+        <div class="telemetry-strip">
+            <div class="telemetry-item">
+                <span class="label">SPECIES:</span>
+                <span class="val">H2O (WATER)</span>
+            </div>
+            <div class="telemetry-item">
+                <span class="label">EQUILIBRIUM:</span>
+                <span id="tel-geom" class="val-gold val">r=0.96 Å, θ=104.5°</span>
+            </div>
+            <div class="telemetry-item">
+                <span class="label">ENERGY E_0:</span>
+                <span id="tel-energy" class="val">-74.9657 Ha</span>
+            </div>
+            <div class="telemetry-item">
+                <span class="label">DIPOLE μ:</span>
+                <span id="tel-dipole" class="val-gold val">1.854 D</span>
+            </div>
+            <div class="telemetry-item">
+                <span class="label">180° BARRIER:</span>
+                <span id="tel-barrier" class="val-red val">27,012.6 cm⁻¹</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Viewport Deck -->
+    <main class="water-viewport">
+        <!-- Left Sidebar: Controls & Live Parameters -->
+        <aside class="control-deck">
+            <div class="section-title">Molecular Geometry Controls</div>
+
+            <div class="control-group">
+                <label for="input-angle">
+                    <span>Bond Angle (θ_HOH)</span>
+                    <span id="disp-angle" class="val-display">104.5°</span>
+                </label>
+                <input type="range" id="input-angle" min="80.0" max="180.0" step="1.0" value="104.5">
+            </div>
+
+            <div class="control-group">
+                <label for="input-bond">
+                    <span>O-H Bond Length (r_OH)</span>
+                    <span id="disp-bond" class="val-display">0.96 Å</span>
+                </label>
+                <input type="range" id="input-bond" min="0.80" max="1.30" step="0.01" value="0.96">
+            </div>
+
+            <div class="section-title" style="margin-top:10px;">Vibrational Mode Dynamics</div>
+            <div class="mode-button-stack">
+                <button id="btn-mode-static" class="btn-mode active">STATIC EQUILIBRIUM</button>
+                <button id="btn-mode-1" class="btn-mode">ν₁ SYMMETRIC STRETCH (4020 cm⁻¹)</button>
+                <button id="btn-mode-2" class="btn-mode">ν₂ SCISSOR BEND (2141 cm⁻¹)</button>
+                <button id="btn-mode-3" class="btn-mode">ν₃ ASYMMETRIC STRETCH (4169 cm⁻¹)</button>
+            </div>
+
+            <div class="control-group" style="margin-top:8px;">
+                <label for="input-osc-speed">
+                    <span>Animation Velocity</span>
+                    <span id="disp-osc-speed" class="val-display">1.0x</span>
+                </label>
+                <input type="range" id="input-osc-speed" min="0.2" max="3.0" step="0.2" value="1.0">
+            </div>
+
+            <div style="display:flex; gap:8px; margin-top:8px;">
+                <button id="btn-linearize" class="btn-primary" style="flex:1;">SNAP TO 180°</button>
+                <button id="btn-reset-geom" class="btn-secondary">RESET EQUILIBRIUM</button>
+            </div>
+
+            <div class="section-title" style="margin-top:14px;">Ab-Initio State Metrics</div>
+            <table class="matrix-table">
+                <tr>
+                    <td style="color:var(--text-slate);">Point Group Symmetry:</td>
+                    <td id="disp-symmetry" style="color:var(--quantum-green); text-align:right;">C_2v</td>
+                </tr>
+                <tr>
+                    <td style="color:var(--text-slate);">Current Dipole Moment:</td>
+                    <td id="disp-live-dipole" style="color:var(--hardware-gold); text-align:right;">1.854 D</td>
+                </tr>
+                <tr>
+                    <td style="color:var(--text-slate);">Walsh 3a₁ Energy:</td>
+                    <td id="disp-orb-3a1" style="color:var(--hardware-gold); text-align:right;">-0.4485 Ha</td>
+                </tr>
+                <tr>
+                    <td style="color:var(--text-slate);">Walsh 1b₁ Energy:</td>
+                    <td id="disp-orb-1b1" style="color:var(--quantum-green); text-align:right;">-0.3884 Ha</td>
+                </tr>
+                <tr>
+                    <td style="color:var(--text-slate);">Degeneracy Gap:</td>
+                    <td id="disp-live-gap" style="color:var(--alert-red); text-align:right;">0.0601 Ha</td>
+                </tr>
+                <tr>
+                    <td style="color:var(--text-slate);">Zero-Point Energy (ZPE):</td>
+                    <td id="disp-live-zpe" style="color:var(--quantum-green); text-align:right;">14.77 kcal/mol</td>
+                </tr>
+            </table>
+
+            <div style="margin-top:auto;">
+                <button id="btn-load-telemetry" class="btn-secondary" style="width:100%;">RELOAD DISK TELEMETRY</button>
+            </div>
+        </aside>
+
+        <!-- Right Main Column: 3D Animated Molecule Deck & 4 Telemetry Panels -->
+        <section class="display-deck">
+            <!-- 3D Molecule Visualizer Card -->
+            <div class="hero-molecule-card">
+                <div class="molecule-header">
+                    <div class="molecule-title-group">
+                        <span class="molecule-title">3D Molecular Orbital Geometry &amp; Vibrational Dynamics</span>
+                        <span class="molecule-tag">REAL-TIME WILSON GF HARMONIC MOTION</span>
+                    </div>
+                    <div class="molecule-hud">
+                        <span>BOND: <strong id="hud-bond">0.96 Å</strong></span>
+                        <span>ANGLE: <strong id="hud-angle" style="color:var(--hardware-gold);">104.5°</strong></span>
+                        <span>DIPOLE: <strong id="hud-dipole" style="color:var(--alert-red);">1.85 D</strong></span>
+                        <span id="hud-symmetry-badge" class="badge-symmetry">C_2v</span>
+                    </div>
+                </div>
+
+                <div class="molecule-canvas-container">
+                    <canvas id="canvas-molecule-3d"></canvas>
+                    <div class="molecule-overlay-legend">
+                        <div class="legend-item"><span class="swatch-o"></span> OXYGEN (Z=8)</div>
+                        <div class="legend-item"><span class="swatch-h"></span> HYDROGEN (Z=1)</div>
+                        <div class="legend-item"><span class="swatch-dipole"></span> DIPOLE VECTOR (μ)</div>
+                        <div class="legend-item"><span class="swatch-lone"></span> 1b₁ / 3a₁ LONE PAIRS</div>
+                        <div class="legend-hint">[DRAG MOUSE TO ORBIT 3D // WHEEL TO ZOOM]</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4 Mathematical Telemetry Canvases Grid -->
+            <div class="telemetry-grid">
+                <!-- Panel 1: 2D PES Contour Surface -->
+                <div class="telemetry-card">
+                    <div class="card-header">
+                        <span class="card-title">1. 2D Potential Energy Surface E(r_OH, θ_HOH)</span>
+                        <span class="card-tag">STO-3G RHF</span>
+                    </div>
+                    <div class="canvas-box">
+                        <canvas id="canvas-pes-surface"></canvas>
+                    </div>
+                </div>
+
+                <!-- Panel 2: 180° Inversion Double Well -->
+                <div class="telemetry-card">
+                    <div class="card-header">
+                        <span class="card-title">2. 180° Linearization Barrier &amp; Double Well</span>
+                        <span class="card-tag">PLANAR INVERSION</span>
+                    </div>
+                    <div class="canvas-box">
+                        <canvas id="canvas-barrier-curve"></canvas>
+                    </div>
+                </div>
+
+                <!-- Panel 3: Walsh Molecular Orbital Correlation -->
+                <div class="telemetry-card">
+                    <div class="card-header">
+                        <span class="card-title">3. Walsh Diagram: 3a₁ vs 1b₁ Lone Pair Degeneracy</span>
+                        <span class="card-tag">1π_u CONVERGENCE</span>
+                    </div>
+                    <div class="canvas-box">
+                        <canvas id="canvas-walsh-diagram"></canvas>
+                    </div>
+                </div>
+
+                <!-- Panel 4: Vibrational Spectrum & Dipole Collapse -->
+                <div class="telemetry-card">
+                    <div class="card-header">
+                        <span class="card-title">4. Dipole Moment Collapse |μ(θ)| &amp; Vibrations</span>
+                        <span class="card-tag">CENTROSYMMETRY</span>
+                    </div>
+                    <div class="canvas-box">
+                        <canvas id="canvas-dipole-modes"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer Status -->
+    <footer class="water-footer">
+        <div>T-1000 Molecular Geometry Engine // Quantum Electronic Structure &amp; Vibrational Manifold</div>
+        <div id="footer-status" style="color:var(--quantum-green);">READY // C_2v EQUILIBRIUM ACTIVE</div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>

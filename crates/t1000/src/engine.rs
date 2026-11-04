@@ -68,6 +68,7 @@ pub struct SystemManifestReport {
     pub vqe_adapt_solver: bool,
     pub holographic_wormhole: bool,
     pub cosmological_simulator: bool,
+    pub water_pes_engine: bool,
     pub available_backends: Vec<crate::backend::BackendKind>,
 }
 
@@ -409,6 +410,7 @@ impl T1000Engine {
             vqe_adapt_solver: true,
             holographic_wormhole: true,
             cosmological_simulator: true,
+            water_pes_engine: true,
             available_backends: Self::available_backends(),
         }
     }
@@ -558,6 +560,20 @@ impl T1000Engine {
         let mut engine = crate::cosmology::CosmologyEngine::new(config);
         engine.run_simulation()
     }
+
+    // =========================================================================
+    // 12. Water (H2O) 2D Energy & Linearization Barrier Engine
+    // =========================================================================
+
+    /// Evaluates ab-initio potential energy surface, vibrational normal modes,
+    /// and 180° planar linearization barrier for water.
+    pub fn simulate_water_pes(
+        &self,
+        config: crate::water_pes::WaterPesConfig,
+    ) -> Result<crate::water_pes::WaterPesReport, String> {
+        let engine = crate::water_pes::WaterPesEngine::new(config);
+        engine.compute_manifold()
+    }
 }
 
 #[cfg(test)]
@@ -613,6 +629,26 @@ mod tests {
         };
         let rep = engine.simulate_cosmology(config);
         assert!(rep.final_spectrum.scale_factor > 1.0);
+    }
+
+    #[test]
+    fn test_master_engine_water_pes() {
+        let engine = T1000Engine::new();
+        let config = crate::water_pes::WaterPesConfig {
+            r_min: 0.90,
+            r_max: 1.05,
+            r_steps: 3,
+            theta_min: 100.0,
+            theta_max: 180.0,
+            theta_steps: 5,
+            walsh_steps: 5,
+        };
+        let rep = engine
+            .simulate_water_pes(config)
+            .expect("Water PES simulation failed");
+        assert!(rep.equilibrium_energy < -74.9);
+        assert!(rep.linearization_barrier_cm1 > 5000.0);
+        assert_eq!(rep.vibrations.modes.len(), 3);
     }
 
     #[test]

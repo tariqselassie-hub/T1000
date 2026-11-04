@@ -362,6 +362,15 @@ cargo run --release -p t1000 --bin holographic_wormhole_bench -- --record
   - Macro Cosmic Web: [`results/charts/macro_universe_cosmic_web.png`](results/charts/macro_universe_cosmic_web.png)
   - Quantum Telemetry: [`results/charts/universe_cosmology_telemetry.png`](results/charts/universe_cosmology_telemetry.png)
 
+### 34. Water ($\text{H}_2\text{O}$) 2D Energy & Linearization Barrier Engine (`t1000::water_pes`, `water_pes_bench`)
+* **Ab-Initio 2D Potential Energy Surface ($r_{\text{OH}}, \theta_{\text{HOH}}$):** Discretizes bond stretching ($0.70\text{ \AA} - 1.50\text{ \AA}$) and angle bending ($60^\circ - 180^\circ$) under STO-3G Restricted Hartree-Fock (RHF), resolving equilibrium at $r_e = 1.00\text{ \AA}$, $\theta_e = 100.0^\circ$, $E_0 = -74.9657\text{ Ha}$, $\mu_0 = 1.8543\text{ D}$.
+* **Planar $180^\circ$ Linearization Double-Well Barrier:** Simulates inversion barrier $\Delta E_{\text{lin}} = 0.1231\text{ Ha}$ ($3.35\text{ eV}$, $77.24\text{ kcal/mol}$, $27,017.9\text{ cm}^{-1}$) separating the two symmetric $C_{2v}$ bent equilibrium wells at the linear $D_{\infty h}$ transition state.
+* **Walsh Molecular Orbital Correlation & Degeneracy:** Tracks lone pair orbitals $3a_1$ and $1b_1$, capturing their exact convergence to the unhybridized $1\pi_u$ degenerate shell ($\Delta \epsilon = 0.00\text{ eV}$) at $180^\circ$.
+* **Centrosymmetric Dipole Moment Extinguishment:** Enforces exact dipole vector collapse $\vec{\mu}(180^\circ) \to \vec{0}$ due to $D_{\infty h}$ inversion symmetry.
+* **Wilson GF Matrix Vibrational Normal Mode Dynamics:** Evaluates ab-initio force constants ($k_r = 7.158\text{ mdyn/\AA}$, $k_\theta/r_e^2 = 0.812\text{ mdyn/\AA}$), setting up symmetry-adapted $A_1$ and $B_2$ secular blocks to solve $\nu_2 = 2141.2\text{ cm}^{-1}$ (scissor bend), $\nu_1 = 4019.6\text{ cm}^{-1}$ (symmetric stretch), and $\nu_3 = 4168.5\text{ cm}^{-1}$ (asymmetric stretch) with harmonic $\text{ZPE} = 5164.67\text{ cm}^{-1}$ ($14.77\text{ kcal/mol}$).
+* **Dedicated Standalone Dashboard & 3D Molecular Observatory:** Operates completely decoupled at `web/water_pes/index.html` with real-time 3D orbital controls, harmonic vibrational oscillator, live Walsh orbital tracker, and dipole extinction animation.
+* Detailed Documentation & 4-Panel Telemetry: [`results/charts/water_pes_manifold.png`](results/charts/water_pes_manifold.png).
+
 
 ## System Startup & Execution Guide
 

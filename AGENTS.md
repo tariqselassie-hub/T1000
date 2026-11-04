@@ -26,6 +26,7 @@ This document defines the sovereign technical specifications, architectural stan
 | **Quantum Mathematics** | `t1000_core` | POVM generalized measurements, partial trace, Hamiltonian time-evolution, Kolmogorov-Smirnov statistics. |
 | **Holographic Wormhole** | `t1000::wormhole` | Traversable ER=EPR simulation, ANEC negative-energy shockwaves, and OTOC operator size winding. |
 | **Quantum Cosmology** | `t1000::cosmology` | FLRW expanding spacetime, Bogoliubov vacuum particle creation, and cosmological horizon area-law entanglement. |
+| **Water PES & Vibrations** | `t1000::water_pes` | Ab-initio STO-3G 2D PES, 180° inversion barrier, Walsh orbital correlation, and Wilson GF matrix modes. |
 | **Chemical Featurizer** | `t1000::molfeatures` | OpenSMILES parser with 19 structural descriptors mapped to parameterized rotation angles $R_y(x_i)$. |
 
 ---

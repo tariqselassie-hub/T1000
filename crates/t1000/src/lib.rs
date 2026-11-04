@@ -104,6 +104,13 @@ pub use wormhole::{
     HolographicWormholeEngine, OptimizerConfig, ScramblerType, SizeWindingOptimizer,
     WormholeConfig, WormholeFidelityPoint, WormholeSweepReport, WormholeWireMap,
 };
+pub mod water_pes;
+pub use water_pes::{
+    evaluate_linearization, evaluate_vibrational_manifold, evaluate_water_point, water_atoms,
+    VibrationalModeReport, WalshOrbitalState, WaterLinearizationReport, WaterPesConfig,
+    WaterPesEngine, WaterPesGrid, WaterPesPoint, WaterPesReport, WaterVibrationalReport,
+    DEFAULT_R_EQUILIBRIUM, DEFAULT_THETA_EQUILIBRIUM,
+};
 
 pub use cascaded_tree_valve::{
     simulate_cascaded_classical_walk, simulate_cascaded_quantum_walk, CascadedBenchmarkResult,

@@ -1,0 +1,450 @@
+/* SPDX-License-Identifier: MIT OR Apache-2.0 */
+/* Copyright (c) 2026 Terrence A. Jones SR. All rights reserved. */
+
+/* Deen OS Sovereign Visual Specification */
+:root {
+    --bg-root: #05080d;
+    --bg-card: #0f172a;
+    --bg-card-sub: #111827;
+    --quantum-green: #00e676;
+    --quantum-green-glow: rgba(0, 230, 118, 0.2);
+    --hardware-gold: #ffb300;
+    --hardware-gold-glow: rgba(255, 179, 0, 0.25);
+    --alert-red: #ef4444;
+    --grid-slate: #1e293b;
+    --grid-slate-light: #334155;
+    --text-white: #f8fafc;
+    --text-slate: #94a3b8;
+    --text-dim: #64748b;
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg-root);
+    color: var(--text-white);
+    font-family: var(--font-sans);
+    line-height: 1.5;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header & Telemetry Strip */
+header.water-header {
+    background-color: var(--bg-card);
+    border-bottom: 1px solid var(--grid-slate);
+    padding: 12px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.brand-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-title {
+    font-size: 18px;
+    font-weight: 800;
+    font-family: var(--font-mono);
+    color: var(--text-white);
+    letter-spacing: 1.5px;
+}
+
+.brand-title span {
+    color: var(--quantum-green);
+}
+
+.badge-sovereign {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 3px;
+    background: rgba(0, 230, 118, 0.1);
+    color: var(--quantum-green);
+    border: 1px solid rgba(0, 230, 118, 0.4);
+    letter-spacing: 1px;
+}
+
+.telemetry-strip {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+}
+
+.telemetry-item {
+    display: flex;
+    gap: 6px;
+}
+
+.telemetry-item .label {
+    color: var(--text-slate);
+}
+
+.telemetry-item .val {
+    color: var(--quantum-green);
+    font-weight: 600;
+}
+
+.telemetry-item .val-gold {
+    color: var(--hardware-gold);
+}
+
+.telemetry-item .val-red {
+    color: var(--alert-red);
+}
+
+/* Main Layout Grid */
+main.water-viewport {
+    display: grid;
+    grid-template-columns: 330px 1fr;
+    gap: 18px;
+    padding: 18px 24px;
+    flex: 1;
+}
+
+/* Sidebar Control Deck */
+aside.control-deck {
+    background-color: var(--bg-card);
+    border: 1px solid var(--grid-slate);
+    border-radius: 4px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.section-title {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--hardware-gold);
+    border-bottom: 1px solid var(--grid-slate);
+    padding-bottom: 5px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.control-group label {
+    font-size: 12px;
+    color: var(--text-slate);
+    display: flex;
+    justify-content: space-between;
+}
+
+.control-group label span.val-display {
+    color: var(--quantum-green);
+    font-family: var(--font-mono);
+}
+
+input[type="range"] {
+    width: 100%;
+    background-color: var(--bg-root);
+    border: 1px solid var(--grid-slate);
+    color: var(--text-white);
+    padding: 6px;
+    border-radius: 4px;
+}
+
+.mode-button-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.btn-mode {
+    background-color: transparent;
+    color: var(--text-slate);
+    border: 1px solid var(--grid-slate);
+    padding: 7px 10px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    text-align: left;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-mode:hover {
+    color: var(--text-white);
+    border-color: var(--grid-slate-light);
+}
+
+.btn-mode.active {
+    background: rgba(0, 230, 118, 0.12);
+    color: var(--quantum-green);
+    border-color: var(--quantum-green);
+    box-shadow: 0 0 8px rgba(0, 230, 118, 0.25);
+    font-weight: 700;
+}
+
+.btn-primary {
+    background-color: var(--quantum-green);
+    color: var(--bg-root);
+    border: none;
+    padding: 8px 14px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-primary:hover {
+    background-color: #00ff88;
+}
+
+.btn-secondary {
+    background-color: transparent;
+    color: var(--text-white);
+    border: 1px solid var(--grid-slate);
+    padding: 7px 12px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-secondary:hover {
+    border-color: var(--hardware-gold);
+    color: var(--hardware-gold);
+}
+
+.matrix-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+}
+
+.matrix-table td {
+    padding: 4px 6px;
+    border-bottom: 1px solid rgba(30, 41, 59, 0.4);
+}
+
+/* Right Main Display Deck */
+.display-deck {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    flex: 1;
+}
+
+/* Hero 3D Molecule Card */
+.hero-molecule-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--grid-slate);
+    border-radius: 4px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+}
+
+.molecule-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.molecule-title-group {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.molecule-title {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-white);
+    letter-spacing: 0.5px;
+}
+
+.molecule-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--quantum-green);
+}
+
+.molecule-hud {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-slate);
+}
+
+.badge-symmetry {
+    background: rgba(255, 179, 0, 0.15);
+    color: var(--hardware-gold);
+    border: 1px solid var(--hardware-gold);
+    padding: 2px 7px;
+    border-radius: 3px;
+    font-weight: 700;
+}
+
+.molecule-canvas-container {
+    position: relative;
+    width: 100%;
+    height: 380px;
+    background-color: var(--bg-root);
+    border: 1px solid var(--grid-slate);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.molecule-canvas-container canvas {
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+    display: block;
+}
+
+.molecule-canvas-container canvas:active {
+    cursor: grabbing;
+}
+
+.molecule-overlay-legend {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(5, 8, 13, 0.85);
+    border: 1px solid rgba(30, 41, 59, 0.8);
+    backdrop-filter: blur(4px);
+    border-radius: 3px;
+    padding: 8px 12px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    pointer-events: none;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-slate);
+}
+
+.swatch-o {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--alert-red);
+    box-shadow: 0 0 6px var(--alert-red);
+}
+
+.swatch-h {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--text-white);
+    border: 1px solid var(--text-slate);
+}
+
+.swatch-dipole {
+    width: 12px;
+    height: 2px;
+    background-color: var(--hardware-gold);
+}
+
+.swatch-lone {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--quantum-green);
+    box-shadow: 0 0 6px var(--quantum-green);
+}
+
+.legend-hint {
+    margin-top: 4px;
+    font-size: 8.5px;
+    color: var(--text-dim);
+}
+
+/* 4 Telemetry Canvases Grid */
+.telemetry-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 14px;
+}
+
+.telemetry-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--grid-slate);
+    border-radius: 4px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.card-title {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-white);
+}
+
+.card-tag {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    color: var(--hardware-gold);
+}
+
+.canvas-box {
+    flex: 1;
+    position: relative;
+    min-height: 200px;
+}
+
+.canvas-box canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* Footer */
+footer.water-footer {
+    background-color: var(--bg-card);
+    border-top: 1px solid var(--grid-slate);
+    padding: 8px 24px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-slate);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
