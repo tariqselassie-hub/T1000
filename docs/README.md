@@ -19,8 +19,11 @@ docs/
 ├── zinc_quantum_screening.md                 # ZINC 250k whole-library VQC screening & Pareto drug mining
 ├── bloch_zipper_mps_specification.md         # 1D Matrix Product State (MPS) linear Bloch-zipper theory
 ├── mimac_quantum_cliff_analysis.md           # Molecular activity cliffs & chemical latent space dispersion
-└── findings/                                 # Sovereign Empirical Research Registry (Monographs M123–M156)
+└── findings/                                 # Sovereign Empirical Research Registry (Monographs M123–M172)
     ├── README.md                             # Monograph index table & verification criteria
+    ├── h2o_2d_pes_linearization_and_vibrational_dynamics.md            # M172: Water 2D PES & Inversion Barrier
+    ├── universe_cosmology_and_spacetime_emergence.md                   # M171: Quantum Cosmology & Bogoliubov Pairs
+    ├── quantinuum_h2_trapped_ion_all_to_all.md                         # M170: Trapped-Ion All-to-All Architecture
     ├── universal_ft_qnn_magic_state_w7_injection.md                     # M156: Universal FT-QNN & Magic State Distillation
     ├── virtual_36q_cut_bridge_igpu.md                                   # M155: 36Q Virtual Cut-Bridge & Co-Processor
     ├── qm9_continuous_topological_walk_screening.md                     # M154: Continuous Topological Walk Screener
@@ -64,7 +67,13 @@ docs/
 
 ## 3. Sovereign Research Monographs (`docs/findings/`)
 
-The `findings/` directory contains 31 lab notes documenting experiments on the T-1000 engine. They are not peer-reviewed; `docs/CLAIMS.md` records which numbers were re-run and corrected. All monographs are dual-housed with the Deen OS Sovereign System Archive:
+The `findings/` directory contains 46 lab notes documenting experiments on the T-1000 engine. They are not peer-reviewed; `docs/CLAIMS.md` records which numbers were re-run and corrected. All monographs are dual-housed with the Deen OS Sovereign System Archive:
+
+* **M172:** Water ($\text{H}_2\text{O}$) Ab-Initio STO-3G 2D PES, Planar $180^\circ$ Linearization Barrier & Wilson GF Vibrations ([`h2o_2d_pes_linearization_and_vibrational_dynamics.md`](findings/h2o_2d_pes_linearization_and_vibrational_dynamics.md))
+* **M171:** Quantum Universe Emergence, Bogoliubov Vacuum Particle Creation & Cosmological Horizon Entanglement ([`universe_cosmology_and_spacetime_emergence.md`](findings/universe_cosmology_and_spacetime_emergence.md))
+* **M170:** Quantinuum H2-1 56-Qubit Trapped-Ion Architecture & Zero-SWAP Distance Scaling ([`quantinuum_h2_trapped_ion_all_to_all.md`](findings/quantinuum_h2_trapped_ion_all_to_all.md))
+* **M169:** Google Willow 105Q Planar Transmon Surface-Code Threshold Mapping ([`google_willow_surface_code_threshold.md`](findings/google_willow_surface_code_threshold.md))
+* **M168:** Strong Correlation in Molecular VQE Against Exact FCI ([`vqe_strong_correlation_adapt_vs_uccsd.md`](findings/vqe_strong_correlation_adapt_vs_uccsd.md))
 
 * **M153:** 18-Qubit Transversal [[7, 1, 3]] Steane-Wheel FT-QNN & In-Register Physical Ancillas ([`qm9_transversal_w7_fault_tolerant_training.md`](findings/qm9_transversal_w7_fault_tolerant_training.md))
 * **M152:** Non-Abelian Geometric Holonomy, Quantized Vortex Dipoles & Floquet Chaos Scrambling in Unitary QCA ([`qgol_geometric_holonomy_and_topological_solitons.md`](findings/qgol_geometric_holonomy_and_topological_solitons.md))
