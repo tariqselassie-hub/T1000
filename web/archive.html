@@ -715,6 +715,78 @@
                             </tr>
                         </table>
                     </div>
+
+                    <!-- Card 5: Holographic Bulk QEC & Traversable Wormhole (ADH Theorem) -->
+                    <div class="telemetry-card">
+                        <div class="card-header">
+                            <span class="card-title">5. Holographic Bulk QEC &amp; Traversable Wormhole (ADH Theorem)</span>
+                            <span class="badge-green">d_holo = 2/3 MODES</span>
+                        </div>
+                        <p class="card-desc">
+                            Almheiri-Dong-Harlow (ADH) bulk reconstruction under boundary erasure channels. When boundary qubits suffer complete erasure, bulk probe transmission survives through the entanglement wedge up to 33.3% loss before throat collapse. SPSA size-winding optimization boosts fidelity from 0.2422 to 0.4856 (+100.52%).
+                        </p>
+                        <div class="table-scroll-container">
+                            <table class="matrix-table">
+                                <thead>
+                                    <tr>
+                                        <th>Horizon Partition</th>
+                                        <th>Boundary Modes Erased</th>
+                                        <th>Erasure Fraction</th>
+                                        <th>Recovered Bell Fid</th>
+                                        <th>Entanglement Wedge Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td style="color:var(--text-slate);">Left Horizon</td>
+                                        <td>0 modes</td>
+                                        <td>0.0%</td>
+                                        <td style="color:var(--quantum-green); font-weight:700;">0.4856</td>
+                                        <td style="color:var(--quantum-green);">OPEN (Full Transmission)</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="color:var(--quantum-green); font-weight:700;">Left Horizon (QEC)</td>
+                                        <td style="color:var(--quantum-green); font-weight:700;">1 mode</td>
+                                        <td style="color:var(--hardware-gold); font-weight:700;">33.3%</td>
+                                        <td style="color:var(--quantum-green); font-weight:700;">0.4174</td>
+                                        <td style="color:var(--quantum-green); font-weight:700;">OPEN (Protected by ADH Bulk QEC)</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="color:var(--alert-red);">Left Horizon (Pinched)</td>
+                                        <td>2 modes</td>
+                                        <td>66.7%</td>
+                                        <td style="color:var(--alert-red);">0.2500</td>
+                                        <td style="color:var(--alert-red);">PINCHED (Classical Noise Floor)</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="color:var(--quantum-green); font-weight:700;">Right Horizon (QEC)</td>
+                                        <td style="color:var(--quantum-green); font-weight:700;">1 mode</td>
+                                        <td style="color:var(--hardware-gold); font-weight:700;">33.3%</td>
+                                        <td style="color:var(--quantum-green); font-weight:700;">0.4170</td>
+                                        <td style="color:var(--quantum-green); font-weight:700;">OPEN (Protected by ADH Bulk QEC)</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <table class="comparison-table">
+                            <tr>
+                                <td>Unoptimized Chaos Fidelity</td>
+                                <td class="val-col" style="color:var(--alert-red);">0.2422 (Phase Randomization Gap)</td>
+                            </tr>
+                            <tr>
+                                <td>Size-Wound Bulk Fidelity (SPSA)</td>
+                                <td class="val-col" style="color:var(--quantum-green); font-weight:700;">0.4856 (+100.52% Gain)</td>
+                            </tr>
+                            <tr>
+                                <td>Holographic Code Distance (d_holo)</td>
+                                <td class="val-col" style="color:var(--hardware-gold);">2 / 3 Spatial Modes</td>
+                            </tr>
+                            <tr>
+                                <td>Entanglement Wedge Loss Threshold</td>
+                                <td class="val-col" style="color:var(--quantum-green);">33.3% Maximum Tolerable Boundary Loss</td>
+                            </tr>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>

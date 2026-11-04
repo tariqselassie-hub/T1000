@@ -1042,6 +1042,8 @@ class SovereignHandler(http.server.SimpleHTTPRequestHandler):
             "photonic_couplers": 10,
             "multi_photon_fock": True,
             "vqe_adapt_solver": True,
+            "holographic_wormhole": True,
+            "holographic_bulk_qec": True,
             "cohesion_status": "PHASE_5_OPERATIONAL",
             "timestamp": time.time(),
         }
@@ -1222,6 +1224,22 @@ class SovereignHandler(http.server.SimpleHTTPRequestHandler):
         if hopf_path.exists():
             try:
                 summary["hopf_s4_entanglement"] = json.loads(hopf_path.read_text(encoding="utf-8"))
+            except Exception:
+                pass
+
+        # 10. Traversable Holographic Wormhole Protocol (ER=EPR)
+        wormhole_path = data_dir / "holographic_wormhole.json"
+        if wormhole_path.exists():
+            try:
+                summary["holographic_wormhole"] = json.loads(wormhole_path.read_text(encoding="utf-8"))
+            except Exception:
+                pass
+
+        # 11. Holographic Bulk Quantum Error Correction & Size-Winding Learning
+        qec_path = data_dir / "holographic_qec.json"
+        if qec_path.exists():
+            try:
+                summary["holographic_qec"] = json.loads(qec_path.read_text(encoding="utf-8"))
             except Exception:
                 pass
 

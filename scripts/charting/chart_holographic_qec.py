@@ -186,3 +186,4 @@ if __name__ == "__main__":
 
     data = load_telemetry(json_path)
     render_qec_charts(data, out_png)
+

@@ -198,3 +198,4 @@ impl SizeWindingOptimizer {
         (best_hamiltonian, trajectory)
     }
 }
+

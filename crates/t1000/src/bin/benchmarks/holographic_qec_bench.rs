@@ -151,3 +151,4 @@ fn main() {
     results::write(&out_path, &serialized).expect("Failed to write results");
     println!("\nTelemetry recorded to: {}", out_path.display());
 }
+

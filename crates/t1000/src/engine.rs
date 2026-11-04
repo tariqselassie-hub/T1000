@@ -66,6 +66,7 @@ pub struct SystemManifestReport {
     pub photonic_couplers: usize,
     pub multi_photon_fock: bool,
     pub vqe_adapt_solver: bool,
+    pub holographic_wormhole: bool,
     pub available_backends: Vec<crate::backend::BackendKind>,
 }
 
@@ -405,6 +406,7 @@ impl T1000Engine {
             photonic_couplers: 10,
             multi_photon_fock: true,
             vqe_adapt_solver: true,
+            holographic_wormhole: true,
             available_backends: Self::available_backends(),
         }
     }
@@ -494,6 +496,53 @@ impl T1000Engine {
     ) -> Result<crate::telemetry::TelemetryPayload, crate::telemetry::TelemetryError> {
         crate::telemetry::ingest_and_evaluate_telemetry(json_data)
     }
+
+    // =========================================================================
+    // 10. Traversable Holographic Wormhole Protocol & Bulk QEC (ER = EPR)
+    // =========================================================================
+
+    /// Simulates the Gao-Jafferis-Wall traversable holographic wormhole protocol.
+    pub fn simulate_holographic_wormhole(
+        &self,
+        config: crate::wormhole::WormholeConfig,
+        coupling_g: f64,
+    ) -> crate::wormhole::WormholeFidelityPoint {
+        let engine = crate::wormhole::HolographicWormholeEngine::new(config);
+        engine.simulate(coupling_g)
+    }
+
+    /// Optimizes black hole scrambling couplings using SPSA to maximize holographic size winding.
+    pub fn optimize_wormhole_size_winding(
+        &self,
+        config: crate::wormhole::OptimizerConfig,
+    ) -> (
+        crate::wormhole::ScramblingHamiltonian,
+        Vec<crate::wormhole::OptimizationTrajectoryPoint>,
+    ) {
+        let initial = crate::wormhole::ScramblingHamiltonian::new(
+            crate::wormhole::ScramblerType::ChaoticHeisenberg,
+            config.num_modes,
+            config.seed,
+        );
+        let optimizer = crate::wormhole::SizeWindingOptimizer::new(config);
+        optimizer.optimize(&initial)
+    }
+
+    /// Evaluates Almheiri-Dong-Harlow (ADH) bulk reconstruction resilience under boundary erasures.
+    pub fn evaluate_holographic_qec(
+        &self,
+        engine_config: &crate::wormhole::WormholeConfig,
+        hamiltonian: &crate::wormhole::ScramblingHamiltonian,
+        partition: crate::wormhole::ErasurePartition,
+        coupling_g: f64,
+    ) -> crate::wormhole::HolographicQecReport {
+        crate::wormhole::evaluate_holographic_qec(
+            engine_config,
+            hamiltonian,
+            partition,
+            coupling_g,
+        )
+    }
 }
 
 #[cfg(test)]
@@ -513,6 +562,22 @@ mod tests {
         let manifest = engine.system_manifest();
         assert_eq!(manifest.author, "Terrence A. Jones SR");
         assert_eq!(manifest.heptal_qudit_radix, 7);
+        assert!(manifest.holographic_wormhole);
+    }
+
+    #[test]
+    fn test_master_engine_holographic_wormhole() {
+        let engine = T1000Engine::new();
+        let config = crate::wormhole::WormholeConfig {
+            num_modes: 2,
+            scrambler_type: crate::wormhole::ScramblerType::ChaoticHeisenberg,
+            trotter_steps: 2,
+            scrambling_time: 1.0,
+            coupling_g: 1.5,
+            seed: 0x42,
+        };
+        let pt = engine.simulate_holographic_wormhole(config, 1.5);
+        assert!(pt.fidelity > 0.0);
     }
 
     #[test]
