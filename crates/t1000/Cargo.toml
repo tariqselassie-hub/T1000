@@ -391,6 +391,10 @@ path = "src/bin/benchmarks/holographic_wormhole_bench.rs"
 name = "holographic_qec_bench"
 path = "src/bin/benchmarks/holographic_qec_bench.rs"
 
+[[bin]]
+name = "universe_cosmology_bench"
+path = "src/bin/benchmarks/universe_cosmology_bench.rs"
+
 
 
 

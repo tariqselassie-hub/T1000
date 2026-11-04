@@ -1,0 +1,1318 @@
+{
+  "config": {
+    "profile": "DeSitter",
+    "hubble_rate": 1.2,
+    "field_mass": 0.1,
+    "num_modes": 16,
+    "box_length": 20.0,
+    "t_initial": 0.0,
+    "t_final": 2.5,
+    "time_steps": 120
+  },
+  "epochs": [
+    {
+      "cosmic_time": 0.0,
+      "scale_factor": 1.0,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 4.942376613912346e-32,
+      "horizon_entanglement_entropy": 0.0,
+      "super_horizon_modes": 3,
+      "mean_power_spectrum": 0.23362425077734772
+    },
+    {
+      "cosmic_time": 0.020833333333333332,
+      "scale_factor": 1.0253151205244289,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 0.013529014986454556,
+      "horizon_entanglement_entropy": 0.07168263783109985,
+      "super_horizon_modes": 3,
+      "mean_power_spectrum": 0.2225103905083135
+    },
+    {
+      "cosmic_time": 0.041666666666666664,
+      "scale_factor": 1.0512710963760241,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 0.055446249738443185,
+      "horizon_entanglement_entropy": 0.2442660693484046,
+      "super_horizon_modes": 4,
+      "mean_power_spectrum": 0.21243858575165578
+    },
+    {
+      "cosmic_time": 0.0625,
+      "scale_factor": 1.0778841508846315,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 0.12789638702792028,
+      "horizon_entanglement_entropy": 0.4701504910690472,
+      "super_horizon_modes": 4,
+      "mean_power_spectrum": 0.2032809844387496
+    },
+    {
+      "cosmic_time": 0.08333333333333333,
+      "scale_factor": 1.1051709180756477,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 0.23324126806709022,
+      "horizon_entanglement_entropy": 0.7374838474796345,
+      "super_horizon_modes": 4,
+      "mean_power_spectrum": 0.1949175373573458
+    },
+    {
+      "cosmic_time": 0.10416666666666666,
+      "scale_factor": 1.1331484530668263,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 0.3740841375510976,
+      "horizon_entanglement_entropy": 1.035407468785468,
+      "super_horizon_modes": 4,
+      "mean_power_spectrum": 0.18723829329544367
+    },
+    {
+      "cosmic_time": 0.12499999999999999,
+      "scale_factor": 1.161834242728283,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 0.5532960980604928,
+      "horizon_entanglement_entropy": 1.3562676654866963,
+      "super_horizon_modes": 4,
+      "mean_power_spectrum": 0.1801447238592028
+    },
+    {
+      "cosmic_time": 0.14583333333333331,
+      "scale_factor": 1.191246216612358,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 0.7740448648194542,
+      "horizon_entanglement_entropy": 1.6944914209493593,
+      "super_horizon_modes": 4,
+      "mean_power_spectrum": 0.17355025856679931
+    },
+    {
+      "cosmic_time": 0.16666666666666666,
+      "scale_factor": 1.2214027581601699,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 1.0398259416298934,
+      "horizon_entanglement_entropy": 2.045959284504196,
+      "super_horizon_modes": 4,
+      "mean_power_spectrum": 0.16738020668492387
+    },
+    {
+      "cosmic_time": 0.1875,
+      "scale_factor": 1.2523227161918644,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 1.3544963696961443,
+      "horizon_entanglement_entropy": 2.4076013142989336,
+      "super_horizon_modes": 4,
+      "mean_power_spectrum": 0.1615712278735555
+    },
+    {
+      "cosmic_time": 0.20833333333333334,
+      "scale_factor": 1.2840254166877414,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 1.722311232469128,
+      "horizon_entanglement_entropy": 2.777115658017774,
+      "super_horizon_modes": 4,
+      "mean_power_spectrum": 0.15607049336447915
+    },
+    {
+      "cosmic_time": 0.22916666666666669,
+      "scale_factor": 1.3165306748676215,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 2.147963131236399,
+      "horizon_entanglement_entropy": 3.376616671582008,
+      "super_horizon_modes": 5,
+      "mean_power_spectrum": 0.15083465643215188
+    },
+    {
+      "cosmic_time": 0.25,
+      "scale_factor": 1.3498588075760032,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 2.636624877812105,
+      "horizon_entanglement_entropy": 3.7937920011209902,
+      "super_horizon_modes": 5,
+      "mean_power_spectrum": 0.14582872770981625
+    },
+    {
+      "cosmic_time": 0.2708333333333333,
+      "scale_factor": 1.3840306459807514,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 3.193995682337056,
+      "horizon_entanglement_entropy": 4.217135120819521,
+      "super_horizon_modes": 5,
+      "mean_power_spectrum": 0.14102492905946556
+    },
+    {
+      "cosmic_time": 0.29166666666666663,
+      "scale_factor": 1.4190675485932571,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 3.826351146002449,
+      "horizon_entanglement_entropy": 4.645820809387165,
+      "super_horizon_modes": 5,
+      "mean_power_spectrum": 0.136401580187378
+    },
+    {
+      "cosmic_time": 0.31249999999999994,
+      "scale_factor": 1.4549914146182013,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 4.540597400673739,
+      "horizon_entanglement_entropy": 5.079196722478658,
+      "super_horizon_modes": 5,
+      "mean_power_spectrum": 0.1319420554887823
+    },
+    {
+      "cosmic_time": 0.33333333333333326,
+      "scale_factor": 1.4918246976412701,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 5.3443297701952766,
+      "horizon_entanglement_entropy": 5.516739481983249,
+      "super_horizon_modes": 5,
+      "mean_power_spectrum": 0.12763383483652255
+    },
+    {
+      "cosmic_time": 0.3541666666666666,
+      "scale_factor": 1.5295904196633785,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 6.245896361934226,
+      "horizon_entanglement_entropy": 5.958022366765286,
+      "super_horizon_modes": 5,
+      "mean_power_spectrum": 0.12346766109243616
+    },
+    {
+      "cosmic_time": 0.3749999999999999,
+      "scale_factor": 1.5683121854901685,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 7.254467032241107,
+      "horizon_entanglement_entropy": 6.402691436137008,
+      "super_horizon_modes": 5,
+      "mean_power_spectrum": 0.11943680876223957
+    },
+    {
+      "cosmic_time": 0.3958333333333332,
+      "scale_factor": 1.6080141974857824,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 8.38010820635643,
+      "horizon_entanglement_entropy": 7.296142797834731,
+      "super_horizon_modes": 6,
+      "mean_power_spectrum": 0.11553646210209348
+    },
+    {
+      "cosmic_time": 0.4166666666666665,
+      "scale_factor": 1.6487212707001278,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 9.633864072285663,
+      "horizon_entanglement_entropy": 7.790009035797488,
+      "super_horizon_modes": 6,
+      "mean_power_spectrum": 0.11176319675588745
+    },
+    {
+      "cosmic_time": 0.43749999999999983,
+      "scale_factor": 1.690458848379091,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 11.02784470971815,
+      "horizon_entanglement_entropy": 8.288395283894163,
+      "super_horizon_modes": 6,
+      "mean_power_spectrum": 0.10811455629991298
+    },
+    {
+      "cosmic_time": 0.45833333333333315,
+      "scale_factor": 1.7332530178673948,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 12.575321759613685,
+      "horizon_entanglement_entropy": 8.79110422899642,
+      "super_horizon_modes": 6,
+      "mean_power_spectrum": 0.10458871356579912
+    },
+    {
+      "cosmic_time": 0.47916666666666646,
+      "scale_factor": 1.7771305269140378,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 14.290832288002528,
+      "horizon_entanglement_entropy": 9.297955710720917,
+      "super_horizon_modes": 6,
+      "mean_power_spectrum": 0.10118420601162531
+    },
+    {
+      "cosmic_time": 0.4999999999999998,
+      "scale_factor": 1.8221188003905084,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 16.19029154950918,
+      "horizon_entanglement_entropy": 9.808781803762148,
+      "super_horizon_modes": 6,
+      "mean_power_spectrum": 0.09789973446683489
+    },
+    {
+      "cosmic_time": 0.5208333333333331,
+      "scale_factor": 1.8682459574322219,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 18.2911154120517,
+      "horizon_entanglement_entropy": 10.904114456649532,
+      "super_horizon_modes": 7,
+      "mean_power_spectrum": 0.09473401508466137
+    },
+    {
+      "cosmic_time": 0.5416666666666665,
+      "scale_factor": 1.9155408290138958,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 20.61235326532455,
+      "horizon_entanglement_entropy": 11.467025729304511,
+      "super_horizon_modes": 7,
+      "mean_power_spectrum": 0.0916856751332841
+    },
+    {
+      "cosmic_time": 0.5624999999999999,
+      "scale_factor": 1.964032975969847,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 23.174832301756762,
+      "horizon_entanglement_entropy": 12.035234723631152,
+      "super_horizon_modes": 7,
+      "mean_power_spectrum": 0.08875318421781284
+    },
+    {
+      "cosmic_time": 0.5833333333333333,
+      "scale_factor": 2.013752707470476,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 26.001314130651192,
+      "horizon_entanglement_entropy": 12.608612409723325,
+      "super_horizon_modes": 7,
+      "mean_power_spectrum": 0.08593481355519755
+    },
+    {
+      "cosmic_time": 0.6041666666666666,
+      "scale_factor": 2.0647310999664863,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 29.116664764453514,
+      "horizon_entanglement_entropy": 13.187027090058471,
+      "super_horizon_modes": 7,
+      "mean_power_spectrum": 0.08322861695551402
+    },
+    {
+      "cosmic_time": 0.625,
+      "scale_factor": 2.117000016612675,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 32.54803910116171,
+      "horizon_entanglement_entropy": 14.429945427245574,
+      "super_horizon_modes": 8,
+      "mean_power_spectrum": 0.0806324281494207
+    },
+    {
+      "cosmic_time": 0.6458333333333334,
+      "scale_factor": 2.1705921271834425,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 36.32508111932139,
+      "horizon_entanglement_entropy": 15.062288864899047,
+      "super_horizon_modes": 8,
+      "mean_power_spectrum": 0.07814387001339378
+    },
+    {
+      "cosmic_time": 0.6666666666666667,
+      "scale_factor": 2.225540928492468,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 40.48014110244602,
+      "horizon_entanglement_entropy": 15.701010325117217,
+      "super_horizon_modes": 8,
+      "mean_power_spectrum": 0.07576037206494264
+    },
+    {
+      "cosmic_time": 0.6875000000000001,
+      "scale_factor": 2.281880765329304,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 45.048511318670805,
+      "horizon_entanglement_entropy": 16.3459875362503,
+      "super_horizon_modes": 8,
+      "mean_power_spectrum": 0.07347919332220257
+    },
+    {
+      "cosmic_time": 0.7083333333333335,
+      "scale_factor": 2.339646851925991,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 50.06868169963789,
+      "horizon_entanglement_entropy": 16.99708789636345,
+      "super_horizon_modes": 8,
+      "mean_power_spectrum": 0.07129744824567234
+    },
+    {
+      "cosmic_time": 0.7291666666666669,
+      "scale_factor": 2.3988752939670985,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 55.58261719070473,
+      "horizon_entanglement_entropy": 18.379584409846732,
+      "super_horizon_modes": 9,
+      "mean_power_spectrum": 0.06921213400856609
+    },
+    {
+      "cosmic_time": 0.7500000000000002,
+      "scale_factor": 2.4596031111569503,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 61.636058583281866,
+      "horizon_entanglement_entropy": 19.08680347373145,
+      "super_horizon_modes": 9,
+      "mean_power_spectrum": 0.06722015778333686
+    },
+    {
+      "cosmic_time": 0.7708333333333336,
+      "scale_factor": 2.521868260358149,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 68.2788487902034,
+      "horizon_entanglement_entropy": 19.801497615448923,
+      "super_horizon_modes": 9,
+      "mean_power_spectrum": 0.06531836309407117
+    },
+    {
+      "cosmic_time": 0.791666666666667,
+      "scale_factor": 2.585709659315847,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 75.56528668731899,
+      "horizon_entanglement_entropy": 20.523525274045664,
+      "super_horizon_modes": 9,
+      "mean_power_spectrum": 0.06350355457702275
+    },
+    {
+      "cosmic_time": 0.8125000000000003,
+      "scale_factor": 2.6511672109826074,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 83.55451081982773,
+      "horizon_entanglement_entropy": 21.98892077680552,
+      "super_horizon_modes": 10,
+      "mean_power_spectrum": 0.061772520723944256
+    },
+    {
+      "cosmic_time": 0.8333333333333337,
+      "scale_factor": 2.7182818284590464,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 92.31091546116348,
+      "horizon_entanglement_entropy": 22.76820372929013,
+      "super_horizon_modes": 10,
+      "mean_power_spectrum": 0.06012205436409944
+    },
+    {
+      "cosmic_time": 0.8541666666666671,
+      "scale_factor": 2.7870954605658516,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 101.9046017164722,
+      "horizon_entanglement_entropy": 23.556178574260084,
+      "super_horizon_modes": 10,
+      "mean_power_spectrum": 0.05854897077921515
+    },
+    {
+      "cosmic_time": 0.8750000000000004,
+      "scale_factor": 2.857651118063165,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 112.41186658293529,
+      "horizon_entanglement_entropy": 24.352682031611124,
+      "super_horizon_modes": 10,
+      "mean_power_spectrum": 0.057050123448669166
+    },
+    {
+      "cosmic_time": 0.8958333333333338,
+      "scale_factor": 2.9299929005337035,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 123.91573311652932,
+      "horizon_entanglement_entropy": 25.89538912397424,
+      "super_horizon_modes": 11,
+      "mean_power_spectrum": 0.05562241749651739
+    },
+    {
+      "cosmic_time": 0.9166666666666672,
+      "scale_factor": 3.0041660239464347,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 136.50652511048645,
+      "horizon_entanglement_entropy": 26.750804039470804,
+      "super_horizon_modes": 11,
+      "mean_power_spectrum": 0.05426282096326402
+    },
+    {
+      "cosmic_time": 0.9375000000000006,
+      "scale_factor": 3.0802168489180333,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 150.28248996605657,
+      "horizon_entanglement_entropy": 27.61610457346168,
+      "super_horizon_modes": 11,
+      "mean_power_spectrum": 0.05296837405844936
+    },
+    {
+      "cosmic_time": 0.9583333333333339,
+      "scale_factor": 3.1581929096897694,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 165.35047373260986,
+      "horizon_entanglement_entropy": 29.184938303459376,
+      "super_horizon_modes": 12,
+      "mean_power_spectrum": 0.051736196569257036
+    },
+    {
+      "cosmic_time": 0.9791666666666673,
+      "scale_factor": 3.238142943837963,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 181.82665261321733,
+      "horizon_entanglement_entropy": 30.109869520809692,
+      "super_horizon_modes": 12,
+      "mean_power_spectrum": 0.050563493608813244
+    },
+    {
+      "cosmic_time": 1.0000000000000007,
+      "scale_factor": 3.3201169227365503,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 199.837325575309,
+      "horizon_entanglement_entropy": 31.04603849619516,
+      "super_horizon_modes": 12,
+      "mean_power_spectrum": 0.04944755988842799
+    },
+    {
+      "cosmic_time": 1.020833333333334,
+      "scale_factor": 3.4041660827908213,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 219.519773075694,
+      "horizon_entanglement_entropy": 32.644583362689715,
+      "super_horizon_modes": 13,
+      "mean_power_spectrum": 0.04838578269293571
+    },
+    {
+      "cosmic_time": 1.0416666666666672,
+      "scale_factor": 3.4903429574618436,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 241.02318730714128,
+      "horizon_entanglement_entropy": 33.64177557659622,
+      "super_horizon_modes": 13,
+      "mean_power_spectrum": 0.04737564372930036
+    },
+    {
+      "cosmic_time": 1.0625000000000004,
+      "scale_factor": 3.5787014101015813,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 264.5096798020905,
+      "horizon_entanglement_entropy": 34.651527400335766,
+      "super_horizon_modes": 13,
+      "mean_power_spectrum": 0.04641472000713906
+    },
+    {
+      "cosmic_time": 1.0833333333333337,
+      "scale_factor": 3.669296667619246,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 290.1553726902538,
+      "horizon_entanglement_entropy": 36.28968043183757,
+      "super_horizon_modes": 14,
+      "mean_power_spectrum": 0.0455006838968514
+    },
+    {
+      "cosmic_time": 1.104166666666667,
+      "scale_factor": 3.762185354999912,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 318.1515804035236,
+      "horizon_entanglement_entropy": 37.36256916087925,
+      "super_horizon_modes": 14,
+      "mean_power_spectrum": 0.04463130249742331
+    },
+    {
+      "cosmic_time": 1.1250000000000002,
+      "scale_factor": 3.8574255306969754,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 348.7060891565099,
+      "horizon_entanglement_entropy": 38.44926728694889,
+      "super_horizon_modes": 14,
+      "mean_power_spectrum": 0.04380443643229308
+    },
+    {
+      "cosmic_time": 1.1458333333333335,
+      "scale_factor": 3.955076722920578,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 382.04454210729426,
+      "horizon_entanglement_entropy": 40.143828050375426,
+      "super_horizon_modes": 15,
+      "mean_power_spectrum": 0.04301803817834706
+    },
+    {
+      "cosmic_time": 1.1666666666666667,
+      "scale_factor": 4.055199966844675,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 418.4119387238988,
+      "horizon_entanglement_entropy": 41.296434473877696,
+      "super_horizon_modes": 15,
+      "mean_power_spectrum": 0.04227015002044143
+    },
+    {
+      "cosmic_time": 1.1875,
+      "scale_factor": 4.157857842756007,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 458.0742575511118,
+      "horizon_entanglement_entropy": 42.46397480866079,
+      "super_horizon_modes": 15,
+      "mean_power_spectrum": 0.041558901712010515
+    },
+    {
+      "cosmic_time": 1.2083333333333333,
+      "scale_factor": 4.263114515168817,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 501.32021229356974,
+      "horizon_entanglement_entropy": 44.23745157650499,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.040882507911429736
+    },
+    {
+      "cosmic_time": 1.2291666666666665,
+      "scale_factor": 4.3710357729297575,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 548.4631519084863,
+      "horizon_entanglement_entropy": 45.47412199344275,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.04023926545389775
+    },
+    {
+      "cosmic_time": 1.2499999999999998,
+      "scale_factor": 4.481689070338064,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 599.8431162396437,
+      "horizon_entanglement_entropy": 46.72667404912071,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.03962755050969459
+    },
+    {
+      "cosmic_time": 1.270833333333333,
+      "scale_factor": 4.595143569306687,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 655.8290596279895,
+      "horizon_entanglement_entropy": 47.99467844531825,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.03904581567173308
+    },
+    {
+      "cosmic_time": 1.2916666666666663,
+      "scale_factor": 4.711470182590739,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 716.8212559085563,
+      "horizon_entanglement_entropy": 49.2776731939625,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.03849258700830332
+    },
+    {
+      "cosmic_time": 1.3124999999999996,
+      "scale_factor": 4.8307416181102765,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 783.2538992539727,
+      "horizon_entanglement_entropy": 50.575166156936184,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.037966461110752435
+    },
+    {
+      "cosmic_time": 1.3333333333333328,
+      "scale_factor": 4.953032424395112,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 855.5979164574014,
+      "horizon_entanglement_entropy": 51.8866378472449,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.03746610216047873
+    },
+    {
+      "cosmic_time": 1.354166666666666,
+      "scale_factor": 5.078419037180078,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 934.3640074687343,
+      "horizon_entanglement_entropy": 53.21154446266799,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.036990239034976224
+    },
+    {
+      "cosmic_time": 1.3749999999999993,
+      "scale_factor": 5.206979827179845,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 1020.1059323139552,
+      "horizon_entanglement_entropy": 54.54932111720575,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.036537662468673356
+    },
+    {
+      "cosmic_time": 1.3958333333333326,
+      "scale_factor": 5.338795149073172,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 1113.424063946105,
+      "horizon_entanglement_entropy": 55.89938523025401,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.03610722228089711
+    },
+    {
+      "cosmic_time": 1.4166666666666659,
+      "scale_factor": 5.473947391727195,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 1214.9692281049336,
+      "horizon_entanglement_entropy": 57.26114002890751,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.0356978246803953
+    },
+    {
+      "cosmic_time": 1.4374999999999991,
+      "scale_factor": 5.612521029693151,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 1325.4468529095507,
+      "horizon_entanglement_entropy": 58.63397811496265,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.03530842965340329
+    },
+    {
+      "cosmic_time": 1.4583333333333324,
+      "scale_factor": 5.754602676005724,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 1445.621452683014,
+      "horizon_entanglement_entropy": 60.01728504594004,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.03493804844019051
+    },
+    {
+      "cosmic_time": 1.4791666666666656,
+      "scale_factor": 5.900281136319009,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 1576.3214724196396,
+      "horizon_entanglement_entropy": 61.41044287822146,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.03458574110331397
+    },
+    {
+      "cosmic_time": 1.499999999999999,
+      "scale_factor": 6.0496474644129385,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 1718.4445213650285,
+      "horizon_entanglement_entropy": 62.812833621100935,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.0342506141893957
+    },
+    {
+      "cosmic_time": 1.5208333333333321,
+      "scale_factor": 6.2027950191048555,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 1872.963026396759,
+      "horizon_entanglement_entropy": 64.22384255254474,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.03393181848508447
+    },
+    {
+      "cosmic_time": 1.5416666666666654,
+      "scale_factor": 6.359819522601821,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 2040.9303382822354,
+      "horizon_entanglement_entropy": 65.6428613512226,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.03362854686692535
+    },
+    {
+      "cosmic_time": 1.5624999999999987,
+      "scale_factor": 6.520819120330101,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 2223.487326462362,
+      "horizon_entanglement_entropy": 67.06929100441401,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.033340032244108725
+    },
+    {
+      "cosmic_time": 1.583333333333332,
+      "scale_factor": 6.685894442279257,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 2421.8695007795204,
+      "horizon_entanglement_entropy": 68.50254445779284,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.03306554559247543
+    },
+    {
+      "cosmic_time": 1.6041666666666652,
+      "scale_factor": 6.855148665899165,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 2637.414701551711,
+      "horizon_entanglement_entropy": 69.942048980234,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.032804394077693734
+    },
+    {
+      "cosmic_time": 1.6249999999999984,
+      "scale_factor": 7.028687580589279,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 2871.571402600321,
+      "horizon_entanglement_entropy": 71.38724822473222,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.0325559192651715
+    },
+    {
+      "cosmic_time": 1.6458333333333317,
+      "scale_factor": 7.206619653820452,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 3125.907675309921,
+      "horizon_entanglement_entropy": 72.8376039743418,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.03231949541400977
+    },
+    {
+      "cosmic_time": 1.666666666666665,
+      "scale_factor": 7.3890560989306335,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 3402.120865510048,
+      "horizon_entanglement_entropy": 74.29259757026567,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.03209452785212253
+    },
+    {
+      "cosmic_time": 1.6874999999999982,
+      "scale_factor": 7.576110944636828,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 3702.0480389749046,
+      "horizon_entanglement_entropy": 75.7517310261506,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.031880451429527355
+    },
+    {
+      "cosmic_time": 1.7083333333333315,
+      "scale_factor": 7.767901106306753,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 4027.677255670721,
+      "horizon_entanglement_entropy": 77.21452783985465,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.03167672904674533
+    },
+    {
+      "cosmic_time": 1.7291666666666647,
+      "scale_factor": 7.964546459034752,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 4381.159737513877,
+      "horizon_entanglement_entropy": 78.68053351913049,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.031482850255223876
+    },
+    {
+      "cosmic_time": 1.749999999999998,
+      "scale_factor": 8.166169912567629,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 4764.822999415471,
+      "horizon_entanglement_entropy": 80.14931584268257,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.03129832992670365
+    },
+    {
+      "cosmic_time": 1.7708333333333313,
+      "scale_factor": 8.372897488127242,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 5181.185018778011,
+      "horizon_entanglement_entropy": 81.62046488113185,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.03112270698848579
+    },
+    {
+      "cosmic_time": 1.7916666666666645,
+      "scale_factor": 8.58485839717787,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 5632.9695244159975,
+      "horizon_entanglement_entropy": 83.09359280505217,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.0309555432216112
+    },
+    {
+      "cosmic_time": 1.8124999999999978,
+      "scale_factor": 8.802185122187582,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 6123.122492124946,
+      "horizon_entanglement_entropy": 84.56833350806508,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.030796422119035004
+    },
+    {
+      "cosmic_time": 1.833333333333331,
+      "scale_factor": 9.025013499434094,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 6654.829940858134,
+      "horizon_entanglement_entropy": 86.04434207343361,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.030644947800962927
+    },
+    {
+      "cosmic_time": 1.8541666666666643,
+      "scale_factor": 9.253482803906865,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 7231.537130723865,
+      "horizon_entanglement_entropy": 87.52129411194387,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.030500743984608003
+    },
+    {
+      "cosmic_time": 1.8749999999999976,
+      "scale_factor": 9.487735836358496,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 7856.969271828848,
+      "horizon_entanglement_entropy": 88.99888499746476,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.03036345300572438
+    },
+    {
+      "cosmic_time": 1.8958333333333308,
+      "scale_factor": 9.727919012559854,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 8535.153861409044,
+      "horizon_entanglement_entropy": 90.47682902478651,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.03023273488937634
+    },
+    {
+      "cosmic_time": 1.916666666666664,
+      "scale_factor": 9.974182454814688,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 9270.444775754177,
+      "horizon_entanglement_entropy": 91.95485851233451,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.03010826646750415
+    },
+    {
+      "cosmic_time": 1.9374999999999973,
+      "scale_factor": 10.226680085790964,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 10067.548253197283,
+      "horizon_entanglement_entropy": 93.43272286943227,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.029989740540952964
+    },
+    {
+      "cosmic_time": 1.9583333333333306,
+      "scale_factor": 10.485569724727538,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 10931.550914960124,
+      "horizon_entanglement_entropy": 94.91018764651551,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.02987686508373374
+    },
+    {
+      "cosmic_time": 1.9791666666666639,
+      "scale_factor": 10.751013186076317,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 11867.94998197767,
+      "horizon_entanglement_entropy": 96.3870335820891,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.029769362487387874
+    },
+    {
+      "cosmic_time": 1.9999999999999971,
+      "scale_factor": 11.023176380641562,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 12882.685858033856,
+      "horizon_entanglement_entropy": 97.86305566052793,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.029666968843426355
+    },
+    {
+      "cosmic_time": 2.0208333333333304,
+      "scale_factor": 11.30222941927954,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 13982.177262693944,
+      "horizon_entanglement_entropy": 99.33806219002159,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.029569433261911998
+    },
+    {
+      "cosmic_time": 2.041666666666664,
+      "scale_factor": 11.58834671922335,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 15173.359111690776,
+      "horizon_entanglement_entropy": 100.81187390994242,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.02947651722434684
+    },
+    {
+      "cosmic_time": 2.0624999999999973,
+      "scale_factor": 11.881707113099358,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 16463.723357690633,
+      "horizon_entanglement_entropy": 102.28432313314613,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.029387993969118092
+    },
+    {
+      "cosmic_time": 2.083333333333331,
+      "scale_factor": 12.182493960703436,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 17861.363020817185,
+      "horizon_entanglement_entropy": 103.75525292914335,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.02930364790784245
+    },
+    {
+      "cosmic_time": 2.1041666666666643,
+      "scale_factor": 12.490895263606774,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 19375.019656038967,
+      "horizon_entanglement_entropy": 105.22451635067536,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.029223274071033645
+    },
+    {
+      "cosmic_time": 2.124999999999998,
+      "scale_factor": 12.807103782662995,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 21014.134523628643,
+      "horizon_entanglement_entropy": 106.69197570621992,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.029146677581596447
+    },
+    {
+      "cosmic_time": 2.1458333333333313,
+      "scale_factor": 13.131317158489983,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 22788.903749486828,
+      "horizon_entanglement_entropy": 108.15750187992018,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.029073673154728173
+    },
+    {
+      "cosmic_time": 2.1666666666666647,
+      "scale_factor": 13.463738035001656,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 24710.33778430635,
+      "horizon_entanglement_entropy": 109.62097369847797,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.029004084622881336
+    },
+    {
+      "cosmic_time": 2.1874999999999982,
+      "scale_factor": 13.804574186067065,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 26790.325494458528,
+      "horizon_entanglement_entropy": 111.08227734567518,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.02893774448450959
+    },
+    {
+      "cosmic_time": 2.2083333333333317,
+      "scale_factor": 14.154038645375776,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 29041.70324324678,
+      "horizon_entanglement_entropy": 112.54130582197658,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.028874493475386735
+    },
+    {
+      "cosmic_time": 2.229166666666665,
+      "scale_factor": 14.512349839590886,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 31478.329348939336,
+      "horizon_entanglement_entropy": 113.99795845052327,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.028814180161349512
+    },
+    {
+      "cosmic_time": 2.2499999999999987,
+      "scale_factor": 14.87973172487281,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 34115.16433591897,
+      "horizon_entanglement_entropy": 115.45214042434854,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.02875666055137579
+    },
+    {
+      "cosmic_time": 2.270833333333332,
+      "scale_factor": 15.256413926859132,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 36968.35742754255,
+      "horizon_entanglement_entropy": 116.90376239660122,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.02870179772996575
+    },
+    {
+      "cosmic_time": 2.2916666666666656,
+      "scale_factor": 15.64263188418815,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 40055.3397640678,
+      "horizon_entanglement_entropy": 118.35274010818134,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.028649461507846648
+    },
+    {
+      "cosmic_time": 2.312499999999999,
+      "scale_factor": 16.038626995655655,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 43394.92486647821,
+      "horizon_entanglement_entropy": 119.79899405412809,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.028599528090073857
+    },
+    {
+      "cosmic_time": 2.3333333333333326,
+      "scale_factor": 16.444646771097034,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 47007.41690742714,
+      "horizon_entanglement_entropy": 121.24244918326946,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.028551879760647544
+    },
+    {
+      "cosmic_time": 2.354166666666666,
+      "scale_factor": 16.86094498608902,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 50914.72739406113,
+      "horizon_entanglement_entropy": 122.68303463212536,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.028506404582810705
+    },
+    {
+      "cosmic_time": 2.3749999999999996,
+      "scale_factor": 17.287781840567625,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 55140.50091441458,
+      "horizon_entanglement_entropy": 124.12068348671482,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.02846299611423771
+    },
+    {
+      "cosmic_time": 2.395833333333333,
+      "scale_factor": 17.725424121461632,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 59710.25064965737,
+      "horizon_entanglement_entropy": 125.55533257563195,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.028421553136362184
+    },
+    {
+      "cosmic_time": 2.4166666666666665,
+      "scale_factor": 18.17414536944306,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 64651.50440901451,
+      "horizon_entanglement_entropy": 126.98692228714015,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.028381979397133435
+    },
+    {
+      "cosmic_time": 2.4375,
+      "scale_factor": 18.634226049899,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 69993.96200296427,
+      "horizon_entanglement_entropy": 128.41539641158596,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.028344183366525708
+    },
+    {
+      "cosmic_time": 2.4583333333333335,
+      "scale_factor": 19.10595372823165,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 75769.66483369634,
+      "horizon_entanglement_entropy": 129.84070200459104,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.028308078004160114
+    },
+    {
+      "cosmic_time": 2.479166666666667,
+      "scale_factor": 19.589623249595995,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 82013.17865013306,
+      "horizon_entanglement_entropy": 131.26278927299438,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.028273580538432232
+    },
+    {
+      "cosmic_time": 2.5000000000000004,
+      "scale_factor": 20.085536923187675,
+      "hubble_parameter": 1.2,
+      "total_particle_density": 88761.7904884633,
+      "horizon_entanglement_entropy": 132.68161147612466,
+      "super_horizon_modes": 16,
+      "mean_power_spectrum": 0.02824061225656832
+    }
+  ],
+  "final_spectrum": {
+    "cosmic_time": 2.5,
+    "scale_factor": 20.085536923187668,
+    "hubble_parameter": 1.2,
+    "gibbons_hawking_temp": 0.1909859317102744,
+    "total_particle_density": 88761.79048846332,
+    "mean_squeezing": 4.339447421394555,
+    "mode_reports": [
+      {
+        "mode_index": 1,
+        "momentum_k": 0.3141592653589793,
+        "alpha_re": -190.1237834829745,
+        "alpha_im": 31.76942505339773,
+        "beta_re": -191.52504599568476,
+        "beta_im": 21.76019693052534,
+        "particle_number": 37155.34941410441,
+        "squeezing_param": 5.954585426386117,
+        "power_spectrum": 0.0010361472732390651,
+        "unitarity_error": 1.4551915228366852e-11
+      },
+      {
+        "mode_index": 2,
+        "momentum_k": 0.6283185307179586,
+        "alpha_re": -130.34019580357193,
+        "alpha_im": 32.13808898403341,
+        "beta_re": -128.32380395636903,
+        "beta_im": 39.413509661364664,
+        "particle_number": 18020.42340565912,
+        "squeezing_param": 5.592791567077089,
+        "power_spectrum": 0.004163688442834374,
+        "unitarity_error": 0.0
+      },
+      {
+        "mode_index": 3,
+        "momentum_k": 0.9424777960769379,
+        "alpha_re": -99.9963941111098,
+        "alpha_im": 29.800277135836332,
+        "beta_re": -90.586136881339,
+        "beta_im": 51.773421342541766,
+        "particle_number": 10886.335352597045,
+        "squeezing_param": 5.340801966528049,
+        "power_spectrum": 0.008956504331262634,
+        "unitarity_error": 1.8189894035458565e-12
+      },
+      {
+        "mode_index": 4,
+        "momentum_k": 1.2566370614359172,
+        "alpha_re": -80.28268151004826,
+        "alpha_im": 26.015079484426522,
+        "beta_re": -60.48668934114331,
+        "beta_im": 58.842618258987216,
+        "particle_number": 7121.093311024875,
+        "squeezing_param": 5.128590559448491,
+        "power_spectrum": 0.014845903215695573,
+        "unitarity_error": 9.094947017729282e-13
+      },
+      {
+        "mode_index": 5,
+        "momentum_k": 1.5707963267948966,
+        "alpha_re": -65.95713394002281,
+        "alpha_im": 21.758235475431555,
+        "beta_re": -34.49069539403847,
+        "beta_im": 60.27566888738847,
+        "particle_number": 4822.764328586437,
+        "squeezing_param": 4.9337502914223395,
+        "power_spectrum": 0.021163957807913487,
+        "unitarity_error": 9.094947017729282e-13
+      },
+      {
+        "mode_index": 6,
+        "momentum_k": 1.8849555921538759,
+        "alpha_re": -54.85888821756292,
+        "alpha_im": 17.637385340121828,
+        "beta_re": -12.38381339315523,
+        "beta_im": 56.26914024531135,
+        "particle_number": 3319.574978103008,
+        "squeezing_param": 4.747018500435683,
+        "power_spectrum": 0.027240963701785182,
+        "unitarity_error": 0.0
+      },
+      {
+        "mode_index": 7,
+        "momentum_k": 2.199114857512855,
+        "alpha_re": -45.90335516316134,
+        "alpha_im": 13.985370375745825,
+        "beta_re": 5.156739773646457,
+        "beta_im": 47.69818271893608,
+        "particle_number": 2301.70859978212,
+        "squeezing_param": 4.563959275632221,
+        "power_spectrum": 0.03249994121735608,
+        "unitarity_error": 4.547473508864641e-13
+      },
+      {
+        "mode_index": 8,
+        "momentum_k": 2.5132741228718345,
+        "alpha_re": -38.490785799453874,
+        "alpha_im": 10.950702819083967,
+        "beta_re": 17.461291562219095,
+        "beta_im": 35.99391310583651,
+        "particle_number": 1600.4584836913332,
+        "squeezing_param": 4.3823260589549005,
+        "power_spectrum": 0.03653145413401407,
+        "unitarity_error": 4.547473508864641e-13
+      },
+      {
+        "mode_index": 9,
+        "momentum_k": 2.827433388230814,
+        "alpha_re": -32.27142761753781,
+        "alpha_im": 8.56470478049387,
+        "beta_re": 24.276507156111727,
+        "beta_im": 22.90088227012778,
+        "particle_number": 1113.7992084509967,
+        "squeezing_param": 4.201137642240765,
+        "power_spectrum": 0.039137249647597724,
+        "unitarity_error": 0.0
+      },
+      {
+        "mode_index": 10,
+        "momentum_k": 3.141592653589793,
+        "alpha_re": -27.030970877550992,
+        "alpha_im": 6.787359251037318,
+        "beta_re": 25.920552926643634,
+        "beta_im": 10.191494893425496,
+        "particle_number": 775.7416321856518,
+        "squeezing_param": 4.020379055395386,
+        "power_spectrum": 0.04033734821215612,
+        "unitarity_error": 1.1368683772161603e-13
+      },
+      {
+        "mode_index": 11,
+        "momentum_k": 3.455751918948772,
+        "alpha_re": -22.62768332424719,
+        "alpha_im": 5.538185474332631,
+        "beta_re": 23.266242400515512,
+        "beta_im": -0.6045788046048384,
+        "particle_number": 541.6835509705232,
+        "squeezing_param": 3.840949373772104,
+        "power_spectrum": 0.04034194981915091,
+        "unitarity_error": 0.0
+      },
+      {
+        "mode_index": 12,
+        "momentum_k": 3.7699111843077517,
+        "alpha_re": -18.95636979177446,
+        "alpha_im": 4.71744204892844,
+        "beta_re": 17.60283309837983,
+        "beta_im": -8.410617223371958,
+        "particle_number": 380.5982151674974,
+        "squeezing_param": 3.6646755276417124,
+        "power_spectrum": 0.03949562711269521,
+        "unitarity_error": 0.0
+      },
+      {
+        "mode_index": 13,
+        "momentum_k": 4.084070449666731,
+        "alpha_re": -15.928099558341515,
+        "alpha_im": 4.221013381942383,
+        "beta_re": 10.424399564250358,
+        "beta_im": -12.72215403286066,
+        "particle_number": 270.5213095109758,
+        "squeezing_param": 3.494245480449741,
+        "power_spectrum": 0.03820563225673853,
+        "unitarity_error": 0.0
+      },
+      {
+        "mode_index": 14,
+        "momentum_k": 4.39822971502571,
+        "alpha_re": -13.459825337091436,
+        "alpha_im": 3.950824410149271,
+        "beta_re": 3.1936844010713106,
+        "beta_im": -13.622638935653903,
+        "particle_number": 195.77591162483992,
+        "squeezing_param": 3.3329070602322357,
+        "power_spectrum": 0.03686803805622586,
+        "unitarity_error": 0.0
+      },
+      {
+        "mode_index": 15,
+        "momentum_k": 4.71238898038469,
+        "alpha_re": -11.470291272375205,
+        "alpha_im": 3.821746381872387,
+        "beta_re": -2.8726543326403418,
+        "beta_im": -11.701332589309825,
+        "particle_number": 145.1733272804815,
+        "squeezing_param": 3.183829023145868,
+        "power_spectrum": 0.03580467187316864,
+        "unitarity_error": 2.842170943040401e-14
+      },
+      {
+        "mode_index": 16,
+        "momentum_k": 5.026548245743669,
+        "alpha_re": -9.879782110899175,
+        "alpha_im": 3.765549782590706,
+        "beta_re": -6.9603733232541165,
+        "beta_im": -7.895737009611242,
+        "particle_number": 110.78945972401223,
+        "squeezing_param": 3.0492119335501693,
+        "power_spectrum": 0.03522071900325997,
+        "unitarity_error": 4.263256414560601e-14
+      }
+    ]
+  },
+  "final_horizon": {
+    "cosmic_time": 2.5,
+    "scale_factor": 20.085536923187668,
+    "comoving_horizon_radius": 0.04148922363988662,
+    "physical_horizon_area": 8.726646259971648,
+    "sub_horizon_modes_count": 0,
+    "super_horizon_modes_count": 16,
+    "total_entanglement_entropy": 132.6816114761242,
+    "entropy_to_area_ratio": 15.20419271315293
+  },
+  "max_unitarity_error": 9.094947017729282e-13,
+  "total_particles_created": 88761.79048846332,
+  "peak_entanglement_entropy": 132.68161147612466
+}

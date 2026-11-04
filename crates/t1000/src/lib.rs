@@ -91,6 +91,13 @@ pub mod vqe;
 pub mod zinc;
 pub use zinc::*;
 pub mod zipper;
+pub mod cosmology;
+pub use cosmology::{
+    compute_mode_bogoliubov, evaluate_horizon_entanglement, mode_entanglement_entropy,
+    BogoliubovModeReport, CosmicParticleSpectrum, CosmologicalEpochSnapshot, CosmologicalMetric,
+    CosmologicalSimulationReport, CosmologyConfig, CosmologyEngine, DiscretizedQuantumField,
+    ExpansionProfile, HorizonEntanglementReport, QuantumFieldMode,
+};
 pub mod wormhole;
 pub use wormhole::{
     bell_fidelity, evaluate_holographic_qec, ErasurePartition, HolographicQecReport,

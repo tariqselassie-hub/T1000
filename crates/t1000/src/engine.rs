@@ -67,6 +67,7 @@ pub struct SystemManifestReport {
     pub multi_photon_fock: bool,
     pub vqe_adapt_solver: bool,
     pub holographic_wormhole: bool,
+    pub cosmological_simulator: bool,
     pub available_backends: Vec<crate::backend::BackendKind>,
 }
 
@@ -407,6 +408,7 @@ impl T1000Engine {
             multi_photon_fock: true,
             vqe_adapt_solver: true,
             holographic_wormhole: true,
+            cosmological_simulator: true,
             available_backends: Self::available_backends(),
         }
     }
@@ -543,6 +545,19 @@ impl T1000Engine {
             coupling_g,
         )
     }
+
+    // =========================================================================
+    // 11. Quantum Universe & Cosmological Spacetime Simulator
+    // =========================================================================
+
+    /// Simulates microscopic quantum field evolution on dynamic expanding FLRW geometries.
+    pub fn simulate_cosmology(
+        &self,
+        config: crate::cosmology::CosmologyConfig,
+    ) -> crate::cosmology::CosmologicalSimulationReport {
+        let mut engine = crate::cosmology::CosmologyEngine::new(config);
+        engine.run_simulation()
+    }
 }
 
 #[cfg(test)]
@@ -578,6 +593,26 @@ mod tests {
         };
         let pt = engine.simulate_holographic_wormhole(config, 1.5);
         assert!(pt.fidelity > 0.0);
+    }
+
+    #[test]
+    fn test_master_engine_cosmology() {
+        let engine = T1000Engine::new();
+        let manifest = engine.system_manifest();
+        assert!(manifest.cosmological_simulator);
+
+        let config = crate::cosmology::CosmologyConfig {
+            profile: crate::cosmology::ExpansionProfile::DeSitter,
+            hubble_rate: 1.0,
+            field_mass: 0.1,
+            num_modes: 6,
+            box_length: 15.0,
+            t_initial: 0.0,
+            t_final: 1.0,
+            time_steps: 20,
+        };
+        let rep = engine.simulate_cosmology(config);
+        assert!(rep.final_spectrum.scale_factor > 1.0);
     }
 
     #[test]

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
+<!-- Copyright (c) 2026 Terrence A. Jones SR. All rights reserved. -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>T-1000 // Quantum Universe &amp; Cosmological Spacetime Simulator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Top Sovereign Reticle Header -->
+    <header class="cosmic-header">
+        <div class="brand-section">
+            <div class="brand-title">T-1000 <span>//</span> COSMOS</div>
+            <span class="badge-sovereign">QUANTUM SPACETIME EMERGENCE</span>
+        </div>
+        <div class="telemetry-strip">
+            <div class="telemetry-item">
+                <span class="label">METRIC:</span>
+                <span id="tel-profile" class="val">DE SITTER (INFLATION)</span>
+            </div>
+            <div class="telemetry-item">
+                <span class="label">SCALE a(t):</span>
+                <span id="tel-scale" class="val-gold val">1.000</span>
+            </div>
+            <div class="telemetry-item">
+                <span class="label">HUBBLE H:</span>
+                <span id="tel-hubble" class="val">1.200</span>
+            </div>
+            <div class="telemetry-item">
+                <span class="label">PARTICLES N:</span>
+                <span id="tel-particles" class="val">0.00</span>
+            </div>
+            <div class="telemetry-item">
+                <span class="label">ENTROPY S:</span>
+                <span id="tel-entropy" class="val-gold val">0.00</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Viewport Layout -->
+    <main class="cosmic-viewport">
+        <!-- Control Deck Sidebar -->
+        <aside class="control-deck">
+            <div class="section-title">Cosmological Parameters</div>
+
+            <div class="control-group">
+                <label for="select-profile">Expansion Profile</label>
+                <select id="select-profile">
+                    <option value="desitter" selected>de Sitter Inflation (a ~ e^Ht)</option>
+                    <option value="radiation">Radiation-Dominated (a ~ t^1/2)</option>
+                    <option value="matter">Matter-Dominated (a ~ t^2/3)</option>
+                    <option value="bounce">Non-Singular Bounce</option>
+                    <option value="minkowski">Static Flat Minkowski</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="input-hubble">
+                    <span>Hubble Expansion Rate (H)</span>
+                    <span id="disp-hubble" class="val-display">1.20</span>
+                </label>
+                <input type="range" id="input-hubble" min="0.1" max="2.5" step="0.05" value="1.20">
+            </div>
+
+            <div class="control-group">
+                <label for="input-mass">
+                    <span>Scalar Field Mass (m)</span>
+                    <span id="disp-mass" class="val-display">0.10</span>
+                </label>
+                <input type="range" id="input-mass" min="0.0" max="0.5" step="0.02" value="0.10">
+            </div>
+
+            <div class="control-group">
+                <label for="input-modes">
+                    <span>Spatial Resolution</span>
+                    <span id="disp-modes" class="val-display">16 modes</span>
+                </label>
+                <input type="range" id="input-modes" min="8" max="32" step="4" value="16">
+            </div>
+
+            <div class="control-group">
+                <label for="input-duration">
+                    <span>Cosmic Duration (t_max)</span>
+                    <span id="disp-duration" class="val-display">2.50</span>
+                </label>
+                <input type="range" id="input-duration" min="1.0" max="4.0" step="0.25" value="2.50">
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button id="btn-run" class="btn-primary" style="flex:1;">RUN EVOLUTION</button>
+                <button id="btn-reset" class="btn-secondary">RESET</button>
+            </div>
+
+            <div class="section-title" style="margin-top:14px;">Cosmological Invariants</div>
+            <table class="matrix-table">
+                <tr>
+                    <td style="color:var(--text-slate);">Gibbons-Hawking Temp:</td>
+                    <td id="disp-gh-temp" style="color:var(--hardware-gold); text-align:right;">0.1910</td>
+                </tr>
+                <tr>
+                    <td style="color:var(--text-slate);">Comoving Horizon (r_c):</td>
+                    <td id="disp-horizon-rc" style="color:var(--quantum-green); text-align:right;">0.0415</td>
+                </tr>
+                <tr>
+                    <td style="color:var(--text-slate);">Super-Horizon Modes:</td>
+                    <td id="disp-super-modes" style="color:var(--alert-red); text-align:right;">16 / 16</td>
+                </tr>
+                <tr>
+                    <td style="color:var(--text-slate);">Symplectic Wronskian Err:</td>
+                    <td id="disp-wronskian-err" style="color:var(--quantum-green); text-align:right;">&lt; 1e-12</td>
+                </tr>
+            </table>
+
+            <div style="margin-top:auto;">
+                <button id="btn-load-recorded" class="btn-secondary" style="width:100%;">LOAD RECORDED DISK TELEMETRY</button>
+            </div>
+        </aside>
+
+        <!-- Visual Canvases Grid (4 Panels) -->
+        <section class="visual-grid">
+            <!-- Panel 1: Metric Scale Factor & Horizon Dynamics -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <span class="chart-title">1. Cosmic Expansion &amp; Hubble Horizon r_H(t)</span>
+                    <span class="chart-tag">FLRW METRIC</span>
+                </div>
+                <div class="canvas-container">
+                    <canvas id="canvas-metric"></canvas>
+                </div>
+            </div>
+
+            <!-- Panel 2: Created Particle Spectrum n_k (Bogoliubov Density) -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <span class="chart-title">2. Bogoliubov Created Particle Density n_k = |&beta;_k|&sup2;</span>
+                    <span class="chart-tag">QUANTUM VACUUM</span>
+                </div>
+                <div class="canvas-container">
+                    <canvas id="canvas-particles"></canvas>
+                </div>
+            </div>
+
+            <!-- Panel 3: Primordial Perturbation Power Spectrum P(k) -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <span class="chart-title">3. Primordial Power Spectrum P(k) (CMB Seeds)</span>
+                    <span class="chart-tag">HARRISON-ZELDOVICH</span>
+                </div>
+                <div class="canvas-container">
+                    <canvas id="canvas-spectrum"></canvas>
+                </div>
+            </div>
+
+            <!-- Panel 4: Cosmological Entanglement Horizon & Area Law -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <span class="chart-title">4. Horizon Entanglement Entropy S_vN vs. Area</span>
+                    <span class="chart-tag">HOLOGRAPHIC AREA LAW</span>
+                </div>
+                <div class="canvas-container">
+                    <canvas id="canvas-entropy"></canvas>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer Status -->
+    <footer class="cosmic-footer">
+        <div>T-1000 Autonomous Quantum Cosmology Engine // Sovereign Architecture</div>
+        <div id="footer-status" style="color:var(--quantum-green);">READY // BUNCH-DAVIES VACUUM INITIALIZED</div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>

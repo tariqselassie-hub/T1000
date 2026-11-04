@@ -1,0 +1,284 @@
+/* SPDX-License-Identifier: MIT OR Apache-2.0 */
+/* Copyright (c) 2026 Terrence A. Jones SR. All rights reserved. */
+
+/* Deen OS Sovereign Visual Specification */
+:root {
+    --bg-root: #05080d;
+    --bg-card: #0f172a;
+    --bg-card-sub: #111827;
+    --quantum-green: #00e676;
+    --quantum-green-glow: rgba(0, 230, 118, 0.2);
+    --hardware-gold: #ffb300;
+    --alert-red: #ef4444;
+    --grid-slate: #1e293b;
+    --grid-slate-light: #334155;
+    --text-white: #f8fafc;
+    --text-slate: #94a3b8;
+    --text-dim: #64748b;
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg-root);
+    color: var(--text-white);
+    font-family: var(--font-sans);
+    line-height: 1.5;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header & Sovereign Reticle Telemetry */
+header.cosmic-header {
+    background-color: var(--bg-card);
+    border-bottom: 1px solid var(--grid-slate);
+    padding: 14px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.brand-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-title {
+    font-size: 18px;
+    font-weight: 800;
+    font-family: var(--font-mono);
+    color: var(--text-white);
+    letter-spacing: 1.5px;
+}
+
+.brand-title span {
+    color: var(--quantum-green);
+}
+
+.badge-sovereign {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 3px;
+    background: rgba(0, 230, 118, 0.1);
+    color: var(--quantum-green);
+    border: 1px solid rgba(0, 230, 118, 0.4);
+    letter-spacing: 1px;
+}
+
+.telemetry-strip {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+}
+
+.telemetry-item {
+    display: flex;
+    gap: 6px;
+}
+
+.telemetry-item .label {
+    color: var(--text-slate);
+}
+
+.telemetry-item .val {
+    color: var(--quantum-green);
+    font-weight: 600;
+}
+
+.telemetry-item .val.gold {
+    color: var(--hardware-gold);
+}
+
+/* Main Layout Grid */
+main.cosmic-viewport {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 18px;
+    padding: 18px 24px;
+    flex: 1;
+}
+
+/* Sidebar Controls Panel */
+aside.control-deck {
+    background-color: var(--bg-card);
+    border: 1px solid var(--grid-slate);
+    border-radius: 4px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.section-title {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--hardware-gold);
+    border-bottom: 1px solid var(--grid-slate);
+    padding-bottom: 6px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.control-group label {
+    font-size: 12px;
+    color: var(--text-slate);
+    display: flex;
+    justify-content: space-between;
+}
+
+.control-group label span.val-display {
+    color: var(--quantum-green);
+    font-family: var(--font-mono);
+}
+
+select, input[type="range"] {
+    width: 100%;
+    background-color: var(--bg-root);
+    border: 1px solid var(--grid-slate);
+    color: var(--text-white);
+    padding: 8px 10px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+}
+
+select:focus {
+    outline: none;
+    border-color: var(--quantum-green);
+}
+
+.btn-primary {
+    background-color: var(--quantum-green);
+    color: var(--bg-root);
+    border: none;
+    padding: 10px 16px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 1px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.btn-primary:hover {
+    background-color: #00ff88;
+}
+
+.btn-secondary {
+    background-color: transparent;
+    color: var(--text-white);
+    border: 1px solid var(--grid-slate);
+    padding: 8px 14px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-secondary:hover {
+    border-color: var(--hardware-gold);
+    color: var(--hardware-gold);
+}
+
+/* Visualization Canvases Grid (2x2) */
+section.visual-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 16px;
+}
+
+.chart-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--grid-slate);
+    border-radius: 4px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.chart-title {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-white);
+    letter-spacing: 0.5px;
+}
+
+.chart-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--quantum-green);
+}
+
+.canvas-container {
+    flex: 1;
+    position: relative;
+    min-height: 220px;
+}
+
+canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* Monospace Readout Tables */
+.matrix-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-mono);
+    font-size: 11px;
+}
+
+.matrix-table th {
+    text-align: left;
+    color: var(--text-slate);
+    border-bottom: 1px solid var(--grid-slate);
+    padding: 6px 8px;
+    font-weight: 600;
+}
+
+.matrix-table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid rgba(30, 41, 59, 0.4);
+}
+
+/* Footer Status Bar */
+footer.cosmic-footer {
+    background-color: var(--bg-card);
+    border-top: 1px solid var(--grid-slate);
+    padding: 8px 24px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-slate);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
