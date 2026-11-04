@@ -118,49 +118,110 @@
             </div>
         </aside>
 
-        <!-- Visual Canvases Grid (4 Panels) -->
-        <section class="visual-grid">
-            <!-- Panel 1: Metric Scale Factor & Horizon Dynamics -->
-            <div class="chart-card">
-                <div class="chart-header">
-                    <span class="chart-title">1. Cosmic Expansion &amp; Hubble Horizon r_H(t)</span>
-                    <span class="chart-tag">FLRW METRIC</span>
+        <!-- Primary Visualization Deck -->
+        <section class="display-deck">
+            <!-- View Mode Switcher Toolbar -->
+            <div class="view-mode-bar">
+                <div class="tab-group">
+                    <button id="tab-macro" class="tab-btn active">MACRO COSMIC OBSERVATORY</button>
+                    <button id="tab-split" class="tab-btn">DUAL SPLIT VIEW</button>
+                    <button id="tab-telemetry" class="tab-btn">QUANTUM TELEMETRY GRIDS</button>
                 </div>
-                <div class="canvas-container">
-                    <canvas id="canvas-metric"></canvas>
-                </div>
-            </div>
-
-            <!-- Panel 2: Created Particle Spectrum n_k (Bogoliubov Density) -->
-            <div class="chart-card">
-                <div class="chart-header">
-                    <span class="chart-title">2. Bogoliubov Created Particle Density n_k = |&beta;_k|&sup2;</span>
-                    <span class="chart-tag">QUANTUM VACUUM</span>
-                </div>
-                <div class="canvas-container">
-                    <canvas id="canvas-particles"></canvas>
+                <div class="macro-hud-compact">
+                    <span>EPOCH: <strong id="hud-epoch">t = 2.50 Gy</strong></span>
+                    <span>SCALE: <strong id="hud-scale" style="color:var(--hardware-gold);">a = 20.09</strong></span>
+                    <span>HORIZON: <strong id="hud-horizon" style="color:var(--alert-red);">R_H = 16.7 Mpc</strong></span>
                 </div>
             </div>
 
-            <!-- Panel 3: Primordial Perturbation Power Spectrum P(k) -->
-            <div class="chart-card">
-                <div class="chart-header">
-                    <span class="chart-title">3. Primordial Power Spectrum P(k) (CMB Seeds)</span>
-                    <span class="chart-tag">HARRISON-ZELDOVICH</span>
+            <!-- Macro Universe Hero Viewport Card -->
+            <div id="panel-macro-cosmos" class="macro-viewport-card">
+                <div class="macro-header">
+                    <div class="macro-title-group">
+                        <span class="macro-title">3D Macroscopic Cosmic Web &amp; Horizon Sphere</span>
+                        <span class="macro-tag">ZEL'DOVICH CAUSTICS // SPHERICAL COLLAPSE</span>
+                    </div>
+                    <div class="macro-controls">
+                        <button id="btn-macro-play" class="btn-macro">PLAY EVOLUTION</button>
+                        <div class="scrubber-group">
+                            <span style="font-size:10px; color:var(--text-slate);">TIMELINE:</span>
+                            <input type="range" id="input-timeline" min="0" max="100" value="100" style="width:130px;">
+                        </div>
+                        <select id="select-macro-mode" style="width:auto; padding:4px 8px; font-size:11px;">
+                            <option value="cosmic-web" selected>3D Cosmic Web (Filaments &amp; Clusters)</option>
+                            <option value="density-slice">2D Density Field Slice δ(x, y)</option>
+                            <option value="horizon-bubble">Expanding Spacetime Horizon Bubble</option>
+                        </select>
+                        <button id="btn-macro-reset-cam" class="btn-macro-secondary">RESET CAMERA</button>
+                    </div>
                 </div>
-                <div class="canvas-container">
-                    <canvas id="canvas-spectrum"></canvas>
+
+                <div class="macro-canvas-container">
+                    <canvas id="canvas-macro-cosmos"></canvas>
+                    <div class="macro-overlay-stats">
+                        <div class="overlay-stat-row">
+                            <span class="dot emerald"></span> FILAMENT BRIDGES: <strong id="stat-filaments">142</strong>
+                        </div>
+                        <div class="overlay-stat-row">
+                            <span class="dot gold"></span> VIRIALIZED HALOS (δ > 1.686): <strong id="stat-clusters">18</strong>
+                        </div>
+                        <div class="overlay-stat-row">
+                            <span class="dot red"></span> CAUSAL HORIZON EXIT: <strong id="stat-super-modes">16 / 16 MODES</strong>
+                        </div>
+                        <div class="overlay-stat-row">
+                            <span class="dot slate"></span> VOID VOLUME FRACTION: <strong id="stat-voids">48.2%</strong>
+                        </div>
+                        <div class="overlay-hint">
+                            [DRAG TO ROTATE 3D // SCROLL TO ZOOM]
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Panel 4: Cosmological Entanglement Horizon & Area Law -->
-            <div class="chart-card">
-                <div class="chart-header">
-                    <span class="chart-title">4. Horizon Entanglement Entropy S_vN vs. Area</span>
-                    <span class="chart-tag">HOLOGRAPHIC AREA LAW</span>
+            <!-- Visual Canvases Grid (4 Panels) -->
+            <div id="panel-telemetry-grid" class="visual-grid">
+                <!-- Panel 1: Metric Scale Factor & Horizon Dynamics -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <span class="chart-title">1. Cosmic Expansion &amp; Hubble Horizon r_H(t)</span>
+                        <span class="chart-tag">FLRW METRIC</span>
+                    </div>
+                    <div class="canvas-container">
+                        <canvas id="canvas-metric"></canvas>
+                    </div>
                 </div>
-                <div class="canvas-container">
-                    <canvas id="canvas-entropy"></canvas>
+
+                <!-- Panel 2: Created Particle Spectrum n_k (Bogoliubov Density) -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <span class="chart-title">2. Bogoliubov Created Particle Density n_k = |&beta;_k|&sup2;</span>
+                        <span class="chart-tag">QUANTUM VACUUM</span>
+                    </div>
+                    <div class="canvas-container">
+                        <canvas id="canvas-particles"></canvas>
+                    </div>
+                </div>
+
+                <!-- Panel 3: Primordial Perturbation Power Spectrum P(k) -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <span class="chart-title">3. Primordial Power Spectrum P(k) (CMB Seeds)</span>
+                        <span class="chart-tag">HARRISON-ZELDOVICH</span>
+                    </div>
+                    <div class="canvas-container">
+                        <canvas id="canvas-spectrum"></canvas>
+                    </div>
+                </div>
+
+                <!-- Panel 4: Cosmological Entanglement Horizon & Area Law -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <span class="chart-title">4. Horizon Entanglement Entropy S_vN vs. Area</span>
+                        <span class="chart-tag">HOLOGRAPHIC AREA LAW</span>
+                    </div>
+                    <div class="canvas-container">
+                        <canvas id="canvas-entropy"></canvas>
+                    </div>
                 </div>
             </div>
         </section>
@@ -175,3 +236,4 @@
     <script src="app.js"></script>
 </body>
 </html>
+

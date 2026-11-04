@@ -143,3 +143,4 @@ impl CosmologicalMetric {
         k < self.conformal_hubble(t)
     }
 }
+

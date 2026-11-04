@@ -15,6 +15,7 @@ pub mod field;
 pub mod horizon;
 pub mod metric;
 pub mod simulation;
+pub mod structure;
 
 pub use bogoliubov::{
     compute_mode_bogoliubov, BogoliubovModeReport, CosmicParticleSpectrum,
@@ -27,3 +28,8 @@ pub use metric::{CosmologicalMetric, ExpansionProfile};
 pub use simulation::{
     CosmologicalEpochSnapshot, CosmologicalSimulationReport, CosmologyConfig, CosmologyEngine,
 };
+pub use structure::{
+    CosmicFilament, CosmicStructureSnapshot, CosmicWebNode, MacroStructureType,
+    ZeldovichStructureEngine,
+};
+

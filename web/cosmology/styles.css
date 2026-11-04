@@ -199,8 +199,232 @@ select:focus {
     color: var(--hardware-gold);
 }
 
+/* Primary Display Deck & View Switching */
+.display-deck {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    flex: 1;
+}
+
+.view-mode-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--bg-card);
+    border: 1px solid var(--grid-slate);
+    border-radius: 4px;
+    padding: 8px 14px;
+}
+
+.tab-group {
+    display: flex;
+    gap: 8px;
+}
+
+.tab-btn {
+    background-color: transparent;
+    color: var(--text-slate);
+    border: 1px solid var(--grid-slate);
+    padding: 6px 14px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.tab-btn:hover {
+    color: var(--text-white);
+    border-color: var(--grid-slate-light);
+}
+
+.tab-btn.active {
+    background: rgba(0, 230, 118, 0.12);
+    color: var(--quantum-green);
+    border-color: var(--quantum-green);
+    box-shadow: 0 0 8px rgba(0, 230, 118, 0.25);
+}
+
+.macro-hud-compact {
+    display: flex;
+    gap: 18px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-slate);
+}
+
+/* Macro Universe Hero Viewport Card */
+.macro-viewport-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--grid-slate);
+    border-radius: 4px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+}
+
+.macro-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.macro-title-group {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.macro-title {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-white);
+    letter-spacing: 0.5px;
+}
+
+.macro-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--hardware-gold);
+}
+
+.macro-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-macro {
+    background-color: var(--quantum-green);
+    color: var(--bg-root);
+    border: none;
+    padding: 6px 12px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.btn-macro:hover {
+    background-color: #00ff88;
+}
+
+.btn-macro.playing {
+    background-color: var(--hardware-gold);
+}
+
+.btn-macro-secondary {
+    background-color: transparent;
+    color: var(--text-slate);
+    border: 1px solid var(--grid-slate);
+    padding: 6px 10px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.btn-macro-secondary:hover {
+    color: var(--text-white);
+    border-color: var(--text-slate);
+}
+
+.scrubber-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+}
+
+.macro-canvas-container {
+    position: relative;
+    width: 100%;
+    height: 480px;
+    background-color: var(--bg-root);
+    border: 1px solid var(--grid-slate);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.macro-canvas-container canvas {
+    cursor: grab;
+}
+
+.macro-canvas-container canvas:active {
+    cursor: grabbing;
+}
+
+.macro-overlay-stats {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: rgba(5, 8, 13, 0.85);
+    border: 1px solid rgba(30, 41, 59, 0.8);
+    backdrop-filter: blur(4px);
+    border-radius: 3px;
+    padding: 10px 14px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    pointer-events: none;
+}
+
+.overlay-stat-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-slate);
+}
+
+.overlay-stat-row strong {
+    color: var(--text-white);
+}
+
+.dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.dot.emerald {
+    background-color: var(--quantum-green);
+    box-shadow: 0 0 6px var(--quantum-green);
+}
+
+.dot.gold {
+    background-color: var(--hardware-gold);
+    box-shadow: 0 0 6px var(--hardware-gold);
+}
+
+.dot.red {
+    background-color: var(--alert-red);
+    box-shadow: 0 0 6px var(--alert-red);
+}
+
+.dot.slate {
+    background-color: var(--text-slate);
+}
+
+.overlay-hint {
+    margin-top: 4px;
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 0.5px;
+}
+
 /* Visualization Canvases Grid (2x2) */
-section.visual-grid {
+.visual-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: 1fr 1fr;
@@ -282,3 +506,4 @@ footer.cosmic-footer {
     justify-content: space-between;
     align-items: center;
 }
+

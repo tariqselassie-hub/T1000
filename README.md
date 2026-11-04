@@ -356,8 +356,11 @@ cargo run --release -p t1000 --bin holographic_wormhole_bench -- --record
 * **Bogoliubov Vacuum Particle Creation:** Evaluates time-dependent Bogoliubov coefficients $\alpha_k(t), \beta_k(t)$, simulating gravitational vacuum pair production ($N_k = |\beta_k|^2$) during cosmic expansion.
 * **Primordial Perturbation Power Spectrum:** Tracks mode freezing beyond the cosmological event horizon ($k < aH$), converging to the scale-invariant Harrison-Zeldovich spectrum $\mathcal{P}(k) \to (H / 2\pi)^2$ observed in the CMB.
 * **Cosmological Entanglement Horizon & Area Law:** Computes von Neumann entanglement entropy $S_{\text{vN}}(t)$ across expanding spatial bipartitions, demonstrating holographic Area Law scaling ($S_{\text{vN}} \propto \text{Area}$) and horizon thermalization at the Gibbons-Hawking temperature $T_{\text{GH}} = H / (2\pi)$.
-* **Dedicated Standalone Dashboard:** Operates completely decoupled from the main lab bench at `web/cosmology/index.html` with real-time interactive canvas visualization.
-* Detailed Documentation & 4-Panel Telemetry: [`results/charts/universe_cosmology_telemetry.png`](results/charts/universe_cosmology_telemetry.png).
+* **Macroscopic Cosmic Web & Zel'dovich Structure Formation:** Models linear growth $D(t)$ and caustic gravitational collapse along tidal filaments connecting virialized halos ($\delta > \delta_c = 1.686$) across expanding cosmic voids.
+* **Dedicated Standalone Dashboard & 3D Observatory:** Operates completely decoupled from the main lab bench at `web/cosmology/index.html` with interactive 3D orbital camera drag, timeline evolution scrubber, 2D density slice mode, and real-time quantum telemetry.
+* Detailed Documentation & Telemetry:
+  - Macro Cosmic Web: [`results/charts/macro_universe_cosmic_web.png`](results/charts/macro_universe_cosmic_web.png)
+  - Quantum Telemetry: [`results/charts/universe_cosmology_telemetry.png`](results/charts/universe_cosmology_telemetry.png)
 
 
 ## System Startup & Execution Guide

@@ -11,6 +11,7 @@ use super::bogoliubov::CosmicParticleSpectrum;
 use super::field::DiscretizedQuantumField;
 use super::horizon::{evaluate_horizon_entanglement, HorizonEntanglementReport};
 use super::metric::{CosmologicalMetric, ExpansionProfile};
+use super::structure::{CosmicStructureSnapshot, ZeldovichStructureEngine};
 use serde::{Deserialize, Serialize};
 
 /// Configuration for the quantum cosmological simulation.
@@ -63,6 +64,7 @@ pub struct CosmologicalSimulationReport {
     pub max_unitarity_error: f64,
     pub total_particles_created: f64,
     pub peak_entanglement_entropy: f64,
+    pub macro_structure: Option<CosmicStructureSnapshot>,
 }
 
 /// The sovereign Quantum Universe Simulator.
@@ -165,6 +167,15 @@ impl CosmologyEngine {
             .map(|e| e.horizon_entanglement_entropy)
             .fold(0.0_f64, f64::max);
 
+        // Generate macroscopic cosmic structure snapshot from primordial power spectrum
+        let power_levels: Vec<f64> = final_spectrum
+            .mode_reports
+            .iter()
+            .map(|m| m.power_spectrum)
+            .collect();
+        let zeldovich = ZeldovichStructureEngine::new(96, self.config.box_length, &power_levels);
+        let macro_struct = zeldovich.snapshot(final_t, final_a, final_h);
+
         CosmologicalSimulationReport {
             config: self.config.clone(),
             epochs,
@@ -173,6 +184,7 @@ impl CosmologyEngine {
             max_unitarity_error: max_u_err,
             total_particles_created: total_particles,
             peak_entanglement_entropy: peak_entropy,
+            macro_structure: Some(macro_struct),
         }
     }
 }

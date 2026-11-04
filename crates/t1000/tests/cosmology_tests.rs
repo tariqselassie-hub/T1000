@@ -153,3 +153,39 @@ fn test_bouncing_cosmology_evolution() {
     assert!(report.max_unitarity_error < 1e-4);
     assert!(report.final_spectrum.scale_factor > 1.0);
 }
+
+#[test]
+fn test_zeldovich_cosmic_web_structure_formation() {
+    let config = CosmologyConfig {
+        profile: ExpansionProfile::DeSitter,
+        hubble_rate: 1.2,
+        field_mass: 0.1,
+        num_modes: 16,
+        box_length: 20.0,
+        t_initial: 0.0,
+        t_final: 2.5,
+        time_steps: 60,
+    };
+
+    let mut engine = CosmologyEngine::new(config);
+    let report = engine.run_simulation();
+
+    let macro_struct = report
+        .macro_structure
+        .expect("Simulation report must generate macroscopic structure snapshot");
+
+    println!(
+        "Macro cosmic structure: nodes={}, filaments={}, clusters={}, void_fraction={:.2}%, horizon_r={:.2}",
+        macro_struct.nodes.len(),
+        macro_struct.filament_count,
+        macro_struct.cluster_count,
+        macro_struct.void_fraction * 100.0,
+        macro_struct.hubble_horizon_radius
+    );
+
+    assert_eq!(macro_struct.nodes.len(), 96, "Expected 96 cosmic web tracer nodes");
+    assert!(macro_struct.filament_count > 0, "Must form cosmic web filament bridges");
+    assert!(macro_struct.cluster_count > 0, "Must collapse virialized halos (delta > 1.686)");
+    assert!(macro_struct.hubble_horizon_radius > 0.0, "Horizon radius must be positive");
+}
+

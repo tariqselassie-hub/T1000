@@ -110,3 +110,4 @@ fn main() {
     results::write(&out_path, &serialized).expect("Failed to write results");
     println!("\nCosmological telemetry recorded to: {}", out_path.display());
 }
+
