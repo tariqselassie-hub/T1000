@@ -67,6 +67,7 @@ pub struct GyroscopicReport {
 pub struct GyroscopicStabilizerEngine;
 
 impl GyroscopicStabilizerEngine {
+    /// Creates a new instance of the gyroscopic stabilizer engine.
     pub fn new() -> Self {
         Self
     }

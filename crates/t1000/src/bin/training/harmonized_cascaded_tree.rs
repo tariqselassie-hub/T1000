@@ -85,9 +85,9 @@ fn apply_cz(state: &mut [Complex64], q1: usize, q2: usize) {
 pub struct CascadedTreeSorter {
     pub cfg: CascadedTreeConfig,
     pub trunk_params: Vec<f64>,
-    /// Tier 2 QMUX: 4 branch unitaries [d_S][2] for wire 2
+    /// Tier 2 QMUX: 4 branch unitaries `[d_S][2]` for wire 2
     pub chapter_branch_params: Vec<[f64; 2]>,
-    /// Tier 3 QMUX: 8 branch unitaries [d_S * d_C][2] for wire 3
+    /// Tier 3 QMUX: 8 branch unitaries `[d_S * d_C][2]` for wire 3
     pub compliance_leaf_params: Vec<[f64; 2]>,
     pub cooling_couplings: [f64; 2],
 }

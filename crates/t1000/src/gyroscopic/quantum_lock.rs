@@ -30,6 +30,7 @@ pub struct QuantumLockEngine {
 }
 
 impl QuantumLockEngine {
+    /// Creates a new quantum phase-locking engine with specified noise parameters and coupling strength.
     pub fn new(noise_amp: f64, noise_freq: f64, coupling_g: f64) -> Self {
         Self {
             noise_amplitude_rad: noise_amp,
@@ -74,3 +75,4 @@ impl QuantumLockEngine {
         }
     }
 }
+

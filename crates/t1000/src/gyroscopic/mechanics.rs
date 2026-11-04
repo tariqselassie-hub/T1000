@@ -32,6 +32,7 @@ pub struct GyroMechanicsEngine {
 }
 
 impl GyroMechanicsEngine {
+    /// Creates a new gyroscopic mechanics engine with specified frequencies and noise amplitude.
     pub fn new(precession_freq: f64, noise_freq: f64, noise_amp: f64) -> Self {
         Self {
             precession_freq_rad_s: precession_freq,

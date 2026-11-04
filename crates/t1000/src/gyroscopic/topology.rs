@@ -17,19 +17,23 @@ pub struct Vector3D {
 }
 
 impl Vector3D {
+    /// Creates a new 3D vector with the given coordinates.
     pub const fn new(x: f64, y: f64, z: f64) -> Self {
         Self { x, y, z }
     }
 
+    /// Returns the origin zero vector (0, 0, 0).
     pub const fn zero() -> Self {
         Self { x: 0.0, y: 0.0, z: 0.0 }
     }
 
+    /// Computes the Euclidean norm (length) of the vector.
     #[inline]
     pub fn norm(&self) -> f64 {
         (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
     }
 
+    /// Computes the vector cross product: self x other.
     #[inline]
     pub fn cross(&self, other: &Self) -> Self {
         Self {
@@ -39,11 +43,13 @@ impl Vector3D {
         }
     }
 
+    /// Computes the Euclidean dot product: self . other.
     #[inline]
     pub fn dot(&self, other: &Self) -> f64 {
         self.x * other.x + self.y * other.y + self.z * other.z
     }
 
+    /// Scales the vector uniformly by scalar `s`.
     #[inline]
     pub fn scale(&self, s: f64) -> Self {
         Self {
@@ -53,6 +59,7 @@ impl Vector3D {
         }
     }
 
+    /// Adds another vector component-wise: self + other.
     #[inline]
     pub fn add(&self, other: &Self) -> Self {
         Self {
@@ -62,6 +69,7 @@ impl Vector3D {
         }
     }
 
+    /// Subtracts another vector component-wise: self - other.
     #[inline]
     pub fn sub(&self, other: &Self) -> Self {
         Self {
@@ -102,7 +110,7 @@ impl JackTopology {
         let r = arm_length;
         let cos30 = (30.0_f64).to_radians().cos();
         let sin30 = (30.0_f64).to_radians().sin();
-        let z_h = r * 0.81649658; // sqrt(2/3) for symmetric tetrahedral spread
+        let z_h = r * (2.0_f64 / 3.0).sqrt(); // sqrt(2/3) for symmetric tetrahedral spread
 
         let nodes = vec![
             JackNode {

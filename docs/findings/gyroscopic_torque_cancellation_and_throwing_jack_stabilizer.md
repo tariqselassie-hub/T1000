@@ -102,3 +102,4 @@ demonstrating complete isolation of the computational fulcrum from boundary nois
 - **Recorded Telemetry:** [`results/hosts/unknown-cpu/experiments/gyroscopic_stabilizer.json`](../../results/hosts/unknown-cpu/experiments/gyroscopic_stabilizer.json)
 - **Visual Chart (300 DPI):** [`results/charts/gyroscopic_stabilizer_manifold.png`](../../results/charts/gyroscopic_stabilizer_manifold.png)
 - **Archive HUD Deck [10]:** [`web/archive.html`](../../web/archive.html) (Deck `page-deck-gyro`)
+

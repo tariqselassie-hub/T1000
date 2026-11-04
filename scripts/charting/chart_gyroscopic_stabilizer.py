@@ -155,3 +155,4 @@ def plot_gyroscopic_stabilizer():
 
 if __name__ == "__main__":
     plot_gyroscopic_stabilizer()
+

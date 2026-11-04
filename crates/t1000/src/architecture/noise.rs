@@ -4,7 +4,7 @@
 //! # Physical Quantum Chip Noise Simulator
 //!
 //! Evaluates physical decoherence, Lindblad decay, gate infidelity, inter-chiplet seam penalties,
-//! and asymmetric readout errors parameterized by a [`QuantumChip`]'s calibrated [`ChipErrorProfile`].
+//! and asymmetric readout errors parameterized by a [`QuantumChip`]'s calibrated [`super::ChipErrorProfile`].
 
 use serde::{Deserialize, Serialize};
 use crate::device_noise::{apply_readout, depolarize, invert_readout, ReadoutError};

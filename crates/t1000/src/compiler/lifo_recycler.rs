@@ -237,7 +237,7 @@ mod tests {
         recycler.record_ancilla_gate(ancilla, cnot);
 
         // 3. Apply phase rotation on ancilla
-        let rz = CircuitOp::Rz { qubit: ancilla, theta: 0.785398 };
+        let rz = CircuitOp::Rz { qubit: ancilla, theta: std::f64::consts::FRAC_PI_4 };
         builder.dag.add_op(rz.clone());
         recycler.record_ancilla_gate(ancilla, rz);
 

@@ -37,9 +37,9 @@ pub struct ScramblingHamiltonian {
     pub scrambler_type: ScramblerType,
     pub num_qubits: usize,
     pub seed: u64,
-    /// Pairwise coupling constants [j][k] -> (Jx, Jy, Jz)
+    /// Pairwise coupling constants `[j][k]` -> (Jx, Jy, Jz)
     pub pairwise_couplings: Vec<((usize, usize), (f64, f64, f64))>,
-    /// Single-qubit local fields [j] -> hz
+    /// Single-qubit local fields `[j]` -> hz
     pub local_fields: Vec<f64>,
     /// 4-body SYK coupling tensors: ((i, j, k, l), J_ijkl)
     pub syk_couplings: Vec<((usize, usize, usize, usize), f64)>,
