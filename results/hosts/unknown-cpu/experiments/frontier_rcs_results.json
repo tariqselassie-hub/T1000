@@ -1,0 +1,267 @@
+{
+  "qubits": 18,
+  "depth": 36,
+  "total_states": 262144,
+  "reference": {
+    "name": "Scalar reference statevector (frontier_rcs.rs)",
+    "total_time_seconds": 0.2299253,
+    "gate_count": 1882,
+    "layers": []
+  },
+  "optimized": {
+    "name": "t1000 AVX2 + tiled kernels",
+    "total_time_seconds": 0.0190252,
+    "gate_count": 1882,
+    "layers": [
+      {
+        "layer": 1,
+        "latency_seconds": 0.0008792
+      },
+      {
+        "layer": 2,
+        "latency_seconds": 0.0003055
+      },
+      {
+        "layer": 3,
+        "latency_seconds": 0.0002955
+      },
+      {
+        "layer": 4,
+        "latency_seconds": 0.0003339
+      },
+      {
+        "layer": 5,
+        "latency_seconds": 0.0007108
+      },
+      {
+        "layer": 6,
+        "latency_seconds": 0.0003242
+      },
+      {
+        "layer": 7,
+        "latency_seconds": 0.0004969
+      },
+      {
+        "layer": 8,
+        "latency_seconds": 0.000624
+      },
+      {
+        "layer": 9,
+        "latency_seconds": 0.0005375
+      },
+      {
+        "layer": 10,
+        "latency_seconds": 0.0003394
+      },
+      {
+        "layer": 11,
+        "latency_seconds": 0.0003327
+      },
+      {
+        "layer": 12,
+        "latency_seconds": 0.0004174
+      },
+      {
+        "layer": 13,
+        "latency_seconds": 0.0008315
+      },
+      {
+        "layer": 14,
+        "latency_seconds": 0.0003341
+      },
+      {
+        "layer": 15,
+        "latency_seconds": 0.0004027
+      },
+      {
+        "layer": 16,
+        "latency_seconds": 0.0003046
+      },
+      {
+        "layer": 17,
+        "latency_seconds": 0.0004161
+      },
+      {
+        "layer": 18,
+        "latency_seconds": 0.0004252
+      },
+      {
+        "layer": 19,
+        "latency_seconds": 0.000277
+      },
+      {
+        "layer": 20,
+        "latency_seconds": 0.000569
+      },
+      {
+        "layer": 21,
+        "latency_seconds": 0.0004932
+      },
+      {
+        "layer": 22,
+        "latency_seconds": 0.000693
+      },
+      {
+        "layer": 23,
+        "latency_seconds": 0.0003039
+      },
+      {
+        "layer": 24,
+        "latency_seconds": 0.0003424
+      },
+      {
+        "layer": 25,
+        "latency_seconds": 0.0003563
+      },
+      {
+        "layer": 26,
+        "latency_seconds": 0.0003634
+      },
+      {
+        "layer": 27,
+        "latency_seconds": 0.0003755
+      },
+      {
+        "layer": 28,
+        "latency_seconds": 0.0003435
+      },
+      {
+        "layer": 29,
+        "latency_seconds": 0.0006357
+      },
+      {
+        "layer": 30,
+        "latency_seconds": 0.0003367
+      },
+      {
+        "layer": 31,
+        "latency_seconds": 0.000328
+      },
+      {
+        "layer": 32,
+        "latency_seconds": 0.0003478
+      },
+      {
+        "layer": 33,
+        "latency_seconds": 0.0005801
+      },
+      {
+        "layer": 34,
+        "latency_seconds": 0.0007122
+      },
+      {
+        "layer": 35,
+        "latency_seconds": 0.0005721
+      },
+      {
+        "layer": 36,
+        "latency_seconds": 0.000317
+      }
+    ]
+  },
+  "optimized_threads": 20,
+  "speedup_vs_reference": 12.085302651220488,
+  "agreement": {
+    "max_amplitude_error": 2.7613758807728467e-17,
+    "state_fidelity": 0.9999999999999554,
+    "total_variation_distance": 1.944703281346101e-15
+  },
+  "porter_thomas": {
+    "dim": 262144,
+    "exact_xeb": 1.0023028339839508,
+    "naive_xeb": 1.002295187049361,
+    "sum_p_sqr": 7.638149975011295e-6,
+    "expected_sum_p_sqr": 7.6293654275305656e-6,
+    "shannon_entropy": 12.053463586376552,
+    "entropy_deficit": 0.4231856637024638,
+    "expected_entropy_deficit": 0.4227824277510468,
+    "effective_participation_ratio": 130921.75504167436,
+    "expected_participation_ratio": 131072.5,
+    "ks_statistic": 0.0008739698604370849,
+    "ks_critical_value": 0.00265234375,
+    "passes_ks_test": true,
+    "is_porter_thomas_conforming": true
+  },
+  "top_bitstrings": [
+    [
+      "|000011001101011110>",
+      0.00004954196184191503
+    ],
+    [
+      "|001010010110010111>",
+      0.00004902099164061212
+    ],
+    [
+      "|111000110001001100>",
+      0.00004848093240273259
+    ],
+    [
+      "|100011111001001011>",
+      0.00004201517666311088
+    ],
+    [
+      "|110110111100011100>",
+      0.000041645179676481964
+    ]
+  ],
+  "gradients": {
+    "compare_qubits": 12,
+    "compare_depth": 4,
+    "compare_params": 96,
+    "adjoint_seconds": 0.0003844,
+    "parameter_shift_seconds": 0.0169421,
+    "max_abs_difference": 1.5265566588595902e-16,
+    "full_circuit_params": 1296,
+    "full_circuit_adjoint_seconds": 0.1199779
+  },
+  "variational_training": {
+    "epochs": 5,
+    "initial_loss": 0.49260977220476354,
+    "final_loss": 0.4266226042741012,
+    "total_training_seconds": 0.1697826,
+    "mean_epoch_seconds": 0.033956520000000004,
+    "scheduler_mode": "Parallel Work-Stealing Pool (20 Threads)",
+    "history": [
+      {
+        "epoch": 1,
+        "loss": 0.49260977220476354,
+        "gradient_norm": 0.038472192249424525,
+        "epoch_seconds": 0.0342128,
+        "active_threads": 20,
+        "scheduler_mode": "Parallel Work-Stealing Pool (20 Threads)"
+      },
+      {
+        "epoch": 2,
+        "loss": 0.47721567618389377,
+        "gradient_norm": 0.04251806305587115,
+        "epoch_seconds": 0.0342166,
+        "active_threads": 20,
+        "scheduler_mode": "Parallel Work-Stealing Pool (20 Threads)"
+      },
+      {
+        "epoch": 3,
+        "loss": 0.46195248599590716,
+        "gradient_norm": 0.048731419237399466,
+        "epoch_seconds": 0.0334322,
+        "active_threads": 20,
+        "scheduler_mode": "Parallel Work-Stealing Pool (20 Threads)"
+      },
+      {
+        "epoch": 4,
+        "loss": 0.44555743026521677,
+        "gradient_norm": 0.055697448354019526,
+        "epoch_seconds": 0.0327094,
+        "active_threads": 20,
+        "scheduler_mode": "Parallel Work-Stealing Pool (20 Threads)"
+      },
+      {
+        "epoch": 5,
+        "loss": 0.4266226042741012,
+        "gradient_norm": 0.06283465586271321,
+        "epoch_seconds": 0.0349906,
+        "active_threads": 20,
+        "scheduler_mode": "Parallel Work-Stealing Pool (20 Threads)"
+      }
+    ]
+  }
+}
