@@ -387,6 +387,10 @@ path = "src/bin/benchmarks/continuous_dynamics_bench.rs"
 name = "holographic_wormhole_bench"
 path = "src/bin/benchmarks/holographic_wormhole_bench.rs"
 
+[[bin]]
+name = "holographic_qec_bench"
+path = "src/bin/benchmarks/holographic_qec_bench.rs"
+
 
 
 

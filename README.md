@@ -346,7 +346,9 @@ cargo run --release -p t1000 --bin holographic_wormhole_bench -- --record
 * **Negative Energy Shockwave Coupling ($U(g)$):** Evaluates bilateral double-trace coupling $U(g) = \exp(i \frac{g}{N} \sum Z_L Z_R)$ where negative energy ($g > 0$) renders the throat traversable, while positive energy ($g < 0$) pinches the throat shut.
 * **Empirical Gravitational Sign Asymmetry ($\Delta \mathcal{F} = +0.0662$):** Demonstrates strict fidelity enhancement under negative energy ($\mathcal{F}(+1.5) = 0.2851$) versus contractive suppression under positive energy ($\mathcal{F}(-1.5) = 0.2190$) against the uncoupled noise floor ($\mathcal{F}(0) = 0.2500$).
 * **Teleportation by Size & OTOC Verification:** Decays out-of-time-order correlators from $1.0000$ down to $-0.0235$, confirming deep information thermalization, and tracks microscopic operator size winding $P(s)$.
-* Detailed Documentation & 4-Panel Telemetry: [`results/charts/holographic_wormhole_telemetry.png`](results/charts/holographic_wormhole_telemetry.png).
+* **Size-Winding Hamiltonian Learning (`SizeWindingOptimizer`):** Employs Simultaneous Perturbation Stochastic Approximation (SPSA) to overcome the generic chaotic phase randomization gap, doubling traversable teleportation fidelity from $\mathcal{F} = 0.2422$ to $\mathcal{F} = 0.4856$ (+100.52% boost).
+* **Almheiri-Dong-Harlow (ADH) Bulk Quantum Error Correction (`evaluate_holographic_qec`):** Models boundary qubit erasures to evaluate bulk reconstruction resilience; demonstrates open wormhole transmission up to 33.3% boundary loss with holographic code distance $d_{\text{holo}} = 2/3$ modes before entanglement wedge pinch-off at 66.7%.
+* Detailed Documentation & 4-Panel Telemetry: [`results/charts/holographic_wormhole_telemetry.png`](results/charts/holographic_wormhole_telemetry.png) and [`results/charts/holographic_qec_telemetry.png`](results/charts/holographic_qec_telemetry.png).
 
 
 ## System Startup & Execution Guide

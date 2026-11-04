@@ -93,8 +93,9 @@ pub use zinc::*;
 pub mod zipper;
 pub mod wormhole;
 pub use wormhole::{
-    bell_fidelity, HolographicWormholeEngine, ScramblerType, WormholeConfig, WormholeFidelityPoint,
-    WormholeSweepReport, WormholeWireMap,
+    bell_fidelity, evaluate_holographic_qec, ErasurePartition, HolographicQecReport,
+    HolographicWormholeEngine, OptimizerConfig, ScramblerType, SizeWindingOptimizer,
+    WormholeConfig, WormholeFidelityPoint, WormholeSweepReport, WormholeWireMap,
 };
 
 pub use cascaded_tree_valve::{

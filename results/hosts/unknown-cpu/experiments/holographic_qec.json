@@ -1,0 +1,450 @@
+{
+  "baseline_fidelity": 0.24216426300151583,
+  "optimized_fidelity": 0.48558082235189015,
+  "trajectory": [
+    {
+      "iteration": 0,
+      "fidelity": 0.24216426300151583,
+      "asymmetry": 0.0,
+      "objective": 0.24216426300151583
+    },
+    {
+      "iteration": 1,
+      "fidelity": 0.26411773263456084,
+      "asymmetry": 0.009801637792671625,
+      "objective": 0.2788201893235683
+    },
+    {
+      "iteration": 2,
+      "fidelity": 0.39611361129391726,
+      "asymmetry": 0.26274560259751617,
+      "objective": 0.7902320151901916
+    },
+    {
+      "iteration": 3,
+      "fidelity": 0.3409179594898654,
+      "asymmetry": 0.14551706348865517,
+      "objective": 0.5591935547228482
+    },
+    {
+      "iteration": 4,
+      "fidelity": 0.3649275380846495,
+      "asymmetry": 0.16216229996185622,
+      "objective": 0.6081709880274339
+    },
+    {
+      "iteration": 5,
+      "fidelity": 0.3938032412307879,
+      "asymmetry": 0.24140772203578675,
+      "objective": 0.755914824284468
+    },
+    {
+      "iteration": 6,
+      "fidelity": 0.4010312372559913,
+      "asymmetry": 0.25245420886738834,
+      "objective": 0.7797125505570739
+    },
+    {
+      "iteration": 7,
+      "fidelity": 0.4009683663149219,
+      "asymmetry": 0.25248940438166345,
+      "objective": 0.7797024728874171
+    },
+    {
+      "iteration": 8,
+      "fidelity": 0.4002487179858036,
+      "asymmetry": 0.2508795876322907,
+      "objective": 0.7765680994342397
+    },
+    {
+      "iteration": 9,
+      "fidelity": 0.39958034343809073,
+      "asymmetry": 0.26452695746837057,
+      "objective": 0.7963707796406465
+    },
+    {
+      "iteration": 10,
+      "fidelity": 0.39566263448141786,
+      "asymmetry": 0.25548595243260863,
+      "objective": 0.7788915631303308
+    },
+    {
+      "iteration": 11,
+      "fidelity": 0.39611658658911225,
+      "asymmetry": 0.2627850833853824,
+      "objective": 0.7902942116671858
+    },
+    {
+      "iteration": 12,
+      "fidelity": 0.3967837462829697,
+      "asymmetry": 0.26157601930987256,
+      "objective": 0.7891477752477785
+    },
+    {
+      "iteration": 13,
+      "fidelity": 0.40937183924348686,
+      "asymmetry": 0.27564694373914306,
+      "objective": 0.8228422548522014
+    },
+    {
+      "iteration": 14,
+      "fidelity": 0.4256592104134156,
+      "asymmetry": 0.30132103783340286,
+      "objective": 0.8776407671635199
+    },
+    {
+      "iteration": 15,
+      "fidelity": 0.4264200020348998,
+      "asymmetry": 0.3106515740623007,
+      "objective": 0.8923973631283508
+    },
+    {
+      "iteration": 16,
+      "fidelity": 0.43234041075825813,
+      "asymmetry": 0.32584971408331675,
+      "objective": 0.9211149818832333
+    },
+    {
+      "iteration": 17,
+      "fidelity": 0.4347634667886541,
+      "asymmetry": 0.327272762153875,
+      "objective": 0.9256726100194665
+    },
+    {
+      "iteration": 18,
+      "fidelity": 0.43429176897590793,
+      "asymmetry": 0.32838464900273057,
+      "objective": 0.9268687424800037
+    },
+    {
+      "iteration": 19,
+      "fidelity": 0.43730768512106466,
+      "asymmetry": 0.33624493768417363,
+      "objective": 0.9416750916473251
+    },
+    {
+      "iteration": 20,
+      "fidelity": 0.43726313992293986,
+      "asymmetry": 0.3362531649418633,
+      "objective": 0.9416428873357348
+    },
+    {
+      "iteration": 21,
+      "fidelity": 0.4432497998089697,
+      "asymmetry": 0.34388309729640915,
+      "objective": 0.9590744457535835
+    },
+    {
+      "iteration": 22,
+      "fidelity": 0.4440086035709622,
+      "asymmetry": 0.35044498110905986,
+      "objective": 0.9696760752345521
+    },
+    {
+      "iteration": 23,
+      "fidelity": 0.4505457509039625,
+      "asymmetry": 0.35958430997660507,
+      "objective": 0.9899222158688701
+    },
+    {
+      "iteration": 24,
+      "fidelity": 0.4550321434877447,
+      "asymmetry": 0.36707822532205836,
+      "objective": 1.005649481470832
+    },
+    {
+      "iteration": 25,
+      "fidelity": 0.4625857958841253,
+      "asymmetry": 0.3741406909888234,
+      "objective": 1.0237968323673603
+    },
+    {
+      "iteration": 26,
+      "fidelity": 0.46241318775328066,
+      "asymmetry": 0.3769231698223826,
+      "objective": 1.0277979424868546
+    },
+    {
+      "iteration": 27,
+      "fidelity": 0.4642316776014301,
+      "asymmetry": 0.3790070061288259,
+      "objective": 1.032742186794669
+    },
+    {
+      "iteration": 28,
+      "fidelity": 0.4640567322780679,
+      "asymmetry": 0.37930450359125445,
+      "objective": 1.0330134876649497
+    },
+    {
+      "iteration": 29,
+      "fidelity": 0.4641263666280415,
+      "asymmetry": 0.380079294012982,
+      "objective": 1.0342453076475144
+    },
+    {
+      "iteration": 30,
+      "fidelity": 0.46408591413903366,
+      "asymmetry": 0.3800963954732741,
+      "objective": 1.0342305073489448
+    },
+    {
+      "iteration": 31,
+      "fidelity": 0.4642958177594274,
+      "asymmetry": 0.38001051944949166,
+      "objective": 1.034311596933665
+    },
+    {
+      "iteration": 32,
+      "fidelity": 0.464713587081963,
+      "asymmetry": 0.3801330115520556,
+      "objective": 1.0349131044100464
+    },
+    {
+      "iteration": 33,
+      "fidelity": 0.4645604397421449,
+      "asymmetry": 0.38159733181159283,
+      "objective": 1.0369564374595341
+    },
+    {
+      "iteration": 34,
+      "fidelity": 0.47064090750529813,
+      "asymmetry": 0.3901129208031926,
+      "objective": 1.055810288710087
+    },
+    {
+      "iteration": 35,
+      "fidelity": 0.47074613475200205,
+      "asymmetry": 0.38995835344864227,
+      "objective": 1.0556836649249655
+    },
+    {
+      "iteration": 36,
+      "fidelity": 0.47070739978544907,
+      "asymmetry": 0.3901364904383564,
+      "objective": 1.0559121354429837
+    },
+    {
+      "iteration": 37,
+      "fidelity": 0.471223904624095,
+      "asymmetry": 0.3925169957092596,
+      "objective": 1.0599993981879843
+    },
+    {
+      "iteration": 38,
+      "fidelity": 0.47335241588111043,
+      "asymmetry": 0.39501208120859743,
+      "objective": 1.0658705376940065
+    },
+    {
+      "iteration": 39,
+      "fidelity": 0.47296270209058644,
+      "asymmetry": 0.39569225502075045,
+      "objective": 1.066501084621712
+    },
+    {
+      "iteration": 40,
+      "fidelity": 0.4740844044501955,
+      "asymmetry": 0.3961047417062132,
+      "objective": 1.0682415170095152
+    },
+    {
+      "iteration": 41,
+      "fidelity": 0.474572070300077,
+      "asymmetry": 0.39666187075347936,
+      "objective": 1.069564876430296
+    },
+    {
+      "iteration": 42,
+      "fidelity": 0.47435076059034714,
+      "asymmetry": 0.39765832785841565,
+      "objective": 1.0708382523779707
+    },
+    {
+      "iteration": 43,
+      "fidelity": 0.47371061820619664,
+      "asymmetry": 0.3980806189448852,
+      "objective": 1.0708315466235243
+    },
+    {
+      "iteration": 44,
+      "fidelity": 0.4753030306248986,
+      "asymmetry": 0.40234101103494424,
+      "objective": 1.078814547177315
+    },
+    {
+      "iteration": 45,
+      "fidelity": 0.4756308712185171,
+      "asymmetry": 0.4031788901012854,
+      "objective": 1.080399206370445
+    },
+    {
+      "iteration": 46,
+      "fidelity": 0.4755595474818428,
+      "asymmetry": 0.4032585790108284,
+      "objective": 1.0804474159980855
+    },
+    {
+      "iteration": 47,
+      "fidelity": 0.47630209325494144,
+      "asymmetry": 0.40316087306250137,
+      "objective": 1.0810434028486935
+    },
+    {
+      "iteration": 48,
+      "fidelity": 0.4766921441585155,
+      "asymmetry": 0.40379873512006825,
+      "objective": 1.082390246838618
+    },
+    {
+      "iteration": 49,
+      "fidelity": 0.47909256472926415,
+      "asymmetry": 0.40654397839975165,
+      "objective": 1.0889085323288916
+    },
+    {
+      "iteration": 50,
+      "fidelity": 0.47951005481582054,
+      "asymmetry": 0.40694597767462176,
+      "objective": 1.089929021327753
+    },
+    {
+      "iteration": 51,
+      "fidelity": 0.4795155823183481,
+      "asymmetry": 0.4069425722784056,
+      "objective": 1.0899294407359565
+    },
+    {
+      "iteration": 52,
+      "fidelity": 0.4814598763874386,
+      "asymmetry": 0.4091991960529734,
+      "objective": 1.0952586704668987
+    },
+    {
+      "iteration": 53,
+      "fidelity": 0.482210243165111,
+      "asymmetry": 0.41035248189923024,
+      "objective": 1.0977389660139563
+    },
+    {
+      "iteration": 54,
+      "fidelity": 0.48397307819762486,
+      "asymmetry": 0.41081671253341073,
+      "objective": 1.1001981469977409
+    },
+    {
+      "iteration": 55,
+      "fidelity": 0.48392210281660963,
+      "asymmetry": 0.41142651640805605,
+      "objective": 1.1010618774286938
+    },
+    {
+      "iteration": 56,
+      "fidelity": 0.485183626537166,
+      "asymmetry": 0.41141575963292665,
+      "objective": 1.102307265986556
+    },
+    {
+      "iteration": 57,
+      "fidelity": 0.48552283720931805,
+      "asymmetry": 0.41153616911237284,
+      "objective": 1.1028270908778772
+    },
+    {
+      "iteration": 58,
+      "fidelity": 0.4858952116151313,
+      "asymmetry": 0.41150667380845896,
+      "objective": 1.1031552223278198
+    },
+    {
+      "iteration": 59,
+      "fidelity": 0.48585916882223834,
+      "asymmetry": 0.41159133982457957,
+      "objective": 1.1032461785591077
+    },
+    {
+      "iteration": 60,
+      "fidelity": 0.48558082235189015,
+      "asymmetry": 0.4118775247241736,
+      "objective": 1.1033971094381507
+    }
+  ],
+  "left_erasure": {
+    "num_modes": 3,
+    "total_qubits": 7,
+    "partition": "LeftHorizon",
+    "clean_fidelity": 0.48558082235189015,
+    "points": [
+      {
+        "erased_count": 0,
+        "erased_wires": [],
+        "erasure_fraction": 0.0,
+        "recovered_fidelity": 0.48558082235189015,
+        "asymmetry": 0.23558082235189015,
+        "throat_open": true
+      },
+      {
+        "erased_count": 1,
+        "erased_wires": [
+          3
+        ],
+        "erasure_fraction": 0.3333333333333333,
+        "recovered_fidelity": 0.4173873846340435,
+        "asymmetry": 0.1673873846340435,
+        "throat_open": true
+      },
+      {
+        "erased_count": 2,
+        "erased_wires": [
+          3,
+          2
+        ],
+        "erasure_fraction": 0.6666666666666666,
+        "recovered_fidelity": 0.25000000000000666,
+        "asymmetry": 6.661338147750939e-15,
+        "throat_open": false
+      }
+    ],
+    "holographic_code_distance": 2,
+    "entanglement_wedge_threshold": 0.3333333333333333
+  },
+  "right_erasure": {
+    "num_modes": 3,
+    "total_qubits": 7,
+    "partition": "RightHorizon",
+    "clean_fidelity": 0.48558082235189015,
+    "points": [
+      {
+        "erased_count": 0,
+        "erased_wires": [],
+        "erasure_fraction": 0.0,
+        "recovered_fidelity": 0.48558082235189015,
+        "asymmetry": 0.23558082235189015,
+        "throat_open": true
+      },
+      {
+        "erased_count": 1,
+        "erased_wires": [
+          6
+        ],
+        "erasure_fraction": 0.3333333333333333,
+        "recovered_fidelity": 0.41704705545182574,
+        "asymmetry": 0.16704705545182574,
+        "throat_open": true
+      },
+      {
+        "erased_count": 2,
+        "erased_wires": [
+          6,
+          5
+        ],
+        "erasure_fraction": 0.6666666666666666,
+        "recovered_fidelity": 0.25000000000000666,
+        "asymmetry": 6.661338147750939e-15,
+        "throat_open": false
+      }
+    ],
+    "holographic_code_distance": 2,
+    "entanglement_wedge_threshold": 0.3333333333333333
+  }
+}

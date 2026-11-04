@@ -11,6 +11,8 @@
 //! - **Gravitational Sign Asymmetry:** \Delta F(g) = F(+g) - F(-g) isolating the physical wormhole signal.
 
 pub mod metrics;
+pub mod optimizer;
+pub mod qec;
 pub mod scrambler;
 pub mod teleportation;
 
@@ -18,6 +20,10 @@ pub use metrics::{
     bell_fidelity, compute_operator_size_distribution, reduced_density_matrix_2q,
     single_qubit_reduced_density_matrix, state_fidelity_1q, WormholeFidelityPoint,
     WormholeSweepReport,
+};
+pub use optimizer::{OptimizationTrajectoryPoint, OptimizerConfig, SizeWindingOptimizer};
+pub use qec::{
+    evaluate_holographic_qec, ErasurePartition, ErasurePoint, HolographicQecReport,
 };
 pub use scrambler::{ScramblerType, ScramblingHamiltonian};
 pub use teleportation::{HolographicWormholeEngine, WormholeConfig, WormholeWireMap};
