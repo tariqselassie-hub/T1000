@@ -7,8 +7,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 use t1000::{
-    AdamOptimizer, CircuitAnsatz, DataEncodingLayer, EncodingKind, ParameterShiftEngine,
-    PauliObservable,
+    adjoint_gradient_encoded_batch, AdamOptimizer, BatchAdjointWorkspace, CircuitAnsatz,
+    DataEncodingLayer, EncodingKind, ParameterShiftEngine, PauliObservable,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -122,7 +122,7 @@ fn main() {
     );
     println!(" 3. Observable      : {}", obs_name);
     println!(
-        " 4. Optimizer       : Exact Parameter-Shift + Adam (lr_0={}, gamma={}, step={})",
+        " 4. Optimizer       : Adjoint Differentiation + Adam (lr_0={}, gamma={}, step={})",
         lr, decay_gamma, decay_step
     );
     println!(
@@ -150,6 +150,13 @@ fn main() {
         dataset.len()
     );
 
+    // Fused parallel mini-batch: one workspace set sized to the largest chunk, so the training
+    // loop allocates nothing per sample. The cap bounds peak workspace memory for large sets.
+    let train_batch = dataset.len().min(TRAIN_BATCH);
+    let mut bws = BatchAdjointWorkspace::new(engine.ansatz.dim, n_qubits, train_batch);
+    let mut batch_grads = vec![0.0; num_params];
+    let mut chunk_grads = vec![0.0; num_params];
+
     let start_time = Instant::now();
     let mut epoch_logs = Vec::new();
     let mut initial_loss = 0.0;
@@ -173,27 +180,44 @@ fn main() {
         let mut max_grad: f64 = 0.0;
 
         // Accumulate batch gradients across dataset
-        let mut batch_grads = vec![0.0; num_params];
+        // Sweep the dataset in fused parallel mini-batch chunks: one encoded adjoint sweep
+        // per sample on its own workspace, zero allocations per sample per epoch.
+        for (chunk_idx, chunk) in dataset.chunks(train_batch).enumerate() {
+            let results = adjoint_gradient_encoded_batch(
+                &engine.ansatz,
+                |i, state| engine.encoding.encode_into(&chunk[i].0, state),
+                &weights,
+                std::slice::from_ref(&engine.observable),
+                |i, e| vec![e[0] - chunk[i].1],
+                &mut bws,
+                &mut chunk_grads,
+            );
 
-        for (sample_idx, (x, y_target)) in dataset.iter().enumerate() {
-            let (pred, loss, sample_grads) = engine.compute_loss_gradients(x, *y_target, &weights);
-            total_loss += loss;
+            let chunk_start = chunk_idx * train_batch;
+            for (offset, (result, (_, y_target))) in results.iter().zip(chunk).enumerate() {
+                let sample_idx = chunk_start + offset;
+                let pred = result.expectations[0];
+                let loss = 0.5 * (pred - y_target) * (pred - y_target);
+                total_loss += loss;
 
-            if ep == 1 && sample_idx < 4 {
-                println!("  [Debug Ep 1] Sample #{}: target={:+.1}, y_pred={:+.6}, sample_loss={:.4}, sample_grad[0]={:+.4}", sample_idx, y_target, pred, loss, sample_grads[0]);
-            }
-
-            // Prediction sign determines class (+1 or -1)
-            let predicted_class = if pred >= 0.0 { 1.0 } else { -1.0 };
-            if (predicted_class - *y_target).abs() < 1e-3 {
-                correct += 1;
-            }
-
-            for (bg, &sg) in batch_grads.iter_mut().zip(sample_grads.iter()) {
-                *bg += sg;
-                if sg.abs() > max_grad {
-                    max_grad = sg.abs();
+                if ep == 1 && sample_idx < 4 {
+                    println!("  [Debug Ep 1] Sample #{}: target={:+.1}, y_pred={:+.6}, sample_loss={:.4}, sample_grad[0]={:+.4}", sample_idx, y_target, pred, loss, result.gradient[0]);
                 }
+
+                // Prediction sign determines class (+1 or -1)
+                let predicted_class = if pred >= 0.0 { 1.0 } else { -1.0 };
+                if (predicted_class - *y_target).abs() < 1e-3 {
+                    correct += 1;
+                }
+
+                for &sg in &result.gradient {
+                    if sg.abs() > max_grad {
+                        max_grad = sg.abs();
+                    }
+                }
+            }
+            for (bg, &cg) in batch_grads.iter_mut().zip(chunk_grads.iter()) {
+                *bg += cg;
             }
         }
 
@@ -279,7 +303,7 @@ fn main() {
     println!("=========================================================================");
 
     let telemetry = QnnTrainingTelemetry {
-        architecture: "Variational Quantum Circuit (HEA + Parameter-Shift)".to_string(),
+        architecture: "Variational Quantum Circuit (HEA + Adjoint Differentiation)".to_string(),
         n_qubits,
         dim: 1 << n_qubits,
         depth,
@@ -344,6 +368,10 @@ fn main() {
 /// half a step, so no holdout point coincides with a training point.
 const TRAIN_SAMPLES: usize = 24;
 const HOLDOUT_SAMPLES: usize = 96;
+
+/// Maximum samples per fused parallel adjoint chunk. 24-sample datasets sweep in one chunk;
+/// larger datasets stay chunked so the BatchAdjointWorkspace memory stays bounded.
+const TRAIN_BATCH: usize = 64;
 
 /// Mean loss and sign accuracy (percent) of `weights` on `data`, forward passes only.
 fn evaluate(

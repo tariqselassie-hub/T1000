@@ -90,8 +90,8 @@ pub mod vqc_classifier;
 pub mod vqe;
 pub mod zinc;
 pub use zinc::*;
-pub mod zipper;
 pub mod cosmology;
+pub mod zipper;
 pub use cosmology::{
     compute_mode_bogoliubov, evaluate_horizon_entanglement, mode_entanglement_entropy,
     BogoliubovModeReport, CosmicParticleSpectrum, CosmologicalEpochSnapshot, CosmologicalMetric,
@@ -113,8 +113,8 @@ pub use water_pes::{
 };
 pub mod gyroscopic;
 pub use gyroscopic::{
-    GyroMechanicsEngine, GyroscopicConfig, GyroscopicReport, GyroscopicStabilizerEngine,
-    JackNode, JackTopology, MechanicsStep, QuantumLockEngine, QuantumLockStep, Vector3D,
+    GyroMechanicsEngine, GyroscopicConfig, GyroscopicReport, GyroscopicStabilizerEngine, JackNode,
+    JackTopology, MechanicsStep, QuantumLockEngine, QuantumLockStep, Vector3D,
 };
 
 pub use cascaded_tree_valve::{
@@ -165,8 +165,9 @@ pub use qec::{
 };
 
 pub use adjoint::{
-    adjoint_gradient, adjoint_gradient_buffered, adjoint_gradient_encoded_into,
-    adjoint_gradient_into, adjoint_gradient_with_purity, adjoint_gradient_with_purity_buffered,
+    adjoint_gradient, adjoint_gradient_batch, adjoint_gradient_buffered,
+    adjoint_gradient_encoded_batch, adjoint_gradient_encoded_into, adjoint_gradient_into,
+    adjoint_gradient_with_purity, adjoint_gradient_with_purity_buffered,
     inject_bloch_purity_costate, AdjointOutput, AdjointResult, AdjointWorkspace,
     BatchAdjointWorkspace,
 };

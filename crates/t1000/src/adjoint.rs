@@ -185,6 +185,66 @@ pub fn adjoint_gradient_batch(
     results
 }
 
+/// Parallel mini-batch version of [`adjoint_gradient_encoded_into`].
+///
+/// Sample `i` is encoded straight into batch workspace `i` by `encode(i, state)` — no
+/// intermediate statevector is allocated — and `coefficients(i, expectations)` maps the
+/// per-sample expectations to loss coefficients (for example MSE residuals `e[0] - y_i`).
+/// The workspace count defines the sample count; per-sample sweeps run in parallel, one
+/// rayon thread per workspace, and per-sample gradients are summed into `grad_out`, which
+/// is zeroed on entry. Returns one [`AdjointResult`] per sample in batch order.
+pub fn adjoint_gradient_encoded_batch(
+    ansatz: &CircuitAnsatz,
+    encode: impl Fn(usize, &mut QuantumState) + Sync,
+    weights: &[f64],
+    observables: &[PauliObservable],
+    coefficients: impl Fn(usize, &[f64]) -> Vec<f64> + Sync,
+    ws: &mut BatchAdjointWorkspace,
+    grad_out: &mut [f64],
+) -> Vec<AdjointResult> {
+    let param_count = ansatz.param_count();
+    assert_eq!(
+        grad_out.len(),
+        param_count,
+        "grad_out length must equal parameter count"
+    );
+
+    // Zero the accumulated gradient.
+    for g in grad_out.iter_mut() {
+        *g = 0.0;
+    }
+
+    // Forward + backward for every sample in parallel; each thread owns one workspace.
+    let results: Vec<AdjointResult> = ws
+        .workspaces
+        .par_iter_mut()
+        .enumerate()
+        .map(|(i, workspace)| {
+            let out = adjoint_gradient_encoded_into(
+                ansatz,
+                |state| encode(i, state),
+                weights,
+                observables,
+                |expectations| coefficients(i, expectations),
+                workspace,
+            );
+            AdjointResult {
+                expectations: out.expectations.to_vec(),
+                gradient: out.gradient.to_vec(),
+            }
+        })
+        .collect();
+
+    // Accumulate per-sample gradients into the shared buffer.
+    for result in &results {
+        for (g_out, &g_res) in grad_out.iter_mut().zip(&result.gradient) {
+            *g_out += g_res;
+        }
+    }
+
+    results
+}
+
 /// Fused forward + adjoint sweep on a borrowed input state.
 ///
 /// Copies `input` into the workspace, runs the ansatz forward once, then walks the circuit
@@ -649,6 +709,60 @@ pub fn inject_bloch_purity_costate(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::feature_map::{DataEncodingLayer, EncodingKind};
+
+    /// Parallel encoded mini-batch must agree bit-for-bit with sequential single-workspace
+    /// sweeps: the same kernel runs per sample, so reassociation is the only allowed
+    /// difference (and gradient summation order matches the sequential accumulation order).
+    #[test]
+    fn encoded_batch_matches_sequential_sweeps() {
+        let n_qubits = 3;
+        let ansatz = CircuitAnsatz::new(n_qubits, 2);
+        let encoding = DataEncodingLayer::new(n_qubits, EncodingKind::Angle);
+        let xs: Vec<Vec<f64>> = vec![
+            vec![0.2, -0.5, 0.9],
+            vec![-1.1, 0.4, 0.3],
+            vec![0.7, 0.8, -0.6],
+        ];
+        let ys = [1.0, -1.0, 1.0];
+        let weights: Vec<f64> = (0..ansatz.param_count())
+            .map(|i| 0.13 * i as f64 - 0.4)
+            .collect();
+        let obs = [PauliObservable::GlobalMeanZ];
+
+        let mut bws = BatchAdjointWorkspace::new(ansatz.dim, n_qubits, xs.len());
+        let mut batch_grads = vec![0.0; ansatz.param_count()];
+        let batch_results = adjoint_gradient_encoded_batch(
+            &ansatz,
+            |i, state| encoding.encode_into(&xs[i], state),
+            &weights,
+            &obs,
+            |i, e| vec![e[0] - ys[i]],
+            &mut bws,
+            &mut batch_grads,
+        );
+
+        // Sequential reference: one workspace, one sample at a time, gradients summed in
+        // exactly the same sample order as the batch accumulation.
+        let mut ws = AdjointWorkspace::new(ansatz.dim, n_qubits);
+        let mut seq_grads = vec![0.0; ansatz.param_count()];
+        for (i, x) in xs.iter().enumerate() {
+            let out = adjoint_gradient_encoded_into(
+                &ansatz,
+                |state| encoding.encode_into(x, state),
+                &weights,
+                &obs,
+                |e| vec![e[0] - ys[i]],
+                &mut ws,
+            );
+            assert_eq!(batch_results[i].expectations, out.expectations);
+            assert_eq!(batch_results[i].gradient, out.gradient);
+            for (g, &gs) in seq_grads.iter_mut().zip(out.gradient) {
+                *g += gs;
+            }
+        }
+        assert_eq!(batch_grads, seq_grads);
+    }
 
     #[test]
     fn test_adjoint_gradient_purity_restoring_force() {
