@@ -56,7 +56,7 @@ impl MolecularPockelsModulator {
             pockels_r33_pm_v: 30.8,
             ref_index: 2.14,
             confinement_gamma: 1.0,
-            electrode_gap_um: 4.0,       // 4.0 um standard electrode separation
+            electrode_gap_um: 4.0, // 4.0 um standard electrode separation
             waveguide_length_um: 10000.0, // 10 mm (1 cm) standard device length
             wavelength_nm: 1550.0,
         }
@@ -85,4 +85,3 @@ impl MolecularPockelsModulator {
         std::f64::consts::PI * (voltage / self.v_pi())
     }
 }
-

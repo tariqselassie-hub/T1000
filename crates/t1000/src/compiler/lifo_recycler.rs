@@ -16,9 +16,9 @@
 //!    for the next operation, keeping stride access in hot CPU L1/L2 cache lines and collapsing
 //!    the peak simulated statevector footprint from $N + K$ down to $N + \max(K_{\mathrm{concurrent}})$.
 
-use std::collections::HashMap;
 use crate::compiler::op::CircuitOp;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// Summary metrics of wire recycling efficiency and memory footprint reduction.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -137,7 +137,11 @@ impl LifoWireRecycler {
                 target: *target,
             },
             CircuitOp::SWAP { q1, q2 } => CircuitOp::SWAP { q1: *q1, q2: *q2 },
-            CircuitOp::ControlledPhase { control, target, theta } => CircuitOp::ControlledPhase {
+            CircuitOp::ControlledPhase {
+                control,
+                target,
+                theta,
+            } => CircuitOp::ControlledPhase {
                 control: *control,
                 target: *target,
                 theta: -theta,
@@ -195,7 +199,13 @@ mod tests {
         assert_eq!(recycler.stats().peak_wires, 4);
 
         // Record entangling gate on a1
-        recycler.record_ancilla_gate(a1, CircuitOp::CNOT { control: 0, target: a1 });
+        recycler.record_ancilla_gate(
+            a1,
+            CircuitOp::CNOT {
+                control: 0,
+                target: a1,
+            },
+        );
         let uncompute1 = recycler.release_and_uncompute(a1);
         assert_eq!(uncompute1.len(), 1);
 
@@ -232,12 +242,18 @@ mod tests {
         builder.dag.add_op(h_q0);
 
         // 2. Entangle ancilla with primary qubit
-        let cnot = CircuitOp::CNOT { control: 0, target: ancilla };
+        let cnot = CircuitOp::CNOT {
+            control: 0,
+            target: ancilla,
+        };
         builder.dag.add_op(cnot.clone());
         recycler.record_ancilla_gate(ancilla, cnot);
 
         // 3. Apply phase rotation on ancilla
-        let rz = CircuitOp::Rz { qubit: ancilla, theta: std::f64::consts::FRAC_PI_4 };
+        let rz = CircuitOp::Rz {
+            qubit: ancilla,
+            theta: std::f64::consts::FRAC_PI_4,
+        };
         builder.dag.add_op(rz.clone());
         recycler.record_ancilla_gate(ancilla, rz);
 

@@ -104,7 +104,10 @@ fn norm_angle(val: f64, min: f64, max: f64) -> f64 {
 }
 
 /// Parses the Harmonized trade customs dataset from CSV.
-pub fn parse_harmonized_shipments(path: &Path, max_samples: Option<usize>) -> Vec<HarmonizedShipment> {
+pub fn parse_harmonized_shipments(
+    path: &Path,
+    max_samples: Option<usize>,
+) -> Vec<HarmonizedShipment> {
     let content = fs::read_to_string(path).expect("Read harmonized dataset CSV");
     let mut shipments = Vec::new();
     let mut lines = content.lines();
@@ -155,14 +158,26 @@ pub fn parse_harmonized_shipments(path: &Path, max_samples: Option<usize>) -> Ve
         let office_id: f64 = fields[idx_office].trim().parse().unwrap_or(10.0);
         let mode_transport: f64 = fields[idx_transport].trim().parse().unwrap_or(10.0);
         let tax_rate: f64 = fields[idx_tax].trim().parse().unwrap_or(0.0);
-        let net_mass = fields[idx_mass].trim().parse::<f64>().unwrap_or(1.0).max(0.01);
-        let item_price = fields[idx_price].trim().parse::<f64>().unwrap_or(1.0).max(0.01);
+        let net_mass = fields[idx_mass]
+            .trim()
+            .parse::<f64>()
+            .unwrap_or(1.0)
+            .max(0.01);
+        let item_price = fields[idx_price]
+            .trim()
+            .parse::<f64>()
+            .unwrap_or(1.0)
+            .max(0.01);
         let fraud: usize = fields[idx_fraud].trim().parse().unwrap_or(0);
         let crit_fraud: usize = fields[idx_crit].trim().parse().unwrap_or(0);
 
         let dep_country = fields[idx_dep].trim();
         let orig_country = fields[idx_orig].trim();
-        let direct_origin = if dep_country == orig_country { 1.0 } else { -1.0 };
+        let direct_origin = if dep_country == orig_country {
+            1.0
+        } else {
+            -1.0
+        };
 
         let log_price = item_price.ln();
         let log_mass = net_mass.ln();
@@ -173,7 +188,11 @@ pub fn parse_harmonized_shipments(path: &Path, max_samples: Option<usize>) -> Ve
         features[1] = norm_angle(log_mass, -2.0, 12.0);
         features[2] = norm_angle(log_unit_val, -2.0, 10.0);
         features[3] = norm_angle(tax_rate, 0.0, 30.0);
-        features[4] = if mode_transport >= 30.0 { 0.785 } else { -0.785 }; // Air vs Sea/Ground
+        features[4] = if mode_transport >= 30.0 {
+            0.785
+        } else {
+            -0.785
+        }; // Air vs Sea/Ground
         features[5] = direct_origin * std::f64::consts::FRAC_PI_2;
         features[6] = norm_angle(office_id, 10.0, 50.0);
         features[7] = norm_angle((log_price - log_mass).abs(), 0.0, 8.0);

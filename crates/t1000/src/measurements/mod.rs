@@ -14,4 +14,6 @@ pub mod streaming_accumulator;
 
 pub use observable::PauliObservable;
 pub use povm_readout::POVMClassifier;
-pub use streaming_accumulator::{StreamingExpectationAccumulator, TrajectoryPoint, VarianceMultipliers};
+pub use streaming_accumulator::{
+    StreamingExpectationAccumulator, TrajectoryPoint, VarianceMultipliers,
+};

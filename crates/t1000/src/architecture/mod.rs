@@ -249,21 +249,14 @@ impl QuantumChip {
                 NativeGateKind::MolmerSorensen,
                 NativeGateKind::Cnot,
             ],
-            Self::BelenosPhotonic16M => &[
-                NativeGateKind::Rz,
-                NativeGateKind::BeamSplitter,
-            ],
+            Self::BelenosPhotonic16M => &[NativeGateKind::Rz, NativeGateKind::BeamSplitter],
             Self::EmeraldNeutralAtom256 => &[
                 NativeGateKind::Rz,
                 NativeGateKind::Ry,
                 NativeGateKind::Cz,
                 NativeGateKind::RydbergBlockade,
             ],
-            Self::T1000QpuArtix7 => &[
-                NativeGateKind::Ry,
-                NativeGateKind::Rz,
-                NativeGateKind::Cz,
-            ],
+            Self::T1000QpuArtix7 => &[NativeGateKind::Ry, NativeGateKind::Rz, NativeGateKind::Cz],
         }
     }
 
@@ -271,73 +264,73 @@ impl QuantumChip {
     pub fn error_profile(&self) -> ChipErrorProfile {
         match self {
             Self::IbmNighthawkR2 => ChipErrorProfile {
-                single_qubit_error: 0.00032,       // 0.032% 1Q error
-                two_qubit_error: 0.0062,           // 0.62% 2Q ECR/CZ error
-                readout_error: 0.0125,             // 1.25% readout error
-                t1_micros: 285.0,                  // 285 us T1
-                t2_micros: 210.0,                  // 210 us T2
+                single_qubit_error: 0.00032, // 0.032% 1Q error
+                two_qubit_error: 0.0062,     // 0.62% 2Q ECR/CZ error
+                readout_error: 0.0125,       // 1.25% readout error
+                t1_micros: 285.0,            // 285 us T1
+                t2_micros: 210.0,            // 210 us T2
                 single_qubit_duration_ns: 20.0,
                 two_qubit_duration_ns: 180.0,
-                inter_chiplet_seam_factor: 1.0,    // Monolithic silicon wafer
+                inter_chiplet_seam_factor: 1.0, // Monolithic silicon wafer
             },
             Self::RigettiCepheus108Q => ChipErrorProfile {
-                single_qubit_error: 0.0010,        // 0.10% 1Q error
-                two_qubit_error: 0.0080,           // 0.80% intra-die 2Q error
-                readout_error: 0.0250,             // 2.50% readout error
-                t1_micros: 34.0,                   // 34 us T1
-                t2_micros: 28.0,                   // 28 us T2
+                single_qubit_error: 0.0010, // 0.10% 1Q error
+                two_qubit_error: 0.0080,    // 0.80% intra-die 2Q error
+                readout_error: 0.0250,      // 2.50% readout error
+                t1_micros: 34.0,            // 34 us T1
+                t2_micros: 28.0,            // 28 us T2
                 single_qubit_duration_ns: 25.0,
                 two_qubit_duration_ns: 90.0,
-                inter_chiplet_seam_factor: 2.125,  // Seam error rises to ~1.7% across chiplet boundaries
+                inter_chiplet_seam_factor: 2.125, // Seam error rises to ~1.7% across chiplet boundaries
             },
             Self::GoogleWillow105Q => ChipErrorProfile {
-                single_qubit_error: 0.00035,       // 0.035% 1Q error
-                two_qubit_error: 0.0014,           // 0.14% 2Q CZ error (surface-code threshold)
-                readout_error: 0.0067,             // 0.67% readout error
-                t1_micros: 98.0,                   // 98.0 us T1
-                t2_micros: 85.0,                   // 85.0 us T2*
-                single_qubit_duration_ns: 25.0,    // 25 ns single-qubit microwave pulse
-                two_qubit_duration_ns: 20.0,       // 20 ns fast tunable coupler CZ
-                inter_chiplet_seam_factor: 1.0,    // Monolithic silicon wafer
+                single_qubit_error: 0.00035,    // 0.035% 1Q error
+                two_qubit_error: 0.0014,        // 0.14% 2Q CZ error (surface-code threshold)
+                readout_error: 0.0067,          // 0.67% readout error
+                t1_micros: 98.0,                // 98.0 us T1
+                t2_micros: 85.0,                // 85.0 us T2*
+                single_qubit_duration_ns: 25.0, // 25 ns single-qubit microwave pulse
+                two_qubit_duration_ns: 20.0,    // 20 ns fast tunable coupler CZ
+                inter_chiplet_seam_factor: 1.0, // Monolithic silicon wafer
             },
             Self::QuantinuumH2_1 => ChipErrorProfile {
-                single_qubit_error: 0.00002,       // 0.002% 1Q error (2e-5)
-                two_qubit_error: 0.0018,           // 0.18% 2Q Mølmer-Sørensen error (99.82% fidelity)
-                readout_error: 0.0020,             // 0.20% SPAM readout error
-                t1_micros: 100_000_000.0,          // 100 second hyperfine state lifetime
-                t2_micros: 3_000_000.0,            // 3.0 second dephasing lifetime
+                single_qubit_error: 0.00002,        // 0.002% 1Q error (2e-5)
+                two_qubit_error: 0.0018, // 0.18% 2Q Mølmer-Sørensen error (99.82% fidelity)
+                readout_error: 0.0020,   // 0.20% SPAM readout error
+                t1_micros: 100_000_000.0, // 100 second hyperfine state lifetime
+                t2_micros: 3_000_000.0,  // 3.0 second dephasing lifetime
                 single_qubit_duration_ns: 10_000.0, // 10 us laser pulse width
-                two_qubit_duration_ns: 150_000.0,  // 150 us Mølmer-Sørensen entangling gate
-                inter_chiplet_seam_factor: 1.0,    // Monolithic surface-electrode trap
+                two_qubit_duration_ns: 150_000.0, // 150 us Mølmer-Sørensen entangling gate
+                inter_chiplet_seam_factor: 1.0, // Monolithic surface-electrode trap
             },
             Self::BelenosPhotonic16M => ChipErrorProfile {
-                single_qubit_error: 0.00005,       // High optical phase stability
-                two_qubit_error: 0.0040,           // Beamsplitter insertion loss
-                readout_error: 0.0150,             // SNSPD dark counts and efficiency
-                t1_micros: 1e9,                    // Photons do not undergo T1 relaxation in flight
+                single_qubit_error: 0.00005, // High optical phase stability
+                two_qubit_error: 0.0040,     // Beamsplitter insertion loss
+                readout_error: 0.0150,       // SNSPD dark counts and efficiency
+                t1_micros: 1e9,              // Photons do not undergo T1 relaxation in flight
                 t2_micros: 1e9,
-                single_qubit_duration_ns: 0.05,    // Optical propagation delay (speed of light in waveguide)
+                single_qubit_duration_ns: 0.05, // Optical propagation delay (speed of light in waveguide)
                 two_qubit_duration_ns: 0.20,
                 inter_chiplet_seam_factor: 1.0,
             },
             Self::EmeraldNeutralAtom256 => ChipErrorProfile {
-                single_qubit_error: 0.0006,        // Raman beam fidelity
-                two_qubit_error: 0.0045,           // Rydberg blockade fidelity
-                readout_error: 0.0080,             // Fluorescence camera imaging
-                t1_micros: 2_500_000.0,            // 2.5 second hyperfine state lifetime
-                t2_micros: 850_000.0,              // 0.85 second dephasing lifetime
-                single_qubit_duration_ns: 1200.0,  // Laser pulse width
-                two_qubit_duration_ns: 350.0,      // Fast Rydberg excitation
-                inter_chiplet_seam_factor: 1.0,    // Homogeneous atomic gas
+                single_qubit_error: 0.0006,       // Raman beam fidelity
+                two_qubit_error: 0.0045,          // Rydberg blockade fidelity
+                readout_error: 0.0080,            // Fluorescence camera imaging
+                t1_micros: 2_500_000.0,           // 2.5 second hyperfine state lifetime
+                t2_micros: 850_000.0,             // 0.85 second dephasing lifetime
+                single_qubit_duration_ns: 1200.0, // Laser pulse width
+                two_qubit_duration_ns: 350.0,     // Fast Rydberg excitation
+                inter_chiplet_seam_factor: 1.0,   // Homogeneous atomic gas
             },
             Self::T1000QpuArtix7 => ChipErrorProfile {
-                single_qubit_error: 1e-7,          // Fixed-point algorithmic roundoff only
+                single_qubit_error: 1e-7, // Fixed-point algorithmic roundoff only
                 two_qubit_error: 2e-7,
-                readout_error: 0.0,                // Exact digital readout
-                t1_micros: 1e12,                   // Digital SRAM retention
+                readout_error: 0.0, // Exact digital readout
+                t1_micros: 1e12,    // Digital SRAM retention
                 t2_micros: 1e12,
-                single_qubit_duration_ns: 10.0,    // 100 MHz clock cycle (1 cycle)
-                two_qubit_duration_ns: 30.0,       // 3 clock cycles per systolic step
+                single_qubit_duration_ns: 10.0, // 100 MHz clock cycle (1 cycle)
+                two_qubit_duration_ns: 30.0,    // 3 clock cycles per systolic step
                 inter_chiplet_seam_factor: 1.0,
             },
         }
@@ -350,7 +343,9 @@ impl QuantumChip {
             "nighthawk-r2" | "nighthawk" | "ibm-nighthawk" => Some(Self::IbmNighthawkR2),
             "cepheus-108q" | "cepheus" | "rigetti-cepheus" => Some(Self::RigettiCepheus108Q),
             "willow-105q" | "willow" | "google-willow" => Some(Self::GoogleWillow105Q),
-            "quantinuum-h2" | "quantinuum-h2-1" | "quantinuum" | "h2-1" | "h2" => Some(Self::QuantinuumH2_1),
+            "quantinuum-h2" | "quantinuum-h2-1" | "quantinuum" | "h2-1" | "h2" => {
+                Some(Self::QuantinuumH2_1)
+            }
             "belenos-16m" | "belenos" | "photonic-16m" => Some(Self::BelenosPhotonic16M),
             "emerald-256" | "emerald" | "rydberg-256" => Some(Self::EmeraldNeutralAtom256),
             "t1000-qpu" | "artix7" | "fpga-qpu" => Some(Self::T1000QpuArtix7),
@@ -363,11 +358,7 @@ impl QuantumChip {
         match self {
             Self::IbmNighthawkR2 => {
                 let lattice = crate::plaquette::PlaquetteLattice::build_ibm_nighthawk_r2();
-                let edges: Vec<(usize, usize)> = lattice
-                    .links
-                    .iter()
-                    .map(|l| (l.u, l.v))
-                    .collect();
+                let edges: Vec<(usize, usize)> = lattice.links.iter().map(|l| (l.u, l.v)).collect();
                 crate::routing::Topology::new(self.slug(), self.capacity(), &edges)
             }
             Self::RigettiCepheus108Q => {

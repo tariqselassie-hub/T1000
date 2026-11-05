@@ -26,9 +26,9 @@ pub use iot_botnet as iot_botnet_data;
 pub use pitt as pitt_data;
 pub use qm9 as qm9_data;
 
-use crate::baselines::ZINC_TARGETS;
 use self::pitt::{PittMolecule, PROPERTIES as PITT_PROPERTIES};
 use self::qm9::{FeatureSet, Qm9Molecule, PROPERTIES};
+use crate::baselines::ZINC_TARGETS;
 use crate::zinc_data;
 
 const ZINC_TRAIN_CSV: &str = "tests/benchmarks/zinc_molecular/outputs/zinc_train_10k.csv";

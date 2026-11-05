@@ -102,30 +102,60 @@ impl ScramblingHamiltonian {
 
     /// Appends elementary Rzz gate: exp(-i theta/2 Z_a Z_b).
     fn append_rzz(ops: &mut Vec<CircuitOp>, q1: usize, q2: usize, theta: f64) {
-        ops.push(CircuitOp::CNOT { control: q1, target: q2 });
+        ops.push(CircuitOp::CNOT {
+            control: q1,
+            target: q2,
+        });
         ops.push(CircuitOp::Rz { qubit: q2, theta });
-        ops.push(CircuitOp::CNOT { control: q1, target: q2 });
+        ops.push(CircuitOp::CNOT {
+            control: q1,
+            target: q2,
+        });
     }
 
     /// Appends elementary Rxx gate: exp(-i theta/2 X_a X_b).
     fn append_rxx(ops: &mut Vec<CircuitOp>, q1: usize, q2: usize, theta: f64) {
         let h = Unitary2x2::hadamard();
-        ops.push(CircuitOp::Unitary1Q { qubit: q1, matrix: h });
-        ops.push(CircuitOp::Unitary1Q { qubit: q2, matrix: h });
+        ops.push(CircuitOp::Unitary1Q {
+            qubit: q1,
+            matrix: h,
+        });
+        ops.push(CircuitOp::Unitary1Q {
+            qubit: q2,
+            matrix: h,
+        });
         Self::append_rzz(ops, q1, q2, theta);
-        ops.push(CircuitOp::Unitary1Q { qubit: q1, matrix: h });
-        ops.push(CircuitOp::Unitary1Q { qubit: q2, matrix: h });
+        ops.push(CircuitOp::Unitary1Q {
+            qubit: q1,
+            matrix: h,
+        });
+        ops.push(CircuitOp::Unitary1Q {
+            qubit: q2,
+            matrix: h,
+        });
     }
 
     /// Appends elementary Ryy gate: exp(-i theta/2 Y_a Y_b).
     fn append_ryy(ops: &mut Vec<CircuitOp>, q1: usize, q2: usize, theta: f64) {
         let rx_p = Unitary2x2::rx(PI * 0.5);
         let rx_m = Unitary2x2::rx(-PI * 0.5);
-        ops.push(CircuitOp::Unitary1Q { qubit: q1, matrix: rx_p });
-        ops.push(CircuitOp::Unitary1Q { qubit: q2, matrix: rx_p });
+        ops.push(CircuitOp::Unitary1Q {
+            qubit: q1,
+            matrix: rx_p,
+        });
+        ops.push(CircuitOp::Unitary1Q {
+            qubit: q2,
+            matrix: rx_p,
+        });
         Self::append_rzz(ops, q1, q2, theta);
-        ops.push(CircuitOp::Unitary1Q { qubit: q1, matrix: rx_m });
-        ops.push(CircuitOp::Unitary1Q { qubit: q2, matrix: rx_m });
+        ops.push(CircuitOp::Unitary1Q {
+            qubit: q1,
+            matrix: rx_m,
+        });
+        ops.push(CircuitOp::Unitary1Q {
+            qubit: q2,
+            matrix: rx_m,
+        });
     }
 
     /// Builds the forward scrambling circuit operations for the specified register wires.
@@ -144,7 +174,10 @@ impl ScramblingHamiltonian {
                 }
                 for (i, &hz) in self.local_fields.iter().enumerate() {
                     if i < wires.len() {
-                        ops.push(CircuitOp::Rz { qubit: wires[i], theta: 2.0 * hz * dt });
+                        ops.push(CircuitOp::Rz {
+                            qubit: wires[i],
+                            theta: 2.0 * hz * dt,
+                        });
                     }
                 }
             }
@@ -153,13 +186,31 @@ impl ScramblingHamiltonian {
                     if l < wires.len() {
                         let theta = 2.0 * j_ijkl * dt;
                         let (w_i, w_j, w_k, w_l) = (wires[i], wires[j], wires[k], wires[l]);
-                        ops.push(CircuitOp::CNOT { control: w_i, target: w_j });
-                        ops.push(CircuitOp::CNOT { control: w_j, target: w_k });
-                        ops.push(CircuitOp::CNOT { control: w_k, target: w_l });
+                        ops.push(CircuitOp::CNOT {
+                            control: w_i,
+                            target: w_j,
+                        });
+                        ops.push(CircuitOp::CNOT {
+                            control: w_j,
+                            target: w_k,
+                        });
+                        ops.push(CircuitOp::CNOT {
+                            control: w_k,
+                            target: w_l,
+                        });
                         ops.push(CircuitOp::Rz { qubit: w_l, theta });
-                        ops.push(CircuitOp::CNOT { control: w_k, target: w_l });
-                        ops.push(CircuitOp::CNOT { control: w_j, target: w_k });
-                        ops.push(CircuitOp::CNOT { control: w_i, target: w_j });
+                        ops.push(CircuitOp::CNOT {
+                            control: w_k,
+                            target: w_l,
+                        });
+                        ops.push(CircuitOp::CNOT {
+                            control: w_j,
+                            target: w_k,
+                        });
+                        ops.push(CircuitOp::CNOT {
+                            control: w_i,
+                            target: w_j,
+                        });
                     }
                 }
             }
@@ -173,8 +224,14 @@ impl ScramblingHamiltonian {
                         ops.push(CircuitOp::CZ { q1: w1, q2: w2 });
                         let angle1 = dt * (i as f64 + 1.0) * golden_ratio;
                         let angle2 = dt * (i as f64 + 2.0) / golden_ratio;
-                        ops.push(CircuitOp::Ry { qubit: w1, theta: angle1 });
-                        ops.push(CircuitOp::Rz { qubit: w2, theta: angle2 });
+                        ops.push(CircuitOp::Ry {
+                            qubit: w1,
+                            theta: angle1,
+                        });
+                        ops.push(CircuitOp::Rz {
+                            qubit: w2,
+                            theta: angle2,
+                        });
                         i += 2;
                     }
                 }
@@ -191,10 +248,16 @@ impl ScramblingHamiltonian {
         for op in fwd.into_iter().rev() {
             match op {
                 CircuitOp::Rz { qubit, theta } => {
-                    adj_ops.push(CircuitOp::Rz { qubit, theta: -theta });
+                    adj_ops.push(CircuitOp::Rz {
+                        qubit,
+                        theta: -theta,
+                    });
                 }
                 CircuitOp::Ry { qubit, theta } => {
-                    adj_ops.push(CircuitOp::Ry { qubit, theta: -theta });
+                    adj_ops.push(CircuitOp::Ry {
+                        qubit,
+                        theta: -theta,
+                    });
                 }
                 CircuitOp::Unitary1Q { qubit, matrix } => {
                     let adj_mat = Unitary2x2 {
@@ -207,14 +270,21 @@ impl ScramblingHamiltonian {
                         u11_re: matrix.u11_re,
                         u11_im: -matrix.u11_im,
                     };
-                    adj_ops.push(CircuitOp::Unitary1Q { qubit, matrix: adj_mat });
+                    adj_ops.push(CircuitOp::Unitary1Q {
+                        qubit,
+                        matrix: adj_mat,
+                    });
                 }
                 CircuitOp::CZ { q1, q2 } => adj_ops.push(CircuitOp::CZ { q1, q2 }),
                 CircuitOp::CNOT { control, target } => {
                     adj_ops.push(CircuitOp::CNOT { control, target })
                 }
                 CircuitOp::SWAP { q1, q2 } => adj_ops.push(CircuitOp::SWAP { q1, q2 }),
-                CircuitOp::ControlledPhase { control, target, theta } => {
+                CircuitOp::ControlledPhase {
+                    control,
+                    target,
+                    theta,
+                } => {
                     adj_ops.push(CircuitOp::ControlledPhase {
                         control,
                         target,
@@ -240,7 +310,10 @@ impl ScramblingHamiltonian {
                 }
                 CircuitOp::Ry { qubit, theta } => {
                     // Ry^T(theta) = Ry(-theta)
-                    conj_ops.push(CircuitOp::Ry { qubit, theta: -theta });
+                    conj_ops.push(CircuitOp::Ry {
+                        qubit,
+                        theta: -theta,
+                    });
                 }
                 CircuitOp::Unitary1Q { qubit, matrix } => {
                     let trans_mat = Unitary2x2 {
@@ -253,14 +326,21 @@ impl ScramblingHamiltonian {
                         u11_re: matrix.u11_re,
                         u11_im: matrix.u11_im,
                     };
-                    conj_ops.push(CircuitOp::Unitary1Q { qubit, matrix: trans_mat });
+                    conj_ops.push(CircuitOp::Unitary1Q {
+                        qubit,
+                        matrix: trans_mat,
+                    });
                 }
                 CircuitOp::CZ { q1, q2 } => conj_ops.push(CircuitOp::CZ { q1, q2 }),
                 CircuitOp::CNOT { control, target } => {
                     conj_ops.push(CircuitOp::CNOT { control, target })
                 }
                 CircuitOp::SWAP { q1, q2 } => conj_ops.push(CircuitOp::SWAP { q1, q2 }),
-                CircuitOp::ControlledPhase { control, target, theta } => {
+                CircuitOp::ControlledPhase {
+                    control,
+                    target,
+                    theta,
+                } => {
                     conj_ops.push(CircuitOp::ControlledPhase {
                         control,
                         target,

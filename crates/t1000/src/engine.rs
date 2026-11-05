@@ -22,14 +22,14 @@ use crate::coherence::NoiseChannelParams;
 use crate::compiler::{CircuitBuilder, LifoWireRecycler};
 use crate::heptal_wave::{HeptalZipperConfig, HeptalZipperEngine, HeptalZipperReport};
 use crate::measurements::StreamingExpectationAccumulator;
+use crate::photonic_interferometer::{
+    FockState, HongOuMandelExperiment, PhotonicInterferometer, WaveguideLossModel,
+};
 use crate::qec::{PauliFrameTracker, PauliFrameTrackerSidecar};
 use crate::smiles::{
     SmilesError, SmilesExplorer, SmilesFeatures, SmilesFeaturizer, SmilesPropertyProfile,
 };
 use crate::state::QuantumState;
-use crate::photonic_interferometer::{
-    FockState, HongOuMandelExperiment, PhotonicInterferometer, WaveguideLossModel,
-};
 use crate::telemetry::QuantumTelemetryReport;
 use crate::zipper::{BlochZipperEngine, ZipperConfig, ZipperExecutionReport};
 
@@ -347,24 +347,21 @@ impl T1000Engine {
     }
 
     /// Simulates Hong-Ou-Mandel (HOM) two-photon quantum interference through a directional coupler.
-    pub fn simulate_photonic_hom(&self, loss: Option<WaveguideLossModel>) -> HongOuMandelExperiment {
+    pub fn simulate_photonic_hom(
+        &self,
+        loss: Option<WaveguideLossModel>,
+    ) -> HongOuMandelExperiment {
         let coupler = if let Some(l) = loss {
             l.imbalanced_coupler()
         } else {
             let inv_sqrt2 = 1.0 / 2.0f64.sqrt();
-            [
-                [inv_sqrt2, inv_sqrt2],
-                [inv_sqrt2, -inv_sqrt2],
-            ]
+            [[inv_sqrt2, inv_sqrt2], [inv_sqrt2, -inv_sqrt2]]
         };
         HongOuMandelExperiment::simulate_2x2(coupler)
     }
 
     /// Simulates multi-photon Boson Sampling through the 16-mode linear optical unitary.
-    pub fn simulate_photonic_boson_sampling(
-        &self,
-        in_state: &FockState,
-    ) -> Vec<(FockState, f64)> {
+    pub fn simulate_photonic_boson_sampling(&self, in_state: &FockState) -> Vec<(FockState, f64)> {
         let interferometer = PhotonicInterferometer::new();
         interferometer.sample_boson_distribution(in_state)
     }
@@ -542,12 +539,7 @@ impl T1000Engine {
         partition: crate::wormhole::ErasurePartition,
         coupling_g: f64,
     ) -> crate::wormhole::HolographicQecReport {
-        crate::wormhole::evaluate_holographic_qec(
-            engine_config,
-            hamiltonian,
-            partition,
-            coupling_g,
-        )
+        crate::wormhole::evaluate_holographic_qec(engine_config, hamiltonian, partition, coupling_g)
     }
 
     // =========================================================================
@@ -777,11 +769,8 @@ mod tests {
         let c = b.compile();
         let mut s = QuantumState::ground(1 << 3);
 
-        let rep_exact = engine.execute_on_backend(
-            &c,
-            &mut s,
-            crate::backend::BackendPolicy::default(),
-        );
+        let rep_exact =
+            engine.execute_on_backend(&c, &mut s, crate::backend::BackendPolicy::default());
         assert_eq!(rep_exact.used, crate::backend::BackendKind::CpuAvx2Fp64);
 
         let rep_fixed = engine.execute_on_backend(
@@ -792,7 +781,10 @@ mod tests {
                 ..crate::backend::BackendPolicy::default()
             },
         );
-        assert_eq!(rep_fixed.used, crate::backend::BackendKind::QpuModelFixedPoint);
+        assert_eq!(
+            rep_fixed.used,
+            crate::backend::BackendKind::QpuModelFixedPoint
+        );
     }
 
     #[test]
@@ -808,7 +800,10 @@ mod tests {
         builder.h(0).cnot(0, ancilla);
         recycler.record_ancilla_gate(
             ancilla,
-            crate::compiler::CircuitOp::CNOT { control: 0, target: ancilla },
+            crate::compiler::CircuitOp::CNOT {
+                control: 0,
+                target: ancilla,
+            },
         );
         let uncompute = recycler.release_and_uncompute(ancilla);
         for op in uncompute {

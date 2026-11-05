@@ -41,7 +41,10 @@ impl FockState {
 
     /// Two-photon input state with one photon in mode `a` and one in mode `b`.
     pub fn two_photon(n_modes: usize, mode_a: usize, mode_b: usize) -> Self {
-        assert!(mode_a < n_modes && mode_b < n_modes, "Mode index out of bounds");
+        assert!(
+            mode_a < n_modes && mode_b < n_modes,
+            "Mode index out of bounds"
+        );
         let mut modes = vec![0; n_modes];
         modes[mode_a] += 1;
         modes[mode_b] += 1;
@@ -107,13 +110,7 @@ pub fn generate_fock_basis(n_modes: usize, n_photons: usize) -> Vec<FockState> {
 
         for n in 0..=remaining_photons {
             current[mode_idx] = n;
-            backtrack(
-                mode_idx + 1,
-                remaining_photons - n,
-                n_modes,
-                current,
-                basis,
-            );
+            backtrack(mode_idx + 1, remaining_photons - n, n_modes, current, basis);
         }
     }
 
@@ -154,7 +151,11 @@ pub fn matrix_permanent(mat: &[Vec<Complex64>]) -> Complex64 {
 
         let mut col_prod = Complex64::new(1.0, 0.0);
         for j in 0..n {
-            let col_sum: Complex64 = mat.iter().enumerate().map(|(i, row)| row[j] * delta[i]).sum();
+            let col_sum: Complex64 = mat
+                .iter()
+                .enumerate()
+                .map(|(i, row)| row[j] * delta[i])
+                .sum();
             col_prod *= col_sum;
         }
 
@@ -246,8 +247,14 @@ impl HongOuMandelExperiment {
         // row 0: coupler[0][0], coupler[0][1]
         // row 1: coupler[1][0], coupler[1][1]
         let sub_11 = vec![
-            vec![Complex64::new(coupler[0][0], 0.0), Complex64::new(coupler[0][1], 0.0)],
-            vec![Complex64::new(coupler[1][0], 0.0), Complex64::new(coupler[1][1], 0.0)],
+            vec![
+                Complex64::new(coupler[0][0], 0.0),
+                Complex64::new(coupler[0][1], 0.0),
+            ],
+            vec![
+                Complex64::new(coupler[1][0], 0.0),
+                Complex64::new(coupler[1][1], 0.0),
+            ],
         ];
         let perm_11 = matrix_permanent(&sub_11);
         let prob_11 = perm_11.norm_sqr();
@@ -255,8 +262,14 @@ impl HongOuMandelExperiment {
         // Submatrix for |2, 0> output:
         // row 0 repeated twice: coupler[0]
         let sub_20 = vec![
-            vec![Complex64::new(coupler[0][0], 0.0), Complex64::new(coupler[0][1], 0.0)],
-            vec![Complex64::new(coupler[0][0], 0.0), Complex64::new(coupler[0][1], 0.0)],
+            vec![
+                Complex64::new(coupler[0][0], 0.0),
+                Complex64::new(coupler[0][1], 0.0),
+            ],
+            vec![
+                Complex64::new(coupler[0][0], 0.0),
+                Complex64::new(coupler[0][1], 0.0),
+            ],
         ];
         let perm_20 = matrix_permanent(&sub_20);
         let prob_20 = perm_20.norm_sqr() / 2.0; // divided by 2! = 2
@@ -264,15 +277,22 @@ impl HongOuMandelExperiment {
         // Submatrix for |0, 2> output:
         // row 1 repeated twice: coupler[1]
         let sub_02 = vec![
-            vec![Complex64::new(coupler[1][0], 0.0), Complex64::new(coupler[1][1], 0.0)],
-            vec![Complex64::new(coupler[1][0], 0.0), Complex64::new(coupler[1][1], 0.0)],
+            vec![
+                Complex64::new(coupler[1][0], 0.0),
+                Complex64::new(coupler[1][1], 0.0),
+            ],
+            vec![
+                Complex64::new(coupler[1][0], 0.0),
+                Complex64::new(coupler[1][1], 0.0),
+            ],
         ];
         let perm_02 = matrix_permanent(&sub_02);
         let prob_02 = perm_02.norm_sqr() / 2.0;
 
         // Classical distinguishable particles would give P_distinguishable(1, 1) = 0.5
         let classical_coincidence = 0.5;
-        let visibility = ((classical_coincidence - prob_11) / classical_coincidence).clamp(0.0, 1.0);
+        let visibility =
+            ((classical_coincidence - prob_11) / classical_coincidence).clamp(0.0, 1.0);
 
         Self {
             coincidence_prob: prob_11,
@@ -282,4 +302,3 @@ impl HongOuMandelExperiment {
         }
     }
 }
-

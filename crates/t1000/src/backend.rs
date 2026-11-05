@@ -148,7 +148,9 @@ impl BackendPolicy {
                 p.force = Some(kind);
                 if kind == BackendKind::IGpuFp32 {
                     p.precision = Precision::Fast;
-                } else if kind == BackendKind::Fpga1000Qpu || kind == BackendKind::QpuModelFixedPoint {
+                } else if kind == BackendKind::Fpga1000Qpu
+                    || kind == BackendKind::QpuModelFixedPoint
+                {
                     p.precision = Precision::FixedPoint;
                 }
             }

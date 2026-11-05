@@ -34,8 +34,15 @@ pub struct QuantumFieldMode {
 
 impl QuantumFieldMode {
     /// Initializes a mode in the canonical Bunch-Davies quantum vacuum state.
-    pub fn new_bunch_davies(mode_index: usize, momentum_k: f64, mass: f64, initial_scale: f64) -> Self {
-        let omega = (momentum_k.powi(2) + (mass * initial_scale).powi(2)).sqrt().max(1e-8);
+    pub fn new_bunch_davies(
+        mode_index: usize,
+        momentum_k: f64,
+        mass: f64,
+        initial_scale: f64,
+    ) -> Self {
+        let omega = (momentum_k.powi(2) + (mass * initial_scale).powi(2))
+            .sqrt()
+            .max(1e-8);
         // Bunch-Davies vacuum condition: v_k = 1 / sqrt(2 * omega), pi_k = -i * sqrt(omega / 2)
         let v0_re = 1.0 / (2.0 * omega).sqrt();
         let pi0_im = -(omega / 2.0).sqrt();
@@ -109,11 +116,19 @@ pub struct DiscretizedQuantumField {
 impl DiscretizedQuantumField {
     /// Constructs a discretized field with `num_modes` spanning momentum space from k_min to k_max.
     pub fn new(num_modes: usize, box_length: f64, field_mass: f64, initial_scale: f64) -> Self {
-        assert!(num_modes >= 2, "Field lattice requires at least 2 spatial modes");
+        assert!(
+            num_modes >= 2,
+            "Field lattice requires at least 2 spatial modes"
+        );
         let mut modes = Vec::with_capacity(num_modes);
         for n in 1..=num_modes {
             let k = 2.0 * std::f64::consts::PI * (n as f64) / box_length;
-            modes.push(QuantumFieldMode::new_bunch_davies(n, k, field_mass, initial_scale));
+            modes.push(QuantumFieldMode::new_bunch_davies(
+                n,
+                k,
+                field_mass,
+                initial_scale,
+            ));
         }
 
         Self {

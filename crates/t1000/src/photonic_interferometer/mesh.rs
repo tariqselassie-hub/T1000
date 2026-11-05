@@ -164,12 +164,12 @@ pub fn compile_mesh_unitary() -> ([[f64; 16]; 16], Vec<Beamsplitter2x2>) {
     // Routing permutation matrix S_16:
     let perm: [usize; 16] = [
         6, 12, 14, 3, // Target Node 0 inputs mapped to Hub mixer ports 0..3
-        0, 8,         // Target Node 1 inputs
-        1, 13,        // Target Node 2 inputs
-        4, 10,        // Target Node 3 inputs
-        9, 15,        // Target Node 4 inputs
-        2, 7,         // Target Node 5 inputs
-        5, 11,        // Target Node 6 inputs
+        0, 8, // Target Node 1 inputs
+        1, 13, // Target Node 2 inputs
+        4, 10, // Target Node 3 inputs
+        9, 15, // Target Node 4 inputs
+        2, 7, // Target Node 5 inputs
+        5, 11, // Target Node 6 inputs
     ];
 
     let mut s_16 = [[0.0f64; 16]; 16];
@@ -191,18 +191,77 @@ pub fn compile_mesh_unitary() -> ([[f64; 16]; 16], Vec<Beamsplitter2x2>) {
     }
 
     let couplers = vec![
-        Beamsplitter2x2 { coupler_id: 0, input_port_a: 0, input_port_b: 1, output_port_a: 0, output_port_b: 1 },
-        Beamsplitter2x2 { coupler_id: 1, input_port_a: 2, input_port_b: 3, output_port_a: 2, output_port_b: 3 },
-        Beamsplitter2x2 { coupler_id: 2, input_port_a: 0, input_port_b: 2, output_port_a: 0, output_port_b: 2 },
-        Beamsplitter2x2 { coupler_id: 3, input_port_a: 1, input_port_b: 3, output_port_a: 1, output_port_b: 3 },
-        Beamsplitter2x2 { coupler_id: 4, input_port_a: 4, input_port_b: 5, output_port_a: 4, output_port_b: 5 },
-        Beamsplitter2x2 { coupler_id: 5, input_port_a: 6, input_port_b: 7, output_port_a: 6, output_port_b: 7 },
-        Beamsplitter2x2 { coupler_id: 6, input_port_a: 8, input_port_b: 9, output_port_a: 8, output_port_b: 9 },
-        Beamsplitter2x2 { coupler_id: 7, input_port_a: 10, input_port_b: 11, output_port_a: 10, output_port_b: 11 },
-        Beamsplitter2x2 { coupler_id: 8, input_port_a: 12, input_port_b: 13, output_port_a: 12, output_port_b: 13 },
-        Beamsplitter2x2 { coupler_id: 9, input_port_a: 14, input_port_b: 15, output_port_a: 14, output_port_b: 15 },
+        Beamsplitter2x2 {
+            coupler_id: 0,
+            input_port_a: 0,
+            input_port_b: 1,
+            output_port_a: 0,
+            output_port_b: 1,
+        },
+        Beamsplitter2x2 {
+            coupler_id: 1,
+            input_port_a: 2,
+            input_port_b: 3,
+            output_port_a: 2,
+            output_port_b: 3,
+        },
+        Beamsplitter2x2 {
+            coupler_id: 2,
+            input_port_a: 0,
+            input_port_b: 2,
+            output_port_a: 0,
+            output_port_b: 2,
+        },
+        Beamsplitter2x2 {
+            coupler_id: 3,
+            input_port_a: 1,
+            input_port_b: 3,
+            output_port_a: 1,
+            output_port_b: 3,
+        },
+        Beamsplitter2x2 {
+            coupler_id: 4,
+            input_port_a: 4,
+            input_port_b: 5,
+            output_port_a: 4,
+            output_port_b: 5,
+        },
+        Beamsplitter2x2 {
+            coupler_id: 5,
+            input_port_a: 6,
+            input_port_b: 7,
+            output_port_a: 6,
+            output_port_b: 7,
+        },
+        Beamsplitter2x2 {
+            coupler_id: 6,
+            input_port_a: 8,
+            input_port_b: 9,
+            output_port_a: 8,
+            output_port_b: 9,
+        },
+        Beamsplitter2x2 {
+            coupler_id: 7,
+            input_port_a: 10,
+            input_port_b: 11,
+            output_port_a: 10,
+            output_port_b: 11,
+        },
+        Beamsplitter2x2 {
+            coupler_id: 8,
+            input_port_a: 12,
+            input_port_b: 13,
+            output_port_a: 12,
+            output_port_b: 13,
+        },
+        Beamsplitter2x2 {
+            coupler_id: 9,
+            input_port_a: 14,
+            input_port_b: 15,
+            output_port_a: 14,
+            output_port_b: 15,
+        },
     ];
 
     (u_16, couplers)
 }
-

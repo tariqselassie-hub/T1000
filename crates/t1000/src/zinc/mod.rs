@@ -30,11 +30,12 @@ pub mod training_common;
 pub use data::{InputScaling, Scaler, ZincMolecule};
 pub use kernel_bench::{Bench as KernelBench, Kernel as KernelType};
 pub use reuploading_model::{
-    AdamPath as ReuploadingAdamPath, Model as ReuploadingModel, QngCheckpoint, Scores as ReuploadingScores,
+    AdamPath as ReuploadingAdamPath, Model as ReuploadingModel, QngCheckpoint,
+    Scores as ReuploadingScores,
 };
 pub use stage_common::{Adam as ZincAdam, Data as ZincStageData, Fit as ZincStageFit};
 pub use training_common::{
-    MidCircuitCheckpoint, PrunedCheckpoint, PropertyMetric, QnnCheckpoint, ReuploadingCheckpoint,
+    MidCircuitCheckpoint, PropertyMetric, PrunedCheckpoint, QnnCheckpoint, ReuploadingCheckpoint,
 };
 
 // Backward-compatible module aliases matching original crate layout

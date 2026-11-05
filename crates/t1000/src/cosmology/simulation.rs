@@ -116,7 +116,8 @@ impl CosmologyEngine {
                 conformal_eta,
             );
 
-            let horizon = evaluate_horizon_entanglement(&self.metric, current_t, &spectrum.mode_reports);
+            let horizon =
+                evaluate_horizon_entanglement(&self.metric, current_t, &spectrum.mode_reports);
 
             let mean_p = spectrum
                 .mode_reports
@@ -159,7 +160,8 @@ impl CosmologyEngine {
             final_h,
             conformal_eta,
         );
-        let final_horizon = evaluate_horizon_entanglement(&self.metric, final_t, &final_spectrum.mode_reports);
+        let final_horizon =
+            evaluate_horizon_entanglement(&self.metric, final_t, &final_spectrum.mode_reports);
 
         let total_particles = final_spectrum.total_particle_density;
         let peak_entropy = epochs

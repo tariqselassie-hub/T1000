@@ -115,12 +115,18 @@ impl WaterPesGrid {
                 let th = theta_min + (j as f64) * dth;
                 let pt = evaluate_water_point(r, th)?;
 
-                if min_pt.as_ref().map_or(true, |m| pt.total_energy < m.total_energy) {
+                if min_pt
+                    .as_ref()
+                    .map_or(true, |m| pt.total_energy < m.total_energy)
+                {
                     min_pt = Some(pt.clone());
                 }
 
                 if (th - 180.0).abs() < 1e-3 {
-                    if lin_pt.as_ref().map_or(true, |l| pt.total_energy < l.total_energy) {
+                    if lin_pt
+                        .as_ref()
+                        .map_or(true, |l| pt.total_energy < l.total_energy)
+                    {
                         lin_pt = Some(pt.clone());
                     }
                 }
@@ -148,4 +154,3 @@ impl WaterPesGrid {
         })
     }
 }
-

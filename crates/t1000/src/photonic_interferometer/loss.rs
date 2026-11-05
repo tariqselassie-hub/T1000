@@ -43,20 +43,20 @@ impl WaveguideLossModel {
     /// Typical Silicon-on-Insulator (SOI) fabrication process parameters.
     pub fn silicon_on_insulator() -> Self {
         Self {
-            alpha_db_cm: 1.8,                  // 1.8 dB/cm typical strip waveguide loss
-            total_length_cm: 0.5,              // 5 mm total routing on chip
-            coupler_imbalance: 0.015,          // 1.5% fabrication split imbalance
-            coupler_insertion_loss_db: 0.08,   // 0.08 dB per directional coupler
+            alpha_db_cm: 1.8,                // 1.8 dB/cm typical strip waveguide loss
+            total_length_cm: 0.5,            // 5 mm total routing on chip
+            coupler_imbalance: 0.015,        // 1.5% fabrication split imbalance
+            coupler_insertion_loss_db: 0.08, // 0.08 dB per directional coupler
         }
     }
 
     /// Low-loss Thin-Film Lithium Niobate (TFLN) process parameters.
     pub fn thin_film_lithium_niobate() -> Self {
         Self {
-            alpha_db_cm: 0.25,                 // Ultra-low 0.25 dB/cm propagation loss
-            total_length_cm: 1.2,              // 12 mm routing
-            coupler_imbalance: 0.008,          // High precision 0.8% coupler split tolerance
-            coupler_insertion_loss_db: 0.03,   // 0.03 dB insertion loss
+            alpha_db_cm: 0.25,               // Ultra-low 0.25 dB/cm propagation loss
+            total_length_cm: 1.2,            // 12 mm routing
+            coupler_imbalance: 0.008,        // High precision 0.8% coupler split tolerance
+            coupler_insertion_loss_db: 0.03, // 0.03 dB insertion loss
         }
     }
 
@@ -83,10 +83,6 @@ impl WaveguideLossModel {
         let t = (0.5 + self.coupler_imbalance).clamp(0.0, 1.0).sqrt();
         let r = (0.5 - self.coupler_imbalance).clamp(0.0, 1.0).sqrt();
 
-        [
-            [eta * t, eta * r],
-            [eta * r, -eta * t],
-        ]
+        [[eta * t, eta * r], [eta * r, -eta * t]]
     }
 }
-

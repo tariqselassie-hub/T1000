@@ -91,10 +91,7 @@ pub fn evaluate_linearization(
     let lin = linear_point.unwrap_or_else(|| evaluate_water_point(r_angstrom, 180.0).unwrap());
     let barrier_h = lin.total_energy - eq_point.total_energy;
 
-    let final_gap = walsh_states
-        .last()
-        .map(|w| w.degeneracy_gap)
-        .unwrap_or(0.0);
+    let final_gap = walsh_states.last().map(|w| w.degeneracy_gap).unwrap_or(0.0);
 
     Ok(WaterLinearizationReport {
         equilibrium_theta_deg: DEFAULT_THETA_EQUILIBRIUM,

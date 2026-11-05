@@ -400,7 +400,11 @@ impl DiagonalPlan {
 
         // Tail: remaining 0-15 amplitudes. Use AVX2 for 8-wide chunks if available,
         // then 4-wide, then scalar.
-        #[cfg(all(target_arch = "x86_64", target_feature = "avx2", target_feature = "fma"))]
+        #[cfg(all(
+            target_arch = "x86_64",
+            target_feature = "avx2",
+            target_feature = "fma"
+        ))]
         if j + 8 <= len && is_x86_feature_detected!("avx2") && is_x86_feature_detected!("fma") {
             let tr0 = _mm256_loadu_pd(self.lo_re.as_ptr().add(j));
             let ti0 = _mm256_loadu_pd(self.lo_im.as_ptr().add(j));
@@ -419,9 +423,11 @@ impl DiagonalPlan {
                 _mm256_storeu_pd(re.as_mut_ptr().add(j), new_r);
                 _mm256_storeu_pd(im.as_mut_ptr().add(j), new_i);
             } else {
-                let flip = _mm256_set1_pd(
-                    if (j & cross_mask).count_ones() & 1 == 1 { -1.0 } else { 1.0 },
-                );
+                let flip = _mm256_set1_pd(if (j & cross_mask).count_ones() & 1 == 1 {
+                    -1.0
+                } else {
+                    1.0
+                });
                 let dr0 = _mm256_mul_pd(flip, dr0);
                 let di0 = _mm256_mul_pd(flip, di0);
                 let new_r = _mm256_fmsub_pd(ar0, dr0, _mm256_mul_pd(ai0, di0));
@@ -435,11 +441,23 @@ impl DiagonalPlan {
         while j + 4 <= len {
             let tr = _mm256_loadu_pd(self.lo_re.as_ptr().add(j));
             let ti = _mm256_loadu_pd(self.lo_im.as_ptr().add(j));
-            let dr = _mm256_fmsub_pd(tr, _mm256_set1_pd(fr), _mm256_mul_pd(ti, _mm256_set1_pd(fi)));
-            let di = _mm256_fmadd_pd(tr, _mm256_set1_pd(fi), _mm256_mul_pd(ti, _mm256_set1_pd(fr)));
+            let dr = _mm256_fmsub_pd(
+                tr,
+                _mm256_set1_pd(fr),
+                _mm256_mul_pd(ti, _mm256_set1_pd(fi)),
+            );
+            let di = _mm256_fmadd_pd(
+                tr,
+                _mm256_set1_pd(fi),
+                _mm256_mul_pd(ti, _mm256_set1_pd(fr)),
+            );
             let ar = _mm256_loadu_pd(re.as_ptr().add(j));
             let ai = _mm256_loadu_pd(im.as_ptr().add(j));
-            let flip = if (j & cross_mask).count_ones() & 1 == 1 { -1.0 } else { 1.0 };
+            let flip = if (j & cross_mask).count_ones() & 1 == 1 {
+                -1.0
+            } else {
+                1.0
+            };
             let dr = _mm256_mul_pd(_mm256_set1_pd(flip), dr);
             let di = _mm256_mul_pd(_mm256_set1_pd(flip), di);
             let new_r = _mm256_fmsub_pd(ar, dr, _mm256_mul_pd(ai, di));
@@ -450,7 +468,11 @@ impl DiagonalPlan {
         }
 
         while j < len {
-            let flip = if (j & cross_mask).count_ones() & 1 == 1 { -1.0 } else { 1.0 };
+            let flip = if (j & cross_mask).count_ones() & 1 == 1 {
+                -1.0
+            } else {
+                1.0
+            };
             let (tr, ti) = (self.lo_re[j], self.lo_im[j]);
             let (dr, di) = (flip * (tr * fr - ti * fi), flip * (tr * fi + ti * fr));
             let (ar, ai) = (re[j], im[j]);

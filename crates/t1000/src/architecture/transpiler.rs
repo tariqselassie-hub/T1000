@@ -7,11 +7,11 @@
 //! executing basis gate decomposition (e.g., CNOT -> H-CZ-H / Ry-CZ-Ry), routing non-adjacent
 //! couplers via shortest-path SWAP networks, and estimating physical duration and fidelity.
 
-use std::f64::consts::PI;
 use serde::{Deserialize, Serialize};
+use std::f64::consts::PI;
 
-use crate::compiler::CircuitOp;
 use super::{NativeGateKind, QuantumChip};
+use crate::compiler::CircuitOp;
 
 /// Summary report generated after transpiling a circuit for a target quantum chip.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -65,7 +65,11 @@ impl ChipTranspiler {
                 if q >= max_q {
                     return Err(format!(
                         "Gate #{} ({:?}) targets qubit {} exceeding chip capacity {} on {}",
-                        idx, op, q, max_q, self.chip.slug()
+                        idx,
+                        op,
+                        q,
+                        max_q,
+                        self.chip.slug()
                     ));
                 }
             }
@@ -78,18 +82,41 @@ impl ChipTranspiler {
         for op in ops {
             match op {
                 CircuitOp::CNOT { control, target } => {
-                    self.decompose_cnot(*control, *target, &topo, &mut native_ops, &mut routing_swaps);
+                    self.decompose_cnot(
+                        *control,
+                        *target,
+                        &topo,
+                        &mut native_ops,
+                        &mut routing_swaps,
+                    );
                 }
                 CircuitOp::CZ { q1, q2 } => {
-                    self.route_and_emit_2q(*q1, *q2, &topo, &mut native_ops, &mut routing_swaps, |a, b| {
-                        CircuitOp::CZ { q1: a, q2: b }
-                    });
+                    self.route_and_emit_2q(
+                        *q1,
+                        *q2,
+                        &topo,
+                        &mut native_ops,
+                        &mut routing_swaps,
+                        |a, b| CircuitOp::CZ { q1: a, q2: b },
+                    );
                 }
                 CircuitOp::AntiCNOT { control, target } => {
                     // X on control, CNOT, X on control
-                    native_ops.push(CircuitOp::Ry { qubit: *control, theta: PI });
-                    self.decompose_cnot(*control, *target, &topo, &mut native_ops, &mut routing_swaps);
-                    native_ops.push(CircuitOp::Ry { qubit: *control, theta: -PI });
+                    native_ops.push(CircuitOp::Ry {
+                        qubit: *control,
+                        theta: PI,
+                    });
+                    self.decompose_cnot(
+                        *control,
+                        *target,
+                        &topo,
+                        &mut native_ops,
+                        &mut routing_swaps,
+                    );
+                    native_ops.push(CircuitOp::Ry {
+                        qubit: *control,
+                        theta: -PI,
+                    });
                 }
                 CircuitOp::SWAP { q1, q2 } => {
                     // 3 CNOTs
@@ -97,14 +124,39 @@ impl ChipTranspiler {
                     self.decompose_cnot(*q2, *q1, &topo, &mut native_ops, &mut routing_swaps);
                     self.decompose_cnot(*q1, *q2, &topo, &mut native_ops, &mut routing_swaps);
                 }
-                CircuitOp::ControlledPhase { control, target, theta } => {
+                CircuitOp::ControlledPhase {
+                    control,
+                    target,
+                    theta,
+                } => {
                     // CP(theta) = Rz(theta/2) on control and target, then CNOT, Rz(-theta/2) on target, CNOT
                     let half = theta * 0.5;
-                    native_ops.push(CircuitOp::Rz { qubit: *control, theta: half });
-                    native_ops.push(CircuitOp::Rz { qubit: *target, theta: half });
-                    self.decompose_cnot(*control, *target, &topo, &mut native_ops, &mut routing_swaps);
-                    native_ops.push(CircuitOp::Rz { qubit: *target, theta: -half });
-                    self.decompose_cnot(*control, *target, &topo, &mut native_ops, &mut routing_swaps);
+                    native_ops.push(CircuitOp::Rz {
+                        qubit: *control,
+                        theta: half,
+                    });
+                    native_ops.push(CircuitOp::Rz {
+                        qubit: *target,
+                        theta: half,
+                    });
+                    self.decompose_cnot(
+                        *control,
+                        *target,
+                        &topo,
+                        &mut native_ops,
+                        &mut routing_swaps,
+                    );
+                    native_ops.push(CircuitOp::Rz {
+                        qubit: *target,
+                        theta: -half,
+                    });
+                    self.decompose_cnot(
+                        *control,
+                        *target,
+                        &topo,
+                        &mut native_ops,
+                        &mut routing_swaps,
+                    );
                 }
                 _ => {
                     // Single qubit gates (Ry, Rz, Unitary1Q, RademacherPhase) pass directly
@@ -167,12 +219,24 @@ impl ChipTranspiler {
             });
         } else if has_cz {
             // CNOT(c, t) = Ry(pi/2)_t -> CZ(c, t) -> Ry(-pi/2)_t
-            out.push(CircuitOp::Ry { qubit: tgt, theta: PI * 0.5 });
-            self.route_and_emit_2q(ctrl, tgt, topo, out, swaps, |a, b| CircuitOp::CZ { q1: a, q2: b });
-            out.push(CircuitOp::Ry { qubit: tgt, theta: -PI * 0.5 });
+            out.push(CircuitOp::Ry {
+                qubit: tgt,
+                theta: PI * 0.5,
+            });
+            self.route_and_emit_2q(ctrl, tgt, topo, out, swaps, |a, b| CircuitOp::CZ {
+                q1: a,
+                q2: b,
+            });
+            out.push(CircuitOp::Ry {
+                qubit: tgt,
+                theta: -PI * 0.5,
+            });
         } else {
             // Default CZ fallback
-            self.route_and_emit_2q(ctrl, tgt, topo, out, swaps, |a, b| CircuitOp::CZ { q1: a, q2: b });
+            self.route_and_emit_2q(ctrl, tgt, topo, out, swaps, |a, b| CircuitOp::CZ {
+                q1: a,
+                q2: b,
+            });
         }
     }
 
@@ -222,7 +286,12 @@ impl ChipTranspiler {
         }
     }
 
-    fn shortest_path(&self, start: usize, goal: usize, topo: &crate::routing::Topology) -> Vec<usize> {
+    fn shortest_path(
+        &self,
+        start: usize,
+        goal: usize,
+        topo: &crate::routing::Topology,
+    ) -> Vec<usize> {
         let n = topo.n;
         let mut prev = vec![None; n];
         let mut dist = vec![usize::MAX; n];
@@ -271,7 +340,10 @@ mod tests {
     fn test_transpile_cnot_decomposition_on_nighthawk() {
         let transpiler = ChipTranspiler::new(QuantumChip::IbmNighthawkR2);
         // Coupler (0, 1) is adjacent on Nighthawk R2
-        let circuit = vec![CircuitOp::CNOT { control: 0, target: 1 }];
+        let circuit = vec![CircuitOp::CNOT {
+            control: 0,
+            target: 1,
+        }];
         let res = transpiler.transpile(&circuit).expect("transpile ok");
 
         // IBM Nighthawk native gates: [Rz, SqrtX, X, Ecr, Cz].
@@ -299,7 +371,10 @@ mod tests {
     #[test]
     fn test_exceeding_capacity_rejected() {
         let transpiler = ChipTranspiler::new(QuantumChip::T1000QpuArtix7); // capacity 14
-        let circuit = vec![CircuitOp::Ry { qubit: 15, theta: 1.0 }];
+        let circuit = vec![CircuitOp::Ry {
+            qubit: 15,
+            theta: 1.0,
+        }];
         let res = transpiler.transpile(&circuit);
         assert!(res.is_err());
     }

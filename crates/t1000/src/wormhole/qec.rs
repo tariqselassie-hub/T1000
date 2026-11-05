@@ -87,8 +87,12 @@ pub fn evaluate_holographic_qec(
     // Sweep erasure count k from 0 up to N - 1
     for k in 0..n {
         let erased_indices: Vec<usize> = match partition {
-            ErasurePartition::LeftHorizon => (0..k).map(|i| wire_map.left_qubits[n - 1 - i]).collect(),
-            ErasurePartition::RightHorizon => (0..k).map(|i| wire_map.right_qubits[n - 1 - i]).collect(),
+            ErasurePartition::LeftHorizon => {
+                (0..k).map(|i| wire_map.left_qubits[n - 1 - i]).collect()
+            }
+            ErasurePartition::RightHorizon => {
+                (0..k).map(|i| wire_map.right_qubits[n - 1 - i]).collect()
+            }
             ErasurePartition::BilateralHorizons => {
                 let mut wires = Vec::new();
                 for i in 0..k {
@@ -142,9 +146,18 @@ pub fn evaluate_holographic_qec(
                 // If mode is erased, its shockwave channel is severed
                 let is_erased = erased_indices.contains(&l_k) || erased_indices.contains(&r_k);
                 if !is_erased {
-                    builder.dag.add_op(CircuitOp::CNOT { control: l_k, target: r_k });
-                    builder.dag.add_op(CircuitOp::Rz { qubit: r_k, theta: coupling_theta });
-                    builder.dag.add_op(CircuitOp::CNOT { control: l_k, target: r_k });
+                    builder.dag.add_op(CircuitOp::CNOT {
+                        control: l_k,
+                        target: r_k,
+                    });
+                    builder.dag.add_op(CircuitOp::Rz {
+                        qubit: r_k,
+                        theta: coupling_theta,
+                    });
+                    builder.dag.add_op(CircuitOp::CNOT {
+                        control: l_k,
+                        target: r_k,
+                    });
                 }
             }
         }
@@ -194,4 +207,3 @@ pub fn evaluate_holographic_qec(
         entanglement_wedge_threshold: threshold_frac,
     }
 }
-

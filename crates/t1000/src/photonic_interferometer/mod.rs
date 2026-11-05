@@ -125,7 +125,9 @@ impl PhotonicInterferometer {
         }
 
         // Apply physical field attenuation if configured
-        let eta = self.loss_model.field_transmission_factor(self.couplers.len());
+        let eta = self
+            .loss_model
+            .field_transmission_factor(self.couplers.len());
         if (eta - 1.0).abs() > 1e-12 {
             for k in 0..16 {
                 next_re[k] *= eta;
@@ -233,10 +235,7 @@ mod tests {
     fn test_hong_ou_mandel_two_photon_bunching() {
         // Ideal 50:50 Hadamard coupler
         let inv_sqrt2 = 1.0 / 2.0f64.sqrt();
-        let coupler = [
-            [inv_sqrt2, inv_sqrt2],
-            [inv_sqrt2, -inv_sqrt2],
-        ];
+        let coupler = [[inv_sqrt2, inv_sqrt2], [inv_sqrt2, -inv_sqrt2]];
 
         let hom = HongOuMandelExperiment::simulate_2x2(coupler);
         assert!(
@@ -325,4 +324,3 @@ mod tests {
         assert!(probs[6] > 0.0, "Sink node must receive quantum wavepacket");
     }
 }
-

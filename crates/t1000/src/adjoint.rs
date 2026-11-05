@@ -68,10 +68,10 @@ pub struct AdjointWorkspace {
     pub ry_grad: Vec<f64>,
     pub expectations: Vec<f64>,
     pub gradient: Vec<f64>,
-    theta_rz: Vec<f64>,
-    neg_rz: Vec<f64>,
-    theta_ry: Vec<f64>,
-    pairs: Vec<(usize, usize)>,
+    pub(crate) theta_rz: Vec<f64>,
+    pub(crate) neg_rz: Vec<f64>,
+    pub(crate) theta_ry: Vec<f64>,
+    pub(crate) pairs: Vec<(usize, usize)>,
 }
 
 impl AdjointWorkspace {

@@ -213,7 +213,9 @@ mod tests {
         for _ in 0..10 {
             let x_masks = vec![0b1010_u64, 0b1100_u64];
             let z_masks = vec![0b0010_u64, 0b1000_u64];
-            assert!(engine.execute_shot_batch_with_tracking(x_masks, z_masks, 0.001).is_ok());
+            assert!(engine
+                .execute_shot_batch_with_tracking(x_masks, z_masks, 0.001)
+                .is_ok());
         }
 
         assert_eq!(engine.execution_batch_counter(), 10);
@@ -237,4 +239,3 @@ mod tests {
         assert!(res.sidecar_frames_processed >= 450); // almost all or all processed
     }
 }
-

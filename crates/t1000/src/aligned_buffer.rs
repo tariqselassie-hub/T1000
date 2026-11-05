@@ -93,7 +93,11 @@ impl AlignedBuffer {
     /// Appends an element to the back of the buffer.
     pub fn push(&mut self, val: f64) {
         if self.len == self.capacity {
-            let new_cap = if self.capacity == 0 { 8 } else { self.capacity * 2 };
+            let new_cap = if self.capacity == 0 {
+                8
+            } else {
+                self.capacity * 2
+            };
             self.reserve_capacity(new_cap);
         }
         unsafe {
@@ -105,10 +109,12 @@ impl AlignedBuffer {
     fn reserve_capacity(&mut self, new_cap: usize) {
         let old_bytes = self.capacity * std::mem::size_of::<f64>();
         let new_bytes = new_cap * std::mem::size_of::<f64>();
-        let old_layout = Layout::from_size_align(old_bytes, CACHE_LINE_ALIGN).expect("valid layout");
+        let old_layout =
+            Layout::from_size_align(old_bytes, CACHE_LINE_ALIGN).expect("valid layout");
 
         let raw = if self.capacity == 0 {
-            let layout = Layout::from_size_align(new_bytes, CACHE_LINE_ALIGN).expect("valid layout");
+            let layout =
+                Layout::from_size_align(new_bytes, CACHE_LINE_ALIGN).expect("valid layout");
             unsafe { alloc_zeroed(layout) as *mut f64 }
         } else {
             unsafe { realloc(self.ptr.as_ptr() as *mut u8, old_layout, new_bytes) as *mut f64 }

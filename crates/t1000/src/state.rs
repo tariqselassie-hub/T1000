@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 // Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
 
+use crate::aligned_buffer::AlignedBuffer;
 use num_complex::Complex64;
 use serde::{Deserialize, Serialize};
 use std::f64::consts::PI;
-use crate::aligned_buffer::AlignedBuffer;
 use t1000_core::QubitRegister;
 
 /// Panics unless `dim` is a power of two >= 2 (i.e. a whole number of qubits).
@@ -185,7 +185,9 @@ impl QuantumState {
             dim_a * dim_b,
             "State dimension must equal dim_a * dim_b"
         );
-        t1000_core::PartialTrace::trace_out_b_soa_into(&self.real, &self.imag, dim_a, dim_b, out_rho_a);
+        t1000_core::PartialTrace::trace_out_b_soa_into(
+            &self.real, &self.imag, dim_a, dim_b, out_rho_a,
+        );
     }
 
     /// Applies a `t1000_core::DecoherenceChannel` to this state in-place.

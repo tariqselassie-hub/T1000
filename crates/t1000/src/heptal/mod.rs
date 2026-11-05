@@ -22,9 +22,7 @@ pub mod qnn;
 pub mod wave;
 
 // Core public exports
-pub use qnn::{
-    HeptalMolecularZipperQnn, HeptalPrediction, HeptalQnnConfig, HeptalSiteObservables,
-};
+pub use qnn::{HeptalMolecularZipperQnn, HeptalPrediction, HeptalQnnConfig, HeptalSiteObservables};
 pub use wave::{
     HeptalWaveState, HeptalZipperConfig, HeptalZipperEngine, HeptalZipperReport,
     HeptalZipperStepTelemetry,

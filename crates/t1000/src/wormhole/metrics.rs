@@ -137,11 +137,7 @@ pub fn single_qubit_reduced_density_matrix(
 
 /// Evaluates single-qubit pure state fidelity F = <\psi|\rho|\psi>.
 #[inline(always)]
-pub fn state_fidelity_1q(
-    rho: &[[Complex64; 2]; 2],
-    alpha: Complex64,
-    beta: Complex64,
-) -> f64 {
+pub fn state_fidelity_1q(rho: &[[Complex64; 2]; 2], alpha: Complex64, beta: Complex64) -> f64 {
     let a_norm_sq = alpha.norm_sqr();
     let b_norm_sq = beta.norm_sqr();
     let cross = 2.0 * (alpha.conj() * beta * rho[0][1]).re;
@@ -158,7 +154,8 @@ pub fn compute_operator_size_distribution(
     // Exact analytical size winding distribution:
     // As time t evolves from 0 to scrambling time, probability moves from size 1 to higher weights.
     let mut dist = Vec::with_capacity(num_qubits);
-    let s_char = (1.0 + (num_qubits as f64 - 1.0) * (time_t.min(3.0) / 3.0)).clamp(1.0, num_qubits as f64);
+    let s_char =
+        (1.0 + (num_qubits as f64 - 1.0) * (time_t.min(3.0) / 3.0)).clamp(1.0, num_qubits as f64);
     let mut sum_p = 0.0;
 
     for s in 1..=num_qubits {

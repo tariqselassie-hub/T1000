@@ -6,9 +6,9 @@
 //! Evaluates physical decoherence, Lindblad decay, gate infidelity, inter-chiplet seam penalties,
 //! and asymmetric readout errors parameterized by a [`QuantumChip`]'s calibrated [`super::ChipErrorProfile`].
 
-use serde::{Deserialize, Serialize};
-use crate::device_noise::{apply_readout, depolarize, invert_readout, ReadoutError};
 use super::QuantumChip;
+use crate::device_noise::{apply_readout, depolarize, invert_readout, ReadoutError};
+use serde::{Deserialize, Serialize};
 
 /// Physical hardware noise execution telemetry.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

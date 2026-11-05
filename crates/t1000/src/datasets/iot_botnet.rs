@@ -91,10 +91,10 @@ pub struct IoTCascadedTreeReport {
 /// 3-Tier Hierarchical Label Tuple.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct IoTTreeLabels {
-    pub device_cat: usize,   // 0..4
-    pub attack_family: usize, // 0..2 (0=Normal, 1=Botnet)
-    pub attack_subtype: usize,// 0..2 (0=Volumetric/Steady, 1=Recon/Bursty)
-    pub leaf_index: usize,    // 0..16
+    pub device_cat: usize,     // 0..4
+    pub attack_family: usize,  // 0..2 (0=Normal, 1=Botnet)
+    pub attack_subtype: usize, // 0..2 (0=Volumetric/Steady, 1=Recon/Bursty)
+    pub leaf_index: usize,     // 0..16
 }
 
 /// A parsed IoT network traffic sample with 10 normalized rotation angles.
@@ -155,7 +155,11 @@ pub fn map_attack_subtype(sub_str: &str, family: usize) -> usize {
 
 /// Computes the unique leaf index in 0..16 for a given (device, family, subtype) triplet.
 #[inline(always)]
-pub fn compute_iot_leaf_index(device_cat: usize, attack_family: usize, attack_subtype: usize) -> usize {
+pub fn compute_iot_leaf_index(
+    device_cat: usize,
+    attack_family: usize,
+    attack_subtype: usize,
+) -> usize {
     (device_cat * 4) + (attack_family * 2) + attack_subtype
 }
 
@@ -443,7 +447,10 @@ impl IoTCascadedTreeSorter {
 
     /// Evaluates marginal distribution across all 16 hierarchical leaves.
     #[inline]
-    pub fn compute_leaf_distribution(&self, state: &[num_complex::Complex64]) -> [f64; N_IOT_LEAVES] {
+    pub fn compute_leaf_distribution(
+        &self,
+        state: &[num_complex::Complex64],
+    ) -> [f64; N_IOT_LEAVES] {
         let mut dist = [0.0; N_IOT_LEAVES];
         for (idx, amp) in state.iter().enumerate() {
             let leaf = idx & 0x0F;
@@ -524,10 +531,19 @@ mod tests {
         assert_eq!(map_device_to_category("Ennio_Doorbell"), 0);
         assert_eq!(map_device_to_category("Ecobee_Thermostat"), 1);
         assert_eq!(map_device_to_category("Philips_B120N10_Baby_Monitor"), 1);
-        assert_eq!(map_device_to_category("Provision_PT_737E_Security_Camera"), 2);
-        assert_eq!(map_device_to_category("Provision_PT_838_Security_Camera"), 2);
+        assert_eq!(
+            map_device_to_category("Provision_PT_737E_Security_Camera"),
+            2
+        );
+        assert_eq!(
+            map_device_to_category("Provision_PT_838_Security_Camera"),
+            2
+        );
         assert_eq!(map_device_to_category("Samsung_SNH_1011_N_Webcam"), 3);
-        assert_eq!(map_device_to_category("SimpleHome_XCS7_1002_WHT_Security_Camera"), 3);
+        assert_eq!(
+            map_device_to_category("SimpleHome_XCS7_1002_WHT_Security_Camera"),
+            3
+        );
     }
 
     #[test]

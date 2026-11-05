@@ -776,9 +776,15 @@ mod tests {
         // Trunk gradient verification
         let t_grad = sorter.parameter_shift_trunk_grad(&features, 0, 0);
         sorter.trunk_params[0] += eps;
-        let p0_plus: f64 = compute_ultrametric_branch_distribution(&sorter.forward(&features), &cfg)[0].iter().sum();
+        let p0_plus: f64 =
+            compute_ultrametric_branch_distribution(&sorter.forward(&features), &cfg)[0]
+                .iter()
+                .sum();
         sorter.trunk_params[0] -= 2.0 * eps;
-        let p0_minus: f64 = compute_ultrametric_branch_distribution(&sorter.forward(&features), &cfg)[0].iter().sum();
+        let p0_minus: f64 =
+            compute_ultrametric_branch_distribution(&sorter.forward(&features), &cfg)[0]
+                .iter()
+                .sum();
         sorter.trunk_params[0] += eps;
         let num_t_grad = (p0_plus - p0_minus) / (2.0 * eps);
         assert!((t_grad - num_t_grad).abs() < 1e-4);

@@ -59,19 +59,47 @@ impl TrajectoryPoint {
     pub fn variance_multipliers(&self) -> VarianceMultipliers {
         let n = self.z_expectations.len();
         if n == 0 {
-            return VarianceMultipliers { s_1: 1.0, s_2: 1.0, s_3: 1.0 };
+            return VarianceMultipliers {
+                s_1: 1.0,
+                s_2: 1.0,
+                s_3: 1.0,
+            };
         }
-        let var_z: f64 = self.z_expectations.iter().map(|&z| 1.0 - z * z).sum::<f64>() / (n as f64);
-        let var_x: f64 = self.x_expectations.iter().map(|&x| 1.0 - x * x).sum::<f64>() / (n as f64);
-        let var_y: f64 = self.y_expectations.iter().map(|&y| 1.0 - y * y).sum::<f64>() / (n as f64);
+        let var_z: f64 = self
+            .z_expectations
+            .iter()
+            .map(|&z| 1.0 - z * z)
+            .sum::<f64>()
+            / (n as f64);
+        let var_x: f64 = self
+            .x_expectations
+            .iter()
+            .map(|&x| 1.0 - x * x)
+            .sum::<f64>()
+            / (n as f64);
+        let var_y: f64 = self
+            .y_expectations
+            .iter()
+            .map(|&y| 1.0 - y * y)
+            .sum::<f64>()
+            / (n as f64);
 
         let s_1 = if var_x > 1e-12 { var_z / var_x } else { 1.0 };
         let s_2 = if var_y > 1e-12 { var_x / var_y } else { 1.0 };
 
         let mean_phi = self.phase_flux.iter().sum::<f64>() / (n as f64);
-        let var_phi = self.phase_flux.iter().map(|&phi| (phi - mean_phi).powi(2)).sum::<f64>() / (n as f64);
+        let var_phi = self
+            .phase_flux
+            .iter()
+            .map(|&phi| (phi - mean_phi).powi(2))
+            .sum::<f64>()
+            / (n as f64);
         let unif_var = std::f64::consts::PI.powi(2) / 3.0;
-        let s_3 = if var_phi > 1e-12 { var_phi / unif_var } else { 1.0 };
+        let s_3 = if var_phi > 1e-12 {
+            var_phi / unif_var
+        } else {
+            1.0
+        };
 
         VarianceMultipliers { s_1, s_2, s_3 }
     }
@@ -191,7 +219,10 @@ impl StreamingExpectationAccumulator {
         tag: String,
     ) -> TrajectoryPoint {
         let dim = state.dim;
-        assert!(dim >= (1 << num_qubits), "state dimension smaller than monitored qubits");
+        assert!(
+            dim >= (1 << num_qubits),
+            "state dimension smaller than monitored qubits"
+        );
 
         let mut z_acc = vec![0.0; num_qubits];
         let mut x_acc = vec![0.0; num_qubits];
@@ -242,7 +273,11 @@ impl StreamingExpectationAccumulator {
         }
 
         // Normalize expectations by state norm if state is unnormalized
-        let inv_norm = if norm_acc > 1e-15 { 1.0 / norm_acc } else { 1.0 };
+        let inv_norm = if norm_acc > 1e-15 {
+            1.0 / norm_acc
+        } else {
+            1.0
+        };
         for q in 0..num_qubits {
             z_acc[q] *= inv_norm;
             x_acc[q] *= inv_norm;
@@ -377,4 +412,3 @@ mod tests {
         assert!(vm1.s_2 > 0.0);
     }
 }
-

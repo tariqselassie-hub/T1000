@@ -22,7 +22,7 @@ pub const N_FRAUD_TYPES: usize = 7;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BankTransaction {
     pub transaction_id: String,
-    pub is_fraud: usize,     // 0 = Clean, 1 = Fraud
+    pub is_fraud: usize,      // 0 = Clean, 1 = Fraud
     pub fraud_type_id: usize, // 0 = None, 1..6 = Specific fraud pattern
     pub transaction_amount: f64,
     pub account_balance: f64,
@@ -112,10 +112,26 @@ pub fn parse_bank_transactions(path: &Path, max_samples: Option<usize>) -> Vec<B
         let _hour: f64 = fields[idx_hour].trim().parse().unwrap_or(12.0);
         let is_night: f64 = fields[idx_night].trim().parse().unwrap_or(0.0);
         let credit_score: f64 = fields[idx_score].trim().parse().unwrap_or(650.0);
-        let balance = fields[idx_bal].trim().parse::<f64>().unwrap_or(100.0).max(0.0);
-        let amount = fields[idx_amt].trim().parse::<f64>().unwrap_or(10.0).max(0.01);
-        let distance = fields[idx_dist].trim().parse::<f64>().unwrap_or(1.0).max(0.01);
-        let elapsed_hrs = fields[idx_time].trim().parse::<f64>().unwrap_or(1.0).max(0.01);
+        let balance = fields[idx_bal]
+            .trim()
+            .parse::<f64>()
+            .unwrap_or(100.0)
+            .max(0.0);
+        let amount = fields[idx_amt]
+            .trim()
+            .parse::<f64>()
+            .unwrap_or(10.0)
+            .max(0.01);
+        let distance = fields[idx_dist]
+            .trim()
+            .parse::<f64>()
+            .unwrap_or(1.0)
+            .max(0.01);
+        let elapsed_hrs = fields[idx_time]
+            .trim()
+            .parse::<f64>()
+            .unwrap_or(1.0)
+            .max(0.01);
         let is_intl: f64 = fields[idx_intl].trim().parse().unwrap_or(0.0);
         let failed_att: f64 = fields[idx_fail].trim().parse().unwrap_or(0.0);
         let pin_changed: f64 = fields[idx_pin].trim().parse().unwrap_or(0.0);
@@ -133,7 +149,11 @@ pub fn parse_bank_transactions(path: &Path, max_samples: Option<usize>) -> Vec<B
         let mut features = [0.0; N_FRAUD_FEATURES];
         features[0] = (failed_att / 5.0).clamp(0.0, 1.0) * FRAC_PI_2;
         features[1] = (if is_intl > 0.5 { 1.0 } else { 0.0 }) * FRAC_PI_2;
-        features[2] = (if is_night > 0.5 || pin_changed > 0.5 { 1.0 } else { 0.0 }) * (FRAC_PI_2 * 0.7);
+        features[2] = (if is_night > 0.5 || pin_changed > 0.5 {
+            1.0
+        } else {
+            0.0
+        }) * (FRAC_PI_2 * 0.7);
         features[3] = (velocity_kmh / 250.0).clamp(0.0, 1.0) * (FRAC_PI_2 * 0.7);
         features[4] = (bal_ratio / 3.0).clamp(0.0, 1.0) * (FRAC_PI_2 * 0.6);
         features[5] = (log_amount * (failed_att + 1.0) / 25.0).clamp(0.0, 1.0) * (FRAC_PI_2 * 0.6);

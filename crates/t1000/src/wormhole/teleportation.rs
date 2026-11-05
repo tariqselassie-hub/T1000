@@ -40,7 +40,10 @@ pub struct WormholeWireMap {
 
 impl WormholeWireMap {
     pub fn new(num_modes: usize) -> Self {
-        assert!(num_modes >= 2, "Holographic wormhole requires at least 2 spatial modes");
+        assert!(
+            num_modes >= 2,
+            "Holographic wormhole requires at least 2 spatial modes"
+        );
         let ref_qubit = 0;
         let left_qubits: Vec<usize> = (1..=num_modes).collect();
         let right_qubits: Vec<usize> = ((num_modes + 1)..=(2 * num_modes)).collect();
@@ -127,7 +130,9 @@ impl HolographicWormholeEngine {
 
         // 3. Forward Scrambling on Left Register: U_L(t)
         for _ in 0..self.config.trotter_steps {
-            let fwd_ops = self.scrambler.build_forward_ops(&self.wire_map.left_qubits, dt);
+            let fwd_ops = self
+                .scrambler
+                .build_forward_ops(&self.wire_map.left_qubits, dt);
             for op in fwd_ops {
                 builder.dag.add_op(op);
             }
@@ -139,15 +144,26 @@ impl HolographicWormholeEngine {
             for k in 0..n {
                 let l_k = self.wire_map.left_qubits[k];
                 let r_k = self.wire_map.right_qubits[k];
-                builder.dag.add_op(CircuitOp::CNOT { control: l_k, target: r_k });
-                builder.dag.add_op(CircuitOp::Rz { qubit: r_k, theta: coupling_theta });
-                builder.dag.add_op(CircuitOp::CNOT { control: l_k, target: r_k });
+                builder.dag.add_op(CircuitOp::CNOT {
+                    control: l_k,
+                    target: r_k,
+                });
+                builder.dag.add_op(CircuitOp::Rz {
+                    qubit: r_k,
+                    theta: coupling_theta,
+                });
+                builder.dag.add_op(CircuitOp::CNOT {
+                    control: l_k,
+                    target: r_k,
+                });
             }
         }
 
         // 5. Unscrambling Time-Evolution on Right Register: U_R(t) = U_L^*(t)
         for _ in 0..self.config.trotter_steps {
-            let conj_ops = self.scrambler.build_conjugate_ops(&self.wire_map.right_qubits, dt);
+            let conj_ops = self
+                .scrambler
+                .build_conjugate_ops(&self.wire_map.right_qubits, dt);
             for op in conj_ops {
                 builder.dag.add_op(op);
             }
@@ -196,12 +212,7 @@ impl HolographicWormholeEngine {
     }
 
     /// Sweeps the bilateral coupling g across negative (wrong-sign) and positive (ANEC violation) regimes.
-    pub fn sweep_coupling(
-        &self,
-        g_min: f64,
-        g_max: f64,
-        num_points: usize,
-    ) -> WormholeSweepReport {
+    pub fn sweep_coupling(&self, g_min: f64, g_max: f64, num_points: usize) -> WormholeSweepReport {
         assert!(num_points >= 3, "Sweep requires at least 3 sampling points");
         let step = (g_max - g_min) / ((num_points - 1) as f64);
         let mut points = Vec::with_capacity(num_points);
@@ -266,7 +277,10 @@ impl HolographicWormholeEngine {
 
         // 3. Forward scrambling on Left: U_L(t)
         for _ in 0..self.config.trotter_steps {
-            for op in self.scrambler.build_forward_ops(&self.wire_map.left_qubits, dt) {
+            for op in self
+                .scrambler
+                .build_forward_ops(&self.wire_map.left_qubits, dt)
+            {
                 builder.dag.add_op(op);
             }
         }
@@ -277,15 +291,27 @@ impl HolographicWormholeEngine {
             for k in 0..n {
                 let l_k = self.wire_map.left_qubits[k];
                 let r_k = self.wire_map.right_qubits[k];
-                builder.dag.add_op(CircuitOp::CNOT { control: l_k, target: r_k });
-                builder.dag.add_op(CircuitOp::Rz { qubit: r_k, theta: coupling_theta });
-                builder.dag.add_op(CircuitOp::CNOT { control: l_k, target: r_k });
+                builder.dag.add_op(CircuitOp::CNOT {
+                    control: l_k,
+                    target: r_k,
+                });
+                builder.dag.add_op(CircuitOp::Rz {
+                    qubit: r_k,
+                    theta: coupling_theta,
+                });
+                builder.dag.add_op(CircuitOp::CNOT {
+                    control: l_k,
+                    target: r_k,
+                });
             }
         }
 
         // 5. Unscrambling on Right
         for _ in 0..self.config.trotter_steps {
-            for op in self.scrambler.build_conjugate_ops(&self.wire_map.right_qubits, dt) {
+            for op in self
+                .scrambler
+                .build_conjugate_ops(&self.wire_map.right_qubits, dt)
+            {
                 builder.dag.add_op(op);
             }
         }

@@ -52,12 +52,12 @@ impl PauliType {
             (PauliType::X, PauliType::X) => (PauliType::I, 0),
             (PauliType::Y, PauliType::Y) => (PauliType::I, 0),
             (PauliType::Z, PauliType::Z) => (PauliType::I, 0),
-            (PauliType::X, PauliType::Y) => (PauliType::Z, 1),  // XY = iZ
-            (PauliType::Y, PauliType::X) => (PauliType::Z, 3),  // YX = -iZ
-            (PauliType::Y, PauliType::Z) => (PauliType::X, 1),  // YZ = iX
-            (PauliType::Z, PauliType::Y) => (PauliType::X, 3),  // ZY = -iX
-            (PauliType::Z, PauliType::X) => (PauliType::Y, 1),  // ZX = iY
-            (PauliType::X, PauliType::Z) => (PauliType::Y, 3),  // XZ = -iY
+            (PauliType::X, PauliType::Y) => (PauliType::Z, 1), // XY = iZ
+            (PauliType::Y, PauliType::X) => (PauliType::Z, 3), // YX = -iZ
+            (PauliType::Y, PauliType::Z) => (PauliType::X, 1), // YZ = iX
+            (PauliType::Z, PauliType::Y) => (PauliType::X, 3), // ZY = -iX
+            (PauliType::Z, PauliType::X) => (PauliType::Y, 1), // ZX = iY
+            (PauliType::X, PauliType::Z) => (PauliType::Y, 3), // XZ = -iY
         }
     }
 }
@@ -199,7 +199,10 @@ impl PauliFrameTracker {
     /// Symplectically updates the frame through a CNOT gate:
     /// $X_c \to X_c X_t, \quad Z_t \to Z_c Z_t, \quad Z_c \to Z_c, \quad X_t \to X_t$.
     pub fn track_cnot(&mut self, control: usize, target: usize) {
-        assert!(control < self.num_qubits && target < self.num_qubits, "qubits out of bounds");
+        assert!(
+            control < self.num_qubits && target < self.num_qubits,
+            "qubits out of bounds"
+        );
         self.x_mask[target] ^= self.x_mask[control];
         self.z_mask[control] ^= self.z_mask[target];
         self.gates_tracked += 1;
@@ -208,7 +211,10 @@ impl PauliFrameTracker {
     /// Symplectically updates the frame through a Controlled-Z (CZ) gate:
     /// $X_1 \to X_1 Z_2, \quad X_2 \to Z_1 X_2$.
     pub fn track_cz(&mut self, q1: usize, q2: usize) {
-        assert!(q1 < self.num_qubits && q2 < self.num_qubits, "qubits out of bounds");
+        assert!(
+            q1 < self.num_qubits && q2 < self.num_qubits,
+            "qubits out of bounds"
+        );
         self.z_mask[q2] ^= self.x_mask[q1];
         self.z_mask[q1] ^= self.x_mask[q2];
         self.gates_tracked += 1;
@@ -216,7 +222,10 @@ impl PauliFrameTracker {
 
     /// Symplectically updates the frame through a SWAP gate.
     pub fn track_swap(&mut self, q1: usize, q2: usize) {
-        assert!(q1 < self.num_qubits && q2 < self.num_qubits, "qubits out of bounds");
+        assert!(
+            q1 < self.num_qubits && q2 < self.num_qubits,
+            "qubits out of bounds"
+        );
         self.x_mask.swap(q1, q2);
         self.z_mask.swap(q1, q2);
         self.gates_tracked += 1;
@@ -440,7 +449,9 @@ impl PauliFrameTrackerSidecar {
 
     /// Push a new batch of frames into the non-blocking channel for the sidecar thread.
     pub fn submit_batch(&self, batch: PauliFrameBatch) -> Result<(), &'static str> {
-        self.sender.send(batch).map_err(|_| "Tracker channel closed")
+        self.sender
+            .send(batch)
+            .map_err(|_| "Tracker channel closed")
     }
 
     /// Internal high-performance worker loop running concurrently.
@@ -576,20 +587,8 @@ mod tests {
     fn test_pauli_frame_sidecar_concurrent_tracking() {
         let sidecar = PauliFrameTrackerSidecar::new(64);
 
-        let batch1 = PauliFrameBatch::new(
-            1,
-            64,
-            vec![0b1010, 0b1100],
-            vec![0b0010, 0b1000],
-            0.001,
-        );
-        let batch2 = PauliFrameBatch::new(
-            2,
-            64,
-            vec![0b1111],
-            vec![0b0000],
-            0.002,
-        );
+        let batch1 = PauliFrameBatch::new(1, 64, vec![0b1010, 0b1100], vec![0b0010, 0b1000], 0.001);
+        let batch2 = PauliFrameBatch::new(2, 64, vec![0b1111], vec![0b0000], 0.002);
 
         assert!(sidecar.submit_batch(batch1).is_ok());
         assert!(sidecar.submit_batch(batch2).is_ok());

@@ -57,14 +57,12 @@ pub fn compute_mode_bogoliubov(
     let amp = mode.amplitude();
     let mom = mode.momentum_pi();
 
-    let alpha = Complex64::from(sqrt_omega_half)
-        * (amp + Complex64::new(0.0, inv_omega) * mom)
-        * phase_pos;
+    let alpha =
+        Complex64::from(sqrt_omega_half) * (amp + Complex64::new(0.0, inv_omega) * mom) * phase_pos;
 
     // beta_k = sqrt(omega / 2) * (v_k - (i / omega) * pi_k) * exp(-i * omega * eta)
-    let beta = Complex64::from(sqrt_omega_half)
-        * (amp - Complex64::new(0.0, inv_omega) * mom)
-        * phase_neg;
+    let beta =
+        Complex64::from(sqrt_omega_half) * (amp - Complex64::new(0.0, inv_omega) * mom) * phase_neg;
 
     let alpha_norm_sq = alpha.norm_sqr();
     let beta_norm_sq = beta.norm_sqr();
@@ -119,7 +117,9 @@ impl CosmicParticleSpectrum {
         let mut total_r = 0.0;
 
         for mode in modes {
-            let ref_omega = (mode.momentum_k.powi(2) + (field_mass * scale_factor).powi(2)).sqrt().max(1e-6);
+            let ref_omega = (mode.momentum_k.powi(2) + (field_mass * scale_factor).powi(2))
+                .sqrt()
+                .max(1e-6);
             let rep = compute_mode_bogoliubov(mode, scale_factor, ref_omega, eta);
             total_n += rep.particle_number;
             total_r += rep.squeezing_param;

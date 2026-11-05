@@ -105,7 +105,6 @@ impl std::ops::IndexMut<(usize, usize)> for ComplexMatrix {
     }
 }
 
-
 #[inline(always)]
 fn matmul_row_scalar(out_row: &mut [Complex64], a: Complex64, other_row: &[Complex64]) {
     for (o, b) in out_row.iter_mut().zip(other_row.iter()) {
@@ -514,4 +513,3 @@ mod tests {
         }
     }
 }
-

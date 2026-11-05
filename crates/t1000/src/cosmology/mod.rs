@@ -17,9 +17,7 @@ pub mod metric;
 pub mod simulation;
 pub mod structure;
 
-pub use bogoliubov::{
-    compute_mode_bogoliubov, BogoliubovModeReport, CosmicParticleSpectrum,
-};
+pub use bogoliubov::{compute_mode_bogoliubov, BogoliubovModeReport, CosmicParticleSpectrum};
 pub use field::{DiscretizedQuantumField, QuantumFieldMode};
 pub use horizon::{
     evaluate_horizon_entanglement, mode_entanglement_entropy, HorizonEntanglementReport,
@@ -32,4 +30,3 @@ pub use structure::{
     CosmicFilament, CosmicStructureSnapshot, CosmicWebNode, MacroStructureType,
     ZeldovichStructureEngine,
 };
-

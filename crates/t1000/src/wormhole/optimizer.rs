@@ -179,8 +179,11 @@ impl SizeWindingOptimizer {
                 param_idx += 1;
             }
 
-            let (cur_obj, cur_fid, cur_asym) =
-                Self::evaluate_objective(&engine_config, &current_hamiltonian, self.config.target_g);
+            let (cur_obj, cur_fid, cur_asym) = Self::evaluate_objective(
+                &engine_config,
+                &current_hamiltonian,
+                self.config.target_g,
+            );
 
             if cur_obj > best_objective {
                 best_objective = cur_obj;
@@ -198,4 +201,3 @@ impl SizeWindingOptimizer {
         (best_hamiltonian, trajectory)
     }
 }
-

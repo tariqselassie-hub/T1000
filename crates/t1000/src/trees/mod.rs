@@ -39,9 +39,7 @@ pub use glued_trees::{
     ClassicalGluedWalker, ContinuousQuantumWalk, GluedTreesConfig, QuantumWalkTelemetry,
     SymmetricChainHamiltonian,
 };
-pub use ultrametric_tree::{
-    UltrametricLossReport, UltrametricTreeConfig, UltrametricTreeSorter,
-};
+pub use ultrametric_tree::{UltrametricLossReport, UltrametricTreeConfig, UltrametricTreeSorter};
 
 // Backward-compatible module aliases matching original crate layout
 pub use cascaded_tree_valve as cascaded_tree_valve_mod;

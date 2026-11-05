@@ -92,10 +92,8 @@ impl WaterPesEngine {
             self.config.theta_steps,
         )?;
 
-        let linearization = evaluate_linearization(
-            grid.min_energy_point.r_oh,
-            self.config.walsh_steps,
-        )?;
+        let linearization =
+            evaluate_linearization(grid.min_energy_point.r_oh, self.config.walsh_steps)?;
 
         let vibrations = evaluate_vibrational_manifold(
             grid.min_energy_point.r_oh,

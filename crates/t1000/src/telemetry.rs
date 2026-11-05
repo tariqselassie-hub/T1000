@@ -227,7 +227,9 @@ pub type DiagnosticTelemetryEvent = TelemetryPayload;
 impl TelemetryPayload {
     /// Constructs a standardized diagnostic log event and evaluates coherence lock status.
     pub fn new(metrics: Metrics) -> Self {
-        let status = if metrics.coherence.xeb_score >= 0.999 && metrics.coherence.hog_probability >= 0.975 {
+        let status = if metrics.coherence.xeb_score >= 0.999
+            && metrics.coherence.hog_probability >= 0.975
+        {
             "nominal_locked".to_string()
         } else if metrics.coherence.xeb_score >= 0.95 && metrics.coherence.hog_probability >= 0.85 {
             "coherence_degraded".to_string()
@@ -256,14 +258,38 @@ impl TelemetryPayload {
         out.push_str("┌──────────────────────────────────────────────────────────────┐\n");
         out.push_str("│             T-1000 DIAGNOSTIC TELEMETRY EVENT                │\n");
         out.push_str("├──────────────────────────────┬───────────────────────────────┤\n");
-        out.push_str(&format!("│ Engine / Mode                │ {:>10} / {:>14} │\n", self.engine, self.mode));
-        out.push_str(&format!("│ Architecture                 │ {:>29} │\n", self.architecture));
-        out.push_str(&format!("│ Qubits / Latency             │ {:>2} Qubits ({:>10.3} ms) │\n", self.metrics.execution.qubit_count, self.metrics.execution.latency_ms));
-        out.push_str(&format!("│ Latency Multiplier vs PyQrack│ {:>28.2}x │\n", self.metrics.execution.latency_multiplier));
-        out.push_str(&format!("│ XEB Score / HOG Floor        │ {:>8.4} / {:>10.4} │\n", self.metrics.coherence.xeb_score, self.metrics.coherence.hog_probability));
-        out.push_str(&format!("│ MBU Recycled / Pruned Gates  │ {:>6} Wires / {:>6} Gates │\n", self.metrics.optimization.mbu_wires_recycled, self.metrics.optimization.toffolis_pruned));
-        out.push_str(&format!("│ Gate Reduction Ratio         │ {:>28.2}x │\n", self.metrics.optimization.gate_reduction_ratio));
-        out.push_str(&format!("│ Coherence Lock Status        │ {:>29} │\n", self.status));
+        out.push_str(&format!(
+            "│ Engine / Mode                │ {:>10} / {:>14} │\n",
+            self.engine, self.mode
+        ));
+        out.push_str(&format!(
+            "│ Architecture                 │ {:>29} │\n",
+            self.architecture
+        ));
+        out.push_str(&format!(
+            "│ Qubits / Latency             │ {:>2} Qubits ({:>10.3} ms) │\n",
+            self.metrics.execution.qubit_count, self.metrics.execution.latency_ms
+        ));
+        out.push_str(&format!(
+            "│ Latency Multiplier vs PyQrack│ {:>28.2}x │\n",
+            self.metrics.execution.latency_multiplier
+        ));
+        out.push_str(&format!(
+            "│ XEB Score / HOG Floor        │ {:>8.4} / {:>10.4} │\n",
+            self.metrics.coherence.xeb_score, self.metrics.coherence.hog_probability
+        ));
+        out.push_str(&format!(
+            "│ MBU Recycled / Pruned Gates  │ {:>6} Wires / {:>6} Gates │\n",
+            self.metrics.optimization.mbu_wires_recycled, self.metrics.optimization.toffolis_pruned
+        ));
+        out.push_str(&format!(
+            "│ Gate Reduction Ratio         │ {:>28.2}x │\n",
+            self.metrics.optimization.gate_reduction_ratio
+        ));
+        out.push_str(&format!(
+            "│ Coherence Lock Status        │ {:>29} │\n",
+            self.status
+        ));
         out.push_str("└──────────────────────────────┴───────────────────────────────┘\n");
         out
     }
@@ -282,7 +308,11 @@ impl fmt::Display for TelemetryError {
         match self {
             TelemetryError::JsonParseError(e) => write!(f, "JSON parse error: {}", e),
             TelemetryError::XebThresholdViolation(xeb) => {
-                write!(f, "XEB score {:.4} breached safety floor (requires >= 0.999)", xeb)
+                write!(
+                    f,
+                    "XEB score {:.4} breached safety floor (requires >= 0.999)",
+                    xeb
+                )
             }
             TelemetryError::LatencyMultiplierLow(m) => {
                 write!(f, "Latency multiplier {:.2}x below target threshold", m)
@@ -297,8 +327,8 @@ impl Error for TelemetryError {}
 /// and evaluates performance and coherence invariants for T-1000.
 pub fn ingest_and_evaluate_telemetry(json_data: &str) -> Result<TelemetryPayload, TelemetryError> {
     // 1. Zero-copy / fast string parsing via serde_json
-    let payload: TelemetryPayload = serde_json::from_str(json_data)
-        .map_err(TelemetryError::JsonParseError)?;
+    let payload: TelemetryPayload =
+        serde_json::from_str(json_data).map_err(TelemetryError::JsonParseError)?;
 
     // 2. Evaluate Coherence Floor (XEB >= 0.999)
     let xeb = payload.metrics.coherence.xeb_score;

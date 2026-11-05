@@ -45,11 +45,7 @@ impl GyroMechanicsEngine {
     #[inline]
     pub fn rotate_z(v: &Vector3D, angle: f64) -> Vector3D {
         let (sin_a, cos_a) = angle.sin_cos();
-        Vector3D::new(
-            v.x * cos_a - v.y * sin_a,
-            v.x * sin_a + v.y * cos_a,
-            v.z,
-        )
+        Vector3D::new(v.x * cos_a - v.y * sin_a, v.x * sin_a + v.y * cos_a, v.z)
     }
 
     /// Advances the topology to time `t`, rotating the polar jets and evaluating torques.
@@ -59,11 +55,7 @@ impl GyroMechanicsEngine {
         // Perturbation noise forces at polar extremes
         let f_mag = self.noise_amplitude_n;
         let noise_phase = self.noise_freq_rad_s * t;
-        let force_a = Vector3D::new(
-            f_mag * noise_phase.cos(),
-            f_mag * noise_phase.sin(),
-            0.0,
-        );
+        let force_a = Vector3D::new(f_mag * noise_phase.cos(), f_mag * noise_phase.sin(), 0.0);
         // Equal force on antipodal arm produces equal and opposite torque: tau_B = (-r_A) x F_A = -tau_A
         let force_b = force_a;
 
@@ -103,7 +95,8 @@ impl GyroMechanicsEngine {
             1.0
         };
 
-        let l_norm = self.compute_angular_momentum_norm(&topology.nodes, self.precession_freq_rad_s);
+        let l_norm =
+            self.compute_angular_momentum_norm(&topology.nodes, self.precession_freq_rad_s);
 
         MechanicsStep {
             time: t,

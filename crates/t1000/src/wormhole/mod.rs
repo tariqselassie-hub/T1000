@@ -22,9 +22,6 @@ pub use metrics::{
     WormholeSweepReport,
 };
 pub use optimizer::{OptimizationTrajectoryPoint, OptimizerConfig, SizeWindingOptimizer};
-pub use qec::{
-    evaluate_holographic_qec, ErasurePartition, ErasurePoint, HolographicQecReport,
-};
+pub use qec::{evaluate_holographic_qec, ErasurePartition, ErasurePoint, HolographicQecReport};
 pub use scrambler::{ScramblerType, ScramblingHamiltonian};
 pub use teleportation::{HolographicWormholeEngine, WormholeConfig, WormholeWireMap};
-
