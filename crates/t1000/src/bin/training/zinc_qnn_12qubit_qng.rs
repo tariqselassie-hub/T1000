@@ -71,8 +71,9 @@ fn print_phase(title: &str) {
 /// Loads the train / holdout molecules and the re-uploading checkpoint.
 fn load_inputs() -> (Vec<ZincMolecule>, Vec<ZincMolecule>, ReuploadingCheckpoint) {
     let train_path =
-        resolve_workspace_path("tests/benchmarks/zinc_molecular/data/zinc_train_10k.csv");
-    let test_path = resolve_workspace_path("tests/benchmarks/zinc_molecular/data/zinc_test_2k.csv");
+        resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_train_10k.csv");
+    let test_path =
+        resolve_workspace_path("tests/benchmarks/zinc_molecular/outputs/zinc_test_2k.csv");
     let ckpt_path = resolve_workspace_path(
         "tests/benchmarks/zinc_molecular/checkpoints/zinc_12qubit_checkpoint_reuploading.json",
     );
