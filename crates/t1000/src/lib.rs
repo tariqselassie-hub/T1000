@@ -18,6 +18,7 @@ pub mod aligned_buffer;
 pub use aligned_buffer::{AlignedBuffer, CACHE_LINE_ALIGN};
 pub mod adjoint;
 pub mod adjoint_fusion;
+pub mod adjoint_reuploading;
 pub mod ansatz;
 pub mod architecture;
 pub use architecture::{
@@ -171,6 +172,7 @@ pub use adjoint::{
     inject_bloch_purity_costate, AdjointOutput, AdjointResult, AdjointWorkspace,
     BatchAdjointWorkspace,
 };
+pub use adjoint_reuploading::{adjoint_reuploading_batch, reuploading_forward_readout};
 pub use ansatz::{
     eval_36q_bipartite_bridge, eval_36q_bipartite_midcircuit, eval_cut_bridge_general, AncillaRole,
     AnsatzMode, CircuitAnsatz, CutBridgeReport, DeepQuantumNeuralNetwork, DualAxisEncoder,
