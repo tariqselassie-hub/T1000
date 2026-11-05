@@ -128,87 +128,65 @@ fn readout_loss(
     (loss, d_pred)
 }
 
-/// Gradient and summed loss of one slice of a batch.
-fn slice_gradient(
-    model: &Model,
-    params: &[f64],
-    qed_weight: f64,
-    samples: &[ZincMolecule],
-) -> (Vec<f64>, f64) {
-    let l = model.layout;
-    let z_obs: Vec<PauliObservable> = (0..N_QUBITS).map(PauliObservable::Z).collect();
-    let mut thread_grads = vec![0.0; l.n_total];
-    let mut thread_loss = 0.0;
-    let task_weights = [1.0, qed_weight, 1.0];
-
-    for sample in samples {
-        let state_in = model.encoding.encode(&sample.features);
-        let targets = [sample.log_p, sample.qed, sample.sas];
-        let head = |z: &[f64]| readout_loss(params, &l, &targets, &task_weights, z);
-        // Chain rule into the circuit: dL/dθ = sum_q g_q d<Z_q>/dθ with
-        // g_q = sum_k dL/dpred_k * W_kq, computed by one adjoint sweep.
-        let res = adjoint_gradient(
-            &model.ansatz,
-            &state_in,
-            &params[..l.n_quantum],
-            &z_obs,
-            |z| {
-                let (_, d_pred) = head(z);
-                (0..N_QUBITS)
-                    .map(|q| {
-                        (0..N_PROPS)
-                            .map(|k| d_pred[k] * params[l.w_offset + k * N_QUBITS + q])
-                            .sum()
-                    })
-                    .collect()
-            },
-        );
-        let z_base = &res.expectations;
-        let (loss, d_pred) = head(z_base);
-        thread_loss += loss;
-        for k in 0..N_PROPS {
-            thread_grads[l.b_offset + k] += d_pred[k];
-            for q in 0..N_QUBITS {
-                thread_grads[l.w_offset + k * N_QUBITS + q] += d_pred[k] * z_base[q];
-            }
-        }
-        for (tg, g) in thread_grads[..l.n_quantum].iter_mut().zip(&res.gradient) {
-            *tg += g;
-        }
-    }
-    (thread_grads, thread_loss)
-}
-
-/// Mean gradient and mean loss of one batch, evaluated across a thread pool.
+/// Mean gradient and mean loss of one batch, one fused parallel adjoint sweep per sample.
+///
+/// The per-sample quantum sweep runs on its own pre-allocated workspace (encoding straight
+/// into the workspace, no interim statevector); the classical head gradients and losses are
+/// then accumulated in sample order, matching the old sequential accumulation exactly.
 fn batch_gradient(
     model: &Model,
     params: &[f64],
     args: &Args,
     chunk: &[ZincMolecule],
+    ws_batch: &mut BatchAdjointWorkspace,
 ) -> (Vec<f64>, f64) {
-    let mut batch_grads = vec![0.0; model.layout.n_total];
+    let l = model.layout;
+    let z_obs: Vec<PauliObservable> = (0..N_QUBITS).map(PauliObservable::Z).collect();
+    let task_weights = [1.0, args.qed_weight, 1.0];
+    let n_quantum = l.n_quantum;
+
+    // Sweeps run in parallel on caller-owned pre-allocated workspaces (see `train`).
+    let mut chunk_grads = vec![0.0; n_quantum];
+    let results = adjoint_gradient_encoded_batch(
+        &model.ansatz,
+        |i, state| model.encoding.encode_into(&chunk[i].features, state),
+        &params[..n_quantum],
+        &z_obs,
+        |i, z| {
+            let targets = [chunk[i].log_p, chunk[i].qed, chunk[i].sas];
+            let (_, d_pred) = readout_loss(params, &l, &targets, &task_weights, z);
+            (0..N_QUBITS)
+                .map(|q| {
+                    (0..N_PROPS)
+                        .map(|k| d_pred[k] * params[l.w_offset + k * N_QUBITS + q])
+                        .sum()
+                })
+                .collect()
+        },
+        ws_batch,
+        chunk.len(),
+        &mut chunk_grads,
+    );
+
+    let mut batch_grads = vec![0.0; l.n_total];
     let mut batch_loss = 0.0;
-
-    let chunk_len = chunk.len();
-    let thread_chunk_size = chunk_len.div_ceil(args.num_threads);
-    let sub_chunks: Vec<&[ZincMolecule]> = chunk.chunks(thread_chunk_size).collect();
-
-    let thread_results: Vec<(Vec<f64>, f64)> = std::thread::scope(|s| {
-        let handles: Vec<_> = sub_chunks
-            .into_iter()
-            .map(|sub| s.spawn(move || slice_gradient(model, params, args.qed_weight, sub)))
-            .collect();
-        handles.into_iter().map(|h| h.join().unwrap()).collect()
-    });
-
-    for (t_grads, t_loss) in thread_results {
-        batch_loss += t_loss;
-        for (bg, tg) in batch_grads.iter_mut().zip(&t_grads) {
-            *bg += tg;
+    for (i, result) in results.iter().enumerate() {
+        let targets = [chunk[i].log_p, chunk[i].qed, chunk[i].sas];
+        let z_base = &result.expectations;
+        let (loss, d_pred) = readout_loss(params, &l, &targets, &task_weights, z_base);
+        batch_loss += loss;
+        for k in 0..N_PROPS {
+            batch_grads[l.b_offset + k] += d_pred[k];
+            for q in 0..N_QUBITS {
+                batch_grads[l.w_offset + k * N_QUBITS + q] += d_pred[k] * z_base[q];
+            }
+        }
+        for (bg, &g) in batch_grads[..n_quantum].iter_mut().zip(&result.gradient) {
+            *bg += g;
         }
     }
 
-    let b_len = chunk_len as f64;
+    let b_len = chunk.len() as f64;
     for bg in batch_grads.iter_mut() {
         *bg /= b_len;
     }
@@ -239,12 +217,17 @@ fn apply_lr_schedule(args: &Args, opt: &mut AdamOptimizer, epoch: usize, cumulat
 }
 
 /// One epoch over the training set; returns its telemetry and prints the summary line.
+///
+/// `ws_batch` is the pre-allocated sweep workspace set sized to the batch capacity, reused
+/// across every batch of the epoch.
+#[allow(clippy::too_many_arguments)]
 fn run_epoch(
     args: &Args,
     model: &Model,
     train: &[ZincMolecule],
     params: &mut [f64],
     opt: &mut AdamOptimizer,
+    ws_batch: &mut BatchAdjointWorkspace,
     (cumulative, total_target): (usize, usize),
 ) -> EpochTelemetry {
     let t_epoch = Instant::now();
@@ -254,7 +237,7 @@ fn run_epoch(
     let mut clipped_batches = 0;
 
     for chunk in train.chunks(args.batch_size) {
-        let (mut batch_grads, batch_loss) = batch_gradient(model, params, args, chunk);
+        let (mut batch_grads, batch_loss) = batch_gradient(model, params, args, chunk, ws_batch);
 
         let raw_g_norm = batch_grads.iter().map(|v| v * v).sum::<f64>().sqrt();
         total_grad_norm += raw_g_norm;
@@ -344,6 +327,10 @@ pub fn train(
         }
     }
 
+    // Pre-allocated scratch for the fused parallel adjoint sweep: one workspace set sized to
+    // the batch capacity, reused by every batch of every epoch (zero per-batch allocation).
+    let mut ws_batch = BatchAdjointWorkspace::new(model.ansatz.dim, N_QUBITS, args.batch_size);
+
     let mut telemetry = Vec::new();
     for epoch in 1..=args.num_epochs {
         let cumulative = prior_epochs + epoch;
@@ -354,6 +341,7 @@ pub fn train(
             train_samples,
             params,
             &mut opt,
+            &mut ws_batch,
             (cumulative, total_epochs_target),
         ));
     }

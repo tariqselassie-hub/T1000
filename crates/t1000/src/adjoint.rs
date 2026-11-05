@@ -190,9 +190,10 @@ pub fn adjoint_gradient_batch(
 /// Sample `i` is encoded straight into batch workspace `i` by `encode(i, state)` — no
 /// intermediate statevector is allocated — and `coefficients(i, expectations)` maps the
 /// per-sample expectations to loss coefficients (for example MSE residuals `e[0] - y_i`).
-/// The workspace count defines the sample count; per-sample sweeps run in parallel, one
-/// rayon thread per workspace, and per-sample gradients are summed into `grad_out`, which
-/// is zeroed on entry. Returns one [`AdjointResult`] per sample in batch order.
+/// `count` samples are processed (at most one per workspace: `count <= ws.workspaces.len()`);
+/// per-sample sweeps run in parallel, one rayon thread per workspace, and per-sample gradients
+/// are summed into `grad_out`, which is zeroed on entry. Returns one [`AdjointResult`] per
+/// sample in batch order.
 pub fn adjoint_gradient_encoded_batch(
     ansatz: &CircuitAnsatz,
     encode: impl Fn(usize, &mut QuantumState) + Sync,
@@ -200,6 +201,7 @@ pub fn adjoint_gradient_encoded_batch(
     observables: &[PauliObservable],
     coefficients: impl Fn(usize, &[f64]) -> Vec<f64> + Sync,
     ws: &mut BatchAdjointWorkspace,
+    count: usize,
     grad_out: &mut [f64],
 ) -> Vec<AdjointResult> {
     let param_count = ansatz.param_count();
@@ -207,6 +209,10 @@ pub fn adjoint_gradient_encoded_batch(
         grad_out.len(),
         param_count,
         "grad_out length must equal parameter count"
+    );
+    assert!(
+        count <= ws.workspaces.len(),
+        "count exceeds the workspace batch capacity"
     );
 
     // Zero the accumulated gradient.
@@ -218,6 +224,7 @@ pub fn adjoint_gradient_encoded_batch(
     let results: Vec<AdjointResult> = ws
         .workspaces
         .par_iter_mut()
+        .take(count)
         .enumerate()
         .map(|(i, workspace)| {
             let out = adjoint_gradient_encoded_into(
@@ -739,6 +746,7 @@ mod tests {
             &obs,
             |i, e| vec![e[0] - ys[i]],
             &mut bws,
+            xs.len(),
             &mut batch_grads,
         );
 

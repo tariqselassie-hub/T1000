@@ -190,6 +190,7 @@ fn main() {
                 std::slice::from_ref(&engine.observable),
                 |i, e| vec![e[0] - chunk[i].1],
                 &mut bws,
+                chunk.len(),
                 &mut chunk_grads,
             );
 

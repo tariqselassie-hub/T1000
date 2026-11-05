@@ -8,8 +8,8 @@ use t1000::calibration::AffineFit;
 use t1000::zinc_data::{self, ZincMolecule};
 use t1000::zinc_training_common::{compute_state_norm, resolve_workspace_path, PropertyMetric};
 use t1000::{
-    adjoint_gradient, AdamOptimizer, CircuitAnsatz, DataEncodingLayer, EncodingKind,
-    PauliObservable, QuantumState,
+    adjoint_gradient_encoded_batch, AdamOptimizer, BatchAdjointWorkspace, CircuitAnsatz,
+    DataEncodingLayer, EncodingKind, PauliObservable, QuantumState,
 };
 
 // Empirical ZINC 10k Target Distributions (Exact Mean & Std)

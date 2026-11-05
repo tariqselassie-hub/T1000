@@ -121,78 +121,63 @@ pub fn fit_head(
     t1000::calibration::fit_columns(&z, &y)
 }
 
-/// Gradient and summed loss of one slice of a batch.
-pub fn slice_gradient(
+/// Scaled residuals `e_k = (pred_k - y_k) / sigma_k` of the affine readout on the circuit
+/// `<Z_k>`, with `pred_k = intercept_k + slope_k <Z_k>`.
+#[inline]
+fn scaled_errors(head: &[AffineFit; 3], y: &[f64; 3], z: &[f64]) -> [f64; 3] {
+    [0, 1, 2].map(|k| (head[k].apply(z[k]) - y[k]) / SIGMAS[k])
+}
+
+/// Chain-rule coefficients of that residual loss w.r.t. the observables:
+/// `dL/d<Z_k> = e_k * slope_k / sigma_k` (exactly 1 for the fixed head).
+#[inline]
+fn residual_coefficients(head: &[AffineFit; 3], y: &[f64; 3], z: &[f64]) -> [f64; 3] {
+    let e = scaled_errors(head, y, z);
+    [0, 1, 2].map(|k| e[k] * head[k].slope / SIGMAS[k])
+}
+
+/// Mean gradient and mean loss of one batch, one fused parallel adjoint sweep per sample.
+///
+/// Each sample is encoded straight into its own pre-allocated workspace and swept once; the
+/// per-sample gradients and residuals are summed in sample order, so the accumulated
+/// gradient and loss match the old sequential accumulation exactly. `ws_batch` is the
+/// caller-owned workspace set sized to the batch capacity, reused across batches.
+pub fn batch_gradient(
     model: &Model,
     weights: &[f64],
     head: &[AffineFit; 3],
-    samples: &[ZincMolecule],
+    chunk: &[ZincMolecule],
+    ws_batch: &mut BatchAdjointWorkspace,
 ) -> (Vec<f64>, f64) {
     let z_obs = [
         PauliObservable::Z(0),
         PauliObservable::Z(1),
         PauliObservable::Z(2),
     ];
-    let mut thread_grads = vec![0.0; weights.len()];
-    let mut thread_loss = 0.0;
 
-    for sample in samples {
-        let state_in = model.encoding.encode(&sample.features);
-        let y = targets_of(sample);
-        // Scaled errors e_k = (pred_k - y_k) / sigma_k with pred_k = mu_k + sigma_k <Z_k>.
-        let errors = |z: &[f64]| [0, 1, 2].map(|k| (head[k].apply(z[k]) - y[k]) / SIGMAS[k]);
-        // d e_k / d<Z_k> = slope_k / sigma_k (exactly 1 for the fixed head).
-        let coefficients = |z: &[f64]| {
-            let e = errors(z);
-            [0, 1, 2].map(|k| e[k] * head[k].slope / SIGMAS[k])
-        };
-        // One adjoint sweep gives d/dθ of sum_k e_k <Z_k> (e_k held at the current
-        // point), i.e. half of dL/dθ for L = sum_k e_k^2, matching the previous
-        // parameter-shift accumulation.
-        let res = adjoint_gradient(&model.ansatz, &state_in, weights, &z_obs, |z| {
-            coefficients(z).to_vec()
-        });
-        let e = errors(&res.expectations);
-        thread_loss += e[0] * e[0] + e[1] * e[1] + e[2] * e[2];
-        for (tg, g) in thread_grads.iter_mut().zip(&res.gradient) {
-            *tg += g;
-        }
-    }
-    (thread_grads, thread_loss)
-}
+    let mut chunk_grads = vec![0.0; model.ansatz.param_count()];
+    let results = adjoint_gradient_encoded_batch(
+        &model.ansatz,
+        |i, state| model.encoding.encode_into(&chunk[i].features, state),
+        weights,
+        &z_obs,
+        |i, z| residual_coefficients(head, &targets_of(&chunk[i]), z).to_vec(),
+        ws_batch,
+        chunk.len(),
+        &mut chunk_grads,
+    );
 
-/// Mean gradient and mean loss of one batch, evaluated across a thread pool.
-pub fn batch_gradient(
-    model: &Model,
-    weights: &[f64],
-    head: &[AffineFit; 3],
-    chunk: &[ZincMolecule],
-    num_threads: usize,
-) -> (Vec<f64>, f64) {
     let mut batch_grads = vec![0.0; model.ansatz.param_count()];
     let mut batch_loss = 0.0;
-
-    // Multithreaded parameter-shift evaluation across thread pool
-    let chunk_len = chunk.len();
-    let thread_chunk_size = chunk_len.div_ceil(num_threads);
-    let sub_chunks: Vec<&[ZincMolecule]> = chunk.chunks(thread_chunk_size).collect();
-
-    let thread_results: Vec<(Vec<f64>, f64)> = std::thread::scope(|s| {
-        let handles: Vec<_> = sub_chunks
-            .into_iter()
-            .map(|sub| s.spawn(move || slice_gradient(model, weights, head, sub)))
-            .collect();
-        handles.into_iter().map(|h| h.join().unwrap()).collect()
-    });
-
-    for (t_grads, t_loss) in thread_results {
-        batch_loss += t_loss;
-        for (bg, tg) in batch_grads.iter_mut().zip(&t_grads) {
-            *bg += tg;
+    for (i, result) in results.iter().enumerate() {
+        let e = scaled_errors(head, &targets_of(&chunk[i]), &result.expectations);
+        batch_loss += e[0] * e[0] + e[1] * e[1] + e[2] * e[2];
+        for (bg, &g) in batch_grads.iter_mut().zip(&result.gradient) {
+            *bg += g;
         }
     }
 
-    let b_len = chunk_len as f64;
+    let b_len = chunk.len() as f64;
     for bg in batch_grads.iter_mut() {
         *bg /= b_len;
     }
@@ -219,6 +204,12 @@ pub fn train(
         train_samples.len(),
         args.batch_size
     );
+
+    // Pre-allocated scratch for the fused parallel adjoint sweep: one workspace set sized to
+    // the batch capacity, reused by every batch of every epoch (zero per-batch allocation).
+    let mut ws_batch =
+        BatchAdjointWorkspace::new(model.ansatz.dim, model.ansatz.n_qubits, args.batch_size);
+
     for epoch in 1..=args.num_epochs {
         let t_epoch = Instant::now();
         if args.calibrated_head {
@@ -230,7 +221,7 @@ pub fn train(
 
         for chunk in train_samples.chunks(args.batch_size) {
             let (batch_grads, batch_loss) =
-                batch_gradient(model, &opt_weights, &head, chunk, args.num_threads);
+                batch_gradient(model, &opt_weights, &head, chunk, &mut ws_batch);
             opt.step(&mut opt_weights, &batch_grads);
 
             let g_norm = batch_grads.iter().map(|v| v * v).sum::<f64>().sqrt();

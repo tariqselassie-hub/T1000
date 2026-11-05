@@ -8,8 +8,8 @@ use t1000::zinc_training_common::{
     eval_all_z12, resolve_workspace_path, PropertyMetric, QnnCheckpoint,
 };
 use t1000::{
-    adjoint_gradient, AdamOptimizer, CircuitAnsatz, DataEncodingLayer, EncodingKind,
-    PauliObservable, QuantumState,
+    adjoint_gradient_encoded_batch, AdamOptimizer, BatchAdjointWorkspace, CircuitAnsatz,
+    DataEncodingLayer, EncodingKind, PauliObservable, QuantumState,
 };
 
 #[path = "zinc_qnn_12qubit_hybrid/args.rs"]
