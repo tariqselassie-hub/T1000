@@ -14,7 +14,10 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
-use t1000::{adjoint_gradient, AdamOptimizer, CircuitAnsatz, PauliObservable, QuantumState};
+use t1000::{
+    adjoint_gradient_encoded_batch, AdamOptimizer, BatchAdjointWorkspace, CircuitAnsatz,
+    PauliObservable, QuantumState,
+};
 use t1000_core::interference::net_interference;
 
 const N_QUBITS: usize = 10;
@@ -462,6 +465,11 @@ fn main() {
 
     let t_start_all = Instant::now();
 
+    // Pre-allocated scratch for the fused parallel adjoint sweep: one workspace set sized to
+    // the batch capacity, reused by every batch of every epoch (zero per-batch allocation).
+    let mut bws = BatchAdjointWorkspace::new(STATE_DIM, N_QUBITS, batch_size);
+    let mut chunk_grads = vec![0.0; n_ansatz_params];
+
     for epoch in 1..=epochs {
         let t_ep_start = Instant::now();
         let mut total_train_loss = 0.0;
@@ -473,71 +481,67 @@ fn main() {
             let batch = &train_states[start..end];
             let batch_len = batch.len() as f64;
 
-            // Parallel forward + adjoint gradient over batch
-            let (batch_loss, batch_correct, batch_ansatz_grad, batch_head_grad) = batch
+            // Unified single-pass Adjoint Differentiation: the fused parallel sweep encodes
+            // each sample straight into its pre-allocated workspace and evaluates forward
+            // evolution, observable expectations, and the reverse-mode adjoint circuit
+            // gradient in one pass, one rayon thread per sample.
+            let results = adjoint_gradient_encoded_batch(
+                &ansatz,
+                |i, state| state.copy_from(&batch[i].0),
+                &ansatz_weights,
+                &observables,
+                |i, exps| {
+                    let logits = head.forward(exps);
+                    let (_, d_logits, _) = softmax_cross_entropy(&logits, batch[i].1);
+                    let mut d_exps = vec![0.0; n_obs];
+                    for q in 0..n_obs {
+                        for c in 0..N_CLASSES {
+                            d_exps[q] += d_logits[c] * head.weights[c * n_obs + q];
+                        }
+                    }
+                    d_exps
+                },
+                &mut bws,
+                batch.len(),
+                &mut chunk_grads,
+            );
+
+            // Classical head back-propagation and loss bookkeeping, parallel over the batch.
+            // The circuit gradient is already summed in sample order inside `chunk_grads` by
+            // the sweep driver; only the head side is folded here.
+            let (batch_loss_sum, batch_correct, batch_head_grad) = results
                 .par_iter()
-                .map(|(input_state, label)| {
-                    let mut sample_loss = 0.0;
-                    let mut sample_correct = 0;
+                .enumerate()
+                .map(|(i, result)| {
+                    let logits = head.forward(&result.expectations);
+                    let (loss, d_logits, pred) = softmax_cross_entropy(&logits, batch[i].1);
                     let mut d_head = vec![0.0; n_head_params];
-
-                    // Unified single-pass Adjoint Differentiation:
-                    // Evaluates forward evolution, observable expectations, classical linear head backprop,
-                    // and reverse-mode adjoint circuit gradients in a single unified pass.
-                    let adj = adjoint_gradient(
-                        &ansatz,
-                        input_state,
-                        &ansatz_weights,
-                        &observables,
-                        |exps| {
-                            let logits = head.forward(exps);
-                            let (loss, d_logits, pred) = softmax_cross_entropy(&logits, *label);
-                            sample_loss = loss;
-                            sample_correct = if pred == *label { 1 } else { 0 };
-
-                            for c in 0..N_CLASSES {
-                                let row = c * n_obs;
-                                for q in 0..n_obs {
-                                    d_head[row + q] = d_logits[c] * exps[q];
-                                }
-                                d_head[N_CLASSES * n_obs + c] = d_logits[c];
-                            }
-
-                            let mut d_exps = vec![0.0; n_obs];
-                            for q in 0..n_obs {
-                                let mut sum = 0.0;
-                                for c in 0..N_CLASSES {
-                                    sum += d_logits[c] * head.weights[c * n_obs + q];
-                                }
-                                d_exps[q] = sum;
-                            }
-                            d_exps
-                        },
-                    );
-
-                    (sample_loss, sample_correct, adj.gradient, d_head)
+                    for c in 0..N_CLASSES {
+                        let row = c * n_obs;
+                        for q in 0..n_obs {
+                            d_head[row + q] = d_logits[c] * result.expectations[q];
+                        }
+                        d_head[N_CLASSES * n_obs + c] = d_logits[c];
+                    }
+                    (loss, if pred == batch[i].1 { 1usize } else { 0 }, d_head)
                 })
                 .reduce(
-                    || (0.0, 0, vec![0.0; n_ansatz_params], vec![0.0; n_head_params]),
+                    || (0.0, 0usize, vec![0.0; n_head_params]),
                     |mut acc, elem| {
                         acc.0 += elem.0;
                         acc.1 += elem.1;
-                        for i in 0..n_ansatz_params {
-                            acc.2[i] += elem.2[i];
-                        }
                         for i in 0..n_head_params {
-                            acc.3[i] += elem.3[i];
+                            acc.2[i] += elem.2[i];
                         }
                         acc
                     },
                 );
 
-            total_train_loss += batch_loss;
+            total_train_loss += batch_loss_sum;
             train_correct += batch_correct;
 
             // Average gradients over batch
-            let avg_ansatz_grad: Vec<f64> =
-                batch_ansatz_grad.iter().map(|&g| g / batch_len).collect();
+            let avg_ansatz_grad: Vec<f64> = chunk_grads.iter().map(|&g| g / batch_len).collect();
             let avg_head_grad: Vec<f64> = batch_head_grad.iter().map(|&g| g / batch_len).collect();
 
             // Adam steps
