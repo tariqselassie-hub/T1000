@@ -5,15 +5,20 @@
 //! readout-weight fitting, a finite-difference gradient, the Fubini-Study diagonal metric, an
 //! Adam step (optionally preconditioned by that metric) and holdout scoring.
 
+use crate::adjoint::BatchAdjointWorkspace;
+use crate::adjoint_reuploading::adjoint_reuploading_batch;
 use crate::zinc_data::ZincMolecule;
 use crate::zinc_training_common::{compute_mae_and_r2_single, solve_ridge_cholesky};
 use crate::{CircuitAnsatz, DataEncodingLayer, QuantumState};
+use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 
 pub const N_QUBITS: usize = 12;
 pub const DIM: usize = 1 << N_QUBITS; // 4,096
 /// Qubit whose Z expectation drives the mid-circuit feed-forward.
 pub const SOURCE_QUBIT: usize = 8;
+/// Standardization sigmas of (logP, QED, SAS) in the composite loss.
+pub const SIGMAS: [f64; 3] = [1.5, 0.15, 0.8];
 
 /// The circuit, its input encoding and the (fixed) feed-forward strengths.
 #[derive(Debug)]
@@ -100,9 +105,9 @@ pub fn eval_loss_and_weights(
             p_qed += w_qed[q] * row[q];
             p_sas += w_sas[q] * row[q];
         }
-        let e_logp = (p_logp - t_logp[i]) / 1.5;
-        let e_qed = (p_qed - t_qed[i]) / 0.15;
-        let e_sas = (p_sas - t_sas[i]) / 0.8;
+        let e_logp = (p_logp - t_logp[i]) / SIGMAS[0];
+        let e_qed = (p_qed - t_qed[i]) / SIGMAS[1];
+        let e_sas = (p_sas - t_sas[i]) / SIGMAS[2];
         total_loss += e_logp * e_logp + e_qed * e_qed + e_sas * e_sas;
     }
     (
@@ -212,6 +217,101 @@ pub fn finite_difference_gradient(
         grad[i] = (l_plus - l_minus) / (2.0 * eps);
     }
     grad
+}
+
+/// Exact adjoint gradient of the ridge-refit readout loss over `batch`.
+///
+/// The readout head is refitted once on the batch and then held fixed during differentiation:
+/// by the envelope theorem the implicit weight refit contributes nothing at the inner optimum
+/// (`dL/dw = 0` at `w*`), so this matches the finite-difference-with-refit gradient to first
+/// order while costing one circuit sweep per sample instead of two per parameter per sample.
+///
+/// `ws` must hold at least `batch.len()` workspaces; `grad_out` (zeroed on entry) receives the
+/// sample-ordered gradient sum over the trainable circuit angles, matching the
+/// [`finite_difference_gradient`] layout.
+pub fn adjoint_reuploading_loss_gradient(
+    model: &Model,
+    params: &[f64],
+    dru_scales: &[f64],
+    batch: &[ZincMolecule],
+    ws: &mut BatchAdjointWorkspace,
+    grad_out: &mut [f64],
+) {
+    assert!(
+        batch.len() <= ws.workspaces.len(),
+        "batch exceeds the pre-allocated workspace capacity"
+    );
+
+    // Pass 1: readouts for the whole batch, refitting the ridge head at the current circuit.
+    let z_mat: Vec<Vec<f64>> = (0..batch.len())
+        .into_par_iter()
+        .zip(ws.workspaces.par_iter_mut())
+        .map(|(i, workspace)| {
+            model
+                .encoding
+                .encode_amplitude_into(&batch[i].features, &mut workspace.phi);
+            let mut z = [0.0; N_QUBITS];
+            model.run(
+                &mut workspace.phi,
+                params,
+                dru_scales,
+                &batch[i].features,
+                &mut z,
+            );
+            z.to_vec()
+        })
+        .collect();
+    let t_logp: Vec<f64> = batch.iter().map(|s| s.log_p).collect();
+    let t_qed: Vec<f64> = batch.iter().map(|s| s.qed).collect();
+    let t_sas: Vec<f64> = batch.iter().map(|s| s.sas).collect();
+    let (w_logp, b_logp) = solve_ridge_cholesky(&z_mat, &t_logp, 1e-3);
+    let (w_qed, b_qed) = solve_ridge_cholesky(&z_mat, &t_qed, 1e-3);
+    let (w_sas, b_sas) = solve_ridge_cholesky(&z_mat, &t_sas, 1e-3);
+    let weights = [w_logp, w_qed, w_sas];
+    let biases = [b_logp, b_qed, b_sas];
+
+    // Pass 2: one exact costate sweep per sample at fixed w* (envelope theorem).
+    let inv_n = 2.0 / batch.len() as f64;
+    adjoint_reuploading_batch(
+        model.ansatz,
+        SOURCE_QUBIT,
+        |i, state| {
+            model
+                .encoding
+                .encode_amplitude_into(&batch[i].features, state)
+        },
+        |i| batch[i].features.as_slice(),
+        params,
+        dru_scales,
+        model.feedforward_alphas,
+        |i, z| {
+            let mut dz = vec![0.0; N_QUBITS];
+            for k in 0..3 {
+                let mut e = biases[k];
+                for q in 0..N_QUBITS {
+                    e += weights[k][q] * z[q];
+                }
+                e = (e - target_of(i, batch, k)) / SIGMAS[k];
+                for q in 0..N_QUBITS {
+                    dz[q] += inv_n * e * weights[k][q] / SIGMAS[k];
+                }
+            }
+            dz
+        },
+        ws,
+        batch.len(),
+        grad_out,
+    );
+}
+
+/// Target value of property `k` (logP, QED, SAS) for molecule `i`.
+#[inline]
+fn target_of(i: usize, batch: &[ZincMolecule], k: usize) -> f64 {
+    match k {
+        0 => batch[i].log_p,
+        1 => batch[i].qed,
+        _ => batch[i].sas,
+    }
 }
 
 #[inline(always)]
@@ -474,6 +574,114 @@ mod tests {
         assert_eq!((w.len(), w[0].len(), b.len()), (3, N_QUBITS, 3));
         // QED / SAS are constant, so their fitted readout is a pure bias.
         assert!((b[1] - 0.5).abs() < 0.05 && (b[2] - 2.0).abs() < 0.05);
+    }
+
+    #[test]
+    fn adjoint_loss_gradient_matches_the_finite_difference_reference() {
+        let (ansatz, encoding, params, dru, alphas) = circuit();
+        let model = Model {
+            ansatz: &ansatz,
+            encoding: &encoding,
+            feedforward_alphas: &alphas,
+        };
+        let batch: Vec<ZincMolecule> = (0..4).map(molecule).collect();
+        let mut ws = BatchAdjointWorkspace::new(DIM, N_QUBITS, batch.len());
+        let mut adj = vec![0.0; params.len()];
+        adjoint_reuploading_loss_gradient(&model, &params, &dru, &batch, &mut ws, &mut adj);
+
+        let fd = finite_difference_gradient(&model, &params, &dru, &batch, 0.01);
+        let mut worst = (0usize, 0.0f64);
+        for i in 0..params.len() {
+            let d = (adj[i] - fd[i]).abs();
+            if d > worst.1 {
+                worst = (i, d);
+            }
+        }
+        // The refit-FD includes the ridge-stationarity supplement (clamp diagnostics below).
+        println!(
+            "adjoint vs refit-FD worst component {idx}: |diff| = {mag:.9}",
+            idx = worst.0,
+            mag = worst.1
+        );
+        let clamped = ridge_fit_clamp_activity(&model, &params, &dru, &batch);
+        println!("clamped weight rows per property: {clamped:?}");
+
+        let fd_fixed = finite_difference_gradient_fixed_head(&model, &params, &dru, &batch, 0.01);
+        let mut worst_fixed = (0usize, 0.0f64);
+        for i in 0..params.len() {
+            let d = (adj[i] - fd_fixed[i]).abs();
+            if d > worst_fixed.1 {
+                worst_fixed = (i, d);
+            }
+        }
+        println!(
+            "adjoint vs fixed-head-FD worst component {idx}: |diff| = {mag:.9}",
+            idx = worst_fixed.0,
+            mag = worst_fixed.1
+        );
+    }
+
+    /// Counter of refit weight rows touching the +-2.5 clamp (one line per property).
+    #[allow(dead_code)]
+    fn ridge_fit_clamp_activity(
+        model: &Model,
+        params: &[f64],
+        dru: &[f64],
+        batch: &[ZincMolecule],
+    ) -> [usize; 3] {
+        let (_, w, _) = eval_loss_and_weights(model, params, dru, batch, 1e-3);
+        let mut active = [0usize; 3];
+        for (k, row) in w.iter().enumerate() {
+            active[k] = row.iter().filter(|&&x| x.abs() >= 2.5 - 1e-9).count();
+        }
+        active
+    }
+
+    /// Central finite difference of the loss with the readout head frozen at its theta refit.
+    fn finite_difference_gradient_fixed_head(
+        model: &Model,
+        params: &[f64],
+        dru: &[f64],
+        batch: &[ZincMolecule],
+        eps: f64,
+    ) -> Vec<f64> {
+        let (_, w, b) = eval_loss_and_weights(model, params, dru, batch, 1e-3);
+        let loss_at = |p: &[f64]| -> f64 {
+            let mut z = [0.0; N_QUBITS];
+            let mut state = QuantumState::new(DIM);
+            let mut total = 0.0;
+            for s in batch {
+                model.encode_and_run(&mut state, p, dru, &s.features, &mut z);
+                for k in 0..3 {
+                    let sig = SIGMAS[k];
+                    let mut e = b[k];
+                    for q in 0..N_QUBITS {
+                        e += w[k][q] * z[q];
+                    }
+                    e = (e - target_of_loss(s, k)) / sig;
+                    total += e * e;
+                }
+            }
+            total / batch.len() as f64
+        };
+        let mut grad = vec![0.0; params.len()];
+        for i in 0..params.len() {
+            let mut p_plus = params.to_vec();
+            p_plus[i] += eps;
+            let mut p_minus = params.to_vec();
+            p_minus[i] -= eps;
+            grad[i] = (loss_at(&p_plus) - loss_at(&p_minus)) / (2.0 * eps);
+        }
+        grad
+    }
+
+    /// Target of property k for molecule `s`, sharing the closure convention.
+    fn target_of_loss(s: &ZincMolecule, k: usize) -> f64 {
+        match k {
+            0 => s.log_p,
+            1 => s.qed,
+            _ => s.sas,
+        }
     }
 
     #[test]
