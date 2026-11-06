@@ -504,3 +504,18 @@ path = "src/bin/measurements/deen_qubit_sidecar_bench.rs"
 [[bin]]
 name = "deen_toolchain"
 path = "src/bin/measurements/deen_toolchain.rs"
+
+[[bin]]
+name = "qbloch_mol"
+path = "src/bin/training/qbloch_mol.rs"
+[[bin]]
+name = "qbloch_zinc"
+path = "src/bin/training/qbloch_zinc.rs"
+
+[[bin]]
+name = "qbloch_multitask"
+path = "src/bin/training/qbloch_multitask.rs"
+
+[[bin]]
+name = "qbloch_smiles"
+path = "src/bin/training/qbloch_smiles.rs"

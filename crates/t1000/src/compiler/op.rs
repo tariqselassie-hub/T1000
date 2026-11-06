@@ -8,6 +8,8 @@
 use num_complex::Complex64;
 use serde::{Deserialize, Serialize};
 
+use crate::Quaternion;
+
 /// 2x2 Complex Unitary Matrix representing a general single-qubit quantum gate:
 /// U = [u00, u01; u10, u11]
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
@@ -142,6 +144,23 @@ impl Unitary2x2 {
         }
     }
 
+    /// Construct a 2x2 unitary from a unit quaternion q = (w, x, y, z).
+    /// Standard SU(2) mapping: a = w + i x, b = y + i z, U = [[a, -conj(b)], [b, conj(a)]].
+    pub fn from_quaternion(q: Quaternion) -> Self {
+        let qn = q.normalize();
+        let (w, x, y, z) = (qn.w, qn.x, qn.y, qn.z);
+        Self {
+            u00_re: w,
+            u00_im: x,
+            u01_re: -y,
+            u01_im: z,
+            u10_re: y,
+            u10_im: z,
+            u11_re: w,
+            u11_im: -x,
+        }
+    }
+
     /// Matrix multiplication: (Self * other)
     /// If gate A is applied first, then gate B, the combined operator is B.matmul(&A).
     pub fn matmul(&self, other: &Self) -> Self {
@@ -158,6 +177,30 @@ impl Unitary2x2 {
     /// Returns true if off-diagonal elements are numerically zero (diagonal gate).
     pub fn is_diagonal(&self, eps: f64) -> bool {
         self.u01().norm_sqr() < eps && self.u10().norm_sqr() < eps
+    }
+
+    /// Recover the quaternion q = (w, x, y, z) if this matrix is in quaternion (SU(2)) form:
+    /// U = [[w+ix, -y+iz], [y+iz, w-ix]], with |q| ≈ 1. Returns None otherwise.
+    pub fn to_quaternion(&self) -> Option<Quaternion> {
+        let w = self.u00_re;
+        let x = self.u00_im;
+        let y = self.u10_re;
+        let z = self.u10_im;
+        // consistency checks
+        let eps = 1e-9;
+        if (self.u01_re - (-y)).abs() > eps
+            || (self.u01_im - z).abs() > eps
+            || (self.u11_re - w).abs() > eps
+            || (self.u11_im - (-x)).abs() > eps
+        {
+            return None;
+        }
+        let q = Quaternion::new(w, x, y, z);
+        let n = q.norm();
+        if (n - 1.0).abs() > 1e-6 {
+            return None;
+        }
+        Some(q.normalize())
     }
 
     /// Returns true if matrix is approximately identity.
@@ -288,6 +331,23 @@ impl CircuitOp {
         }
     }
 
+    /// Recover the unit quaternion parameterizing this op, if it is a quaternionic
+    /// single-qubit rotation (Ry, Rz, or a Unitary1Q in quaternion form).
+    pub fn as_quaternion(&self) -> Option<Quaternion> {
+        match self {
+            CircuitOp::Ry { theta, .. } => {
+                let half = theta * 0.5;
+                Some(Quaternion::new(half.cos(), 0.0, half.sin(), 0.0))
+            }
+            CircuitOp::Rz { theta, .. } => {
+                let half = theta * 0.5;
+                Some(Quaternion::new(half.cos(), -half.sin(), 0.0, 0.0))
+            }
+            CircuitOp::Unitary1Q { matrix, .. } => matrix.to_quaternion(),
+            _ => None,
+        }
+    }
+
     /// Attempts to fuse `self` followed by `next` on the same qubit into a single compound Unitary1Q.
     /// If successful, returns the combined operation which cuts statevector traversal overhead by 2x.
     pub fn try_fuse_single_qubit(&self, next: &Self) -> Option<CircuitOp> {
@@ -322,6 +382,17 @@ impl CircuitOp {
             return Some(CircuitOp::Ry {
                 qubit: q_self,
                 theta: t1 + t2,
+            });
+        }
+
+        // Quaternionic fusion fast path: if both ops are quaternionic rotations,
+        // compose via the Hamilton product and lower back to a Unitary1Q. This
+        // avoids the general complex matrix multiply and preserves the quaternion
+        // form, enabling repeated fusion without floating-point drift.
+        if let (Some(qs), Some(qn)) = (self.as_quaternion(), next.as_quaternion()) {
+            return Some(CircuitOp::Unitary1Q {
+                qubit: q_self,
+                matrix: Unitary2x2::from_quaternion(qs.mul(qn)),
             });
         }
 

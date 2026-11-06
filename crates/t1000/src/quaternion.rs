@@ -226,6 +226,160 @@ impl Quaternion {
     pub fn dot(self, rhs: Self) -> f64 {
         self.w * rhs.w + self.x * rhs.x + self.y * rhs.y + self.z * rhs.z
     }
+
+    /// Construct a unit rotation quaternion from an axis and angle (radians).
+    /// q = (cos(theta/2), sin(theta/2) * axis/|axis|)
+    #[inline]
+    pub fn from_axis_angle(axis: [f64; 3], angle: f64) -> Self {
+        let half = angle * 0.5;
+        let (s, c) = half.sin_cos();
+        let n = (axis[0] * axis[0] + axis[1] * axis[1] + axis[2] * axis[2]).sqrt();
+        if n < 1e-15 {
+            return Self::IDENTITY;
+        }
+        let inv = s / n;
+        Self {
+            w: c,
+            x: axis[0] * inv,
+            y: axis[1] * inv,
+            z: axis[2] * inv,
+        }
+    }
+
+    /// Rotate a 3D vector v by this quaternion: v' = q * (0,v) * q*.
+    #[inline]
+    pub fn rotate_vector(self, v: [f64; 3]) -> [f64; 3] {
+        let q = self.normalize();
+        let vc = Self::new(0.0, v[0], v[1], v[2]);
+        let rotated = q.mul(vc).mul(q.conjugate());
+        [rotated.x, rotated.y, rotated.z]
+    }
+
+    /// Convert this (unit) quaternion to a 3x3 SO(3) rotation matrix.
+    pub fn to_rotation_matrix(self) -> [[f64; 3]; 3] {
+        let q = self.normalize();
+        let (w, x, y, z) = (q.w, q.x, q.y, q.z);
+        [
+            [
+                1.0 - 2.0 * (y * y + z * z),
+                2.0 * (x * y - w * z),
+                2.0 * (x * z + w * y),
+            ],
+            [
+                2.0 * (x * y + w * z),
+                1.0 - 2.0 * (x * x + z * z),
+                2.0 * (y * z - w * x),
+            ],
+            [
+                2.0 * (x * z - w * y),
+                2.0 * (y * z + w * x),
+                1.0 - 2.0 * (x * x + y * y),
+            ],
+        ]
+    }
+
+    /// Convert a 3x3 rotation matrix back to a unit quaternion (Shepperd).
+    pub fn from_rotation_matrix(m: &[[f64; 3]; 3]) -> Self {
+        let tr = m[0][0] + m[1][1] + m[2][2];
+        let q = if tr > 0.0 {
+            let s = 2.0 * (tr + 1.0).sqrt();
+            Self {
+                w: 0.25 * s,
+                x: (m[2][1] - m[1][2]) / s,
+                y: (m[0][2] - m[2][0]) / s,
+                z: (m[1][0] - m[0][1]) / s,
+            }
+        } else if m[0][0] > m[1][1] && m[0][0] > m[2][2] {
+            let s = 2.0 * (1.0 + m[0][0] - m[1][1] - m[2][2]).max(0.0).sqrt();
+            let inv = if s > 1e-15 { 1.0 / s } else { 0.0 };
+            Self {
+                w: (m[2][1] - m[1][2]) * inv,
+                x: 0.25 * s,
+                y: (m[0][1] + m[1][0]) * inv,
+                z: (m[0][2] + m[2][0]) * inv,
+            }
+        } else if m[1][1] > m[2][2] {
+            let s = 2.0 * (1.0 + m[1][1] - m[0][0] - m[2][2]).max(0.0).sqrt();
+            let inv = if s > 1e-15 { 1.0 / s } else { 0.0 };
+            Self {
+                w: (m[0][2] - m[2][0]) * inv,
+                x: (m[0][1] + m[1][0]) * inv,
+                y: 0.25 * s,
+                z: (m[1][2] + m[2][1]) * inv,
+            }
+        } else {
+            let s = 2.0 * (1.0 + m[2][2] - m[0][0] - m[1][1]).max(0.0).sqrt();
+            let inv = if s > 1e-15 { 1.0 / s } else { 0.0 };
+            Self {
+                w: (m[1][0] - m[0][1]) * inv,
+                x: (m[0][2] + m[2][0]) * inv,
+                y: (m[1][2] + m[2][1]) * inv,
+                z: 0.25 * s,
+            }
+        };
+        q.normalize()
+    }
+
+    /// Spherical linear interpolation between two unit quaternions.
+    pub fn slerp(self, other: Self, t: f64) -> Self {
+        let mut cos_omega = self.dot(other).clamp(-1.0, 1.0);
+        let mut other = other;
+        if cos_omega < 0.0 {
+            cos_omega = -cos_omega;
+            other = other.scale(-1.0);
+        }
+        if cos_omega > 0.9999 {
+            // Linear fallback
+            return self
+                .scale(1.0 - t)
+                .add(other.scale(t))
+                .normalize();
+        }
+        let omega = cos_omega.acos();
+        let sin_omega = omega.sin();
+        let a = ((1.0 - t) * omega).sin() / sin_omega;
+        let b = (t * omega).sin() / sin_omega;
+        self.scale(a).add(other.scale(b))
+    }
+
+    /// Convert this quaternion to an SU(2) single-qubit unitary (a, b) such that
+    /// U = [[a, -conj(b)], [b, conj(a)]] with a = w + i x, b = y + i z.
+    /// Returns (a_re, a_im, b_re, b_im).
+    pub fn to_su2(self) -> (f64, f64, f64, f64) {
+        let q = self.normalize();
+        (q.w, q.x, q.y, q.z)
+    }
+
+    /// Apply this quaternion as an SU(2) rotation to a single-qubit state
+    /// (re0, im0, re1, im1) -> (re0', im0', re1', im1').
+    pub fn apply_single_qubit(&self, re0: f64, im0: f64, re1: f64, im1: f64) -> (f64, f64, f64, f64) {
+        let q = self.normalize();
+        let (a_re, a_im, b_re, b_im) = (q.w, q.x, q.y, q.z);
+        // U = [[a, -conj(b)], [b, conj(a)]], a=w+ix, b=y+iz
+        // new0 = a*psi0 - conj(b)*psi1
+        // new1 = b*psi0 + conj(a)*psi1
+        // a*psi0
+        let a0_re = a_re * re0 - a_im * im0;
+        let a0_im = a_re * im0 + a_im * re0;
+        // conj(b) = b_re - i b_im ; -conj(b)*psi1 = (-b_re + i b_im)*psi1
+        let nb_re = -b_re;
+        let nb_im = b_im;
+        let t_re = nb_re * re1 - nb_im * im1;
+        let t_im = nb_re * im1 + nb_im * re1;
+        let n0_re = a0_re + t_re;
+        let n0_im = a0_im + t_im;
+        // b*psi0
+        let b0_re = b_re * re0 - b_im * im0;
+        let b0_im = b_re * im0 + b_im * re0;
+        // conj(a)*psi1 = (a_re - i a_im)*psi1
+        let ca_re = a_re;
+        let ca_im = -a_im;
+        let c1_re = ca_re * re1 - ca_im * im1;
+        let c1_im = ca_re * im1 + ca_im * re1;
+        let n1_re = b0_re + c1_re;
+        let n1_im = b0_im + c1_im;
+        (n0_re, n0_im, n1_re, n1_im)
+    }
 }
 
 impl std::ops::Add for Quaternion {
@@ -335,5 +489,59 @@ mod tests {
         assert!((res_scalar.x - res_default.x).abs() < 1e-14);
         assert!((res_scalar.y - res_default.y).abs() < 1e-14);
         assert!((res_scalar.z - res_default.z).abs() < 1e-14);
+    }
+
+    #[test]
+    fn test_axis_angle_and_rotate_vector() {
+        // 90 deg around Z rotates X -> Y
+        let q = Quaternion::from_axis_angle([0.0, 0.0, 1.0], std::f64::consts::FRAC_PI_2);
+        let v = [1.0, 0.0, 0.0];
+        let vr = q.rotate_vector(v);
+        assert!((vr[0]).abs() < 1e-12);
+        assert!((vr[1] - 1.0).abs() < 1e-12);
+        assert!((vr[2]).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_rotation_matrix_roundtrip() {
+        let q = Quaternion::from_axis_angle([0.577, 0.577, 0.577], 1.25);
+        let m = q.to_rotation_matrix();
+        let q2 = Quaternion::from_rotation_matrix(&m);
+        assert!((q.w - q2.w).abs() < 1e-10);
+        assert!((q.x - q2.x).abs() < 1e-10);
+        assert!((q.y - q2.y).abs() < 1e-10);
+        assert!((q.z - q2.z).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_slerp_endpoints() {
+        let a = Quaternion::from_axis_angle([0.0, 0.0, 1.0], 0.0);
+        let b = Quaternion::from_axis_angle([0.0, 0.0, 1.0], std::f64::consts::PI);
+        let mid = a.slerp(b, 0.5);
+        // angle should be ~pi/2
+        let q = Quaternion::from_axis_angle([0.0, 0.0, 1.0], std::f64::consts::FRAC_PI_2);
+        assert!((mid.w - q.w).abs() < 1e-10);
+        assert!((mid.z - q.z).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_apply_single_qubit_identity() {
+        // identity quaternion -> identity gate
+        let q = Quaternion::IDENTITY;
+        let (r0, i0, r1, i1) = q.apply_single_qubit(0.3, 0.4, 0.5, 0.6);
+        assert!((r0 - 0.3).abs() < 1e-12);
+        assert!((i0 - 0.4).abs() < 1e-12);
+        assert!((r1 - 0.5).abs() < 1e-12);
+        assert!((i1 - 0.6).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_apply_single_qubit_unitarity() {
+        // norm preservation
+        let q = Quaternion::from_axis_angle([1.0, 0.0, 0.0], 0.7);
+        let (r0, i0, r1, i1) = q.apply_single_qubit(0.3, 0.4, 0.5, 0.6);
+        let n_before = 0.3 * 0.3 + 0.4 * 0.4 + 0.5 * 0.5 + 0.6 * 0.6;
+        let n_after = r0 * r0 + i0 * i0 + r1 * r1 + i1 * i1;
+        assert!((n_before - n_after).abs() < 1e-12);
     }
 }

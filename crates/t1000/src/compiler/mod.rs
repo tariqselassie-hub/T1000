@@ -16,6 +16,7 @@ mod permute;
 pub mod scheduler;
 
 use crate::state::QuantumState;
+use crate::Quaternion;
 pub use dag::{CircuitDag, DagNode};
 pub use executor::{
     apply_anticnot_op, apply_cnot_op, apply_controlled_phase_op, apply_hadamard_op, apply_swap_op,
@@ -71,6 +72,18 @@ impl CircuitBuilder {
     /// Appends a general single-qubit 2x2 complex unitary.
     pub fn unitary_1q(&mut self, qubit: usize, matrix: Unitary2x2) -> &mut Self {
         self.dag.add_op(CircuitOp::Unitary1Q { qubit, matrix });
+        self
+    }
+
+    /// Appends a single-qubit rotation parameterized by a unit quaternion.
+    /// The quaternion is lowered to an SU(2) 2x2 unitary via `Unitary2x2::from_quaternion`.
+    /// Composing two quaternion rotations corresponds to the Hamilton product of
+    /// their quaternions, enabling quaternionic gate fusion.
+    pub fn rot_q(&mut self, qubit: usize, q: Quaternion) -> &mut Self {
+        self.dag.add_op(CircuitOp::Unitary1Q {
+            qubit,
+            matrix: Unitary2x2::from_quaternion(q),
+        });
         self
     }
 
@@ -440,5 +453,101 @@ mod tests {
             "Expected state |0101> prob 1.0, got {}",
             prob_5
         );
+    }
+
+    #[test]
+    fn test_rot_q_fusion_fast_path() {
+        use crate::Quaternion;
+        // Two rot_q gates on the same qubit should fuse into a single Unitary1Q
+        // whose quaternion is the Hamilton product (application order).
+        let q1 = Quaternion::from_axis_angle([1.0, 0.0, 0.0], 0.3);
+        let q2 = Quaternion::from_axis_angle([0.0, 1.0, 0.0], 0.4);
+        let mut builder = CircuitBuilder::new(2);
+        builder.rot_q(0, q1);
+        builder.rot_q(0, q2);
+        let compiled = builder.compile();
+        assert_eq!(compiled.telemetry.raw_ops, 2);
+        assert_eq!(compiled.telemetry.fused_ops, 1);
+        assert_eq!(compiled.telemetry.single_qubit_fused, 1);
+
+        // The fused matrix must equal U(q2)*U(q1) = U(q1*q2)
+        let expected = Unitary2x2::from_quaternion(q1.mul(q2));
+        // Find the fused Unitary1Q in the compiled circuit
+        let mut found = false;
+        for stage in &compiled.stages {
+            for op in &stage.ops {
+                if let CircuitOp::Unitary1Q { matrix, .. } = op {
+                    assert!((matrix.u00_re - expected.u00_re).abs() < 1e-12);
+                    assert!((matrix.u00_im - expected.u00_im).abs() < 1e-12);
+                    assert!((matrix.u01_re - expected.u01_re).abs() < 1e-12);
+                    assert!((matrix.u01_im - expected.u01_im).abs() < 1e-12);
+                    assert!((matrix.u10_re - expected.u10_re).abs() < 1e-12);
+                    assert!((matrix.u10_im - expected.u10_im).abs() < 1e-12);
+                    assert!((matrix.u11_re - expected.u11_re).abs() < 1e-12);
+                    assert!((matrix.u11_im - expected.u11_im).abs() < 1e-12);
+                    found = true;
+                }
+            }
+        }
+        assert!(found, "fused Unitary1Q not found");
+    }
+
+    #[test]
+    fn test_from_quaternion_matches_ry_rz() {
+        use crate::Quaternion;
+        // Ry
+        for theta in [0.0f64, 0.3, 0.7, 1.2, 2.5] {
+            let half = theta * 0.5;
+            let q = Quaternion::new(half.cos(), 0.0, half.sin(), 0.0);
+            let uq = Unitary2x2::from_quaternion(q);
+            let ur = Unitary2x2::ry(theta);
+            assert!((uq.u00_re - ur.u00_re).abs() < 1e-12);
+            assert!((uq.u00_im - ur.u00_im).abs() < 1e-12);
+            assert!((uq.u01_re - ur.u01_re).abs() < 1e-12);
+            assert!((uq.u01_im - ur.u01_im).abs() < 1e-12);
+            assert!((uq.u10_re - ur.u10_re).abs() < 1e-12);
+            assert!((uq.u10_im - ur.u10_im).abs() < 1e-12);
+            assert!((uq.u11_re - ur.u11_re).abs() < 1e-12);
+            assert!((uq.u11_im - ur.u11_im).abs() < 1e-12);
+        }
+        // Rz
+        for theta in [0.0f64, 0.3, 0.7, 1.2, 2.5] {
+            let half = theta * 0.5;
+            let q = Quaternion::new(half.cos(), -half.sin(), 0.0, 0.0);
+            let uq = Unitary2x2::from_quaternion(q);
+            let ur = Unitary2x2::rz(theta);
+            assert!((uq.u00_re - ur.u00_re).abs() < 1e-12);
+            assert!((uq.u00_im - ur.u00_im).abs() < 1e-12);
+            assert!((uq.u01_re - ur.u01_re).abs() < 1e-12);
+            assert!((uq.u01_im - ur.u01_im).abs() < 1e-12);
+            assert!((uq.u10_re - ur.u10_re).abs() < 1e-12);
+            assert!((uq.u10_im - ur.u10_im).abs() < 1e-12);
+            assert!((uq.u11_re - ur.u11_re).abs() < 1e-12);
+            assert!((uq.u11_im - ur.u11_im).abs() < 1e-12);
+        }
+    }
+    #[test]
+    fn test_rot_q_lowers_and_composes() {
+        use crate::Quaternion;
+        let q = Quaternion::from_axis_angle([0.0, 0.0, 1.0], 0.7);
+        let mut builder = CircuitBuilder::new(2);
+        builder.rot_q(0, q);
+        let compiled = builder.compile();
+        let mut st = QuantumState::ground(4);
+        compiled.execute(&mut st);
+        st.assert_normalized(1e-9);
+
+        let q1 = Quaternion::from_axis_angle([1.0, 0.0, 0.0], 0.3);
+        let q2 = Quaternion::from_axis_angle([0.0, 1.0, 0.0], 0.4);
+        let u_fused = Unitary2x2::from_quaternion(q1.mul(q2));
+        let u_seq = Unitary2x2::from_quaternion(q2).matmul(&Unitary2x2::from_quaternion(q1));
+        assert!((u_fused.u00_re - u_seq.u00_re).abs() < 1e-12);
+        assert!((u_fused.u00_im - u_seq.u00_im).abs() < 1e-12);
+        assert!((u_fused.u01_re - u_seq.u01_re).abs() < 1e-12);
+        assert!((u_fused.u01_im - u_seq.u01_im).abs() < 1e-12);
+        assert!((u_fused.u10_re - u_seq.u10_re).abs() < 1e-12);
+        assert!((u_fused.u10_im - u_seq.u10_im).abs() < 1e-12);
+        assert!((u_fused.u11_re - u_seq.u11_re).abs() < 1e-12);
+        assert!((u_fused.u11_im - u_seq.u11_im).abs() < 1e-12);
     }
 }

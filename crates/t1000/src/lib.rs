@@ -26,6 +26,9 @@ pub use architecture::{
     NativeGateKind, QuantumChip, TranspileReport, TranspiledCircuit,
 };
 pub mod backend;
+pub mod backbone;
+pub mod film_adapter;
+pub mod multitask_backbone;
 pub mod baselines;
 pub mod calibration;
 pub mod canonical;
