@@ -163,3 +163,4 @@ Combining the 1-qubit adaptive zipper with the $K = 6$ virtual cut-bridge extend
 3. **Strict Machine-Precision Floor:** Ground truth divergence against calibrated systems must satisfy:
    $$|\langle \mathcal{O} \rangle_{\text{cut\_bridge}} - \langle \mathcal{O} \rangle_{\text{dense}}| \le 10^{-14}$$
 4. **Sovereign Attribution:** All newly created engine modules must carry the standard dual-licensing SPDX header and copyright notice to `Terrence A. Jones SR`.
+

@@ -1,0 +1,250 @@
+/* SPDX-License-Identifier: MIT OR Apache-2.0 */
+/* Copyright (c) 2026 Terrence A. Jones SR. All rights reserved. */
+
+:root {
+  --bg-obsidian: #05080d;
+  --bg-card: #0f172a;
+  --bg-card-translucent: rgba(15, 23, 42, 0.85);
+  --quantum-emerald: #00ff88;
+  --emerald-dim: rgba(0, 255, 136, 0.25);
+  --gold-amber: #ffd700;
+  --crimson-alert: #ef4444;
+  --grid-slate: #1e293b;
+  --border-slate: #334155;
+  --text-polar: #f8fafc;
+  --text-muted: #94a3b8;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+}
+
+body, html {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-obsidian);
+  color: var(--text-polar);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+#canvas-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+/* Sovereign Top Telemetry Bar */
+.top-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 12px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(180deg, rgba(5, 8, 13, 0.95) 0%, rgba(5, 8, 13, 0.4) 80%, transparent 100%);
+  border-bottom: 1px solid var(--border-slate);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.top-header * {
+  pointer-events: auto;
+}
+
+.brand-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-title h1 {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--quantum-emerald);
+  text-transform: uppercase;
+}
+
+.badge {
+  padding: 2px 8px;
+  border-radius: 2px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.badge-yoda {
+  background: rgba(0, 255, 136, 0.15);
+  border: 1px solid var(--quantum-emerald);
+  color: var(--quantum-emerald);
+}
+
+.badge-cache {
+  background: rgba(255, 215, 0, 0.15);
+  border: 1px solid var(--gold-amber);
+  color: var(--gold-amber);
+}
+
+.header-metrics {
+  display: flex;
+  gap: 24px;
+}
+
+.metric-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.metric-label {
+  font-size: 9px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.metric-val {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-polar);
+}
+
+.metric-val.emerald {
+  color: var(--quantum-emerald);
+}
+
+.metric-val.gold {
+  color: var(--gold-amber);
+}
+
+/* Floating Reticle Panels */
+.hud-panel {
+  position: absolute;
+  background: var(--bg-card-translucent);
+  border: 1px solid var(--border-slate);
+  backdrop-filter: blur(8px);
+  padding: 14px 18px;
+  z-index: 10;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+
+.panel-left {
+  top: 72px;
+  left: 20px;
+  width: 320px;
+}
+
+.panel-right {
+  top: 72px;
+  right: 20px;
+  width: 360px;
+}
+
+.panel-bottom {
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 780px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.panel-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--gold-amber);
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--grid-slate);
+  padding-bottom: 6px;
+}
+
+.panel-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 11px;
+}
+
+.panel-row span:first-child {
+  color: var(--text-muted);
+}
+
+.panel-row span:last-child {
+  font-weight: 600;
+}
+
+/* Telemetry Mini Bars */
+.progress-track {
+  width: 100%;
+  height: 4px;
+  background: var(--grid-slate);
+  margin-top: 4px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--quantum-emerald);
+  transition: width 0.3s ease;
+}
+
+.progress-fill.gold {
+  background: var(--gold-amber);
+}
+
+/* View Mode Selector Buttons */
+.view-nav {
+  display: flex;
+  gap: 8px;
+}
+
+.nav-btn {
+  background: var(--bg-obsidian);
+  border: 1px solid var(--border-slate);
+  color: var(--text-muted);
+  padding: 8px 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nav-btn:hover {
+  border-color: var(--quantum-emerald);
+  color: var(--text-polar);
+}
+
+.nav-btn.active {
+  background: rgba(0, 255, 136, 0.15);
+  border-color: var(--quantum-emerald);
+  color: var(--quantum-emerald);
+}
+
+/* Canvas Waveform Display */
+#wave-canvas {
+  width: 100%;
+  height: 80px;
+  background: #05080d;
+  border: 1px solid var(--grid-slate);
+  margin-top: 8px;
+}

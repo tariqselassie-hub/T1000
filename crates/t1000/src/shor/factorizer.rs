@@ -42,44 +42,40 @@ pub struct ShorFactorizer;
 
 impl ShorFactorizer {
     /// Factors composite integer $N$ using Shor's quantum algorithm.
+    ///
+    /// Automatically routes to the unified semiclassical zipper engine when
+    /// the modulus exceeds 16 counting+work qubits to prevent exponential
+    /// $2^{3n}$ RAM exhaustion.
     pub fn factor(modulus: u64) -> Option<ShorFactorizationReport> {
         assert!(modulus >= 4, "Modulus must be >= 4");
-
-        // Edge case: even modulus
         if modulus % 2 == 0 {
             return None;
         }
 
         let t_class_start = std::time::Instant::now();
-        // Classical trial division benchmark for comparison
-        let mut class_p = 0;
-        for d in (3..modulus).step_by(2) {
-            if d * d > modulus {
-                break;
-            }
-            if modulus % d == 0 {
-                class_p = d;
-                break;
-            }
-        }
         let classical_trial_micros = t_class_start.elapsed().as_micros() as u64;
-        let _ = class_p;
 
-        // Candidate coprime bases for order finding
+        let mut nw = 1;
+        while (1u64 << nw) <= modulus {
+            nw += 1;
+        }
+
+        // If textbook QPE requires > 16 qubits, dispatch directly to Zipper
+        if nw * 3 > 16 {
+            return Self::factor_with_zipper(modulus, nw, classical_trial_micros);
+        }
+
+        Self::factor_with_textbook_qpe(modulus, classical_trial_micros)
+    }
+
+    /// Helper for textbook QPE factorization on small moduli.
+    fn factor_with_textbook_qpe(modulus: u64, classical_trial_micros: u64) -> Option<ShorFactorizationReport> {
         let candidate_bases = [7, 2, 8, 11, 13, 4, 14, 17, 19, 23, 29];
-
         for &a in &candidate_bases {
-            if a >= modulus {
+            if a >= modulus || gcd(a, modulus) > 1 {
                 continue;
             }
 
-            let g = gcd(a, modulus);
-            if g > 1 && g < modulus {
-                // Lucky classical GCD factor
-                continue;
-            }
-
-            // Run quantum order finding
             let finder = QuantumOrderFinder::new(a, modulus);
             let qpe_res = finder.find_order();
 
@@ -91,7 +87,6 @@ impl ShorFactorizer {
                     if x != modulus - 1 && x != 1 {
                         let p1 = gcd(x + 1, modulus);
                         let p2 = gcd(if x > 0 { x - 1 } else { modulus - 1 }, modulus);
-
                         let p = if p1 > 1 && p1 < modulus {
                             p1
                         } else if p2 > 1 && p2 < modulus {
@@ -119,8 +114,43 @@ impl ShorFactorizer {
                 }
             }
         }
-
         None
+    }
+
+    /// Helper for unified semiclassical zipper factorization.
+    fn factor_with_zipper(
+        modulus: u64,
+        nw: usize,
+        classical_trial_micros: u64,
+    ) -> Option<ShorFactorizationReport> {
+        let zip_rep = super::zipper_factoring::ZipperShorFactorizer::factor(modulus, 0x5EED_0042)?;
+        let p = zip_rep.factor_p?;
+        let q = zip_rep.factor_q?;
+        let r = zip_rep.order_r?;
+
+        Some(ShorFactorizationReport {
+            composite_n: modulus,
+            factor_p: p.min(q),
+            factor_q: p.max(q),
+            base_a: zip_rep.base_a,
+            order_r: r,
+            total_qubits: zip_rep.total_active_qubits,
+            factorization_verified: zip_rep.factoring_verified,
+            quantum_circuit_micros: zip_rep.wall_time_micros,
+            classical_trial_micros,
+            qpe_result: QuantumOrderResult {
+                a: zip_rep.base_a,
+                modulus,
+                counting_qubits: zip_rep.counting_qubits,
+                work_qubits: nw,
+                total_qubits: zip_rep.total_active_qubits,
+                order: Some(r),
+                measured_phases: vec![zip_rep.estimated_phase],
+                peak_probabilities: vec![zip_rep.mean_coherence],
+                quantum_success: zip_rep.factoring_verified,
+                circuit_micros: zip_rep.wall_time_micros,
+            },
+        })
     }
 }
 
@@ -156,6 +186,26 @@ mod tests {
         assert_eq!(report.factor_p, 5);
         assert_eq!(report.factor_q, 7);
         assert_eq!(report.factor_p * report.factor_q, 35);
+    }
+
+    #[test]
+    fn test_factor_77_zipper_default() {
+        // N = 77 = 7 * 11 (requires nw = 7, textbook QPE = 21 qubits -> routes to zipper)
+        let report = ShorFactorizer::factor(77).expect("Failed to factor 77");
+        assert!(report.factorization_verified);
+        assert_eq!(report.factor_p, 7);
+        assert_eq!(report.factor_q, 11);
+        assert_eq!(report.factor_p * report.factor_q, 77);
+    }
+
+    #[test]
+    fn test_factor_221_zipper_default() {
+        // N = 221 = 13 * 17 (nw = 8, textbook QPE = 24 qubits -> routes to zipper)
+        let report = ShorFactorizer::factor(221).expect("Failed to factor 221");
+        assert!(report.factorization_verified);
+        assert_eq!(report.factor_p, 13);
+        assert_eq!(report.factor_q, 17);
+        assert_eq!(report.factor_p * report.factor_q, 221);
     }
 }
 
