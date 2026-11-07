@@ -3,6 +3,9 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 
 // Global simulation state container
 const state = {
@@ -43,7 +46,7 @@ const state = {
   ]
 };
 
-// Initialize Main 3D System Viewport
+// Initialize Main 3D System Viewport with Post-Processing
 function initSystemRenderer() {
   const container = document.getElementById('canvas-container');
   const scene = new THREE.Scene();
@@ -56,7 +59,21 @@ function initSystemRenderer() {
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.1;
   container.appendChild(renderer.domElement);
+
+  const composer = new EffectComposer(renderer);
+  const renderPass = new RenderPass(scene, camera);
+  composer.addPass(renderPass);
+
+  const bloomPass = new UnrealBloomPass(
+    new THREE.Vector2(window.innerWidth, window.innerHeight),
+    1.25, // strength
+    0.55, // radius
+    0.16  // threshold
+  );
+  composer.addPass(bloomPass);
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
@@ -68,9 +85,10 @@ function initSystemRenderer() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
+    composer.setSize(window.innerWidth, window.innerHeight);
   });
 
-  return { scene, camera, renderer, controls };
+  return { scene, camera, renderer, composer, controls };
 }
 
 // Create FLRW Cosmic Starfield and extract high-density supercluster nodes
@@ -173,7 +191,7 @@ function createCosmicWebFilaments(scene, clusterNodes) {
   const material = new THREE.LineBasicMaterial({
     vertexColors: true,
     transparent: true,
-    opacity: 0.45,
+    opacity: 0.55,
     blending: THREE.AdditiveBlending
   });
 
@@ -200,9 +218,10 @@ function createFilamentFluxParticles(scene, edgeList) {
 
   const material = new THREE.PointsMaterial({
     color: 0x00ff88,
-    size: 2.5,
+    size: 2.6,
     transparent: true,
-    opacity: 0.85
+    opacity: 0.9,
+    blending: THREE.AdditiveBlending
   });
 
   const fluxPoints = new THREE.Points(geometry, material);
@@ -214,7 +233,6 @@ function createFilamentFluxParticles(scene, edgeList) {
 function createHubbleHorizon(scene) {
   const horizonGroup = new THREE.Group();
 
-  // Geodesic Horizon Boundary Shell
   const shellGeo = new THREE.IcosahedronGeometry(280, 2);
   const shellMat = new THREE.MeshBasicMaterial({
     color: 0x00ff88,
@@ -225,7 +243,6 @@ function createHubbleHorizon(scene) {
   const shell = new THREE.Mesh(shellGeo, shellMat);
   horizonGroup.add(shell);
 
-  // Equatorial Radiant Gold Reticle Ring
   const eqGeo = new THREE.RingGeometry(278, 282, 64);
   const eqMat = new THREE.MeshBasicMaterial({
     color: 0xffd700,
@@ -265,55 +282,80 @@ function createVacuumRipples(scene) {
   return ripples;
 }
 
-// Create Central Quantum Core Planet with Gyroscopic Rings
+// Create Central Quantum Core Planet with Relativistic Kerr Lensing Halo
 function createQuantumPlanet(scene) {
   const planetGroup = new THREE.Group();
   planetGroup.position.set(0, 0, 0);
 
-  // Deep Obsidian Core Sphere
+  // 1. Deep Obsidian Event Horizon Core
   const coreGeo = new THREE.SphereGeometry(12, 48, 48);
   const coreMat = new THREE.MeshBasicMaterial({ color: 0x05080d });
   const core = new THREE.Mesh(coreGeo, coreMat);
   planetGroup.add(core);
 
-  // Emerald Wireframe Grid Shell
+  // 2. Emerald Quantum Lattice Grid Shell
   const wireGeo = new THREE.SphereGeometry(12.2, 24, 24);
   const wireMat = new THREE.MeshBasicMaterial({
     color: 0x00ff88,
     wireframe: true,
     transparent: true,
-    opacity: 0.45
+    opacity: 0.5,
+    blending: THREE.AdditiveBlending
   });
   const gridShell = new THREE.Mesh(wireGeo, wireMat);
   planetGroup.add(gridShell);
 
-  // Radiant Gold Accretion Disc
-  const discGeo = new THREE.RingGeometry(16, 26, 64);
+  // 3. Relativistic Kerr Photon Sphere Ring (Unstable circular orbit)
+  const photonGeo = new THREE.TorusGeometry(13.8, 0.25, 16, 120);
+  const photonMat = new THREE.MeshBasicMaterial({
+    color: 0xffd700,
+    transparent: true,
+    opacity: 0.85
+  });
+  const photonSphere = new THREE.Mesh(photonGeo, photonMat);
+  photonSphere.rotation.x = Math.PI / 2.3;
+  planetGroup.add(photonSphere);
+
+  // 4. Primary Equatorial Radiant Gold Accretion Disc
+  const discGeo = new THREE.RingGeometry(16, 27, 64);
   const discMat = new THREE.MeshBasicMaterial({
     color: 0xffd700,
     side: THREE.DoubleSide,
     transparent: true,
-    opacity: 0.5,
+    opacity: 0.6,
     wireframe: true
   });
   const accretion = new THREE.Mesh(discGeo, discMat);
   accretion.rotation.x = Math.PI / 2.3;
   planetGroup.add(accretion);
 
-  // Dual Gyroscopic Stabilizer Rings
-  const ring1Geo = new THREE.TorusGeometry(20, 0.25, 16, 100);
+  // 5. Relativistic Vertical Warped Accretion Halo (Light deflected over poles)
+  const haloGeo = new THREE.RingGeometry(15.5, 25, 64);
+  const haloMat = new THREE.MeshBasicMaterial({
+    color: 0xffd700,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.35,
+    wireframe: true
+  });
+  const halo = new THREE.Mesh(haloGeo, haloMat);
+  halo.rotation.y = Math.PI / 2.4;
+  planetGroup.add(halo);
+
+  // 6. Dual Gyroscopic Stabilizer Rings (Pulsars)
+  const ring1Geo = new THREE.TorusGeometry(20, 0.28, 16, 100);
   const ringMat1 = new THREE.MeshBasicMaterial({ color: 0x00ff88 });
   const ring1 = new THREE.Mesh(ring1Geo, ringMat1);
   planetGroup.add(ring1);
 
-  const ring2Geo = new THREE.TorusGeometry(24, 0.25, 16, 100);
+  const ring2Geo = new THREE.TorusGeometry(24, 0.28, 16, 100);
   const ringMat2 = new THREE.MeshBasicMaterial({ color: 0xffd700 });
   const ring2 = new THREE.Mesh(ring2Geo, ringMat2);
   ring2.rotation.y = Math.PI / 3;
   planetGroup.add(ring2);
 
   scene.add(planetGroup);
-  return { planetGroup, gridShell, accretion, ring1, ring2 };
+  return { planetGroup, gridShell, accretion, halo, photonSphere, ring1, ring2 };
 }
 
 // Create Cut-Bridge Topology in Dedicated Coordinate Space
@@ -326,21 +368,18 @@ function createCutBridgeTopology(scene) {
   const startPt = new THREE.Vector3(-22, 0, 0);
   const endPt = new THREE.Vector3(22, 0, 0);
 
-  // Fragment A Node (Left: 18Q)
   const nodeAGeo = new THREE.IcosahedronGeometry(4, 2);
   const nodeAMat = new THREE.MeshBasicMaterial({ color: 0x00ff88, wireframe: true });
   const nodeA = new THREE.Mesh(nodeAGeo, nodeAMat);
   nodeA.position.copy(startPt);
   bridgeGroup.add(nodeA);
 
-  // Fragment B Node (Right: 18Q)
   const nodeBGeo = new THREE.IcosahedronGeometry(4, 2);
   const nodeBMat = new THREE.MeshBasicMaterial({ color: 0xffd700, wireframe: true });
   const nodeB = new THREE.Mesh(nodeBGeo, nodeBMat);
   nodeB.position.copy(endPt);
   bridgeGroup.add(nodeB);
 
-  // 6 Helical Flux Splines for K=6 Cut Bridges
   for (let k = 0; k < kCuts; k++) {
     const angle = (k / kCuts) * Math.PI * 2;
     const curvePoints = [];
@@ -362,14 +401,14 @@ function createCutBridgeTopology(scene) {
       color: k % 2 === 0 ? 0x00ff88 : 0xffd700,
       wireframe: true,
       transparent: true,
-      opacity: 0.75
+      opacity: 0.75,
+      blending: THREE.AdditiveBlending
     });
     const pipe = new THREE.Mesh(pipeGeo, pipeMat);
     bridgeGroup.add(pipe);
     bridgePipes.push({ pipe, path });
   }
 
-  // Quasiprobability Flux Stream Particles
   const fluxCount = 300;
   const fluxGeo = new THREE.BufferGeometry();
   const fluxPos = new Float32Array(fluxCount * 3);
@@ -386,7 +425,8 @@ function createCutBridgeTopology(scene) {
     color: 0x00ff88,
     size: 2.2,
     transparent: true,
-    opacity: 0.95
+    opacity: 0.95,
+    blending: THREE.AdditiveBlending
   });
   const fluxPoints = new THREE.Points(fluxGeo, fluxMat);
   bridgeGroup.add(fluxPoints);
@@ -431,7 +471,6 @@ function renderWaveformCanvas() {
   ctx.fillStyle = '#05080d';
   ctx.fillRect(0, 0, w, h);
 
-  // Grid lines
   ctx.strokeStyle = '#1e293b';
   ctx.lineWidth = 1;
   ctx.beginPath();
@@ -441,7 +480,6 @@ function renderWaveformCanvas() {
   ctx.lineTo(w, 10);
   ctx.stroke();
 
-  // Draw 24-step 100% Phase-Lock Plateau
   const steps = state.phaseLockSteps;
   const stepW = w / (steps.length - 1);
 
@@ -458,7 +496,6 @@ function renderWaveformCanvas() {
   }
   ctx.stroke();
 
-  // Highlight points
   for (let i = 0; i < steps.length; i++) {
     const x = i * stepW;
     const normCoh = (steps[i].coherence - 0.95) / 0.05;
@@ -578,7 +615,7 @@ function updateBridgeDisplay(bridgeDisplay, delta) {
 
 // Main Animation Loop
 function animate(context, planetObj, starfield, filamentsObj, fluxObj, horizonObj, ripples, bridgeDisplay) {
-  const { scene, camera, renderer, controls } = context;
+  const { scene, camera, composer, controls } = context;
 
   function loop() {
     requestAnimationFrame(loop);
@@ -590,9 +627,11 @@ function animate(context, planetObj, starfield, filamentsObj, fluxObj, horizonOb
     controls.target.lerp(state.targetLookAt, 0.04);
     controls.update();
 
-    // Rotate Quantum Planet & Gyroscopic Rings
+    // Rotate Quantum Planet Core, Relativistic Halo & Gyroscopic Rings
     planetObj.gridShell.rotation.y += delta * 0.5;
     planetObj.accretion.rotation.z += delta * 0.8;
+    planetObj.halo.rotation.x += delta * 0.6;
+    planetObj.photonSphere.rotation.z += delta * 1.1;
     planetObj.ring1.rotation.x += delta * 0.9;
     planetObj.ring1.rotation.y += delta * 0.6;
     planetObj.ring2.rotation.y += delta * 0.7;
@@ -609,7 +648,9 @@ function animate(context, planetObj, starfield, filamentsObj, fluxObj, horizonOb
     updateFilamentFlux(fluxObj, delta);
     updateVacuumRipples(ripples, delta);
     updateTelemetry(state.time);
-    renderer.render(scene, camera);
+
+    // Render main system through Photonic Bloom Post-Processing
+    composer.render();
 
     // Update the decoupled tactical bridge monitor
     updateBridgeDisplay(bridgeDisplay, delta);

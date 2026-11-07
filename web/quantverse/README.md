@@ -12,9 +12,13 @@
 The dashboard is decoupled into two independent 3D rendering pipelines to preserve clear visual separation:
 
 1. **Main Cosmic System Viewport (`#canvas-container`):**
-   - **FLRW Expanding Spacetime:** 10,000 starfield particles with radial density and Doppler colors derived from Bogoliubov vacuum particle creation ($n_k = \sinh^2(\theta_k)$).
-   - **Quantum Core Planet:** Deep Obsidian (`#05080d`) core sphere, Laser Emerald (`#00ff88`) latitudinal grid shell, and Radiant Gold (`#ffd700`) accretion disc.
+   - **Photonic Bloom & Post-Processing:** `EffectComposer` with `UnrealBloomPass` (strength: 1.25, radius: 0.55, threshold: 0.16) and `ACESFilmicToneMapping`.
+   - **FLRW Expanding Spacetime & Cosmic Web:** 10,000 starfield particles with Bogoliubov spectrum $n_k$, interconnected with 3D large-scale structure filaments and 280 streaming flux particles.
+   - **Expanding Hubble Horizon:** Geodesic boundary $R_H(t)$ and equatorial reticle ring breathing with cosmic scale factor $a(t)$.
+   - **Bogoliubov Vacuum Ripples:** 3 concentric expanding shockwaves visualizing particle pair creation.
+   - **Relativistic Kerr Gravitational Lensing:** Deep Obsidian (`#05080d`) core, Laser Emerald (`#00ff88`) grid shell, unstable photon sphere orbit at $r=13.8$, primary equatorial accretion disk, and vertical warped accretion halo looping over the poles.
    - **Gyroscopic Stabilizers:** Dual precessing counter-rotating rings based on the 8-node throwing jack stabilizer model.
+   - **Tactical Reticle Overlay:** CRT scanlines and center targeting crosshairs.
 2. **Dedicated ER=EPR Bridge Tactical HUD (`#bridge-canvas`):**
    - Isolated WebGL sub-renderer located directly inside the right HUD panel.
    - Renders the $K=6$ cut-bridge tensor bisection between Fragment A (18Q) and Fragment B (18Q).
