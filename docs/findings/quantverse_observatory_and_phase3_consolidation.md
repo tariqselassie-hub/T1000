@@ -127,3 +127,4 @@ npm run build
 * **Research Sanctuary (`yoda`):** All cryptanalytic order finding, cut-bridge tensor bisection code (`crates/t1000/src/shor/`), and `quantverse` dashboard are quarantined on `yoda`.
 * **Public Upstream (`main`):** Receives vetted, sanitized releases only after formal sign-off.
 * **Dual Licensing:** Dual-licensed under MIT and Apache 2.0. Copyright (c) 2026 Terrence A. Jones SR.
+

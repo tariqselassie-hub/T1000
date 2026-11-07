@@ -4,13 +4,14 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
-// Global state container
+// Global simulation state container
 const state = {
   warpSpeed: 1.0,
   currentMode: 'planet',
   time: 0,
   targetCameraPos: new THREE.Vector3(0, 18, 48),
   targetLookAt: new THREE.Vector3(0, 0, 0),
+  activeFilamentsCount: 0,
   phaseLockSteps: [
     { step: 26, coherence: 1.0000 },
     { step: 25, coherence: 1.0000 },
@@ -47,7 +48,7 @@ function initSystemRenderer() {
   const container = document.getElementById('canvas-container');
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x05080d);
-  scene.fog = new THREE.FogExp2(0x05080d, 0.0035);
+  scene.fog = new THREE.FogExp2(0x05080d, 0.0032);
 
   const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 2000);
   camera.position.copy(state.targetCameraPos);
@@ -60,7 +61,7 @@ function initSystemRenderer() {
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.05;
-  controls.maxDistance = 600;
+  controls.maxDistance = 750;
   controls.minDistance = 5;
 
   window.addEventListener('resize', () => {
@@ -72,12 +73,13 @@ function initSystemRenderer() {
   return { scene, camera, renderer, controls };
 }
 
-// Create FLRW Cosmic Starfield with Bogoliubov Spectrum
+// Create FLRW Cosmic Starfield and extract high-density supercluster nodes
 function createCosmicStarfield(scene) {
   const particleCount = 10000;
   const geometry = new THREE.BufferGeometry();
   const positions = new Float32Array(particleCount * 3);
   const colors = new Float32Array(particleCount * 3);
+  const clusterNodes = [];
 
   const emerald = new THREE.Color(0x00ff88);
   const gold = new THREE.Color(0xffd700);
@@ -85,19 +87,31 @@ function createCosmicStarfield(scene) {
   const dim = new THREE.Color(0x334155);
 
   for (let i = 0; i < particleCount; i++) {
-    const radius = 60 + Math.pow(Math.random(), 1.8) * 540;
+    const radius = 55 + Math.pow(Math.random(), 1.7) * 480;
     const theta = Math.random() * Math.PI * 2;
     const phi = Math.acos(2 * Math.random() - 1);
 
-    positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
-    positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
-    positions[i * 3 + 2] = radius * Math.cos(phi);
+    const x = radius * Math.sin(phi) * Math.cos(theta);
+    const y = radius * Math.sin(phi) * Math.sin(theta);
+    const z = radius * Math.cos(phi);
+
+    positions[i * 3] = x;
+    positions[i * 3 + 1] = y;
+    positions[i * 3 + 2] = z;
 
     const rVal = Math.random();
     let col = dim;
-    if (rVal > 0.88) col = emerald;
-    else if (rVal > 0.70) col = gold;
-    else if (rVal > 0.50) col = polar;
+    if (rVal > 0.88) {
+      col = emerald;
+      if (clusterNodes.length < 150) clusterNodes.push(new THREE.Vector3(x, y, z));
+    } else if (rVal > 0.70) {
+      col = gold;
+      if (clusterNodes.length < 150 && Math.random() > 0.5) {
+        clusterNodes.push(new THREE.Vector3(x, y, z));
+      }
+    } else if (rVal > 0.50) {
+      col = polar;
+    }
 
     colors[i * 3] = col.r;
     colors[i * 3 + 1] = col.g;
@@ -116,7 +130,139 @@ function createCosmicStarfield(scene) {
 
   const starfield = new THREE.Points(geometry, material);
   scene.add(starfield);
-  return starfield;
+  return { starfield, clusterNodes };
+}
+
+// Create Cosmic Web Filaments connecting Bogoliubov density superclusters
+function createCosmicWebFilaments(scene, clusterNodes) {
+  const linePositions = [];
+  const lineColors = [];
+  const edgeList = [];
+  const maxEdgesPerNode = 4;
+  const minDistance = 30;
+  const maxDistance = 120;
+
+  const emerald = new THREE.Color(0x00ff88);
+  const gold = new THREE.Color(0xffd700);
+  const slate = new THREE.Color(0x1e293b);
+
+  for (let i = 0; i < clusterNodes.length; i++) {
+    let connections = 0;
+    for (let j = i + 1; j < clusterNodes.length; j++) {
+      if (connections >= maxEdgesPerNode) break;
+      const d = clusterNodes[i].distanceTo(clusterNodes[j]);
+      if (d >= minDistance && d <= maxDistance) {
+        linePositions.push(clusterNodes[i].x, clusterNodes[i].y, clusterNodes[i].z);
+        linePositions.push(clusterNodes[j].x, clusterNodes[j].y, clusterNodes[j].z);
+
+        const edgeColA = connections % 2 === 0 ? emerald : gold;
+        const edgeColB = connections % 2 === 0 ? slate : emerald;
+        lineColors.push(edgeColA.r, edgeColA.g, edgeColA.b);
+        lineColors.push(edgeColB.r, edgeColB.g, edgeColB.b);
+
+        edgeList.push({ start: clusterNodes[i], end: clusterNodes[j] });
+        connections++;
+      }
+    }
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(lineColors, 3));
+
+  const material = new THREE.LineBasicMaterial({
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.45,
+    blending: THREE.AdditiveBlending
+  });
+
+  const filaments = new THREE.LineSegments(geometry, material);
+  scene.add(filaments);
+  state.activeFilamentsCount = edgeList.length;
+
+  return { filaments, edgeList };
+}
+
+// Create Streaming Baryon & Energy Flux Particles along Cosmic Filaments
+function createFilamentFluxParticles(scene, edgeList) {
+  const particleCount = 280;
+  const geometry = new THREE.BufferGeometry();
+  const positions = new Float32Array(particleCount * 3);
+  const progress = new Float32Array(particleCount);
+  const edgeIndices = new Uint16Array(particleCount);
+
+  for (let i = 0; i < particleCount; i++) {
+    progress[i] = Math.random();
+    edgeIndices[i] = Math.floor(Math.random() * edgeList.length);
+  }
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+  const material = new THREE.PointsMaterial({
+    color: 0x00ff88,
+    size: 2.5,
+    transparent: true,
+    opacity: 0.85
+  });
+
+  const fluxPoints = new THREE.Points(geometry, material);
+  scene.add(fluxPoints);
+  return { fluxPoints, progress, edgeIndices, edgeList };
+}
+
+// Create Expanding Cosmological Hubble Horizon Sphere R_H(t)
+function createHubbleHorizon(scene) {
+  const horizonGroup = new THREE.Group();
+
+  // Geodesic Horizon Boundary Shell
+  const shellGeo = new THREE.IcosahedronGeometry(280, 2);
+  const shellMat = new THREE.MeshBasicMaterial({
+    color: 0x00ff88,
+    wireframe: true,
+    transparent: true,
+    opacity: 0.08
+  });
+  const shell = new THREE.Mesh(shellGeo, shellMat);
+  horizonGroup.add(shell);
+
+  // Equatorial Radiant Gold Reticle Ring
+  const eqGeo = new THREE.RingGeometry(278, 282, 64);
+  const eqMat = new THREE.MeshBasicMaterial({
+    color: 0xffd700,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.35,
+    wireframe: true
+  });
+  const eqRing = new THREE.Mesh(eqGeo, eqMat);
+  eqRing.rotation.x = Math.PI / 2;
+  horizonGroup.add(eqRing);
+
+  scene.add(horizonGroup);
+  return { horizonGroup, shell, eqRing };
+}
+
+// Create Bogoliubov Vacuum Expansion Ripples
+function createVacuumRipples(scene) {
+  const rippleCount = 3;
+  const ripples = [];
+
+  for (let i = 0; i < rippleCount; i++) {
+    const geo = new THREE.RingGeometry(1, 2.5, 48);
+    const mat = new THREE.MeshBasicMaterial({
+      color: i % 2 === 0 ? 0x00ff88 : 0xffd700,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.4,
+      wireframe: true
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.rotation.x = Math.PI / 2;
+    scene.add(mesh);
+    ripples.push({ mesh, radius: (i + 1) * 80 });
+  }
+
+  return ripples;
 }
 
 // Create Central Quantum Core Planet with Gyroscopic Rings
@@ -327,7 +473,7 @@ function setupControls(camera, controls) {
   const modes = {
     planet: { pos: new THREE.Vector3(0, 18, 48), lookAt: new THREE.Vector3(0, 0, 0) },
     cosmos: { pos: new THREE.Vector3(0, 180, 260), lookAt: new THREE.Vector3(0, 0, 0) },
-    panorama: { pos: new THREE.Vector3(65, 45, 95), lookAt: new THREE.Vector3(0, 0, 0) },
+    panorama: { pos: new THREE.Vector3(75, 55, 115), lookAt: new THREE.Vector3(0, 0, 0) },
     reset: { pos: new THREE.Vector3(0, 25, 75), lookAt: new THREE.Vector3(0, 0, 0) }
   };
 
@@ -355,11 +501,50 @@ function setupControls(camera, controls) {
 // Update Dynamic Telemetry Values
 function updateTelemetry(time) {
   const aT = 1.0 + 0.4142 * Math.sin(time * 0.3);
+  const hubbleRate = 67.42 * (1.0 + 0.12 * Math.cos(time * 0.3));
   const nK = 0.4217 + 0.08 * Math.cos(time * 0.5);
+  const entropy = (2.7182 * aT * aT).toFixed(4);
+
   const scaleEl = document.getElementById('telemetry-scale');
+  const hubbleEl = document.getElementById('telemetry-hubble');
   const partEl = document.getElementById('telemetry-particles');
+  const filEl = document.getElementById('telemetry-filaments');
+  const entEl = document.getElementById('telemetry-entropy');
+
   if (scaleEl) scaleEl.textContent = aT.toFixed(4);
+  if (hubbleEl) hubbleEl.textContent = `${hubbleRate.toFixed(2)} km/s/Mpc`;
   if (partEl) partEl.textContent = `${nK.toFixed(4)} n_k`;
+  if (filEl) filEl.textContent = `${state.activeFilamentsCount} Filaments`;
+  if (entEl) entEl.textContent = `S_vN = ${entropy} k_B`;
+}
+
+// Update Cosmic Filament Flux Particles
+function updateFilamentFlux(fluxObj, delta) {
+  if (!fluxObj || !fluxObj.edgeList.length) return;
+  const { fluxPoints, progress, edgeIndices, edgeList } = fluxObj;
+  const posArr = fluxPoints.geometry.attributes.position.array;
+
+  for (let i = 0; i < progress.length; i++) {
+    progress[i] = (progress[i] + delta * 0.25) % 1.0;
+    const edge = edgeList[edgeIndices[i]];
+    if (!edge) continue;
+    posArr[i * 3] = THREE.MathUtils.lerp(edge.start.x, edge.end.x, progress[i]);
+    posArr[i * 3 + 1] = THREE.MathUtils.lerp(edge.start.y, edge.end.y, progress[i]);
+    posArr[i * 3 + 2] = THREE.MathUtils.lerp(edge.start.z, edge.end.z, progress[i]);
+  }
+  fluxPoints.geometry.attributes.position.needsUpdate = true;
+}
+
+// Update Vacuum Expansion Ripples
+function updateVacuumRipples(ripples, delta) {
+  for (let i = 0; i < ripples.length; i++) {
+    ripples[i].radius += delta * 35;
+    if (ripples[i].radius > 280) ripples[i].radius = 15;
+    const r = ripples[i].radius;
+    ripples[i].mesh.scale.set(r, r, 1);
+    const alpha = Math.max(0.02, 0.4 * (1.0 - r / 280));
+    ripples[i].mesh.material.opacity = alpha;
+  }
 }
 
 // Update Dedicated Bridge Viewport Animation
@@ -367,17 +552,14 @@ function updateBridgeDisplay(bridgeDisplay, delta) {
   if (!bridgeDisplay) return;
   const { scene, camera, renderer, bridgeObj } = bridgeDisplay;
 
-  // Rotate bridge nodes
   bridgeObj.nodeA.rotation.x += delta * 1.5;
   bridgeObj.nodeA.rotation.y += delta * 1.0;
   bridgeObj.nodeB.rotation.x -= delta * 1.5;
   bridgeObj.nodeB.rotation.y -= delta * 1.0;
 
-  // Gentle precession of the whole bridge group in tactical monitor
   bridgeObj.bridgeGroup.rotation.y += delta * 0.3;
   bridgeObj.bridgeGroup.rotation.x = Math.sin(state.time * 0.4) * 0.15;
 
-  // Quasiprobability particle progression along the 6 cut splines
   const fluxAttr = bridgeObj.fluxPoints.geometry.attributes.position;
   const posArr = fluxAttr.array;
   for (let i = 0; i < bridgeObj.fluxProgress.length; i++) {
@@ -395,7 +577,7 @@ function updateBridgeDisplay(bridgeDisplay, delta) {
 }
 
 // Main Animation Loop
-function animate(context, planetObj, starfield, bridgeDisplay) {
+function animate(context, planetObj, starfield, filamentsObj, fluxObj, horizonObj, ripples, bridgeDisplay) {
   const { scene, camera, renderer, controls } = context;
 
   function loop() {
@@ -404,7 +586,6 @@ function animate(context, planetObj, starfield, bridgeDisplay) {
     const delta = 0.016 * state.warpSpeed;
     state.time += delta;
 
-    // Smooth system camera transition
     camera.position.lerp(state.targetCameraPos, 0.04);
     controls.target.lerp(state.targetLookAt, 0.04);
     controls.update();
@@ -417,13 +598,20 @@ function animate(context, planetObj, starfield, bridgeDisplay) {
     planetObj.ring2.rotation.y += delta * 0.7;
     planetObj.ring2.rotation.z += delta * 0.4;
 
-    // Precess cosmic starfield
+    // Slowly precess cosmic starfield and web filaments
     starfield.rotation.y += delta * 0.03;
+    filamentsObj.filaments.rotation.y += delta * 0.03;
 
+    // Scale horizon with cosmological factor a(t)
+    const aT = 1.0 + 0.06 * Math.sin(state.time * 0.3);
+    horizonObj.horizonGroup.scale.setScalar(aT);
+
+    updateFilamentFlux(fluxObj, delta);
+    updateVacuumRipples(ripples, delta);
     updateTelemetry(state.time);
     renderer.render(scene, camera);
 
-    // Update the dedicated bridge tactical monitor
+    // Update the decoupled tactical bridge monitor
     updateBridgeDisplay(bridgeDisplay, delta);
   }
 
@@ -433,13 +621,17 @@ function animate(context, planetObj, starfield, bridgeDisplay) {
 // Bootstrap Application
 function main() {
   const context = initSystemRenderer();
-  const starfield = createCosmicStarfield(context.scene);
+  const { starfield, clusterNodes } = createCosmicStarfield(context.scene);
+  const filamentsObj = createCosmicWebFilaments(context.scene, clusterNodes);
+  const fluxObj = createFilamentFluxParticles(context.scene, filamentsObj.edgeList);
+  const horizonObj = createHubbleHorizon(context.scene);
+  const ripples = createVacuumRipples(context.scene);
   const planetObj = createQuantumPlanet(context.scene);
   const bridgeDisplay = initBridgeDisplay();
 
   setupControls(context.camera, context.controls);
   renderWaveformCanvas();
-  animate(context, planetObj, starfield, bridgeDisplay);
+  animate(context, planetObj, starfield, filamentsObj, fluxObj, horizonObj, ripples, bridgeDisplay);
 }
 
 window.addEventListener('DOMContentLoaded', main);

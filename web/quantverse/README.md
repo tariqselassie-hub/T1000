@@ -60,3 +60,4 @@ npm run build
 
 Dual-licensed under the **MIT License** and the **Apache License, Version 2.0**.  
 Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
+
