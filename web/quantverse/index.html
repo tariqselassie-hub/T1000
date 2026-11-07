@@ -90,6 +90,19 @@
       <span style="color: var(--gold-amber);">K = 6 BRIDGES</span>
     </div>
 
+    <!-- Dedicated Cut-Bridge Visual Display -->
+    <div class="bridge-display-card">
+      <div class="bridge-display-header">
+        <span class="bridge-node-tag emerald">FRAGMENT A [18Q]</span>
+        <span class="bridge-node-tag gold">FRAGMENT B [18Q]</span>
+      </div>
+      <canvas id="bridge-canvas"></canvas>
+      <div class="bridge-display-footer">
+        <span>6 ENTANGLEMENT CHANNELS</span>
+        <span style="color: var(--quantum-emerald); font-weight: 600;">FLUX &Delta; = +0.1246</span>
+      </div>
+    </div>
+
     <div class="panel-row">
       <span>Topology Bisection:</span>
       <span class="metric-val">Fragment A (18Q) &harr; Fragment B (18Q)</span>
@@ -139,10 +152,10 @@
   <!-- Bottom Control Panel: Universe Mode Selector -->
   <nav class="hud-panel panel-bottom">
     <div class="view-nav">
-      <button class="nav-btn active" id="btn-mode-cosmos">COSMIC WEB (FLRW)</button>
-      <button class="nav-btn" id="btn-mode-wormhole">ER=EPR CUT-BRIDGE</button>
-      <button class="nav-btn" id="btn-mode-planet">QUANTUM CORE (PLANET)</button>
-      <button class="nav-btn" id="btn-mode-all">UNIFIED VIRTUAL UNIVERSE</button>
+      <button class="nav-btn active" id="btn-mode-planet">QUANTUM SYSTEM (PLANET)</button>
+      <button class="nav-btn" id="btn-mode-cosmos">COSMIC WEB (FLRW)</button>
+      <button class="nav-btn" id="btn-mode-panorama">ORBITAL PANORAMA</button>
+      <button class="nav-btn" id="btn-mode-reset">SYSTEM RESET</button>
     </div>
 
     <div style="display: flex; gap: 16px; align-items: center;">

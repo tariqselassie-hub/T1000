@@ -7,9 +7,9 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 // Global state container
 const state = {
   warpSpeed: 1.0,
-  currentMode: 'all', // 'cosmos', 'wormhole', 'planet', 'all'
+  currentMode: 'planet',
   time: 0,
-  targetCameraPos: new THREE.Vector3(0, 45, 120),
+  targetCameraPos: new THREE.Vector3(0, 18, 48),
   targetLookAt: new THREE.Vector3(0, 0, 0),
   phaseLockSteps: [
     { step: 26, coherence: 1.0000 },
@@ -42,8 +42,8 @@ const state = {
   ]
 };
 
-// Initialize Three.js Scene and Renderer
-function initRenderer() {
+// Initialize Main 3D System Viewport
+function initSystemRenderer() {
   const container = document.getElementById('canvas-container');
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x05080d);
@@ -72,7 +72,7 @@ function initRenderer() {
   return { scene, camera, renderer, controls };
 }
 
-// Create FLRW Cosmic Starfield with Bogoliubov Density
+// Create FLRW Cosmic Starfield with Bogoliubov Spectrum
 function createCosmicStarfield(scene) {
   const particleCount = 10000;
   const geometry = new THREE.BufferGeometry();
@@ -85,7 +85,6 @@ function createCosmicStarfield(scene) {
   const dim = new THREE.Color(0x334155);
 
   for (let i = 0; i < particleCount; i++) {
-    // Spherical distribution with logarithmic density
     const radius = 60 + Math.pow(Math.random(), 1.8) * 540;
     const theta = Math.random() * Math.PI * 2;
     const phi = Math.acos(2 * Math.random() - 1);
@@ -94,7 +93,6 @@ function createCosmicStarfield(scene) {
     positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
     positions[i * 3 + 2] = radius * Math.cos(phi);
 
-    // Bogoliubov particle spectrum coloring
     const rVal = Math.random();
     let col = dim;
     if (rVal > 0.88) col = emerald;
@@ -128,10 +126,7 @@ function createQuantumPlanet(scene) {
 
   // Deep Obsidian Core Sphere
   const coreGeo = new THREE.SphereGeometry(12, 48, 48);
-  const coreMat = new THREE.MeshBasicMaterial({
-    color: 0x05080d,
-    wireframe: false
-  });
+  const coreMat = new THREE.MeshBasicMaterial({ color: 0x05080d });
   const core = new THREE.Mesh(coreGeo, coreMat);
   planetGroup.add(core);
 
@@ -175,61 +170,61 @@ function createQuantumPlanet(scene) {
   return { planetGroup, gridShell, accretion, ring1, ring2 };
 }
 
-// Create ER=EPR Cut-Bridge Wormhole Structure (K = 6 bridges)
-function createCutBridgeWormhole(scene) {
-  const wormholeGroup = new THREE.Group();
-  wormholeGroup.position.set(0, -35, 0);
+// Create Cut-Bridge Topology in Dedicated Coordinate Space
+function createCutBridgeTopology(scene) {
+  const bridgeGroup = new THREE.Group();
+  bridgeGroup.position.set(0, 0, 0);
 
   const kCuts = 6;
   const bridgePipes = [];
-  const startPt = new THREE.Vector3(-45, 0, 0);
-  const endPt = new THREE.Vector3(45, 0, 0);
+  const startPt = new THREE.Vector3(-22, 0, 0);
+  const endPt = new THREE.Vector3(22, 0, 0);
 
-  // Fragment A Node (Left Hilbert subspace: 18Q)
-  const nodeAGeo = new THREE.IcosahedronGeometry(6, 2);
+  // Fragment A Node (Left: 18Q)
+  const nodeAGeo = new THREE.IcosahedronGeometry(4, 2);
   const nodeAMat = new THREE.MeshBasicMaterial({ color: 0x00ff88, wireframe: true });
   const nodeA = new THREE.Mesh(nodeAGeo, nodeAMat);
   nodeA.position.copy(startPt);
-  wormholeGroup.add(nodeA);
+  bridgeGroup.add(nodeA);
 
-  // Fragment B Node (Right Hilbert subspace: 18Q)
-  const nodeBGeo = new THREE.IcosahedronGeometry(6, 2);
+  // Fragment B Node (Right: 18Q)
+  const nodeBGeo = new THREE.IcosahedronGeometry(4, 2);
   const nodeBMat = new THREE.MeshBasicMaterial({ color: 0xffd700, wireframe: true });
   const nodeB = new THREE.Mesh(nodeBGeo, nodeBMat);
   nodeB.position.copy(endPt);
-  wormholeGroup.add(nodeB);
+  bridgeGroup.add(nodeB);
 
   // 6 Helical Flux Splines for K=6 Cut Bridges
   for (let k = 0; k < kCuts; k++) {
     const angle = (k / kCuts) * Math.PI * 2;
     const curvePoints = [];
-    const segments = 50;
+    const segments = 40;
 
     for (let s = 0; s <= segments; s++) {
       const t = s / segments;
       const x = THREE.MathUtils.lerp(startPt.x, endPt.x, t);
-      const bridgeRadius = Math.sin(t * Math.PI) * 14;
-      const twist = t * Math.PI * 4 + angle;
+      const bridgeRadius = Math.sin(t * Math.PI) * 7.5;
+      const twist = t * Math.PI * 3 + angle;
       const y = Math.cos(twist) * bridgeRadius;
       const z = Math.sin(twist) * bridgeRadius;
       curvePoints.push(new THREE.Vector3(x, y, z));
     }
 
     const path = new THREE.CatmullRomCurve3(curvePoints);
-    const pipeGeo = new THREE.TubeGeometry(path, 64, 0.4, 8, false);
+    const pipeGeo = new THREE.TubeGeometry(path, 48, 0.35, 6, false);
     const pipeMat = new THREE.MeshBasicMaterial({
       color: k % 2 === 0 ? 0x00ff88 : 0xffd700,
       wireframe: true,
       transparent: true,
-      opacity: 0.7
+      opacity: 0.75
     });
     const pipe = new THREE.Mesh(pipeGeo, pipeMat);
-    wormholeGroup.add(pipe);
+    bridgeGroup.add(pipe);
     bridgePipes.push({ pipe, path });
   }
 
   // Quasiprobability Flux Stream Particles
-  const fluxCount = 400;
+  const fluxCount = 300;
   const fluxGeo = new THREE.BufferGeometry();
   const fluxPos = new Float32Array(fluxCount * 3);
   const fluxProgress = new Float32Array(fluxCount);
@@ -243,15 +238,40 @@ function createCutBridgeWormhole(scene) {
 
   const fluxMat = new THREE.PointsMaterial({
     color: 0x00ff88,
-    size: 2.8,
+    size: 2.2,
     transparent: true,
     opacity: 0.95
   });
   const fluxPoints = new THREE.Points(fluxGeo, fluxMat);
-  wormholeGroup.add(fluxPoints);
+  bridgeGroup.add(fluxPoints);
 
-  scene.add(wormholeGroup);
-  return { wormholeGroup, nodeA, nodeB, bridgePipes, fluxPoints, fluxProgress, fluxChannel };
+  scene.add(bridgeGroup);
+  return { bridgeGroup, nodeA, nodeB, bridgePipes, fluxPoints, fluxProgress, fluxChannel };
+}
+
+// Initialize Dedicated Bridge Tactical 3D Viewport
+function initBridgeDisplay() {
+  const canvas = document.getElementById('bridge-canvas');
+  if (!canvas) return null;
+
+  const card = canvas.parentElement;
+  const width = card.clientWidth || 320;
+  const height = card.clientHeight || 180;
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x05080d);
+
+  const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 500);
+  camera.position.set(0, 16, 42);
+  camera.lookAt(0, 0, 0);
+
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setSize(width, height);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+  const bridgeObj = createCutBridgeTopology(scene);
+
+  return { scene, camera, renderer, bridgeObj, canvas };
 }
 
 // Render 2D Phase-Lock Plateau Waveform on Canvas
@@ -285,7 +305,7 @@ function renderWaveformCanvas() {
 
   for (let i = 0; i < steps.length; i++) {
     const x = i * stepW;
-    const normCoh = (steps[i].coherence - 0.95) / 0.05; // 0.95 -> 1.0 mapped to 0 -> 1
+    const normCoh = (steps[i].coherence - 0.95) / 0.05;
     const y = h - (normCoh * (h - 18) + 8);
     if (i === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
@@ -305,10 +325,10 @@ function renderWaveformCanvas() {
 // Bind Navigation and Speed Slider Controls
 function setupControls(camera, controls) {
   const modes = {
+    planet: { pos: new THREE.Vector3(0, 18, 48), lookAt: new THREE.Vector3(0, 0, 0) },
     cosmos: { pos: new THREE.Vector3(0, 180, 260), lookAt: new THREE.Vector3(0, 0, 0) },
-    wormhole: { pos: new THREE.Vector3(0, -32, 85), lookAt: new THREE.Vector3(0, -35, 0) },
-    planet: { pos: new THREE.Vector3(0, 15, 42), lookAt: new THREE.Vector3(0, 0, 0) },
-    all: { pos: new THREE.Vector3(0, 45, 130), lookAt: new THREE.Vector3(0, -10, 0) }
+    panorama: { pos: new THREE.Vector3(65, 45, 95), lookAt: new THREE.Vector3(0, 0, 0) },
+    reset: { pos: new THREE.Vector3(0, 25, 75), lookAt: new THREE.Vector3(0, 0, 0) }
   };
 
   const setMode = (modeKey, btnId) => {
@@ -319,10 +339,10 @@ function setupControls(camera, controls) {
     document.getElementById(btnId).classList.add('active');
   };
 
-  document.getElementById('btn-mode-cosmos').addEventListener('click', () => setMode('cosmos', 'btn-mode-cosmos'));
-  document.getElementById('btn-mode-wormhole').addEventListener('click', () => setMode('wormhole', 'btn-mode-wormhole'));
   document.getElementById('btn-mode-planet').addEventListener('click', () => setMode('planet', 'btn-mode-planet'));
-  document.getElementById('btn-mode-all').addEventListener('click', () => setMode('all', 'btn-mode-all'));
+  document.getElementById('btn-mode-cosmos').addEventListener('click', () => setMode('cosmos', 'btn-mode-cosmos'));
+  document.getElementById('btn-mode-panorama').addEventListener('click', () => setMode('panorama', 'btn-mode-panorama'));
+  document.getElementById('btn-mode-reset').addEventListener('click', () => setMode('reset', 'btn-mode-reset'));
 
   const slider = document.getElementById('slider-speed');
   const speedText = document.getElementById('txt-speed');
@@ -342,8 +362,40 @@ function updateTelemetry(time) {
   if (partEl) partEl.textContent = `${nK.toFixed(4)} n_k`;
 }
 
+// Update Dedicated Bridge Viewport Animation
+function updateBridgeDisplay(bridgeDisplay, delta) {
+  if (!bridgeDisplay) return;
+  const { scene, camera, renderer, bridgeObj } = bridgeDisplay;
+
+  // Rotate bridge nodes
+  bridgeObj.nodeA.rotation.x += delta * 1.5;
+  bridgeObj.nodeA.rotation.y += delta * 1.0;
+  bridgeObj.nodeB.rotation.x -= delta * 1.5;
+  bridgeObj.nodeB.rotation.y -= delta * 1.0;
+
+  // Gentle precession of the whole bridge group in tactical monitor
+  bridgeObj.bridgeGroup.rotation.y += delta * 0.3;
+  bridgeObj.bridgeGroup.rotation.x = Math.sin(state.time * 0.4) * 0.15;
+
+  // Quasiprobability particle progression along the 6 cut splines
+  const fluxAttr = bridgeObj.fluxPoints.geometry.attributes.position;
+  const posArr = fluxAttr.array;
+  for (let i = 0; i < bridgeObj.fluxProgress.length; i++) {
+    bridgeObj.fluxProgress[i] = (bridgeObj.fluxProgress[i] + delta * 0.45) % 1.0;
+    const ch = bridgeObj.fluxChannel[i];
+    const curve = bridgeObj.bridgePipes[ch].path;
+    const pt = curve.getPoint(bridgeObj.fluxProgress[i]);
+    posArr[i * 3] = pt.x;
+    posArr[i * 3 + 1] = pt.y;
+    posArr[i * 3 + 2] = pt.z;
+  }
+  fluxAttr.needsUpdate = true;
+
+  renderer.render(scene, camera);
+}
+
 // Main Animation Loop
-function animate(context, planetObj, wormholeObj, starfield) {
+function animate(context, planetObj, starfield, bridgeDisplay) {
   const { scene, camera, renderer, controls } = context;
 
   function loop() {
@@ -352,7 +404,7 @@ function animate(context, planetObj, wormholeObj, starfield) {
     const delta = 0.016 * state.warpSpeed;
     state.time += delta;
 
-    // Smooth camera transition toward targets
+    // Smooth system camera transition
     camera.position.lerp(state.targetCameraPos, 0.04);
     controls.target.lerp(state.targetLookAt, 0.04);
     controls.update();
@@ -365,31 +417,14 @@ function animate(context, planetObj, wormholeObj, starfield) {
     planetObj.ring2.rotation.y += delta * 0.7;
     planetObj.ring2.rotation.z += delta * 0.4;
 
-    // Rotate Cut-Bridge Wormhole End Nodes
-    wormholeObj.nodeA.rotation.x += delta * 1.2;
-    wormholeObj.nodeA.rotation.y += delta * 0.8;
-    wormholeObj.nodeB.rotation.x -= delta * 1.2;
-    wormholeObj.nodeB.rotation.y -= delta * 0.8;
-
-    // Update Quasiprobability Flux Particles along K=6 Splines
-    const fluxAttr = wormholeObj.fluxPoints.geometry.attributes.position;
-    const posArr = fluxAttr.array;
-    for (let i = 0; i < wormholeObj.fluxProgress.length; i++) {
-      wormholeObj.fluxProgress[i] = (wormholeObj.fluxProgress[i] + delta * 0.35) % 1.0;
-      const ch = wormholeObj.fluxChannel[i];
-      const curve = wormholeObj.bridgePipes[ch].path;
-      const pt = curve.getPoint(wormholeObj.fluxProgress[i]);
-      posArr[i * 3] = pt.x;
-      posArr[i * 3 + 1] = pt.y;
-      posArr[i * 3 + 2] = pt.z;
-    }
-    fluxAttr.needsUpdate = true;
-
-    // Slowly precess starfield
+    // Precess cosmic starfield
     starfield.rotation.y += delta * 0.03;
 
     updateTelemetry(state.time);
     renderer.render(scene, camera);
+
+    // Update the dedicated bridge tactical monitor
+    updateBridgeDisplay(bridgeDisplay, delta);
   }
 
   loop();
@@ -397,14 +432,14 @@ function animate(context, planetObj, wormholeObj, starfield) {
 
 // Bootstrap Application
 function main() {
-  const context = initRenderer();
+  const context = initSystemRenderer();
   const starfield = createCosmicStarfield(context.scene);
   const planetObj = createQuantumPlanet(context.scene);
-  const wormholeObj = createCutBridgeWormhole(context.scene);
+  const bridgeDisplay = initBridgeDisplay();
 
   setupControls(context.camera, context.controls);
   renderWaveformCanvas();
-  animate(context, planetObj, wormholeObj, starfield);
+  animate(context, planetObj, starfield, bridgeDisplay);
 }
 
 window.addEventListener('DOMContentLoaded', main);

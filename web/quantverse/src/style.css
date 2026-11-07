@@ -248,3 +248,67 @@ body, html {
   border: 1px solid var(--grid-slate);
   margin-top: 8px;
 }
+
+/* Dedicated Tactical Bridge Monitor */
+.bridge-display-card {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  background: #05080d;
+  border: 1px solid var(--border-slate);
+  margin-bottom: 12px;
+  overflow: hidden;
+  box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.85);
+}
+
+.bridge-display-header {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  right: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.bridge-node-tag {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 2px 6px;
+  border-radius: 2px;
+}
+
+.bridge-node-tag.emerald {
+  color: var(--quantum-emerald);
+  background: rgba(0, 255, 136, 0.12);
+  border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+.bridge-node-tag.gold {
+  color: var(--gold-amber);
+  background: rgba(255, 215, 0, 0.12);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.bridge-display-footer {
+  position: absolute;
+  bottom: 6px;
+  left: 8px;
+  right: 8px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 8px;
+  color: var(--text-muted);
+  letter-spacing: 0.8px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+#bridge-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
