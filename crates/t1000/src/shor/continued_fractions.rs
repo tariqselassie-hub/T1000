@@ -111,3 +111,4 @@ mod tests {
         assert_eq!(ContinuedFractions::extract_order(0.50, 7, 15), Some(4));
     }
 }
+

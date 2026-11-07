@@ -111,3 +111,4 @@ fn main() {
         println!("[bench] Pass --record (or T1000_RECORD=1) to save official results.");
     }
 }
+

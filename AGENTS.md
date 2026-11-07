@@ -124,3 +124,16 @@ All crates inherit compiler and clippy lints from the root `Cargo.toml` via `[li
 * **Never allocate in inner quantum loops:** No `vec![]`, `to_string()`, `format!()`, or dynamic dispatch inside butterfly passes, unitary Trotter steps, or observable evaluation.
 * **Pre-allocate scratch buffers:** All temporary workspace memory (e.g. forward states, adjoint vectors, expectation registers) must be allocated once before stepping and reused across iterations.
 
+---
+
+## 7. Tripartite Branch Lifecycle & Sovereign Research Governance
+
+To guarantee security boundaries and protect critical cryptographic discoveries, all agents and contributors must strictly enforce branch isolation:
+
+| Branch | Classification | Scope & Policy |
+| :---: | :--- | :--- |
+| **`master` / `main`** | **Public Production Release** | Production releases, public APIs, SIMD performance optimizations, and stable open-source deliverables. |
+| **`develop`** | **Active Construction & Integration** | Work-in-progress features, standard module development, and continuous integration. |
+| **`yoda`** | **Internal Research Branch** | **Sovereign sanctuary for security, cryptanalysis, and critical findings.** All quantum order finding (Shor), Decoded Quantum Interferometry (DQI), post-quantum evaluations, and sensitive research are quarantined here. |
+
+

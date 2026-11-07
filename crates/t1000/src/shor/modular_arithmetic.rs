@@ -194,3 +194,4 @@ mod tests {
         assert_eq!(mult.permute(15), 15);
     }
 }
+

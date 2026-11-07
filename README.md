@@ -754,6 +754,21 @@ cargo run --release -p t1000 --bin deen_toolchain -- bench-sidecar 100000 --reco
 
 ---
 
+## Repository Branching Architecture & Sovereign Research Governance
+
+The `T-1000` project follows a strict tripartite branch lifecycle to separate public distributions, active continuous integration, and sensitive cryptographic research:
+
+| Branch Name | Governance Classification | Intended Scope & Operational Policy |
+| :---: | :--- | :--- |
+| **`master` / `main`** | **Public Production Release** | Stable releases, public APIs, general documentation, verified SIMD/AVX2 optimizations, and production performance baselines. Publicly distributed and cited. |
+| **`develop`** | **Active Construction & Integration** | Ongoing day-to-day feature development, architectural experiments, non-sensitive modules, and continuous integration testing. |
+| **`yoda`** | **Internal Research Branch** | **Sovereign sanctuary for security and cryptographic research.** Houses advanced quantum cryptanalysis (Shor factorization, discrete log, continued fraction convergents), Decoded Quantum Interferometry (DQI) code breaking beyond classical limits, critical findings, and sensitive post-quantum resilience audits. |
+
+> [!IMPORTANT]
+> All critical security findings, cryptographic advantage mechanisms, and breaking cryptanalysis remain strictly quarantined inside the `yoda` internal research branch until formally declassified or authorized for public release. All general performance improvements, SIMD optimizations, and production features are promoted upstream to `develop` and `master`.
+
+---
+
 ## Contributing & Community Governance
 
 We actively welcome quantum computing researchers, Rust performance engineers, and machine learning architects to collaborate.

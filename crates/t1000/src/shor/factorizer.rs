@@ -158,3 +158,4 @@ mod tests {
         assert_eq!(report.factor_p * report.factor_q, 35);
     }
 }
+
