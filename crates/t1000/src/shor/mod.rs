@@ -17,6 +17,7 @@ pub mod continued_fractions;
 pub mod factorizer;
 pub mod modular_arithmetic;
 pub mod order_finding;
+pub mod zipper_factoring;
 
 pub use continued_fractions::{ContinuedFractions, Convergent};
 pub use factorizer::{ShorFactorizationReport, ShorFactorizer};
@@ -24,4 +25,7 @@ pub use modular_arithmetic::{
     classical_multiplicative_order, gcd, mod_pow, ModularMultiplier,
 };
 pub use order_finding::{QuantumOrderFinder, QuantumOrderResult};
+pub use zipper_factoring::{
+    ZipperFactoringReport, ZipperRng, ZipperShorFactorizer, ZipperStepTelemetry,
+};
 

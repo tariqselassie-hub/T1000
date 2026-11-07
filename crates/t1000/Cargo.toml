@@ -411,6 +411,10 @@ path = "src/bin/benchmarks/dqi_opi_bench.rs"
 name = "shor_factoring_bench"
 path = "src/bin/benchmarks/shor_factoring_bench.rs"
 
+[[bin]]
+name = "zipper_digit_coherence_bench"
+path = "src/bin/benchmarks/zipper_digit_coherence_bench.rs"
+
 
 
 
