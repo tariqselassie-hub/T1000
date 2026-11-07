@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
+<!-- Copyright (c) 2026 Terrence A. Jones SR. All rights reserved. -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>T-1000 // Decoded Quantum Interferometry (DQI) Observatory</title>
+    <style>
+        :root {
+            --bg-root: #05080d;
+            --bg-card: #0f172a;
+            --bg-card-hover: #152238;
+            --border-dim: #1e293b;
+            --border-bright: #334155;
+            --quantum-green: #00e676;
+            --quantum-green-bright: #00ff88;
+            --quantum-green-glow: rgba(0, 230, 118, 0.25);
+            --hardware-gold: #ffb300;
+            --hardware-gold-bright: #ffd700;
+            --alert-red: #ef4444;
+            --text-white: #f8fafc;
+            --text-polar: #e2e8f0;
+            --text-slate: #94a3b8;
+            --text-muted: #64748b;
+            --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg-root);
+            color: var(--text-white);
+            font-family: var(--font-sans);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        header.app-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 24px;
+            background: #080c14;
+            border-bottom: 1px solid var(--border-dim);
+            flex-shrink: 0;
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: var(--font-mono);
+        }
+        .brand .logo {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--quantum-green);
+            letter-spacing: 1.5px;
+        }
+        .brand .slash { color: var(--border-bright); font-weight: 300; }
+        .brand .title { font-size: 13px; color: var(--text-polar); letter-spacing: 0.5px; }
+
+        .telemetry-pills {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+        }
+        .pill {
+            padding: 4px 10px;
+            border-radius: 4px;
+            border: 1px solid var(--border-bright);
+            background: var(--bg-card);
+            color: var(--text-slate);
+        }
+        .pill.active {
+            border-color: var(--quantum-green);
+            color: var(--quantum-green-bright);
+            box-shadow: 0 0 10px var(--quantum-green-glow);
+        }
+        .pill.gold {
+            border-color: var(--hardware-gold);
+            color: var(--hardware-gold-bright);
+        }
+        .pill.red {
+            border-color: var(--alert-red);
+            color: var(--alert-red);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            font-family: var(--font-mono);
+            font-size: 11px;
+        }
+        .nav-links a {
+            color: var(--text-slate);
+            text-decoration: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid transparent;
+        }
+        .nav-links a:hover {
+            color: var(--text-white);
+            border-color: var(--border-bright);
+            background: var(--bg-card);
+        }
+
+        main.observatory {
+            display: grid;
+            grid-template-columns: 360px 1fr 380px;
+            flex: 1;
+            overflow: hidden;
+            background: var(--bg-root);
+        }
+
+        .panel {
+            border-right: 1px solid var(--border-dim);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+        }
+        .panel:last-child {
+            border-right: none;
+            border-left: 1px solid var(--border-dim);
+        }
+
+        h2.panel-title {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--hardware-gold);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-dim);
+            padding-bottom: 6px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: var(--bg-card);
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border-dim);
+        }
+        .control-group label {
+            font-size: 11px;
+            font-family: var(--font-mono);
+            color: var(--text-slate);
+            display: flex;
+            justify-content: space-between;
+        }
+        .control-group label span.val {
+            color: var(--quantum-green);
+            font-weight: 600;
+        }
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--quantum-green);
+        }
+
+        button.btn-run {
+            background: var(--bg-card);
+            border: 1px solid var(--quantum-green);
+            color: var(--quantum-green-bright);
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: all 0.2s ease;
+        }
+        button.btn-run:hover {
+            background: var(--quantum-green);
+            color: var(--bg-root);
+            box-shadow: 0 0 15px var(--quantum-green-glow);
+        }
+
+        .showdown-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 6px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-family: var(--font-mono);
+        }
+        .showdown-card .title {
+            font-size: 11px;
+            color: var(--text-slate);
+            text-transform: uppercase;
+        }
+        .showdown-card .status {
+            font-size: 14px;
+            font-weight: 700;
+        }
+        .status.success { color: var(--quantum-green-bright); }
+        .status.fail { color: var(--alert-red); }
+        .status.gold { color: var(--hardware-gold-bright); }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 11px;
+        }
+        .stat-item {
+            background: #080c14;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border-dim);
+        }
+        .stat-item .k { color: var(--text-muted); }
+        .stat-item .v { color: var(--text-white); font-weight: 600; margin-top: 2px; }
+
+        .center-canvas-panel {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+        }
+        .canvas-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 6px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .canvas-card h3 {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-polar);
+            display: flex;
+            justify-content: space-between;
+        }
+        canvas {
+            background: #080c14;
+            border: 1px solid var(--border-dim);
+            border-radius: 4px;
+            width: 100%;
+        }
+
+        .banner-attestation {
+            background: #080c14;
+            border: 1px solid var(--quantum-green);
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            line-height: 1.5;
+            color: var(--text-polar);
+        }
+        .banner-attestation b { color: var(--quantum-green-bright); }
+    </style>
+</head>
+<body>
+
+<header class="app-header">
+    <div class="brand">
+        <span class="logo">T-1000</span>
+        <span class="slash">//</span>
+        <span class="title">DECODED QUANTUM INTERFEROMETRY (DQI) OBSERVATORY</span>
+    </div>
+    <div class="telemetry-pills">
+        <span class="pill active" id="pill-dqi">DQI STATUS: ONLINE</span>
+        <span class="pill gold" id="pill-field">FIELD: F_7 [5, 2]</span>
+        <span class="pill" id="pill-hilbert">DIM: 16,807 STATES</span>
+    </div>
+    <nav class="nav-links">
+        <a href="index.html">Lab Bench</a>
+        <a href="archive.html">Research Archive</a>
+    </nav>
+</header>
+
+<main class="observatory">
+    <!-- LEFT PANEL: CONTROLS & REED-SOLOMON PARAMETERS -->
+    <section class="panel">
+        <h2 class="panel-title">Problem Controls <span>RS [5, 2] over F_7</span></h2>
+
+        <div class="control-group">
+            <label>Planted Poly c_0 (Constant): <span class="val" id="lbl-c0">3</span></label>
+            <input type="range" id="rng-c0" min="0" max="6" value="3">
+        </div>
+
+        <div class="control-group">
+            <label>Planted Poly c_1 (Linear x): <span class="val" id="lbl-c1">2</span></label>
+            <input type="range" id="rng-c1" min="0" max="6" value="2">
+        </div>
+
+        <div class="control-group">
+            <label>Adversarial Errors t: <span class="val" id="lbl-t">2</span></label>
+            <input type="range" id="rng-t" min="0" max="4" value="2">
+            <div style="font-size:10px; color:var(--text-muted); font-family:var(--font-mono); margin-top:4px;">
+                Classical Unique Decoding Limit: t &le; 1
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>Agreement Phase &phi;: <span class="val" id="lbl-phi">1.26 rad</span></label>
+            <input type="range" id="rng-phi" min="0.2" max="3.14" step="0.05" value="1.26">
+        </div>
+
+        <div class="control-group">
+            <label>Dual Syndrome Phase &theta;: <span class="val" id="lbl-theta">&pi; (3.14)</span></label>
+            <input type="range" id="rng-theta" min="0.5" max="6.28" step="0.1" value="3.14">
+        </div>
+
+        <button class="btn-run" id="btn-recompute">Execute Quantum Circuit</button>
+
+        <div class="banner-attestation">
+            <b>Target 01 Attestation:</b> At t = 2 (60% agreement), classical Berlekamp-Welch unique decoding yields 0% recovery, while DQI constructive interference concentrates amplitude onto the planted polynomial with <b>&gt; 5.0x amplification</b> over the codespace.
+        </div>
+    </section>
+
+    <!-- CENTER PANEL: SPECTRUM VISUALIZATION & PHASORS -->
+    <section class="center-canvas-panel">
+        <div class="canvas-card">
+            <h3>
+                <span>Codeword Subspace Probability Spectrum (All 49 Candidates)</span>
+                <span id="lbl-spectrum-stats" style="color:var(--quantum-green);">Amplification: 5.286x</span>
+            </h3>
+            <canvas id="cv-spectrum" height="260"></canvas>
+        </div>
+
+        <div class="canvas-card">
+            <h3>
+                <span>Quantum State Interference Phasors (Constructive vs Destructive)</span>
+                <span style="color:var(--hardware-gold);">Dual-Space Projection</span>
+            </h3>
+            <canvas id="cv-phasor" height="220"></canvas>
+        </div>
+    </section>
+
+    <!-- RIGHT PANEL: CLASSICAL VS QUANTUM SHOWDOWN RETICLES -->
+    <section class="panel">
+        <h2 class="panel-title">Showdown Telemetry <span>Compendium Target 01</span></h2>
+
+        <div class="showdown-card">
+            <div class="title">Classical Berlekamp-Welch Unique Decoder</div>
+            <div class="status" id="stat-bw">FAILED (0% RECOVERY)</div>
+            <div style="font-size:11px; color:var(--text-slate);">
+                Limit: t &le; &lfloor;(n-k)/2&rfloor; = 1 error. Fails when t &ge; 2.
+            </div>
+        </div>
+
+        <div class="showdown-card">
+            <div class="title">Quantum Decoded Interferometry (DQI)</div>
+            <div class="status success" id="stat-dqi">SUCCESS (PEAK RECOVERED)</div>
+            <div style="font-size:11px; color:var(--text-slate);">
+                Dual QFT + Parity kickback concentrates peak on c*.
+            </div>
+        </div>
+
+        <div class="stat-grid">
+            <div class="stat-item">
+                <div class="k">Planted Codeword</div>
+                <div class="v" id="stat-cw">[3, 5, 0, 2, 4]</div>
+            </div>
+            <div class="stat-item">
+                <div class="k">Received Word y</div>
+                <div class="v" id="stat-y">[3, 0, 0, 6, 4]</div>
+            </div>
+            <div class="stat-item">
+                <div class="k">Syndrome H &middot; y</div>
+                <div class="v" id="stat-syndrome">[1, 4, 2]</div>
+            </div>
+            <div class="stat-item">
+                <div class="k">Agreement Count</div>
+                <div class="v" id="stat-agreement">3 / 5 (60%)</div>
+            </div>
+            <div class="stat-item">
+                <div class="k">Classical Search Space</div>
+                <div class="v">7^2 = 49 polys</div>
+            </div>
+            <div class="stat-item">
+                <div class="k">Hilbert Dimension</div>
+                <div class="v">7^5 = 16,807</div>
+            </div>
+        </div>
+
+        <div class="showdown-card">
+            <div class="title">Top Candidate Ranking (By Probability)</div>
+            <div id="list-candidates" style="font-size:11px; display:flex; flex-direction:column; gap:4px; margin-top:6px;">
+                <!-- Filled dynamically -->
+            </div>
+        </div>
+    </section>
+</main>
+
+<script>
+// --- FINITE FIELD ARITHMETIC F_7 ---
+const P = 7;
+const N = 5;
+const K = 2;
+
+function fAdd(a, b) { return (a + b) % P; }
+function fSub(a, b) { return (a - b + P) % P; }
+function fMul(a, b) { return (a * b) % P; }
+
+function fInv(a) {
+    if (a === 0) return 0;
+    for (let x = 1; x < P; x++) {
+        if ((a * x) % P === 1) return x;
+    }
+    return 0;
+}
+
+// Evaluation points alpha_i = i mod P
+const EVAL_POINTS = [0, 1, 2, 3, 4];
+
+// Generator matrix G: G[j][i] = alpha_i^j
+const G = [
+    [1, 1, 1, 1, 1],
+    [0, 1, 2, 3, 4]
+];
+
+// Parity matrix H (3 x 5) for F_7 [5, 2]
+const H = [
+    [1, 5, 3, 6, 0],
+    [2, 3, 1, 0, 6],
+    [4, 2, 0, 1, 5]
+];
+
+function encode(c0, c1) {
+    const cw = [];
+    for (let i = 0; i < N; i++) {
+        const x = EVAL_POINTS[i];
+        cw.push(fAdd(c0, fMul(c1, x)));
+    }
+    return cw;
+}
+
+function computeSyndrome(vec) {
+    const syn = [];
+    for (let r = 0; r < H.length; r++) {
+        let sum = 0;
+        for (let c = 0; c < N; c++) {
+            sum = fAdd(sum, fMul(H[r][c], vec[c]));
+        }
+        syn.push(sum);
+    }
+    return syn;
+}
+
+function berlekampWelch(y) {
+    // Unique decoding radius is floor((5-2)/2) = 1
+    // For t = 0: check if y is a codeword
+    const syn = computeSyndrome(y);
+    if (syn.every(v => v === 0)) {
+        return { success: true, poly: [y[0], fMul(fSub(y[1], y[0]), fInv(1))] };
+    }
+
+    // For t = 1: test error locators E(x) = x - e0
+    for (let e0 = 0; e0 < P; e0++) {
+        // Find if degree < 2 polynomial fits 4 out of 5 points
+        for (let c0 = 0; c0 < P; c0++) {
+            for (let c1 = 0; c1 < P; c1++) {
+                const cw = encode(c0, c1);
+                let agr = 0;
+                for (let i = 0; i < N; i++) {
+                    if (cw[i] === y[i]) agr++;
+                }
+                if (agr >= N - 1) {
+                    return { success: true, poly: [c0, c1] };
+                }
+            }
+        }
+    }
+    return { success: false, poly: null };
+}
+
+// --- QUANTUM DQI SIMULATION ---
+const DIM = Math.pow(P, N); // 7^5 = 16,807
+
+let stateReal = new Float64Array(DIM);
+let stateImag = new Float64Array(DIM);
+
+function indexToDigits(idx) {
+    const d = new Uint8Array(N);
+    for (let i = 0; i < N; i++) {
+        d[i] = idx % P;
+        idx = Math.floor(idx / P);
+    }
+    return d;
+}
+
+function digitsToIndex(d) {
+    let idx = 0;
+    let stride = 1;
+    for (let i = 0; i < N; i++) {
+        idx += d[i] * stride;
+        stride *= P;
+    }
+    return idx;
+}
+
+// Precompute QFT matrix for F_7
+const qftReal = [];
+const qftImag = [];
+const invQftReal = [];
+const invQftImag = [];
+const invSqrtP = 1.0 / Math.sqrt(P);
+
+for (let a = 0; a < P; a++) {
+    qftReal[a] = [];
+    qftImag[a] = [];
+    invQftReal[a] = [];
+    invQftImag[a] = [];
+    for (let b = 0; b < P; b++) {
+        const angle = (2 * Math.PI * a * b) / P;
+        qftReal[a][b] = Math.cos(angle) * invSqrtP;
+        qftImag[a][b] = Math.sin(angle) * invSqrtP;
+        invQftReal[a][b] = Math.cos(-angle) * invSqrtP;
+        invQftImag[a][b] = Math.sin(-angle) * invSqrtP;
+    }
+}
+
+function applyQftWire(real, imag, wire, inverse) {
+    const stride = Math.pow(P, wire);
+    const chunkSize = stride * P;
+    const fR = inverse ? invQftReal : qftReal;
+    const fI = inverse ? invQftImag : qftImag;
+
+    const scratchR = new Float64Array(P);
+    const scratchI = new Float64Array(P);
+
+    for (let chunkStart = 0; chunkStart < DIM; chunkStart += chunkSize) {
+        for (let offset = 0; offset < stride; offset++) {
+            for (let k = 0; k < P; k++) {
+                const idx = chunkStart + k * stride + offset;
+                scratchR[k] = real[idx];
+                scratchI[k] = imag[idx];
+            }
+
+            for (let a = 0; a < P; a++) {
+                let sumR = 0;
+                let sumI = 0;
+                for (let b = 0; b < P; b++) {
+                    const ar = fR[a][b];
+                    const ai = fI[a][b];
+                    const br = scratchR[b];
+                    const bi = scratchI[b];
+                    sumR += ar * br - ai * bi;
+                    sumI += ar * bi + ai * br;
+                }
+                const idx = chunkStart + a * stride + offset;
+                real[idx] = sumR;
+                imag[idx] = sumI;
+            }
+        }
+    }
+}
+
+function runDqiSimulation(y, phi, theta) {
+    const invSqrtDim = 1.0 / Math.sqrt(DIM);
+    for (let i = 0; i < DIM; i++) {
+        stateReal[i] = invSqrtDim;
+        stateImag[i] = 0.0;
+    }
+
+    // 1. Agreement Phase Oracle
+    for (let i = 0; i < DIM; i++) {
+        const d = indexToDigits(i);
+        let agr = 0;
+        for (let j = 0; j < N; j++) {
+            if (d[j] === y[j]) agr++;
+        }
+        if (agr > 0) {
+            const angle = agr * phi;
+            const c = Math.cos(angle);
+            const s = Math.sin(angle);
+            const r = stateReal[i];
+            const im = stateImag[i];
+            stateReal[i] = r * c - im * s;
+            stateImag[i] = r * s + im * c;
+        }
+    }
+
+    // 2. Full QFT to dual space
+    for (let w = 0; w < N; w++) {
+        applyQftWire(stateReal, stateImag, w, false);
+    }
+
+    // 3. Dual Syndrome Phase Kickback
+    const cDual = Math.cos(theta);
+    const sDual = Math.sin(theta);
+
+    for (let i = 0; i < DIM; i++) {
+        const d = indexToDigits(i);
+        // Dual check: G * d == 0
+        let isDual = true;
+        for (let r = 0; r < K; r++) {
+            let dot = 0;
+            for (let c = 0; c < N; c++) {
+                dot = fAdd(dot, fMul(G[r][c], d[c]));
+            }
+            if (dot !== 0) { isDual = false; break; }
+        }
+
+        if (isDual) {
+            const r = stateReal[i];
+            const im = stateImag[i];
+            stateReal[i] = r * cDual - im * sDual;
+            stateImag[i] = r * sDual + im * cDual;
+        }
+    }
+
+    // 4. Inverse QFT back to primal basis
+    for (let w = 0; w < N; w++) {
+        applyQftWire(stateReal, stateImag, w, true);
+    }
+
+    // 5. Normalization
+    let normSq = 0;
+    for (let i = 0; i < DIM; i++) {
+        normSq += stateReal[i] * stateReal[i] + stateImag[i] * stateImag[i];
+    }
+    const invNorm = 1.0 / Math.sqrt(normSq);
+    for (let i = 0; i < DIM; i++) {
+        stateReal[i] *= invNorm;
+        stateImag[i] *= invNorm;
+    }
+
+    // Collect probabilities on all 49 valid codewords in C
+    const codewordProbs = [];
+    let totalCodeProb = 0;
+
+    for (let c0 = 0; c0 < P; c0++) {
+        for (let c1 = 0; c1 < P; c1++) {
+            const cw = encode(c0, c1);
+            const idx = digitsToIndex(cw);
+            const prob = stateReal[idx] * stateReal[idx] + stateImag[idx] * stateImag[idx];
+            codewordProbs.push({ c0, c1, prob, cw, idx });
+            totalCodeProb += prob;
+        }
+    }
+
+    // Conditional probability within code subspace
+    for (const item of codewordProbs) {
+        item.condProb = totalCodeProb > 0 ? item.prob / totalCodeProb : 0;
+    }
+
+    codewordProbs.sort((a, b) => b.condProb - a.condProb);
+    return { codewordProbs, totalCodeProb };
+}
+
+// --- UI EVENT BINDINGS & RENDERING ---
+const rngC0 = document.getElementById('rng-c0');
+const rngC1 = document.getElementById('rng-c1');
+const rngT = document.getElementById('rng-t');
+const rngPhi = document.getElementById('rng-phi');
+const rngTheta = document.getElementById('rng-theta');
+
+const lblC0 = document.getElementById('lbl-c0');
+const lblC1 = document.getElementById('lbl-c1');
+const lblT = document.getElementById('lbl-t');
+const lblPhi = document.getElementById('lbl-phi');
+const lblTheta = document.getElementById('lbl-theta');
+
+const cvSpectrum = document.getElementById('cv-spectrum');
+const cvPhasor = document.getElementById('cv-phasor');
+const ctxSpectrum = cvSpectrum.getContext('2d');
+const ctxPhasor = cvPhasor.getContext('2d');
+
+function updateShowdown() {
+    const c0 = parseInt(rngC0.value);
+    const c1 = parseInt(rngC1.value);
+    const t = parseInt(rngT.value);
+    const phi = parseFloat(rngPhi.value);
+    const theta = parseFloat(rngTheta.value);
+
+    lblC0.textContent = c0;
+    lblC1.textContent = c1;
+    lblT.textContent = t;
+    lblPhi.textContent = phi.toFixed(2) + ' rad';
+    lblTheta.textContent = theta.toFixed(2) + ' rad';
+
+    const plantedCw = encode(c0, c1);
+    const y = [...plantedCw];
+
+    // Corrupt at deterministically chosen positions
+    const errPositions = [1, 3, 2, 4];
+    for (let i = 0; i < t && i < errPositions.length; i++) {
+        const pos = errPositions[i];
+        y[pos] = fAdd(y[pos], (i % (P - 1)) + 1);
+    }
+
+    let agreements = 0;
+    for (let i = 0; i < N; i++) {
+        if (plantedCw[i] === y[i]) agreements++;
+    }
+
+    const syn = computeSyndrome(y);
+
+    document.getElementById('stat-cw').textContent = `[${plantedCw.join(', ')}]`;
+    document.getElementById('stat-y').textContent = `[${y.join(', ')}]`;
+    document.getElementById('stat-syndrome').textContent = `[${syn.join(', ')}]`;
+    document.getElementById('stat-agreement').textContent = `${agreements} / 5 (${Math.round((agreements/5)*100)}%)`;
+
+    // Classical BW
+    const bwRes = berlekampWelch(y);
+    const statBw = document.getElementById('stat-bw');
+    if (bwRes.success && bwRes.poly[0] === c0 && bwRes.poly[1] === c1) {
+        statBw.className = 'status success';
+        statBw.textContent = `SUCCESS (P(x) = ${c0} + ${c1}x)`;
+    } else {
+        statBw.className = 'status fail';
+        statBw.textContent = 'FAILED (0% RECOVERY)';
+    }
+
+    // Quantum DQI
+    const { codewordProbs } = runDqiSimulation(y, phi, theta);
+    const top = codewordProbs[0];
+    const statDqi = document.getElementById('stat-dqi');
+
+    const uniformBase = 1.0 / 49.0;
+    const ampl = top.condProb / uniformBase;
+
+    if (top.c0 === c0 && top.c1 === c1) {
+        statDqi.className = 'status success';
+        statDqi.textContent = `SUCCESS: PEAK c* (${ampl.toFixed(2)}x Ampl)`;
+    } else {
+        statDqi.className = 'status fail';
+        statDqi.textContent = `SUB-OPTIMAL (Peak P=${(top.condProb*100).toFixed(1)}%)`;
+    }
+
+    document.getElementById('lbl-spectrum-stats').textContent = `Planted Peak Amplification: ${ampl.toFixed(3)}x`;
+
+    // Render candidate ranking list
+    const listEl = document.getElementById('list-candidates');
+    listEl.innerHTML = '';
+    for (let i = 0; i < Math.min(5, codewordProbs.length); i++) {
+        const item = codewordProbs[i];
+        const isPlanted = (item.c0 === c0 && item.c1 === c1);
+        const color = isPlanted ? 'var(--quantum-green-bright)' : 'var(--text-slate)';
+        const bold = isPlanted ? 'font-weight:700;' : '';
+        const tag = isPlanted ? ' [PLANTED]' : '';
+        listEl.innerHTML += `
+            <div style="display:flex; justify-content:space-between; color:${color}; ${bold}">
+                <span>#${i+1} P(x) = ${item.c0} + ${item.c1}x${tag}</span>
+                <span>${(item.condProb * 100).toFixed(2)}%</span>
+            </div>
+        `;
+    }
+
+    renderSpectrumChart(codewordProbs, c0, c1);
+    renderPhasorChart(c0, c1);
+}
+
+function renderSpectrumChart(codewordProbs, c0, c1) {
+    const w = cvSpectrum.width = cvSpectrum.clientWidth * window.devicePixelRatio;
+    const h = cvSpectrum.height = cvSpectrum.clientHeight * window.devicePixelRatio;
+
+    ctxSpectrum.clearRect(0, 0, w, h);
+
+    const padL = 40 * window.devicePixelRatio;
+    const padR = 20 * window.devicePixelRatio;
+    const padB = 30 * window.devicePixelRatio;
+    const padT = 20 * window.devicePixelRatio;
+
+    const plotW = w - padL - padR;
+    const plotH = h - padT - padB;
+
+    const barW = plotW / 49;
+    const uniformBase = 1.0 / 49.0;
+
+    // Find max prob
+    let maxP = 0.25;
+    for (const p of codewordProbs) {
+        if (p.condProb > maxP) maxP = p.condProb;
+    }
+
+    // Grid lines
+    ctxSpectrum.strokeStyle = '#1e293b';
+    ctxSpectrum.lineWidth = 1;
+    for (let step = 0; step <= 4; step++) {
+        const yVal = (maxP / 4) * step;
+        const py = padT + plotH - (yVal / maxP) * plotH;
+        ctxSpectrum.beginPath();
+        ctxSpectrum.moveTo(padL, py);
+        ctxSpectrum.lineTo(w - padR, py);
+        ctxSpectrum.stroke();
+
+        ctxSpectrum.fillStyle = '#64748b';
+        ctxSpectrum.font = `${9 * window.devicePixelRatio}px monospace`;
+        ctxSpectrum.fillText(`${(yVal * 100).toFixed(0)}%`, 4 * window.devicePixelRatio, py + 3);
+    }
+
+    // Uniform baseline
+    const baseY = padT + plotH - (uniformBase / maxP) * plotH;
+    ctxSpectrum.strokeStyle = '#ffb300';
+    ctxSpectrum.setLineDash([4, 4]);
+    ctxSpectrum.beginPath();
+    ctxSpectrum.moveTo(padL, baseY);
+    ctxSpectrum.lineTo(w - padR, baseY);
+    ctxSpectrum.stroke();
+    ctxSpectrum.setLineDash([]);
+
+    // Draw bars
+    for (let i = 0; i < codewordProbs.length; i++) {
+        const item = codewordProbs[i];
+        const isPlanted = (item.c0 === c0 && item.c1 === c1);
+        const barH = (item.condProb / maxP) * plotH;
+        const px = padL + i * barW;
+        const py = padT + plotH - barH;
+
+        if (isPlanted) {
+            ctxSpectrum.fillStyle = '#00ff88';
+            ctxSpectrum.shadowColor = 'rgba(0, 255, 136, 0.6)';
+            ctxSpectrum.shadowBlur = 12;
+        } else {
+            ctxSpectrum.fillStyle = '#1e293b';
+            ctxSpectrum.shadowBlur = 0;
+        }
+
+        ctxSpectrum.fillRect(px + 1, py, Math.max(1, barW - 2), barH);
+        ctxSpectrum.shadowBlur = 0;
+    }
+}
+
+function renderPhasorChart(c0, c1) {
+    const w = cvPhasor.width = cvPhasor.clientWidth * window.devicePixelRatio;
+    const h = cvPhasor.height = cvPhasor.clientHeight * window.devicePixelRatio;
+
+    ctxPhasor.clearRect(0, 0, w, h);
+
+    const cx = w / 2;
+    const cy = h / 2;
+    const radius = Math.min(cx, cy) - 20 * window.devicePixelRatio;
+
+    // Unit circle
+    ctxPhasor.strokeStyle = '#1e293b';
+    ctxPhasor.lineWidth = 1;
+    ctxPhasor.beginPath();
+    ctxPhasor.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctxPhasor.stroke();
+
+    // Crosshairs
+    ctxPhasor.beginPath();
+    ctxPhasor.moveTo(cx - radius, cy);
+    ctxPhasor.lineTo(cx + radius, cy);
+    ctxPhasor.moveTo(cx, cy - radius);
+    ctxPhasor.lineTo(cx, cy + radius);
+    ctxPhasor.stroke();
+
+    // Plot planted codeword phasor vs sample random phasors
+    const plantedCw = encode(c0, c1);
+    const plantedIdx = digitsToIndex(plantedCw);
+    const prR = stateReal[plantedIdx];
+    const prI = stateImag[plantedIdx];
+
+    // Draw non-codeword background cloud
+    ctxPhasor.fillStyle = 'rgba(100, 116, 139, 0.2)';
+    for (let i = 0; i < 200; i++) {
+        const r = stateReal[i * 80];
+        const im = stateImag[i * 80];
+        const scale = radius * 35;
+        ctxPhasor.fillRect(cx + r * scale, cy - im * scale, 2, 2);
+    }
+
+    // Planted phasor vector
+    const vecScale = radius * 45;
+    ctxPhasor.strokeStyle = '#00ff88';
+    ctxPhasor.lineWidth = 2.5;
+    ctxPhasor.shadowColor = 'rgba(0, 255, 136, 0.8)';
+    ctxPhasor.shadowBlur = 10;
+    ctxPhasor.beginPath();
+    ctxPhasor.moveTo(cx, cy);
+    ctxPhasor.lineTo(cx + prR * vecScale, cy - prI * vecScale);
+    ctxPhasor.stroke();
+    ctxPhasor.shadowBlur = 0;
+
+    // Label
+    ctxPhasor.fillStyle = '#00ff88';
+    ctxPhasor.font = `${10 * window.devicePixelRatio}px monospace`;
+    ctxPhasor.fillText('Constructive c*', cx + prR * vecScale + 8, cy - prI * vecScale - 4);
+}
+
+[rngC0, rngC1, rngT, rngPhi, rngTheta].forEach(el => {
+    el.addEventListener('input', updateShowdown);
+});
+document.getElementById('btn-recompute').addEventListener('click', updateShowdown);
+
+window.addEventListener('resize', updateShowdown);
+window.addEventListener('DOMContentLoaded', updateShowdown);
+</script>
+
+</body>
+</html>

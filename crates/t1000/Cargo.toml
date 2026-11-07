@@ -403,6 +403,10 @@ path = "src/bin/benchmarks/water_pes_bench.rs"
 name = "gyroscopic_stabilizer_bench"
 path = "src/bin/benchmarks/gyroscopic_stabilizer_bench.rs"
 
+[[bin]]
+name = "dqi_opi_bench"
+path = "src/bin/benchmarks/dqi_opi_bench.rs"
+
 
 
 

@@ -40,6 +40,7 @@ pub mod datasets;
 pub use datasets::*;
 pub mod device_noise;
 pub mod diagonal;
+pub mod dqi;
 pub mod engine;
 pub mod feature_head;
 pub mod feature_map;
