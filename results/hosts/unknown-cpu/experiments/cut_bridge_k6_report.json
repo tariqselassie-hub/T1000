@@ -1,0 +1,21 @@
+{
+  "benchmark_id": "T1000-BENCH-CUT-BRIDGE-K6-EXACT",
+  "k_bridges": 6,
+  "branch_count_per_fragment": 64,
+  "total_tensor_terms": 4096,
+  "ground_truth_12q_error": 1.942890293094024e-16,
+  "ground_truth_verified": true,
+  "weight_sum_conservation_error": 0.0,
+  "total_qubits": 36,
+  "working_set_mb": 8.0,
+  "avoided_dense_ram_gb": 1024.0,
+  "memory_reduction_ratio": 131072.0,
+  "prep_snapshot_ms": 17.9987,
+  "branch_evolution_ms": 1079.0630999999998,
+  "tensor_contraction_ms": 0.0034000000000000002,
+  "total_execution_ms": 1097.1185,
+  "uncoupled_product": -0.8601780117089747,
+  "entangled_36q_expectation": -0.7355452940211831,
+  "entanglement_delta": 0.1246327176877916,
+  "non_separable_verified": true
+}
