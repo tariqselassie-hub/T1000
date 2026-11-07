@@ -407,6 +407,10 @@ path = "src/bin/benchmarks/gyroscopic_stabilizer_bench.rs"
 name = "dqi_opi_bench"
 path = "src/bin/benchmarks/dqi_opi_bench.rs"
 
+[[bin]]
+name = "shor_factoring_bench"
+path = "src/bin/benchmarks/shor_factoring_bench.rs"
+
 
 
 

@@ -1,0 +1,219 @@
+{
+  "target_designation": "TARGET-02",
+  "compendium_reference": "arXiv:2610.32595 (Section 2.1)",
+  "semi_primes_tested": [
+    15,
+    21,
+    33,
+    35,
+    39
+  ],
+  "factorizations": [
+    {
+      "composite_n": 15,
+      "factor_p": 3,
+      "factor_q": 5,
+      "base_a": 7,
+      "order_r": 4,
+      "total_qubits": 12,
+      "factorization_verified": true,
+      "quantum_circuit_micros": 222,
+      "classical_trial_micros": 0,
+      "qpe_result": {
+        "a": 7,
+        "modulus": 15,
+        "counting_qubits": 8,
+        "work_qubits": 4,
+        "total_qubits": 12,
+        "order": 4,
+        "measured_phases": [
+          0.0,
+          0.99609375,
+          0.00390625,
+          0.0078125,
+          0.9921875,
+          0.01171875,
+          0.98828125,
+          0.9765625
+        ],
+        "peak_probabilities": [
+          0.2499999999999994,
+          0.20265254011711692,
+          0.20265254011711686,
+          0.10134153114579801,
+          0.10134153114579801,
+          0.022525993871356776,
+          0.022525993871356766,
+          0.011278276424959958
+        ],
+        "quantum_success": true,
+        "circuit_micros": 222
+      }
+    },
+    {
+      "composite_n": 21,
+      "factor_p": 3,
+      "factor_q": 7,
+      "base_a": 2,
+      "order_r": 6,
+      "total_qubits": 13,
+      "factorization_verified": true,
+      "quantum_circuit_micros": 327,
+      "classical_trial_micros": 0,
+      "qpe_result": {
+        "a": 2,
+        "modulus": 21,
+        "counting_qubits": 8,
+        "work_qubits": 5,
+        "total_qubits": 13,
+        "order": 6,
+        "measured_phases": [
+          0.0,
+          0.66796875,
+          0.33203125,
+          0.60546875,
+          0.39453125,
+          0.41796875,
+          0.58203125,
+          0.40234375
+        ],
+        "peak_probabilities": [
+          0.3333435058593741,
+          0.021297132171473915,
+          0.0212971321714739,
+          0.013093079784446566,
+          0.013093079784446557,
+          0.01273486164438871,
+          0.01273486164438871,
+          0.012331917862169186
+        ],
+        "quantum_success": true,
+        "circuit_micros": 327
+      }
+    },
+    {
+      "composite_n": 33,
+      "factor_p": 3,
+      "factor_q": 11,
+      "base_a": 7,
+      "order_r": 10,
+      "total_qubits": 14,
+      "factorization_verified": true,
+      "quantum_circuit_micros": 619,
+      "classical_trial_micros": 0,
+      "qpe_result": {
+        "a": 7,
+        "modulus": 33,
+        "counting_qubits": 8,
+        "work_qubits": 6,
+        "total_qubits": 14,
+        "order": 10,
+        "measured_phases": [
+          0.0,
+          0.35546875,
+          0.64453125,
+          0.36328125,
+          0.63671875,
+          0.98046875,
+          0.01953125,
+          0.93359375
+        ],
+        "peak_probabilities": [
+          0.20098876953124944,
+          0.017788876937307678,
+          0.01778887693730767,
+          0.012977630978271848,
+          0.012977630978271842,
+          0.010167325095177829,
+          0.010167325095177825,
+          0.009513886527220614
+        ],
+        "quantum_success": true,
+        "circuit_micros": 619
+      }
+    },
+    {
+      "composite_n": 35,
+      "factor_p": 5,
+      "factor_q": 7,
+      "base_a": 2,
+      "order_r": 12,
+      "total_qubits": 14,
+      "factorization_verified": true,
+      "quantum_circuit_micros": 550,
+      "classical_trial_micros": 0,
+      "qpe_result": {
+        "a": 2,
+        "modulus": 35,
+        "counting_qubits": 8,
+        "work_qubits": 6,
+        "total_qubits": 14,
+        "order": 12,
+        "measured_phases": [
+          0.0,
+          0.99609375,
+          0.00390625,
+          0.0078125,
+          0.9921875,
+          0.33203125,
+          0.66796875,
+          0.328125
+        ],
+        "peak_probabilities": [
+          0.08337402343749974,
+          0.0676292664257483,
+          0.06762926642574829,
+          0.03391799058916398,
+          0.03391799058916397,
+          0.01327961088255421,
+          0.01327961088255421,
+          0.011482246584752841
+        ],
+        "quantum_success": true,
+        "circuit_micros": 550
+      }
+    },
+    {
+      "composite_n": 39,
+      "factor_p": 3,
+      "factor_q": 13,
+      "base_a": 7,
+      "order_r": 12,
+      "total_qubits": 14,
+      "factorization_verified": true,
+      "quantum_circuit_micros": 417,
+      "classical_trial_micros": 0,
+      "qpe_result": {
+        "a": 7,
+        "modulus": 39,
+        "counting_qubits": 8,
+        "work_qubits": 6,
+        "total_qubits": 14,
+        "order": 12,
+        "measured_phases": [
+          0.0,
+          0.99609375,
+          0.00390625,
+          0.0078125,
+          0.9921875,
+          0.328125,
+          0.671875,
+          0.33203125
+        ],
+        "peak_probabilities": [
+          0.08337402343749972,
+          0.06762452103796518,
+          0.06762452103796515,
+          0.03390426073334399,
+          0.03390426073334398,
+          0.011066666283417546,
+          0.011066666283417546,
+          0.010207668955256786
+        ],
+        "quantum_success": true,
+        "circuit_micros": 417
+      }
+    }
+  ],
+  "all_verified": true
+}

@@ -77,6 +77,7 @@ pub mod reuploading;
 pub mod routing;
 pub mod simd;
 pub mod simd_bloch;
+pub mod shor;
 pub mod smiles;
 pub mod state;
 pub mod state_prep;
