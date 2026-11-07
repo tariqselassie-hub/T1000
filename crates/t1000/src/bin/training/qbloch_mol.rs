@@ -278,10 +278,10 @@ impl Model {
             for (j, msg, bc, alpha) in &msgs_all[i] {
                 let w_bond = self.w_bond[*bc];
                 let w_bond_star = w_bond.conjugate();
-                let gC = dl_dcombined[i];
-                let dot_g_msg = gC.w*msg.w + gC.x*msg.x + gC.y*msg.y + gC.z*msg.z;
-                // contribution to dl_dh[j] from message conjugation: alpha * w* gC w
-                let conj_g = w_bond_star.mul(gC).mul(w_bond);
+                let g_c = dl_dcombined[i];
+                let dot_g_msg = g_c.w * msg.w + g_c.x * msg.x + g_c.y * msg.y + g_c.z * msg.z;
+                // contribution to dl_dh[j] from message conjugation: alpha * w* g_c w
+                let conj_g = w_bond_star.mul(g_c).mul(w_bond);
                 let alpha = *alpha;
                 dl_dh[*j].w += alpha * conj_g.w;
                 dl_dh[*j].x += alpha * conj_g.x;
@@ -319,9 +319,7 @@ impl Model {
                 }
             }
         }
-        // apply weight decay
-        let base = self.params();
-        // (weight decay applied later in assembly)
+        // apply weight decay (applied later in assembly)
 
         // Weight gradients via finite differences (weights are few: 28 params)
         let mut grad_w_self = Quaternion::ZERO;

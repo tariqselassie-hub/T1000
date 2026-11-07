@@ -2,7 +2,7 @@
 // Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
 
 use t1000::backbone;
-use t1000::film_adapter::{self, TaskFiLMAdapter, FiLMGradients};
+use t1000::film_adapter::{TaskFiLMAdapter, FiLMGradients};
 use t1000::multitask_backbone::{self, DatasetSource, MolGraph as BGraph, MultiTaskBackbone, MultiTaskBackboneGrads};
 use t1000::qgnn::graph::MolecularGraph;
 

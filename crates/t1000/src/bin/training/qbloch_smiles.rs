@@ -2,13 +2,10 @@
 // Copyright (c) 2026 Terrence A. Jones SR. All rights reserved.
 
 use t1000::backbone;
-use t1000::multitask_backbone::{self, DatasetSource, MolGraph as BGraph};
+use t1000::multitask_backbone::{self, MolGraph as BGraph};
 use t1000::qgnn::graph::MolecularGraph;
 
 const EPOCHS: usize = 10;
-const HALF_BATCH: usize = 32;
-const LR: f64 = 0.01;
-const WD: f64 = 1e-4;
 
 fn scale_quat(q: [f64; 4], s: f64) -> [f64; 4] { [q[0]*s, q[1]*s, q[2]*s, q[3]*s] }
 fn normalize_quat(q: [f64; 4]) -> [f64; 4] {
@@ -59,11 +56,11 @@ fn main() {
         w_self[l] = normalize_quat([1.0+0.1*nf(),0.1*nf(),0.1*nf(),0.1*nf()]);
         w_bond[l] = normalize_quat([1.0+0.1*nf(),0.1*nf(),0.1*nf(),0.1*nf()]);
     }
-    let mut w_read = [0.5_f64,0.3,0.2,0.1];
-    let mut bias = 0.0_f64;
+    let w_read = [0.5_f64,0.3,0.2,0.1];
+    let bias = 0.0_f64;
     // quick training loop
     for _epoch in 0..EPOCHS {
-        for (smiles, target, g) in rows.iter() {
+        for (_smiles, target, g) in rows.iter() {
             // forward
             let n = g.num_atoms();
             let mut q = vec![[0.0_f64;4]; n];

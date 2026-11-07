@@ -109,6 +109,7 @@ pub fn reuploading_forward_readout(
 /// (`dL/dz_k`, one value per readout qubit). Returns the per-sample readouts in batch order;
 /// `grad_out` (zeroed on entry, length `2*n*(depth-1) + n_eval`) receives the sample-ordered
 /// gradient sum, matching the finite-difference summation convention.
+#[allow(clippy::too_many_arguments)]
 pub fn adjoint_reuploading_batch<'a>(
     ansatz: &CircuitAnsatz,
     source_qubit: usize,

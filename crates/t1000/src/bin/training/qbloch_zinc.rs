@@ -274,9 +274,9 @@ impl Model {
             for (j, msg, bc, alpha) in &msgs_all[i] {
                 let w_bond = self.w_bond[*bc];
                 let w_bond_star = w_bond.conjugate();
-                let gC = dl_dcombined[i];
-                let dot_g_msg = gC.w*msg.w + gC.x*msg.x + gC.y*msg.y + gC.z*msg.z;
-                let conj_g = w_bond_star.mul(gC).mul(w_bond);
+                let g_c = dl_dcombined[i];
+                let dot_g_msg = g_c.w * msg.w + g_c.x * msg.x + g_c.y * msg.y + g_c.z * msg.z;
+                let conj_g = w_bond_star.mul(g_c).mul(w_bond);
                 let alpha = *alpha;
                 dl_dh[*j].w += alpha * conj_g.w;
                 dl_dh[*j].x += alpha * conj_g.x;
@@ -375,9 +375,7 @@ fn mse(model: &Model, data: &[(MolecularGraph, f64)]) -> f64 {
 }
 
 fn main() {
-    // Load ZINC CSV
-    let path = "C:/Users/zoddj/datasets/zinc_250k.zip";
-    // We'll read extracted csv from a known path; unzip manually not here. Instead read first 5000 from extracted file if present.
+    // Read first 5000 from extracted file if present.
     let csv_path = "C:/Users/zoddj/datasets/combined/zinc_qm9_10k.csv";
     let text = std::fs::read_to_string(csv_path).expect("csv");
     let mut data: Vec<(MolecularGraph, f64)> = Vec::new();
