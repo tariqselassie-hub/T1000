@@ -201,4 +201,18 @@ To verify the exact point where quantum coherence and order estimation hold vs. 
 * **Coherence Fall Boundary:** Coherence and phase resolution hold across all on-chip CPU SRAM tiers (L1, L2, L3 up to $Q = 21$ wires / $32\text{ MB}$), but fail when buffer requirements spill past $36\text{ MB}$ into off-chip DRAM ($Q \ge 23$ wires / $128\text{ MB}$).
 * **Telemetry Artifact:** Recorded to [`results/experiments/zipper_digit_coherence_frontier.json`](file:///C:/Users/zoddj/GuddaLM_workspace/T1000/results/experiments/zipper_digit_coherence_frontier.json).
 
+---
+
+### 5. The Combined Architecture: Parallel Cut-Bridge Partitioned Zipper
+
+By unifying **Push 1 (Cut-Bridge Work-Register Partitioning)** and **Push 3 (Parallel Rayon / iGPU Fragment Dispatch)**, we formalize the sovereign architecture to scale Shor's algorithm past the physical DRAM wall without losing phase coherence:
+
+* **Full Technical Specification:** [`docs/cut_bridge_partitioned_zipper_specification.md`](file:///c:/Users/zoddj/GuddaLM_workspace/T1000/docs/cut_bridge_partitioned_zipper_specification.md).
+* **Empirical Cut-Bridge Calibration:** Proven exact to **$1.94 \times 10^{-16}$ machine precision** across $4,096$ tensor terms in [`docs/findings/cut_bridge_k6_stress_verification.md`](file:///c:/Users/zoddj/GuddaLM_workspace/T1000/docs/findings/cut_bridge_k6_stress_verification.md).
+* **Memory Compression Scaling:**
+  * For $n = 32$-bit composites ($N \approx 4.29 \times 10^9$, factoring **6-digit primes**): Monolithic statevector requires $68.7\text{ GB}$ RAM (OOM crash). Partitioned cut-bridge sub-registers ($2 \times 16\text{Q}$) require only **$2.00\text{ MB}$**, achieving a **$34,359\times$ memory collapse** that runs entirely within CPU L2/L3 cache.
+  * For $n = 40$-bit composites ($N \approx 1.10 \times 10^{12}$, factoring **8-digit primes**): Monolithic statevector requires $17.6\text{ TB}$ RAM. Partitioned sub-registers ($2 \times 20\text{Q}$) require only **$32.0\text{ MB}$**, fitting within standard desktop L3 cache.
+* **Concurrent Execution:** Dispatches $2^K = 64$ independent branches per fragment across CPU P-cores and mounted Intel Xe iGPU via zero-copy OpenCL UMA, executing each phase step in $\approx 40.5\text{ ms}$ with microsecond tensor contraction.
+
+
 

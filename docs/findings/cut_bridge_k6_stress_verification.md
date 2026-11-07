@@ -72,3 +72,4 @@ To reproduce this benchmark and record telemetry:
 ```bash
 cargo run --release -p t1000 --bin cut_bridge_k6_bench -- --record
 ```
+

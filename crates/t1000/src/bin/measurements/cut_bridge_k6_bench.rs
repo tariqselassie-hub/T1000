@@ -338,3 +338,4 @@ fn main() {
         .expect("Failed to write benchmark telemetry");
     println!("Telemetry successfully written to experiments/cut_bridge_k6_report.json");
 }
+
